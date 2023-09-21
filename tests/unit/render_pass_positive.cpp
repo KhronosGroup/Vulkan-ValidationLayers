@@ -753,8 +753,8 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet::Bindings binding_defs = {{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    const VkDescriptorSetLayoutObj pipeline_dsl(m_device, binding_defs);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&pipeline_dsl});
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, binding_defs);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
     OneOffDescriptorSet descriptor_set(m_device, binding_defs);
 
     VkDescriptorImageInfo image_info = {
@@ -935,24 +935,25 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
     // Create push descriptor set layout
-    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding},
+                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
     helper.InitState();
-    helper.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds_layout});
+    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
     helper.gp_ci_.renderPass = render_pass.handle();
     helper.CreateGraphicsPipeline();
 
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), &vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    const uint32_t data_size = sizeof(float) * 3;
+    vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
     buff_info.buffer = vbo.handle();
     buff_info.offset = 0;
-    buff_info.range = sizeof(vbo_data);
+    buff_info.range = data_size;
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;

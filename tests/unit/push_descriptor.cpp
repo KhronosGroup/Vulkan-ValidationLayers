@@ -81,12 +81,12 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
     ASSERT_VK_SUCCESS(vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template));
 
-    std::unique_ptr<VkDescriptorSetLayoutObj> push_dsl = nullptr;
-    std::unique_ptr<VkPipelineLayoutObj> pipeline_layout = nullptr;
+    std::unique_ptr<vkt::DescriptorSetLayout> push_dsl = nullptr;
+    std::unique_ptr<vkt::PipelineLayout> pipeline_layout = nullptr;
     VkDescriptorUpdateTemplate push_template = VK_NULL_HANDLE;
 
-    push_dsl.reset(new VkDescriptorSetLayoutObj(m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
-    pipeline_layout.reset(new VkPipelineLayoutObj(m_device, {push_dsl.get()}));
+    push_dsl.reset(new vkt::DescriptorSetLayout(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+    pipeline_layout.reset(new vkt::PipelineLayout(*m_device, {push_dsl.get()}));
     ASSERT_TRUE(push_dsl->initialized());
 
     auto push_template_ci = vku::InitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
@@ -276,8 +276,8 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-    auto pipeline_layout = VkPipelineLayoutObj(m_device, {&ds_layout});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    auto pipeline_layout = vkt::PipelineLayout(*m_device, {&ds_layout});
 
     char const *fsSource = R"glsl(
         #version 450
@@ -420,11 +420,11 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout_ub(m_device, {dsl_binding});
-    const VkDescriptorSetLayoutObj ds_layout_ub1(m_device, {dsl_binding});
-    const VkDescriptorSetLayoutObj ds_layout_ub_push(m_device, {dsl_binding},
+    const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout_ub1(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding},
                                                      VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
 
     constexpr uint64_t badhandle = 0xcadecade;
     VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
@@ -669,23 +669,20 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
     // Create ordinary and push descriptor set layout
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {binding});
     ASSERT_TRUE(ds_layout.initialized());
-    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     ASSERT_TRUE(push_ds_layout.initialized());
 
     // Now use the descriptor set layouts to create a pipeline layout
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&push_ds_layout, &ds_layout});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout, &ds_layout});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    // Create a descriptor to push
-    const uint32_t buffer_data[4] = {4, 5, 6, 7};
-    VkConstantBufferObj buffer_obj(m_device, sizeof(buffer_data), &buffer_data);
-    ASSERT_TRUE(buffer_obj.initialized());
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     // Create a "write" struct, noting that the buffer_info cannot be a temporary arg (the return from write_descriptor_set
     // references its data), and the DescriptorSet() can be temporary, because the value is ignored
-    VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
 
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
@@ -698,7 +695,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
     if (transfer_only_qfi || no_gfx_qfi) {
         const uint32_t err_qfi = no_gfx_qfi ? no_gfx_qfi.value() : transfer_only_qfi.value();
 
-        VkCommandPoolObj command_pool(m_device, err_qfi);
+        vkt::CommandPool command_pool(*m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         ASSERT_TRUE(command_buffer.initialized());
@@ -718,7 +715,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
         // If we succeed in testing only one condition above, we need to test the other below.
         if (transfer_only_qfi && err_qfi != transfer_only_qfi.value()) {
             // Need to test the neither compute/gfx supported case separately.
-            VkCommandPoolObj tran_command_pool(m_device, transfer_only_qfi.value());
+            vkt::CommandPool tran_command_pool(*m_device, transfer_only_qfi.value());
             ASSERT_TRUE(tran_command_pool.initialized());
             VkCommandBufferObj tran_command_buffer(m_device, &tran_command_pool);
             ASSERT_TRUE(tran_command_buffer.initialized());
@@ -773,18 +770,16 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     }
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     ASSERT_TRUE(push_ds_layout.initialized());
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&push_ds_layout});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    const uint32_t buffer_data[4] = {4, 5, 6, 7};
-    VkConstantBufferObj buffer_obj(m_device, sizeof(buffer_data), &buffer_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    ASSERT_TRUE(buffer_obj.initialized());
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Use an invalid alignment.
-    VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), min_alignment - 1, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), min_alignment - 1, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 

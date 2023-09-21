@@ -329,13 +329,13 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     const VkPipeline pipeline_c = pipeline_helper_c.pipeline_;
 
     const float data[16] = {};  // dummy data to match shader size
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // case 1 - bind different layout with the same range
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
     m_commandBuffer->Draw(1, 0, 0, 0);
@@ -345,7 +345,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // case 2 - bind layout with same range then push different range
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_b, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
     m_commandBuffer->Draw(1, 0, 0, 0);
@@ -357,7 +357,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // case 3 - same range same layout then same range from a different layout and same range from the same layout
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_b, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
@@ -369,7 +369,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // case 4 - same range same layout then diff range and same range update
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_c, VK_SHADER_STAGE_VERTEX_BIT, 16, pc_size, data);
@@ -381,7 +381,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // case 5 - update push constant bind different layout with the same range then bind correct layout
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
@@ -392,7 +392,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // case 6 - update push constant then bind different layout with overlapping range then bind correct layout
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_c);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
@@ -403,7 +403,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // case 7 - bind different layout with different range then update push constant and bind correct layout
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_c);
     vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
@@ -457,13 +457,12 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     pipeline_empty.InitState();
     pipeline_empty.CreateGraphicsPipeline();
 
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // Draw without ever pushing to the unused and empty pipelines
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.pipeline_);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
@@ -471,7 +470,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty.pipeline_);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
@@ -501,12 +500,12 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 32};
-    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
     const float data[16] = {};  // dummy data to match shader size
@@ -564,12 +563,12 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
 
     // Use exact range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 28};
-    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
     const float data[12] = {};  // dummy data to match shader size
@@ -716,12 +715,12 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 32, 16};
-    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
     const float data[16] = {};
@@ -752,12 +751,12 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
     )glsl";
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 32};
-    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
 }
 
@@ -792,12 +791,12 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     specialization_info.pData = &data;
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
-    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
 }

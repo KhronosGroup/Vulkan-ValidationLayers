@@ -681,7 +681,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
     dsl_binding.pImmutableSamplers = nullptr;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptorSet;
     auto alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();
@@ -701,8 +701,8 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     vk::UpdateDescriptorSets(m_device->handle(), 1u, &descriptorWrite, 0u, nullptr);
 
-    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {dsl_binding});
-    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
+    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {dsl_binding});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
 
     VkDescriptorSetLayout descriptorSetLayout = descriptor_set_layout.handle();
 
@@ -1098,7 +1098,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
                       {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                   });
 
-    VkPipelineLayoutObj pipeline_layout(m_device, {&vert_descriptor_set.layout_, &frag_descriptor_set.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_, &frag_descriptor_set.layout_});
 
     static const char vert_src[] = R"glsl(
         #version 460
@@ -1215,7 +1215,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     push_constant_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     push_constant_ranges[1].offset = sizeof(int);
     push_constant_ranges[1].size = sizeof(float);
-    VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_ranges[0], push_constant_ranges[1]});
+    vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_ranges[0], push_constant_ranges[1]});
 
     auto vert_create_info = vku::InitStruct<VkShaderCreateInfoEXT>();
     vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1446,7 +1446,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
 
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
-    VkCommandPoolObj command_pool(m_device, graphics_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     VkCommandBufferObj command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     command_buffer.begin();
     command_buffer.BeginRenderingColor(GetDynamicRenderTarget());
@@ -1572,7 +1572,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
 
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
-    VkCommandPoolObj command_pool(m_device, graphics_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     VkCommandBufferObj command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     auto rendering_info = vku::InitStruct<VkCommandBufferInheritanceRenderingInfo>();
     rendering_info.colorAttachmentCount = 1;

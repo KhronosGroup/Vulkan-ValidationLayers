@@ -949,7 +949,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     ViewportInheritanceTestData test_data(m_device, gpu());

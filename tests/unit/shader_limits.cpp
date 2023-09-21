@@ -158,7 +158,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ = std::move(cs);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipeline.LateBindPipelineInfo();
     // as commented in SPIR-V should trigger the limits as following
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06376");
@@ -238,7 +238,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     // as commented in SPIR-V should trigger the limits as following
     //
     // OpImageSampleImplicitLod

@@ -28,7 +28,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
     VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
     VkShaderObj chit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
@@ -188,7 +188,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
 
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj ahit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
@@ -683,7 +683,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
     const char *ray_generation_shader = R"glsl(
         #version 460 core
@@ -893,11 +893,11 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
@@ -1042,8 +1042,8 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
          VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}};
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, layout_bindings);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, layout_bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -1090,7 +1090,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kMinimalShaderGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -1163,7 +1163,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     }
     pipeline_library_group_handles_features.pipelineLibraryGroupHandles = false;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pipeline_library_group_handles_features));
-    const VkPipelineLayoutObj pipeline_layout(m_device, {});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
     VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -1228,7 +1228,7 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     pipleline_features.pipelineCreationCacheControl = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
     VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
     VkShaderObj chit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
@@ -1357,7 +1357,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
 
     VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
     VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_NV);

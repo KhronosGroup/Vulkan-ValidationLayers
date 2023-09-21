@@ -83,7 +83,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = {};
@@ -113,7 +113,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet empty_ds(m_device, {});
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&empty_ds.layout_, &empty_ds.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&empty_ds.layout_, &empty_ds.layout_});
 
     m_commandBuffer->begin();
 
@@ -122,9 +122,8 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
 
     // The draw command will most likely produce a crash in case of a regression.
     m_commandBuffer->Draw(1, 0, 0, 0);

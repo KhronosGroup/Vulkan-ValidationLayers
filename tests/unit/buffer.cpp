@@ -619,23 +619,25 @@ TEST_F(NegativeBuffer, VertexBufferOffset) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     const uint32_t maxVertexInputBindings = m_device->props.limits.maxVertexInputBindings;
-    static const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    const VkDeviceSize vbo_size = 3 * sizeof(float);
+    vkt::Buffer vbo(*m_device, vbo_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pOffsets-00626");
-    m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)(3 * sizeof(float)), 1);  // Offset at the end of the buffer
+    // Offset at the end of the buffer
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &vbo_size);
     m_errorMonitor->VerifyFound();
 
     // firstBinding set over limit
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-firstBinding-00624");
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, (maxVertexInputBindings + 1));
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), maxVertexInputBindings + 1, 1, &vbo.handle(), &kZeroDeviceSize);
     m_errorMonitor->VerifyFound();
 
     // sum of firstBinding and bindingCount set over limit
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-firstBinding-00625");
-    m_commandBuffer->BindVertexBuffer(&vbo, 0, (maxVertexInputBindings));  // bindingCount of 1 puts it over limit
+    // bindingCount of 1 puts it over limit
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), maxVertexInputBindings, 1, &vbo.handle(), &kZeroDeviceSize);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -874,7 +876,7 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
     }
     VkQueueObj *queue = m_device->queue_family_queues(transfer.value())[0].get();
 
-    VkCommandPoolObj pool(m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     cb.begin();

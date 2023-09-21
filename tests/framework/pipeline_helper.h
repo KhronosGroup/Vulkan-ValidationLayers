@@ -31,7 +31,7 @@ class CreatePipelineHelper {
     VkPipelineViewportStateCreateInfo vp_state_ci_ = {};
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci_ = {};
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
-    VkPipelineLayoutObj pipeline_layout_;
+    vkt::PipelineLayout pipeline_layout_;
     VkPipelineDynamicStateCreateInfo dyn_state_ci_ = {};
     VkPipelineRasterizationStateCreateInfo rs_state_ci_ = {};
     VkPipelineRasterizationLineStateCreateInfoEXT line_state_ci_ = {};
@@ -125,7 +125,7 @@ class CreateComputePipelineHelper {
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
-    VkPipelineLayoutObj pipeline_layout_;
+    vkt::PipelineLayout pipeline_layout_;
     VkComputePipelineCreateInfo cp_ci_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
     VkPipeline pipeline_ = VK_NULL_HANDLE;

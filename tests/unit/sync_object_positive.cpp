@@ -36,7 +36,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
-    VkCommandPoolObj no_gfx_pool(m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
     // Create an "exclusive" image owned by the graphics queue.
@@ -86,14 +86,10 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
-    VkCommandPoolObj no_gfx_pool(m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
-    // Create a buffer
-    const VkDeviceSize buffer_size = 256;
-    uint8_t data[buffer_size] = {0xFF};
-    VkConstantBufferObj buffer(m_device, buffer_size, data, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    ASSERT_TRUE(buffer.initialized());
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     auto buffer_barrier =
         buffer.buffer_memory_barrier(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR, VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
                                      VK_ACCESS_2_NONE_KHR, VK_ACCESS_2_NONE_KHR, 0, VK_WHOLE_SIZE);
@@ -1739,13 +1735,13 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
-    VkCommandPoolObj pool0(m_device, q0->get_family_index());
+    vkt::CommandPool pool0(*m_device, q0->get_family_index());
     VkCommandBufferObj cb0(m_device, &pool0);
     cb0.begin();
     vk::CmdCopyBuffer(cb0.handle(), buffer_a.handle(), buffer_b.handle(), 1, &region);
     cb0.end();
 
-    VkCommandPoolObj pool1(m_device, q1->get_family_index());
+    vkt::CommandPool pool1(*m_device, q1->get_family_index());
     VkCommandBufferObj cb1(m_device, &pool1);
     cb1.begin();
     vk::CmdCopyBuffer(cb1.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
@@ -2097,7 +2093,7 @@ struct SemBufferRaceData {
         }
     }
 
-    void Run(VkCommandPoolObj &command_pool, ErrorMonitor &error_mon) {
+    void Run(vkt::CommandPool &command_pool, ErrorMonitor &error_mon) {
         uint64_t gpu_wait_value, gpu_signal_value;
         auto timeline_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
         timeline_info.waitSemaphoreValueCount = 1;

@@ -82,7 +82,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         }
     }
 
-    VkCommandPoolObj ray_tracing_command_pool(m_device, ray_tracing_queue_family_index,
+    vkt::CommandPool ray_tracing_command_pool(*m_device, ray_tracing_queue_family_index,
                                               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj ray_tracing_command_buffer(m_device, &ray_tracing_command_pool);
 
@@ -197,8 +197,10 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(ray_tracing_queue);
 
-    VkTextureObj texture(m_device, nullptr);
-    VkSamplerObj sampler(m_device);
+    VkImageObj image(m_device);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDeviceSize storage_buffer_size = 1024;
     vkt::Buffer storage_buffer;
@@ -280,9 +282,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     VkDescriptorImageInfo descriptor_image_infos[6] = {};
     for (int i = 0; i < 6; i++) {
-        descriptor_image_infos[i] = texture.DescriptorImageInfo();
-        descriptor_image_infos[i].sampler = sampler.handle();
-        descriptor_image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptor_image_infos[i] = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     }
 
     VkWriteDescriptorSet descriptor_writes[3] = {};
@@ -317,8 +317,8 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, NULL);
     }
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-    const VkPipelineLayoutObj pipeline_layout_variable(m_device, {&ds_variable.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
+    const vkt::PipelineLayout pipeline_layout_variable(*m_device, {&ds_variable.layout_});
 
     const auto SetImagesArrayLength = [](const std::string &shader_template, const std::string &length_str) {
         const std::string to_replace = "IMAGES_ARRAY_LENGTH";
@@ -2080,11 +2080,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     // Create ray tracing pipeline
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
     {
-        const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+        const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
         VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-        const VkPipelineLayoutObj pipeline_layout(m_device, {});
+        const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
         shader_stages[0] = vku::InitStructHelper();

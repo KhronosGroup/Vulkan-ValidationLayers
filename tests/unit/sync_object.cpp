@@ -375,9 +375,8 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
 
     // Now exercise barrier aspect bit errors, first DS
-    VkDepthStencilObj ds_image(m_device);
-    ds_image.Init(m_device, 128, 128, depth_format);
-    ASSERT_TRUE(ds_image.initialized());
+    VkImageObj ds_image(m_device);
+    ds_image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -408,9 +407,8 @@ TEST_F(NegativeSyncObject, Barriers) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D16_UNORM, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        VkDepthStencilObj d_image(m_device);
-        d_image.Init(m_device, 128, 128, VK_FORMAT_D16_UNORM);
-        ASSERT_TRUE(d_image.initialized());
+        VkImageObj d_image(m_device);
+        d_image.Init(128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -428,9 +426,8 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Now test stencil-only
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_S8_UINT, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        VkDepthStencilObj s_image(m_device);
-        s_image.Init(m_device, 128, 128, VK_FORMAT_S8_UINT);
-        ASSERT_TRUE(s_image.initialized());
+        VkImageObj s_image(m_device);
+        s_image.Init(128, 128, 1, VK_FORMAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -735,7 +732,7 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcStageMask-06461");
 
-    VkCommandPoolObj command_pool(m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj bad_command_buffer(m_device, &command_pool);
 
     bad_command_buffer.begin();
@@ -904,9 +901,8 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
 
     // Now exercise barrier aspect bit errors, first DS
-    VkDepthStencilObj ds_image(m_device);
-    ds_image.Init(m_device, 128, 128, depth_format);
-    ASSERT_TRUE(ds_image.initialized());
+    VkImageObj ds_image(m_device);
+    ds_image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -933,9 +929,8 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D16_UNORM, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        VkDepthStencilObj d_image(m_device);
-        d_image.Init(m_device, 128, 128, VK_FORMAT_D16_UNORM);
-        ASSERT_TRUE(d_image.initialized());
+        VkImageObj d_image(m_device);
+        d_image.Init(128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -953,9 +948,8 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Now test stencil-only
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_S8_UINT, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        VkDepthStencilObj s_image(m_device);
-        s_image.Init(m_device, 128, 128, VK_FORMAT_S8_UINT);
-        ASSERT_TRUE(s_image.initialized());
+        VkImageObj s_image(m_device);
+        s_image.Init(128, 128, 1, VK_FORMAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1185,7 +1179,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-srcStageMask-03849");
 
-    VkCommandPoolObj command_pool(m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj bad_command_buffer(m_device, &command_pool);
 
     bad_command_buffer.begin();
@@ -1224,8 +1218,8 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {
     m_commandBuffer->begin();
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
-    VkDepthStencilObj ds_image(m_device);
-    ds_image.Init(m_device, 128, 128, depth_format);
+    VkImageObj ds_image(m_device);
+    ds_image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1273,8 +1267,8 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
     m_commandBuffer->begin();
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
-    VkDepthStencilObj ds_image(m_device);
-    ds_image.Init(m_device, 128, 128, depth_format);
+    VkImageObj ds_image(m_device);
+    ds_image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -3593,7 +3587,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
+    vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex);
     VkCommandBufferObj commandBuffer(m_device, &commandPool);
 
     commandBuffer.begin();

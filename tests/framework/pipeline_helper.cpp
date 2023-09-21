@@ -216,7 +216,7 @@ void CreatePipelineHelper::InitState() {
         pipeline_layout_ci_.pPushConstantRanges,
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
     pipeline_layout_ =
-        VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+        vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
 
     InitPipelineCache();
 }
@@ -302,7 +302,7 @@ void CreateComputePipelineHelper::InitState() {
     const std::vector<VkPushConstantRange> push_ranges(
         pipeline_layout_ci_.pPushConstantRanges,
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-    pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
+    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
 
     InitPipelineCache();
 }
@@ -565,7 +565,7 @@ void RayTracingPipelineHelper::InitState() {
     descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());
 
-    pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_});
+    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_});
 
     InitPipelineCache();
 }

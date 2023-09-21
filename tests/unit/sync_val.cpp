@@ -1521,7 +1521,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
@@ -1614,7 +1614,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
     m_commandBuffer->reset();
@@ -2050,20 +2050,52 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     auto format_dp = format_ds;
     auto format_st = format_ds;
 
-    VkDepthStencilObj image_ds(m_device), image_dp(m_device), image_st(m_device);
-    image_ds.Init(m_device, 16, 16, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image_dp.Init(m_device, 16, 16, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_st.Init(m_device, 16, 16, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    VkImageObj image_ds(m_device);
+    VkImageObj image_dp(m_device);
+    VkImageObj image_st(m_device);
+    image_ds.Init(16, 16, 1, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                  VK_IMAGE_TILING_OPTIMAL);
+    image_dp.Init(16, 16, 1, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                  VK_IMAGE_TILING_OPTIMAL);
+    image_st.Init(16, 16, 1, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                  VK_IMAGE_TILING_OPTIMAL);
+    VkImageView image_view_ds = image_ds.targetView(format_ds, VK_IMAGE_ASPECT_DEPTH_BIT);
+    VkImageView image_view_dp = image_dp.targetView(format_dp, VK_IMAGE_ASPECT_DEPTH_BIT);
+    VkImageView image_view_st = image_st.targetView(format_st, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    VkRenderpassObj rp_ds(m_device, format_ds, true), rp_dp(m_device, format_dp, true), rp_st(m_device, format_st, true);
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pDepthStencilAttachment = &attach;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    attach_desc.format = format_ds;
+    vkt::RenderPass rp_ds(*m_device, rpci);
+    attach_desc.format = format_dp;
+    vkt::RenderPass rp_dp(*m_device, rpci);
+    attach_desc.format = format_st;
+    vkt::RenderPass rp_st(*m_device, rpci);
 
     vkt::Framebuffer fb_ds, fb_dp, fb_st;
     VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, image_ds.BindInfo(), 16, 16, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, &image_view_ds, 16, 16, 1};
     fb_ds.init(*m_device, fbci);
-    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_dp.handle(), 1, image_dp.BindInfo(), 16, 16, 1};
+    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_dp.handle(), 1, &image_view_dp, 16, 16, 1};
     fb_dp.init(*m_device, fbci);
-    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_st.handle(), 1, image_st.BindInfo(), 16, 16, 1};
+    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_st.handle(), 1, &image_view_st, 16, 16, 1};
     fb_st.init(*m_device, fbci);
 
     VkStencilOpState stencil = {};
@@ -2278,8 +2310,8 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, color_format, usage_color, VK_IMAGE_TILING_OPTIMAL);
     image_color.Init(image_ci);
     image_color2.Init(image_ci);
-    VkDepthStencilObj image_ds(m_device);
-    image_ds.Init(m_device, 32, 32, ds_format, usage_ds);
+    VkImageObj image_ds(m_device);
+    image_ds.Init(32, 32, 1, ds_format, usage_ds, VK_IMAGE_TILING_OPTIMAL);
 
     const VkAttachmentDescription colorAttachmentDescription = {(VkAttachmentDescriptionFlags)0,
                                                                 color_format,
@@ -3768,7 +3800,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
                                            {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        },
                                        0, &layout_createinfo_binding_flags, 0);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
     auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
@@ -4265,7 +4297,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
     m_commandBuffer->reset();
@@ -4349,7 +4381,7 @@ struct QSTestContext {
     VkBufferCopy second_half;
     VkBufferCopy first_to_second;
     VkBufferCopy second_to_first;
-    VkCommandPoolObj pool;
+    vkt::CommandPool pool;
 
     VkCommandBufferObj cba;
     VkCommandBufferObj cbb;
@@ -4493,7 +4525,7 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
     first_to_second = {0, half_size, half_size};
     second_to_first = {half_size, 0, half_size};
 
-    pool.Init(device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    pool.init(*device, vkt::CommandPool::create_info(q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     h_cba = InitFromPool(cba);
     h_cbb = InitFromPool(cbb);

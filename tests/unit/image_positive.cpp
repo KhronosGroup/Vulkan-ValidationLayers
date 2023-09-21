@@ -44,7 +44,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
-    VkCommandPoolObj no_gfx_pool(m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
     // Create an "exclusive" image owned by the graphics queue.
@@ -1065,7 +1065,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
                                        });
     VkDescriptorSet descriptorSet = descriptor_set.set_;
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Create image, view, and sampler
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1199,7 +1199,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
                                        });
     VkDescriptorSet descriptorSet = descriptor_set.set_;
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Create image, view, and sampler
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;

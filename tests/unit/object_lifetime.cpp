@@ -343,7 +343,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
 
         pipe.InitState();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+        pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
         err = pipe.CreateGraphicsPipeline();
         if (err != VK_SUCCESS) {
             GTEST_SKIP() << "Unable to compile shader";
@@ -681,23 +681,24 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
     // Create push descriptor set layout
-    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding},
+                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
     helper.InitState();
-    helper.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds_layout});
+    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
     helper.CreateGraphicsPipeline();
 
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    auto vbo = std::make_unique<VkConstantBufferObj>(m_device, sizeof(vbo_data), &vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    const uint32_t data_size = sizeof(float) * 3;
+    vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
-    buff_info.buffer = vbo->handle();
+    buff_info.buffer = vbo.handle();
     buff_info.offset = 0;
-    buff_info.range = sizeof(vbo_data);
+    buff_info.range = data_size;
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
@@ -721,11 +722,10 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
-    vk::DestroyBuffer(m_device->handle(), vbo->handle(), nullptr);
+    vk::DestroyBuffer(m_device->handle(), vbo.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
-    vbo.reset();
 }
 
 TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
@@ -882,7 +882,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkPipelineLayoutObj pipeline_layout(m_device);
+    const vkt::PipelineLayout pipeline_layout(*m_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyPipeline-pipeline-00765");
     // Create PSO to be used for draw-time errors below

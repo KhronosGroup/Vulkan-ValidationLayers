@@ -1412,7 +1412,7 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
     VkQueue other_queue;
     vk::GetDeviceQueue(m_device->device(), other_queue_family, 0, &other_queue);
 
-    VkCommandPoolObj cmd_pool(m_device, queue_family);
+    vkt::CommandPool cmd_pool(*m_device, queue_family);
     VkCommandBufferObj cmd_buff(m_device, &cmd_pool);
 
     cmd_buff.begin();

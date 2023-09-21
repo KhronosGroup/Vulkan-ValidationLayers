@@ -507,7 +507,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        });
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     auto image_view_create_info = image.BasicViewCreatInfo();
     vkt::ImageView view(*m_device, image_view_create_info);
 

@@ -65,8 +65,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     char const *csSource = R"glsl(
         #version 450
@@ -108,7 +108,6 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -165,8 +164,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
     };
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     std::string css = R"glsl(
          #version 450 core
@@ -210,7 +209,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&dsl});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

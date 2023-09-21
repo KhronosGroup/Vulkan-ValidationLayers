@@ -27,13 +27,13 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
@@ -127,11 +127,11 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
-    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;

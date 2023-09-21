@@ -24,14 +24,10 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
-    VkCommandPoolObj no_gfx_pool(m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
-    // Create a buffer
-    const VkDeviceSize buffer_size = 256;
-    uint8_t data[buffer_size] = {0xFF};
-    VkConstantBufferObj buffer(m_device, buffer_size, data, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    ASSERT_TRUE(buffer.initialized());
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     auto buffer_barrier = buffer.buffer_memory_barrier(0, 0, 0, VK_WHOLE_SIZE);
 
     // Let gfx own it.

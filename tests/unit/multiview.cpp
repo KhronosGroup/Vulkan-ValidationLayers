@@ -505,8 +505,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     // Vertex buffer
     {
         float const vertex_data[] = {1.0f, 0.0f};
-        VkConstantBufferObj vbo(m_device, static_cast<int>(sizeof(vertex_data)), reinterpret_cast<const void *>(vertex_data),
-                                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        vkt::Buffer vbo(*m_device, sizeof(vertex_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
         VkVertexInputBindingDescription input_binding{};
         input_binding.binding = 0;
@@ -525,7 +524,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         void main(){
            gl_Position = vec4(input0.x, input0.y, 0.0f, 1.0f);
         }
-    )glsl";
+        )glsl";
 
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -581,12 +580,10 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     // Index buffer
     {
         float const vertex_data[] = {1.0f, 0.0f};
-        VkConstantBufferObj vbo(m_device, static_cast<int>(sizeof(vertex_data)), reinterpret_cast<const void *>(vertex_data),
-                                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        vkt::Buffer vbo(*m_device, sizeof(vertex_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
         uint32_t const index_data[] = {0};
-        VkConstantBufferObj ibo(m_device, static_cast<int>(sizeof(index_data)), reinterpret_cast<const void *>(index_data),
-                                VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        vkt::Buffer ibo(*m_device, sizeof(index_data), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
         VkVertexInputBindingDescription input_binding{};
         input_binding.binding = 0;
@@ -937,7 +934,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Set up VkRenderPassCreateInfo struct used with VK_VERSION_1_0
     VkAttachmentReference color_att = {};

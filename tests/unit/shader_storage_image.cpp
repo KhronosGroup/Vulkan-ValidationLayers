@@ -87,7 +87,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -162,7 +162,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -275,7 +275,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
@@ -434,7 +434,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
@@ -558,7 +558,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07955");
@@ -627,7 +627,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07954");
@@ -832,7 +832,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
@@ -920,7 +920,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();

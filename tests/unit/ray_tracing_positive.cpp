@@ -177,11 +177,11 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     // Create ray tracing pipeline
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
     {
-        const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+        const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
         VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-        const VkPipelineLayoutObj pipeline_layout(m_device, {});
+        const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
         shader_stages[0] = vku::InitStructHelper();

@@ -156,10 +156,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                                                 },
                                                 layout_create_flags, layout_pnext, pool_create_flags, allocate_pnext);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
-    const VkPipelineLayoutObj pipeline_layout_variable(m_device, {&descriptor_set_variable.layout_});
-    VkTextureObj texture(m_device, nullptr);
-    VkSamplerObj sampler(m_device);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout_variable(*m_device, {&descriptor_set_variable.layout_});
+
+    VkImageObj image(m_device);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer0.handle();
@@ -168,9 +171,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     VkDescriptorImageInfo image_info[6] = {};
     for (int i = 0; i < 6; i++) {
-        image_info[i] = texture.DescriptorImageInfo();
-        image_info[i].sampler = sampler.handle();
-        image_info[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info[i] = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     }
 
     VkWriteDescriptorSet descriptor_writes[2] = {};
@@ -207,7 +208,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                                               },
                                               0, layout_pnext, 0);
 
-    const VkPipelineLayoutObj pipeline_layout_buffer(m_device, {&descriptor_set_buffer.layout_});
+    const vkt::PipelineLayout pipeline_layout_buffer(*m_device, {&descriptor_set_buffer.layout_});
 
     VkDescriptorBufferInfo buffer_test_buffer_info[7] = {};
     buffer_test_buffer_info[0].buffer = buffer0.handle();
@@ -343,7 +344,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         char const *tess_ctrl_source;
         char const *tess_eval_source;
         bool debug;
-        const VkPipelineLayoutObj *pipeline_layout;
+        const vkt::PipelineLayout *pipeline_layout;
         const OneOffDescriptorSet *descriptor_set;
         uint32_t index;
         char const *expected_error;
@@ -549,7 +550,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     OneOffDescriptorSet descriptor_set(m_device, {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 4);
     descriptor_set.WriteDescriptorBufferInfo(1, storage_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -663,7 +664,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
                                                   {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -842,7 +843,7 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
 
     OneOffDescriptorSet ds(m_device, {{0, descriptor_type, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
 
     uint32_t qfi = 0;
     VkBufferCreateInfo bci = vku::InitStructHelper();
@@ -1174,7 +1175,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     {
         OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-        const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+        const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
         VkDescriptorBufferInfo buffer_test_buffer_info = {};
         buffer_test_buffer_info.buffer = buffer0.handle();
         buffer_test_buffer_info.offset = 0;
@@ -1815,7 +1816,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
                                             nullptr},
                                        },
                                        0, layout_createinfo_binding_flags, 0);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer0.handle();
@@ -1987,7 +1988,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     pipe.AddDefaultColorAttachment();
     pipe.DisableRasterization();
     {
-        const VkPipelineLayoutObj doomed_pipeline_layout(m_device);
+        const vkt::PipelineLayout doomed_pipeline_layout(*m_device);
         pipe.CreateVKPipeline(doomed_pipeline_layout.handle(), m_renderPass);
     }
     m_commandBuffer->begin();
@@ -2115,7 +2116,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -2296,7 +2297,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
                                                   {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -2478,11 +2479,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
                                       {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       {2, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout_vs(m_device, {&vertex_set.layout_, &common_set.layout_, nullptr}, {},
+    const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, &common_set.layout_, nullptr}, {},
                                                  VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const VkPipelineLayoutObj pipeline_layout_fs(m_device, {nullptr, &common_set.layout_, &fragment_set.layout_}, {},
+    const vkt::PipelineLayout pipeline_layout_fs(*m_device, {nullptr, &common_set.layout_, &fragment_set.layout_}, {},
                                                  VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&vertex_set.layout_, &common_set.layout_, &fragment_set.layout_}, {},
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &common_set.layout_, &fragment_set.layout_}, {},
                                               VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     vertex_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vertex_set.UpdateDescriptorSets();

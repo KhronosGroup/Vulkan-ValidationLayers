@@ -875,7 +875,7 @@ class VideoContext {
           device_(device),
           queue_(GetQueue(device, config)),
           cmd_pool_(
-              device, queue_.get_family_index(),
+              *device, queue_.get_family_index(),
               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | (protected_content ? VK_COMMAND_POOL_CREATE_PROTECTED_BIT : 0)),
           cmd_buffer_(device, &cmd_pool_, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &queue_),
           session_(VK_NULL_HANDLE),
@@ -1035,7 +1035,7 @@ class VideoContext {
 
     VkDeviceObj* device_{};
     VkQueueObj queue_;
-    VkCommandPoolObj cmd_pool_{};
+    vkt::CommandPool cmd_pool_{};
     VkCommandBufferObj cmd_buffer_{};
 
     VkVideoSessionKHR session_{};

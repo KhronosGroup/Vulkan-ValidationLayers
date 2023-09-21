@@ -189,11 +189,11 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
                                       });
 
     // We _vs and _fs layouts are identical, but we want them to be separate handles handles for the sake layout merging
-    VkPipelineLayoutObj pipeline_layout_vs(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_null(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_null(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, ds2.set_};

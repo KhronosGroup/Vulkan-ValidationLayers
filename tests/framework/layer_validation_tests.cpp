@@ -1035,7 +1035,7 @@ VkBufferTest::~VkBufferTest() {
 }
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
-    VkCommandPoolObj pool(device, device->graphics_queue_node_index_);
+    vkt::CommandPool pool(*device, device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buf(device, &pool);
 
     cmd_buf.begin();
@@ -1155,7 +1155,7 @@ OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bi
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
                                          VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext, int buffer_info_size,
                                          int image_info_size, int buffer_view_size)
-    : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pnext), set_(VK_NULL_HANDLE) {
+    : device_{device}, pool_{}, layout_(*device, bindings, layout_flags, layout_pnext), set_(VK_NULL_HANDLE) {
     VkResult err;
     buffer_infos.reserve(buffer_info_size);
     image_infos.reserve(image_info_size);
@@ -1278,7 +1278,7 @@ void BarrierQueueFamilyBase::QueueFamilyObjs::Init(VkDeviceObj *device, uint32_t
                                                    VkCommandPoolCreateFlags cp_flags) {
     index = qf_index;
     queue = new VkQueueObj(qf_queue, qf_index);
-    command_pool = new VkCommandPoolObj(device, qf_index, cp_flags);
+    command_pool = new vkt::CommandPool(*device, qf_index, cp_flags);
     command_buffer = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     command_buffer2 = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 }

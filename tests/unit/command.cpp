@@ -81,7 +81,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
@@ -413,7 +413,7 @@ TEST_F(NegativeCommand, PushConstants) {
     // Setup a pipeline layout with ranges: [0,32) [16,80)
     const std::vector<VkPushConstantRange> pc_range2 = {{VK_SHADER_STAGE_VERTEX_BIT, 16, 64},
                                                         {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 32}};
-    const VkPipelineLayoutObj pipeline_layout_obj(m_device, {}, pc_range2);
+    const vkt::PipelineLayout pipeline_layout_obj(*m_device, {}, pc_range2);
 
     const uint8_t dummy_values[100] = {};
 
@@ -480,7 +480,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkCommandBuffer");
 
     // A pool we can reset in.
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary.begin();
@@ -504,7 +504,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedNoReset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkCommandBuffer");
 
     // A pool we can reset in.
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary.begin();
@@ -1022,11 +1022,15 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkTextureObj texture(m_device, nullptr);
-    VkSamplerObj sampler(m_device);
+    VkImageObj image(m_device);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
 
     VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendSamplerTexture(&sampler, &texture);
+    descriptorSet.AppendSamplerTexture(image_info);
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     CreatePipelineHelper pipe(*this);
@@ -1077,8 +1081,10 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkTextureObj texture(m_device, nullptr);
-    VkSamplerObj sampler(m_device);
+    VkImageObj image(m_device);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorBindingFlagsEXT binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
     auto flags_create_info = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
@@ -1088,10 +1094,9 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}},
                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
                                        VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkDescriptorImageInfo image_info = texture.DescriptorImageInfo();
-    image_info.sampler = sampler.handle();
+    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
@@ -1143,11 +1148,15 @@ TEST_F(NegativeCommand, DrawTimeImageMultisampleMismatchWithPipeline) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkTextureObj texture(m_device, nullptr);  // THIS LINE CAUSES CRASH ON MALI
-    VkSamplerObj sampler(m_device);
+    VkImageObj image(m_device);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
 
     VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendSamplerTexture(&sampler, &texture);
+    descriptorSet.AppendSamplerTexture(image_info);
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     CreatePipelineHelper pipe(*this);
@@ -1186,11 +1195,15 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkTextureObj texture(m_device, nullptr);  // UNORM texture by default, incompatible with isampler2D
-    VkSamplerObj sampler(m_device);
+    VkImageObj image(m_device);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
 
     VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendSamplerTexture(&sampler, &texture);
+    descriptorSet.AppendSamplerTexture(image_info);
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     CreatePipelineHelper pipe(*this);
@@ -4349,7 +4362,7 @@ TEST_F(NegativeCommand, CommandQueueFlags) {
     }
 
     // Create command pool on a non-graphics queue
-    VkCommandPoolObj command_pool(m_device, queueFamilyIndex.value());
+    vkt::CommandPool command_pool(*m_device, queueFamilyIndex.value());
 
     // Setup command buffer on pool
     VkCommandBufferObj command_buffer(m_device, &command_pool);
@@ -4395,7 +4408,7 @@ TEST_F(NegativeCommand, DepthStencilImageCopyNoGraphicsQueueFlags) {
     region.bufferOffset = 0;
 
     // Create command pool on a non-graphics queue
-    VkCommandPoolObj command_pool(m_device, queueFamilyIndex.value());
+    vkt::CommandPool command_pool(*m_device, queueFamilyIndex.value());
 
     // Setup command buffer on pool
     VkCommandBufferObj command_buffer(m_device, &command_pool);
@@ -4439,7 +4452,7 @@ TEST_F(NegativeCommand, ImageCopyTransferQueueFlags) {
     region.bufferOffset = 5;
 
     // Create command pool on a non-graphics queue
-    VkCommandPoolObj command_pool(m_device, queueFamilyIndex.value());
+    vkt::CommandPool command_pool(*m_device, queueFamilyIndex.value());
 
     // Setup command buffer on pool
     VkCommandBufferObj command_buffer(m_device, &command_pool);
@@ -5761,7 +5774,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
         GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
     }
 
-    VkCommandPoolObj command_pool(m_device, no_gfx_qfi.value());
+    vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
     ASSERT_TRUE(command_pool.initialized());
     VkCommandBufferObj command_buffer(m_device, &command_pool);
 
@@ -5785,7 +5798,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
     dsl_binding.pImmutableSamplers = nullptr;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptorSet;
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -5794,8 +5807,8 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
     alloc_info.pSetLayouts = &ds_layout.handle();
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
 
-    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {dsl_binding});
-    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
+    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {dsl_binding});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
 
     command_buffer.begin();
     // Set invalid set

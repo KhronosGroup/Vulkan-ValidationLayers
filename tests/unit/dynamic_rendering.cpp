@@ -134,8 +134,8 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
     pipe.SetDepthStencil(&ds_state);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -224,7 +224,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
 
     auto ms_ci = vku::InitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_ci.sampleShadingEnable = VK_TRUE;
@@ -239,7 +239,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipe.gp_ci_.pDepthStencilState = &ds_state;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&dsl});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -830,7 +830,7 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
         GTEST_SKIP() << "Device doesn't support required maxGeometryOutputVertices";
     }
 
-    const VkPipelineLayoutObj pl(m_device);
+    const vkt::PipelineLayout pl(*m_device);
     VkPipelineObj pipe(m_device);
 
     std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment_state(2);
@@ -978,8 +978,8 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
     pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -1034,8 +1034,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -1200,8 +1200,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats2) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -1339,8 +1339,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3Color) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -1399,8 +1399,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 0;
@@ -1510,8 +1510,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -1569,8 +1569,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesDepthStencil) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
 
@@ -1667,8 +1667,8 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesColor) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkSampleCountFlagBits counts[2] = {VK_SAMPLE_COUNT_2_BIT, VK_SAMPLE_COUNT_2_BIT};
     auto samples_info = vku::InitStruct<VkAttachmentSampleCountInfoAMD>();
@@ -1746,8 +1746,8 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkSampleCountFlagBits counts[2] = {VK_SAMPLE_COUNT_2_BIT, VK_SAMPLE_COUNT_2_BIT};
     auto samples_info = vku::InitStruct<VkAttachmentSampleCountInfoAMD>();
@@ -5271,7 +5271,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer3(m_device, &command_pool);
@@ -5350,7 +5350,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     InitBasicDynamicRendering(&synchronization2);
     if (::testing::Test::IsSkipped()) return;
 
-    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer3(m_device, &command_pool);
@@ -5436,7 +5436,7 @@ TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
     if (::testing::Test::IsSkipped()) return;
 
     // Create secondary command buffer
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
@@ -5453,12 +5453,13 @@ TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
     cbbi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     // Prepare primary dynamic rendering cmd buffer
-    VkDepthStencilObj depth_stencil(m_device);
-    depth_stencil.Init(m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                       VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    VkImageObj depth_stencil(m_device);
+    depth_stencil.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    VkImageView depth_stencil_view =
+        depth_stencil.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     auto rai = vku::InitStruct<VkRenderingAttachmentInfo>();
-    rai.imageView = *depth_stencil.BindInfo();
+    rai.imageView = depth_stencil_view;
     rai.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     auto ri = vku::InitStruct<VkRenderingInfoKHR>();
@@ -6018,7 +6019,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewRasteriz
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     // A pool we can reset in.
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkCommandBufferInheritanceInfo cmdbuff_ii = {
@@ -6132,7 +6133,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewAttachme
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     // A pool we can reset in.
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkCommandBufferInheritanceInfo cmdbuff_ii = {
@@ -6519,8 +6520,8 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
     pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -6618,8 +6619,8 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -6662,8 +6663,8 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     auto rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -6696,8 +6697,8 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061");
     CreatePipelineHelper pipe(*this);

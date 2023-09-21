@@ -38,8 +38,8 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRSpecInfo) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     char const *csSource = R"glsl(
         #version 450
@@ -82,7 +82,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRSpecInfo) {
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -174,8 +173,8 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRParametersMatchProperties) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     // Tests are assume that Float16 3*5 is not available
     char const *csSource = R"glsl(
@@ -194,7 +193,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRParametersMatchProperties) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -256,7 +254,7 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRDimXMultipleSubgroupSize) {
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     // Ignore messages that types and sizes are unsupported by implementation
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08975");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-KSize-08977");
@@ -331,7 +329,7 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRSameScope) {
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     // Ignore messages that types and sizes are unsupported by implementation
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08975");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-KSize-08977");

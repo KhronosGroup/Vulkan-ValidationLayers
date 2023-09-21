@@ -568,7 +568,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     protected_pipe.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
     protected_pipe.CreateGraphicsPipeline();
 
-    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj unprotected_cmdbuf(m_device, &command_pool);
     unprotected_cmdbuf.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
@@ -650,10 +650,33 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     featureless_pipe.SetRasterization(&ms_state);
     featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
     gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
-    const VkPipelineLayoutObj test_pipeline_layout(&test_device);
-    VkRenderpassObj test_rp(&test_device);
+    const vkt::PipelineLayout test_pipeline_layout(test_device);
+
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attach;
+    subpass.colorAttachmentCount = 1;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    vkt::RenderPass render_pass(test_device, rpci);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368");
-    featureless_pipe.CreateVKPipeline(test_pipeline_layout.handle(), test_rp.handle(), &gp_ci);
+    featureless_pipe.CreateVKPipeline(test_pipeline_layout.handle(), render_pass.handle(), &gp_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -764,7 +787,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkCommandPoolObj protectedCommandPool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {

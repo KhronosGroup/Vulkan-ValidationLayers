@@ -17,6 +17,19 @@
 
 const char *kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
 
+class VkConstantBufferObj : public vkt::Buffer {
+  public:
+    VkConstantBufferObj(VkDeviceObj* device, VkDeviceSize size, const void* data,
+                        VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
+        VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        init(*device, create_info(size, usage), reqs);
+
+        void* pData = memory().map();
+        memcpy(pData, data, static_cast<size_t>(size));
+        memory().unmap();
+    }
+};
+
 // Tests for Arm-specific best practices
 
 TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
@@ -850,8 +863,8 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
         sampler_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
         pipe.InitState();
-        auto ds_layout = std::unique_ptr<VkDescriptorSetLayoutObj>(new VkDescriptorSetLayoutObj(m_device, {sampler_binding}));
-        auto pipe_layout = std::unique_ptr<VkPipelineLayoutObj>(new VkPipelineLayoutObj(m_device, {ds_layout.get()}));
+        auto ds_layout = std::unique_ptr<vkt::DescriptorSetLayout>(new vkt::DescriptorSetLayout(*m_device, {sampler_binding}));
+        auto pipe_layout = std::unique_ptr<vkt::PipelineLayout>(new vkt::PipelineLayout(*m_device, {ds_layout.get()}));
         pipe.cp_ci_.stage = stage;
         pipe.cp_ci_.layout = pipe_layout->handle();
 

@@ -371,8 +371,8 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
-    const VkDescriptorSetLayoutObj set_layout(m_device, {binding});
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&set_layout, &set_layout});
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout, &set_layout});
     OneOffDescriptorSet set(m_device, {binding});
 
     CreatePipelineHelper pipe(*this);

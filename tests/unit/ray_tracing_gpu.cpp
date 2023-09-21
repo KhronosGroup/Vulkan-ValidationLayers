@@ -48,7 +48,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
 
-    VkCommandPoolObj command_pool(m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     struct VkGeometryInstanceNV {
         float transform[12];
@@ -136,7 +136,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
 
-    VkCommandPoolObj command_pool(m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     struct VkGeometryInstanceNV {
         float transform[12];
@@ -226,7 +226,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
 
-    VkCommandPoolObj command_pool(m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     struct VkGeometryInstanceNV {
         float transform[12];
@@ -329,7 +329,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
 
-    VkCommandPoolObj command_pool(m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, 0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     struct VkGeometryInstanceNV {
         float transform[12];
@@ -424,7 +424,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     push_constant_range.size = 4;
     push_constant_range.offset = 0;
 
-    const VkPipelineLayoutObj compute_pipeline_layout(m_device,
+    const vkt::PipelineLayout compute_pipeline_layout(*m_device,
                                                       {
                                                           &push_descriptor_set.layout_,
                                                           &normal_descriptor_set.layout_,

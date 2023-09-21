@@ -536,7 +536,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkPipelineLayoutObj pipeline_layout(m_device);
+    const vkt::PipelineLayout pipeline_layout(*m_device);
 
     struct VboEntry {
         uint16_t input0[2];
@@ -545,10 +545,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     };
 
     const unsigned vbo_entry_count = 3;
-    const VboEntry vbo_data[vbo_entry_count] = {};
-
-    VkConstantBufferObj vbo(m_device, static_cast<int>(sizeof(VboEntry) * vbo_entry_count),
-                            reinterpret_cast<const void *>(vbo_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vbo(*m_device, sizeof(VboEntry) * vbo_entry_count, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     VkVertexInputBindingDescription input_binding;
     input_binding.binding = 0;

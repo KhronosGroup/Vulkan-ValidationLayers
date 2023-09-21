@@ -229,7 +229,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     query_pool_create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
-    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj primary_buffer(m_device, &command_pool);
     VkCommandBufferObj secondary_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 

@@ -364,7 +364,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
                       {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
                   });
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 

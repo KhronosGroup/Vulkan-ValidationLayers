@@ -350,8 +350,8 @@ TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     char const *csSource = R"glsl(
         #version 450
@@ -367,7 +367,6 @@ TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     pipe.CreateComputePipeline();
 }
 
@@ -400,8 +399,8 @@ TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     char const *csSource = R"glsl(
         #version 450
@@ -417,7 +416,6 @@ TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-None-06275");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -802,7 +800,7 @@ TEST_F(NegativeSubgroup, SubgroupUniformControlFlow) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

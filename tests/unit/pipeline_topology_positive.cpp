@@ -337,9 +337,30 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
     // The sacrificial device object
     VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
 
-    VkRenderpassObj render_pass(&test_device);
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
 
-    const VkPipelineLayoutObj pipeline_layout(&test_device);
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attach;
+    subpass.colorAttachmentCount = 1;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    vkt::RenderPass render_pass(test_device, rpci);
+
+    const vkt::PipelineLayout pipeline_layout(test_device);
 
     VkPipelineRasterizationStateCreateInfo rs_ci = vku::InitStructHelper();
     rs_ci.lineWidth = 1.0f;
@@ -497,16 +518,14 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    const float vbo_data[3] = {0};
-    VkConstantBufferObj vb(m_device, sizeof(vbo_data), reinterpret_cast<const void *>(&vbo_data),
-                           VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     VkCommandBufferObj cb(m_device, m_commandPool);
     cb.begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    cb.BindVertexBuffer(&vb, 0, 0);
+    vk::CmdBindVertexBuffers(cb.handle(), 0, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdSetPrimitiveTopologyEXT(cb.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
     vk::CmdDraw(cb.handle(), 1, 1, 0, 0);
 

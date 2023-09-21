@@ -2422,7 +2422,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Create a renderpass that will be incompatible with default renderpass
     VkAttachmentReference color_att = {};
@@ -2488,7 +2488,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -3304,9 +3304,9 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     layout_binding.pImmutableSamplers = nullptr;
-    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
 
-    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout, &descriptor_set_layout});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout});
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
 
     OneOffDescriptorSet descriptor_set(m_device,

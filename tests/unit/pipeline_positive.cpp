@@ -563,7 +563,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
         VkPipelineTessellationStateCreateInfo tsci = vku::InitStructHelper();
         tsci.patchControlPoints = 3;
 
-        const VkPipelineLayoutObj pl(m_device);
+        const vkt::PipelineLayout pl(*m_device);
 
         VkPipelineObj pipe(m_device);
         pipe.AddDefaultColorAttachment();
@@ -747,7 +747,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     rpci.pSubpasses = &subpass;
     vkt::RenderPass rp(*m_device, rpci);
 
-    const VkPipelineLayoutObj pl(m_device);
+    const vkt::PipelineLayout pl(*m_device);
 
     VkSampleMask sampleMask = 0x01;
     VkPipelineMultisampleStateCreateInfo msaa = vku::InitStructHelper();
@@ -1201,7 +1201,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
@@ -1623,7 +1623,7 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
-        const VkPipelineLayoutObj pl(m_device);
+        const vkt::PipelineLayout pl(*m_device);
 
         VkPipelineObj pipe(m_device);
         pipe.AddDefaultColorAttachment();

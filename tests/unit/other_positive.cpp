@@ -94,7 +94,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -493,7 +493,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
 
     const auto queue_family = DeviceObj()->GetDefaultQueue()->get_family_index();
     constexpr uint32_t queue_index = 0;
-    VkCommandPoolObj command_pool(DeviceObj(), queue_family);
+    vkt::CommandPool command_pool(*DeviceObj(), queue_family);
 
     const VkDevice device_h = device();
     VkQueue queue_h;
@@ -1027,7 +1027,7 @@ TEST_F(VkPositiveLayerTest, FreeDescriptorSetsNull) {
     VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                 nullptr};
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptor_sets[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
     auto alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();

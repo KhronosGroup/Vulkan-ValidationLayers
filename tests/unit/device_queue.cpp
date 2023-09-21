@@ -326,7 +326,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
     if (only_transfer_queueFamilyIndex == vvl::kU32Max) {
         GTEST_SKIP() << "Only VK_QUEUE_TRANSFER_BIT Queue is not supported";
     }
-    VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
+    vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex);
     VkCommandBufferObj commandBuffer(m_device, &commandPool);
 
     CreatePipelineHelper g_pipe(*this);
@@ -355,6 +355,6 @@ TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const size_t queue_count = vkt::PhysicalDevice(gpu()).queue_properties().size();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
-    VkCommandPoolObj commandPool(m_device, queue_count + 1);
+    vkt::CommandPool commandPool(*m_device, queue_count + 1);
     m_errorMonitor->VerifyFound();
 }

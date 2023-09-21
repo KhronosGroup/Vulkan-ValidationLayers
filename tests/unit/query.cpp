@@ -1858,7 +1858,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     }
 
     if (graphics_queue_family_index) {
-        VkCommandPoolObj command_pool(m_device, graphics_queue_family_index.value());
+        vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
@@ -1878,7 +1878,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     }
 
     if (compute_queue_family_index) {
-        VkCommandPoolObj command_pool(m_device, compute_queue_family_index.value());
+        vkt::CommandPool command_pool(*m_device, compute_queue_family_index.value());
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
@@ -1950,7 +1950,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     if (!compute_queue_family_index) {
         GTEST_SKIP() << "required queue family not found, skipping test";
     }
-    VkCommandPoolObj command_pool(m_device, compute_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, compute_queue_family_index.value());
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -2608,7 +2608,7 @@ TEST_F(NegativeQuery, CmdExecuteCommandsActiveQueries) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();

@@ -68,7 +68,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     OneOffDescriptorSet descriptor_set_0(m_device,
                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set_0.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     ASSERT_TRUE(pipeline_layout.initialized());
 
     auto pipeline_info = vku::InitStruct<VkComputePipelineCreateInfo>();
@@ -174,7 +174,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
                                          VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set_0.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     ASSERT_TRUE(pipeline_layout.initialized());
 
     auto pipeline_info = vku::InitStruct<VkComputePipelineCreateInfo>();
@@ -281,7 +281,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     VkDescriptorBufferInfo buffer_test_buffer_info = {};
     buffer_test_buffer_info.buffer = buffer0.handle();
     buffer_test_buffer_info.offset = 0;
@@ -450,7 +450,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
                                           {1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
                                          0, &mdtci);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set_0.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     ASSERT_TRUE(pipeline_layout.initialized());
 
     auto pipeline_info = vku::InitStruct<VkComputePipelineCreateInfo>();

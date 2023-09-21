@@ -52,7 +52,7 @@ TEST_F(VkPositiveVideoLayerTest, MultipleCmdBufs) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandPoolObj cmd_pool(m_device, config.QueueFamilyIndex(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool cmd_pool(*m_device, config.QueueFamilyIndex(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb1(m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &context.Queue());
     VkCommandBufferObj cb2(m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &context.Queue());
 

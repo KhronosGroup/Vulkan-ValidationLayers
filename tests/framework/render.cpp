@@ -560,7 +560,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_render_target_fmt = GetRenderTargetFormat();
 
-    m_commandPool = new VkCommandPoolObj(m_device, m_device->graphics_queue_node_index_, flags);
+    m_commandPool = new vkt::CommandPool(*m_device, m_device->graphics_queue_node_index_, flags);
 
     m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
 }
@@ -1078,17 +1078,6 @@ VkQueueObj *VkDeviceObj::GetDefaultComputeQueue() {
     return compute_queues()[0];
 }
 
-VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
-                                                   const vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
-                                                   VkDescriptorSetLayoutCreateFlags flags, void *pNext) {
-    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper(pNext);
-    dsl_ci.flags = flags;
-    dsl_ci.bindingCount = static_cast<uint32_t>(descriptor_set_bindings.size());
-    dsl_ci.pBindings = descriptor_set_bindings.data();
-
-    init(*device, dsl_ci);
-}
-
 VkDescriptorSetObj::VkDescriptorSetObj(VkDeviceObj *device) : m_device(device), m_nextSlot(0) {}
 
 VkDescriptorSetObj::~VkDescriptorSetObj() noexcept {
@@ -1112,26 +1101,7 @@ int VkDescriptorSetObj::AppendDummy() {
     return m_nextSlot++;
 }
 
-int VkDescriptorSetObj::AppendBuffer(VkDescriptorType type, VkConstantBufferObj &constantBuffer) {
-    assert(type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-           type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
-    VkDescriptorSetLayoutBinding binding = {};
-    binding.descriptorType = type;
-    binding.descriptorCount = 1;
-    binding.binding = m_layout_bindings.size();
-    binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = NULL;
-
-    m_layout_bindings.push_back(binding);
-    m_type_counts[type] += binding.descriptorCount;
-
-    m_writes.push_back(
-        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), m_nextSlot, 0, type, 1, &constantBuffer.m_descriptorBufferInfo));
-
-    return m_nextSlot++;
-}
-
-int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj *texture) {
+int VkDescriptorSetObj::AppendSamplerTexture(VkDescriptorImageInfo &image_info) {
     VkDescriptorSetLayoutBinding binding = {};
     binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     binding.descriptorCount = 1;
@@ -1141,12 +1111,10 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj
 
     m_layout_bindings.push_back(binding);
     m_type_counts[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] += binding.descriptorCount;
-    VkDescriptorImageInfo tmp = texture->DescriptorImageInfo();
-    tmp.sampler = sampler->handle();
-    m_imageSamplerDescriptors.push_back(tmp);
+    m_imageSamplerDescriptors.push_back(image_info);
 
-    m_writes.push_back(
-        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), m_nextSlot, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &tmp));
+    m_writes.push_back(vkt::Device::write_descriptor_set(vkt::DescriptorSet(), m_nextSlot, 0,
+                                                         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &image_info));
 
     return m_nextSlot++;
 }
@@ -1198,63 +1166,6 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
 
         // do the updates
         m_device->update_descriptor_sets(m_writes);
-    }
-}
-
-VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
-    // Create a renderPass with a single color attachment
-    VkAttachmentReference attach = {};
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attach;
-    subpass.colorAttachmentCount = 1;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = format;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    rpci.pAttachments = &attach_desc;
-
-    init(*dev, rpci);
-}
-
-VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthStencil) {
-    if (!depthStencil) {
-        VkRenderpassObj(dev, format);
-    } else {
-        // Create a renderPass with a depth/stencil attachment
-        VkAttachmentReference attach = {};
-        attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass = {};
-        subpass.pDepthStencilAttachment = &attach;
-
-        VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-        rpci.subpassCount = 1;
-        rpci.pSubpasses = &subpass;
-        rpci.attachmentCount = 1;
-
-        VkAttachmentDescription attach_desc = {};
-        attach_desc.format = format;
-        attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-        attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-        rpci.pAttachments = &attach_desc;
-
-        init(*dev, rpci);
     }
 }
 
@@ -1373,7 +1284,7 @@ void VkImageObj::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout
         return;
     }
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buf(m_device, &pool);
 
     /* Build command buffer to set image layout in the driver */
@@ -1598,7 +1509,7 @@ void VkImageObj::init_no_mem(const vkt::Device &dev, const VkImageCreateInfo &in
 VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
     VkImageLayout src_image_layout, dest_image_layout;
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buf(m_device, &pool);
 
     /* Build command buffer to copy staging texture to usable texture */
@@ -1645,7 +1556,7 @@ VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
 VkResult VkImageObj::CopyImageOut(VkImageObj &dst_image) {
     VkImageLayout src_image_layout, dest_image_layout;
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buf(m_device, &pool);
 
     cmd_buf.begin();
@@ -1706,115 +1617,6 @@ std::array<std::array<uint32_t, 16>, 16> VkImageObj::Read() {
     }
     stagingImage.UnmapMemory();
     return m;
-}
-
-VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(device) {
-    m_device = device;
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    uint32_t tex_colors[2] = {0xffff0000, 0xff00ff00};
-    void *data;
-    uint32_t x, y;
-    VkImageObj stagingImage(device);
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    stagingImage.Init(16, 16, 1, tex_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                      VK_IMAGE_TILING_LINEAR, reqs);
-    VkSubresourceLayout layout = stagingImage.subresource_layout(subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0));
-
-    if (colors == NULL) colors = tex_colors;
-
-    VkImageViewCreateInfo view = vku::InitStructHelper();
-    view.image = VK_NULL_HANDLE;
-    view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view.format = tex_format;
-    view.components.r = VK_COMPONENT_SWIZZLE_R;
-    view.components.g = VK_COMPONENT_SWIZZLE_G;
-    view.components.b = VK_COMPONENT_SWIZZLE_B;
-    view.components.a = VK_COMPONENT_SWIZZLE_A;
-    view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    view.subresourceRange.baseMipLevel = 0;
-    view.subresourceRange.levelCount = 1;
-    view.subresourceRange.baseArrayLayer = 0;
-    view.subresourceRange.layerCount = 1;
-
-    /* create image */
-    Init(16, 16, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
-    stagingImage.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-
-    /* create image view */
-    view.image = handle();
-    m_textureView.init(*m_device, view);
-    m_descriptorImageInfo.imageView = m_textureView.handle();
-
-    data = stagingImage.MapMemory();
-
-    for (y = 0; y < extent().height; y++) {
-        uint32_t *row = (uint32_t *)((char *)data + layout.rowPitch * y);
-        for (x = 0; x < extent().width; x++) row[x] = colors[(x & 1) ^ (y & 1)];
-    }
-    stagingImage.UnmapMemory();
-    stagingImage.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    VkImageObj::CopyImage(stagingImage);
-}
-
-VkSamplerObj::VkSamplerObj(VkDeviceObj *device) {
-    m_device = device;
-
-    VkSamplerCreateInfo samplerCreateInfo = vku::InitStructHelper();
-    samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
-    samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
-    samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerCreateInfo.mipLodBias = 0.0;
-    samplerCreateInfo.anisotropyEnable = VK_FALSE;
-    samplerCreateInfo.maxAnisotropy = 1;
-    samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
-    samplerCreateInfo.minLod = 0.0;
-    samplerCreateInfo.maxLod = 0.0;
-    samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-
-    init(*m_device, samplerCreateInfo);
-}
-
-/*
- * Basic ConstantBuffer constructor. Then use create methods to fill in the
- * details.
- */
-VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkBufferUsageFlags usage) {
-    m_device = device;
-
-    memset(&m_descriptorBufferInfo, 0, sizeof(m_descriptorBufferInfo));
-
-    // Special case for usages outside of original limits of framework
-    if ((VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) != usage) {
-        init_no_mem(*m_device, create_info(0, usage));
-    }
-}
-
-VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize allocationSize, const void *data,
-                                         VkBufferUsageFlags usage) {
-    m_device = device;
-
-    memset(&m_descriptorBufferInfo, 0, sizeof(m_descriptorBufferInfo));
-
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    init(*m_device, create_info(allocationSize, usage), reqs);
-
-    void *pData = memory().map();
-    memcpy(pData, data, static_cast<size_t>(allocationSize));
-    memory().unmap();
-
-    /*
-     * Constant buffers are going to be used as vertex input buffers
-     * or as shader uniform buffers. So, we'll create the shaderbuffer
-     * descriptor here so it's ready if needed.
-     */
-    this->m_descriptorBufferInfo.buffer = handle();
-    this->m_descriptorBufferInfo.offset = 0;
-    this->m_descriptorBufferInfo.range = allocationSize;
 }
 
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
@@ -1916,21 +1718,6 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework *frame
     }
     return {};
 }
-
-VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device, const vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,
-                                         const vector<VkPushConstantRange> &push_constant_ranges,
-                                         VkPipelineLayoutCreateFlags flags) {
-    VkPipelineLayoutCreateInfo pl_ci = vku::InitStructHelper();
-    pl_ci.flags = flags;
-    pl_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
-    pl_ci.pPushConstantRanges = push_constant_ranges.data();
-
-    auto descriptor_layouts_unwrapped = MakeTestbindingHandles<const vkt::DescriptorSetLayout>(descriptor_layouts);
-
-    init(*device, pl_ci, descriptor_layouts_unwrapped);
-}
-
-void VkPipelineLayoutObj::Reset() { *this = VkPipelineLayoutObj(); }
 
 VkPipelineObj::VkPipelineObj(VkDeviceObj *device) {
     m_device = device;
@@ -2128,7 +1915,7 @@ VkResult VkPipelineObj::CreateVKPipeline(VkPipelineLayout layout, VkRenderPass r
     return init_try(*m_device, *gp_ci);
 }
 
-void VkCommandBufferObj::Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
+void VkCommandBufferObj::Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
     m_device = device;
     if (queue) {
         m_queue = queue;
@@ -2142,7 +1929,8 @@ void VkCommandBufferObj::Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCom
     init(*device, create_info);
 }
 
-VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
+VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level,
+                                       VkQueueObj *queue) {
     Init(device, pool, level, queue);
 }
 
@@ -2379,18 +2167,6 @@ void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
 
 void VkCommandBufferObj::BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType) {
     vk::CmdBindIndexBuffer(handle(), indexBuffer->handle(), offset, indexType);
-}
-
-void VkCommandBufferObj::BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding) {
-    vk::CmdBindVertexBuffers(handle(), binding, 1, &vertexBuffer->handle(), &offset);
-}
-
-void VkCommandPoolObj::Init(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
-    init(*device, vkt::CommandPool::create_info(queue_family_index, flags));
-}
-
-VkCommandPoolObj::VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
-    Init(device, queue_family_index, flags);
 }
 
 bool VkDepthStencilObj::Initialized() { return m_initialized; }
