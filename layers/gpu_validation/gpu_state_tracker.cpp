@@ -975,8 +975,9 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         }
                         const VkShaderStageFlagBits stage = stage_state.GetStage();
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
+                        csm_state.unique_shader_id = unique_shader_module_id++;
                         const auto pass =
-                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv, &csm_state.unique_shader_id);
+                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv, csm_state.unique_shader_id);
                         if (pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
