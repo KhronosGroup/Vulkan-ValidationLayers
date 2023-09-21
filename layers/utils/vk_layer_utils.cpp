@@ -18,6 +18,7 @@
 #include "vk_layer_utils.h"
 
 #include <string.h>
+#include <sys/stat.h>
 
 #include "vulkan/vulkan.h"
 
@@ -174,4 +175,22 @@ VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, V
     }
     assert(chain_info != NULL);
     return chain_info;
+}
+
+std::string GetTempFilePath() {
+    auto tmp_path = GetEnvironment("XDG_CACHE_HOME");
+    if (!tmp_path.size()) {
+        auto cachepath = GetEnvironment("HOME") + "/.cache";
+        struct stat info;
+        if (stat(cachepath.c_str(), &info) == 0) {
+            if ((info.st_mode & S_IFMT) == S_IFDIR) {
+                tmp_path = cachepath;
+            }
+        }
+    }
+    if (!tmp_path.size()) tmp_path = GetEnvironment("TMPDIR");
+    if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
+    if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
+    if (!tmp_path.size()) tmp_path = "/tmp";
+    return tmp_path;
 }
