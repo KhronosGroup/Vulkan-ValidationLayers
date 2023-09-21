@@ -30,14 +30,15 @@ on:
 
 env:
   CMAKE_GENERATOR: Ninja
-  CMAKE_C_COMPILER_LAUNCHER: ccache
-  CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
 permissions:
   contents: read
 
 jobs:
   linux:
+    env:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -146,6 +147,9 @@ jobs:
         run: python scripts/tests.py --test
 
   android:
+      env:
+        CMAKE_C_COMPILER_LAUNCHER: ccache
+        CMAKE_CXX_COMPILER_LAUNCHER: ccache
       runs-on: ubuntu-22.04
       strategy:
         matrix:
@@ -182,6 +186,9 @@ jobs:
           run: ctest --output-on-failure -C Debug
 
   macos:
+    env:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     runs-on: macos-latest
     strategy:
       matrix:
@@ -200,6 +207,9 @@ jobs:
         run: python3 scripts/macos.py --config release --osx ${{ matrix.macos_version }}
 
   mingw:
+    env:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     runs-on: windows-latest
     defaults:
       run:
