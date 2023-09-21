@@ -707,7 +707,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     assert(cb_state != nullptr);
 
     std::vector<uint64_t> current_valid_handles;
-    ForEach<ACCELERATION_STRUCTURE_STATE>([&current_valid_handles](const ACCELERATION_STRUCTURE_STATE &as_state) {
+    ForEach<ACCELERATION_STRUCTURE_STATE_NV>([&current_valid_handles](const ACCELERATION_STRUCTURE_STATE_NV &as_state) {
         if (as_state.built && as_state.create_infoNV.info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
             current_valid_handles.push_back(as_state.opaque_handle);
         }
@@ -884,7 +884,7 @@ void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice devic
     ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-        auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(info.accelerationStructure);
+        auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(info.accelerationStructure);
         if (as_state) {
             DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
         }

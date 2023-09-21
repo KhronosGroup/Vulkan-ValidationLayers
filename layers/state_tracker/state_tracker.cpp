@@ -3006,9 +3006,9 @@ void ValidationStateTracker::PostCallRecordCmdSetViewportShadingRatePaletteNV(Vk
     cb_state->dynamic_state_value.shading_rate_palette_count = viewportCount;
 }
 
-std::shared_ptr<ACCELERATION_STRUCTURE_STATE> ValidationStateTracker::CreateAccelerationStructureState(
+std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> ValidationStateTracker::CreateAccelerationStructureState(
     VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci) {
-    return std::make_shared<ACCELERATION_STRUCTURE_STATE>(device, as, ci);
+    return std::make_shared<ACCELERATION_STRUCTURE_STATE_NV>(device, as, ci);
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
@@ -3109,7 +3109,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements,
     const RecordObject &record_obj) {
-    auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(pInfo->accelerationStructure);
+    auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(pInfo->accelerationStructure);
     if (as_state != nullptr) {
         if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
             as_state->memory_requirements_checked = true;
@@ -3128,7 +3128,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
 
-        auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(info.accelerationStructure);
+        auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(info.accelerationStructure);
         if (as_state) {
             // Track objects tied to memory
             auto mem_state = Get<DEVICE_MEMORY_STATE>(info.memory);
@@ -3155,7 +3155,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
     }
     cb_state->RecordCmd(record_obj.location.function);
 
-    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
+    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
     if (dst_as_state) {
         dst_as_state->Build(pInfo);
         if (!disabled[command_buffer_state]) {
@@ -3163,7 +3163,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
         }
     }
     if (!disabled[command_buffer_state]) {
-        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
+        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
         if (src_as_state) {
             cb_state->AddChild(src_as_state);
         }
@@ -3208,8 +3208,8 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
                                                                           const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
-        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
-        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
+        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
+        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
         if (!disabled[command_buffer_state]) {
             cb_state->RecordTransferCmd(record_obj.location.function, src_as_state, dst_as_state);
         }
@@ -3229,7 +3229,7 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevi
 void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
                                                                          VkAccelerationStructureNV accelerationStructure,
                                                                          const VkAllocationCallbacks *pAllocator) {
-    Destroy<ACCELERATION_STRUCTURE_STATE>(accelerationStructure);
+    Destroy<ACCELERATION_STRUCTURE_STATE_NV>(accelerationStructure);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,

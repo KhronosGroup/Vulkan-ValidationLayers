@@ -279,7 +279,7 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
 }
 
 VALSTATETRACK_STATE_OBJECT(VkQueue, QUEUE_STATE)
-VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, RENDER_PASS_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, SAMPLER_STATE)
@@ -669,7 +669,8 @@ class ValidationStateTracker : public ValidationObject {
 
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;
 
-    virtual std::shared_ptr<ACCELERATION_STRUCTURE_STATE> CreateAccelerationStructureState(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo);
+    virtual std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> CreateAccelerationStructureState(
+        VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo);
     void PostCallRecordCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator,
                                                      VkAccelerationStructureNV* pAccelerationStructure,
@@ -1841,7 +1842,7 @@ class ValidationStateTracker : public ValidationObject {
 
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, acceleration_structure_nv_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV, acceleration_structure_nv_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, render_pass_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout, descriptor_set_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, sampler_map_)
