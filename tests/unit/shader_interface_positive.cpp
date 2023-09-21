@@ -503,8 +503,8 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkAttachmentDescription descs[2] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
@@ -945,7 +945,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
     pipe.vi_ci_.pVertexAttributeDescriptions = vertex_input_attribute_descriptions;
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateGraphicsPipeline();
 
     auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();

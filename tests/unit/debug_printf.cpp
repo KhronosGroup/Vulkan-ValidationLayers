@@ -64,7 +64,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     buffer0.init(*m_device, bci, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     VkDescriptorBufferInfo buffer_info[2] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
@@ -441,7 +441,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     buffer0.init(*m_device, bci, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     VkDescriptorBufferInfo buffer_info[2] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
@@ -770,7 +770,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     OneOffDescriptorSet fragment_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
 
     // "Normal" sets
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&vertex_set.layout_, &fragment_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &fragment_set.layout_});
     const auto vs_layout = pipeline_layout.handle();
     const auto fs_layout = pipeline_layout.handle();
     const auto layout = pipeline_layout.handle();
@@ -924,13 +924,13 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     OneOffDescriptorSet fragment_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
 
     // Independent sets
-    const VkPipelineLayoutObj pipeline_layout_vs(m_device, {&vertex_set.layout_, nullptr}, {},
+    const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, nullptr}, {},
                                                  VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     const auto vs_layout = pipeline_layout_vs.handle();
-    const VkPipelineLayoutObj pipeline_layout_fs(m_device, {nullptr, &fragment_set.layout_}, {},
+    const vkt::PipelineLayout pipeline_layout_fs(*m_device, {nullptr, &fragment_set.layout_}, {},
                                                  VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     const auto fs_layout = pipeline_layout_fs.handle();
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&vertex_set.layout_, &fragment_set.layout_}, {},
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &fragment_set.layout_}, {},
                                               VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     const auto layout = pipeline_layout.handle();
 
@@ -1087,7 +1087,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     buffer0.init(*m_device, bci, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     VkDescriptorBufferInfo buffer_info[2] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;

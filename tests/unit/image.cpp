@@ -1201,7 +1201,7 @@ TEST_F(NegativeImage, MinImageTransferGranularity) {
     }
     const size_t queue_family_index = std::distance(queue_family_properties.begin(), large_granularity_family);
     VkExtent3D granularity = queue_family_properties[queue_family_index].minImageTransferGranularity;
-    VkCommandPoolObj command_pool(m_device, queue_family_index, 0);
+    vkt::CommandPool command_pool(*m_device, queue_family_index, 0);
 
     // Create two images of different types and try to copy between them
     VkImage srcImage;
@@ -6109,7 +6109,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
 
     VkImageView view = image.targetView(fmt);
 
-    VkSamplerObj sampler(m_device);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -6173,7 +6173,7 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
 
     VkImageView view = image.targetView(fmt);
 
-    VkSamplerObj sampler(m_device);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();

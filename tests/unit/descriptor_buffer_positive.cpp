@@ -76,8 +76,8 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 
     const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
-    const VkDescriptorSetLayoutObj set_layout(m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&set_layout});
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
 
     const uint32_t index = 0;
     const VkDeviceSize offset = 0;

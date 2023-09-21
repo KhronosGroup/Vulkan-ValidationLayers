@@ -819,7 +819,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
     pipe.CreateGraphicsPipeline();
@@ -931,7 +931,7 @@ TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
     pipe.CreateGraphicsPipeline();
@@ -980,7 +980,7 @@ TEST_F(NegativePipelineLayout, MissingDescriptor) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07988");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -1005,10 +1005,10 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     dsl_binding.pImmutableSamplers = NULL;
 
     const unsigned int descriptor_set_layout_count = 2;
-    std::vector<VkDescriptorSetLayoutObj> ds_layouts;
+    std::vector<vkt::DescriptorSetLayout> ds_layouts;
     for (uint32_t i = 0; i < descriptor_set_layout_count; ++i) {
         dsl_binding.binding = i;
-        ds_layouts.emplace_back(m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
+        ds_layouts.emplace_back(*m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     }
     const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);

@@ -731,7 +731,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         {
             const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
             if (no_gfx_qfi) {
-                VkCommandPoolObj command_pool(m_device, no_gfx_qfi.value());
+                vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
                 ASSERT_TRUE(command_pool.initialized());
                 VkCommandBufferObj command_buffer(m_device, &command_pool);
 
@@ -753,8 +753,8 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         {
             const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT,
                                                           nullptr};
-            const VkDescriptorSetLayoutObj set_layout_no_flag(m_device, {binding});
-            const VkPipelineLayoutObj pipeline_layout_2(m_device, {&set_layout_no_flag, &set_layout_no_flag});
+            const vkt::DescriptorSetLayout set_layout_no_flag(*m_device, {binding});
+            const vkt::PipelineLayout pipeline_layout_2(*m_device, {&set_layout_no_flag, &set_layout_no_flag});
 
             const uint32_t indices_2[2] = {0, 0};
             const VkDeviceSize offsets_2[2] = {0, 0};
@@ -993,7 +993,7 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
             return;
         }
 
-        VkCommandPoolObj command_pool(m_device, no_gfx_qfi.value());
+        vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
         VkCommandBufferObj command_buffer(m_device, &command_pool);
 

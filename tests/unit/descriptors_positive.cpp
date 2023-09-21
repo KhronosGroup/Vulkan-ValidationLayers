@@ -73,7 +73,7 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
 
     VkDescriptorSet descriptorSet;
     {
-        const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+        const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
         auto alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();
         alloc_info.descriptorSetCount = 1;
@@ -240,7 +240,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -360,7 +360,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -669,11 +669,11 @@ TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     layout_binding.pImmutableSamplers = nullptr;
-    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
     layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    const VkDescriptorSetLayoutObj descriptor_set_layout2(m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout2(*m_device, {layout_binding});
 
-    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout, &descriptor_set_layout2});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout2});
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
@@ -826,7 +826,7 @@ TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     OneOffDescriptorSet empty_ds(m_device, {});
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&empty_ds.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&empty_ds.layout_});
 
     m_commandBuffer->begin();
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -906,8 +906,8 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     descriptor_set.WriteDescriptorImageInfo(0, view_input, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
                                             VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
-    const VkDescriptorSetLayoutObj ds_layout_unused(m_device, {binding});
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_, &ds_layout_unused});
+    const vkt::DescriptorSetLayout ds_layout_unused(*m_device, {binding});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &ds_layout_unused});
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

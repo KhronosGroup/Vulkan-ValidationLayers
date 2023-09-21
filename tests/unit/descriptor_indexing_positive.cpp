@@ -72,7 +72,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
                                            {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        },
                                        0, &layout_createinfo_binding_flags, 0);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
     auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
@@ -185,7 +185,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     flags_create_info.pBindingFlags = flags;
     OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
                                        &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
 
@@ -220,7 +220,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -303,7 +303,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     flags_create_info.pBindingFlags = flags;
     OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
                                        &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
 
@@ -338,7 +338,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

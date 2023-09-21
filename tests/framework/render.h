@@ -37,14 +37,7 @@
 using vkt::MakeVkHandles;
 
 static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
-
-template <class Dst, class Src>
-std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
-    std::vector<Dst *> handles;
-    handles.reserve(v.size());
-    std::transform(v.begin(), v.end(), std::back_inserter(handles), [](const Src *o) { return static_cast<Dst *>(o); });
-    return handles;
-}
+static constexpr VkDeviceSize kZeroDeviceSize{0};
 
 typedef vkt::Queue VkQueueObj;
 class VkDeviceObj : public vkt::Device {
@@ -74,7 +67,6 @@ class VkDeviceObj : public vkt::Device {
 };
 
 class VkImageObj;
-class VkCommandPoolObj;
 class VkCommandBufferObj;
 class VkDepthStencilObj;
 
@@ -218,7 +210,7 @@ class VkRenderFramework : public VkTestFramework {
 
     uint32_t m_gpu_index;
     VkDeviceObj *m_device;
-    VkCommandPoolObj *m_commandPool;
+    vkt::CommandPool *m_commandPool;
     VkCommandBufferObj *m_commandBuffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkRenderPassCreateInfo m_renderPass_info = {};
@@ -293,21 +285,14 @@ class VkRenderFramework : public VkTestFramework {
 };
 
 class VkDescriptorSetObj;
-class VkConstantBufferObj;
 class VkPipelineObj;
-class VkCommandPoolObj : public vkt::CommandPool {
-  public:
-    VkCommandPoolObj() : vkt::CommandPool(){};
-    void Init(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
-    VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
-};
 
 class VkCommandBufferObj : public vkt::CommandBuffer {
   public:
     VkCommandBufferObj() : vkt::CommandBuffer() {}
-    VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                       VkQueueObj *queue = nullptr);
-    void Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    VkCommandBufferObj(VkDeviceObj *device, const vkt::CommandPool *pool,
+                       VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, VkQueueObj *queue = nullptr);
+    void Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
               VkQueueObj *queue = nullptr);
     void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
@@ -319,7 +304,6 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
     void PrepareAttachments(const std::vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
     void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
     void BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
-    void BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding);
     void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void EndRenderPass();
@@ -362,25 +346,6 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
   protected:
     VkDeviceObj *m_device;
     VkQueueObj *m_queue;
-};
-
-class VkConstantBufferObj : public vkt::Buffer {
-  public:
-    VkConstantBufferObj(VkDeviceObj *device,
-                        VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize size, const void *data,
-                        VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
-    VkDescriptorBufferInfo m_descriptorBufferInfo;
-
-  protected:
-    VkDeviceObj *m_device;
-};
-
-class VkRenderpassObj : public vkt::RenderPass {
-  public:
-    VkRenderpassObj(VkDeviceObj *device, VkFormat format = VK_FORMAT_B8G8R8A8_UNORM);
-    VkRenderpassObj(VkDeviceObj *device, VkFormat format, bool depthStencil);
 };
 
 class VkImageObj : public vkt::Image {
@@ -490,17 +455,6 @@ class VkImageObj : public vkt::Image {
     uint32_t m_arrayLayers;
 };
 
-class VkTextureObj : public VkImageObj {
-  public:
-    VkTextureObj(VkDeviceObj *device, uint32_t *colors = NULL);
-
-    const VkDescriptorImageInfo &DescriptorImageInfo() const { return m_descriptorImageInfo; }
-
-  protected:
-    VkDeviceObj *m_device;
-    vkt::ImageView m_textureView;
-};
-
 class VkDepthStencilObj : public VkImageObj {
   public:
     VkDepthStencilObj(VkDeviceObj *device);
@@ -519,37 +473,13 @@ class VkDepthStencilObj : public VkImageObj {
     VkImageView m_attachmentBindInfo;
 };
 
-class VkSamplerObj : public vkt::Sampler {
-  public:
-    VkSamplerObj(VkDeviceObj *device);
-
-  protected:
-    VkDeviceObj *m_device;
-};
-
-class VkDescriptorSetLayoutObj : public vkt::DescriptorSetLayout {
-  public:
-    VkDescriptorSetLayoutObj() = default;
-    VkDescriptorSetLayoutObj(const VkDeviceObj *device,
-                             const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings = {},
-                             VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = NULL);
-
-    // Move constructor and move assignment operator for Visual Studio 2013
-    VkDescriptorSetLayoutObj(VkDescriptorSetLayoutObj &&src) noexcept : DescriptorSetLayout(std::move(src)){};
-    VkDescriptorSetLayoutObj &operator=(VkDescriptorSetLayoutObj &&src) noexcept {
-        DescriptorSetLayout::operator=(std::move(src));
-        return *this;
-    }
-};
-
 class VkDescriptorSetObj : public vkt::DescriptorPool {
   public:
     VkDescriptorSetObj(VkDeviceObj *device);
     ~VkDescriptorSetObj() noexcept;
 
     int AppendDummy();
-    int AppendBuffer(VkDescriptorType type, VkConstantBufferObj &constantBuffer);
-    int AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj *texture);
+    int AppendSamplerTexture(VkDescriptorImageInfo &image_info);
     void CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer);
 
     VkDescriptorSet GetDescriptorSetHandle() const { return m_set ? m_set->handle() : VK_NULL_HANDLE; }
@@ -667,23 +597,6 @@ class VkShaderObj : public vkt::ShaderModule {
     VkDeviceObj &m_device;
     const char *m_source;
     spv_target_env m_spv_env;
-};
-
-class VkPipelineLayoutObj : public vkt::PipelineLayout {
-  public:
-    VkPipelineLayoutObj() = default;
-    VkPipelineLayoutObj(VkDeviceObj *device, const std::vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts = {},
-                        const std::vector<VkPushConstantRange> &push_constant_ranges = {},
-                        VkPipelineLayoutCreateFlags flags = static_cast<VkPipelineLayoutCreateFlags>(0));
-
-    // Move constructor and move assignment operator for Visual Studio 2013
-    VkPipelineLayoutObj(VkPipelineLayoutObj &&src) noexcept : PipelineLayout(std::move(src)) {}
-    VkPipelineLayoutObj &operator=(VkPipelineLayoutObj &&src) noexcept {
-        PipelineLayout::operator=(std::move(src));
-        return *this;
-    }
-
-    void Reset();
 };
 
 class VkPipelineObj : public vkt::Pipeline {

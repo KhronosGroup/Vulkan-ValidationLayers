@@ -411,7 +411,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_VERTEX_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-stage-00701");
@@ -927,7 +927,7 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
     pipe_ms_state_ci.minSampleShading = 1.0;
     pipe_ms_state_ci.pSampleMask = NULL;
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1175,7 +1175,7 @@ TEST_F(NegativePipeline, NullStagepName) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};
     pipe.shader_stages_[0].pName = nullptr;
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1871,14 +1871,14 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
-    const VkDescriptorSetLayoutObj pipeline_dsl(m_device, binding_defs);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&pipeline_dsl});
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, binding_defs);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
 
     // We now will use a slightly different Layout definition for the descriptors we acutally bind with (but that would still be
     // correct for the shader
     binding_defs[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     OneOffDescriptorSet binding_descriptor_set(m_device, binding_defs);
-    const VkPipelineLayoutObj binding_pipeline_layout(m_device, {&binding_descriptor_set.layout_});
+    const vkt::PipelineLayout binding_pipeline_layout(*m_device, {&binding_descriptor_set.layout_});
 
     VkDescriptorBufferInfo storage_buffer_info = {storage_buffer.handle(), 0, sizeof(uint32_t)};
     VkDescriptorBufferInfo uniform_buffer_info = {uniform_buffer.handle(), 0, 5 * sizeof(uint32_t)};
@@ -1986,16 +1986,16 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     std::vector<VkDescriptorSetLayoutBinding> layout_binding_combined1 = {
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
 
-    const VkDescriptorSetLayoutObj ds_layout_normal(m_device, layout_bindings_normal);
-    const VkDescriptorSetLayoutObj ds_layout_vert(m_device, layout_bindings_vert);
-    const VkDescriptorSetLayoutObj ds_layout_frag(m_device, layout_bindings_frag);
-    const VkDescriptorSetLayoutObj ds_layout_comp(m_device, layout_bindings_comp);
-    const VkDescriptorSetLayoutObj ds_layout_combined0(m_device, layout_binding_combined0);
-    const VkDescriptorSetLayoutObj ds_layout_combined1(m_device, layout_binding_combined1);
+    const vkt::DescriptorSetLayout ds_layout_normal(*m_device, layout_bindings_normal);
+    const vkt::DescriptorSetLayout ds_layout_vert(*m_device, layout_bindings_vert);
+    const vkt::DescriptorSetLayout ds_layout_frag(*m_device, layout_bindings_frag);
+    const vkt::DescriptorSetLayout ds_layout_comp(*m_device, layout_bindings_comp);
+    const vkt::DescriptorSetLayout ds_layout_combined0(*m_device, layout_binding_combined0);
+    const vkt::DescriptorSetLayout ds_layout_combined1(*m_device, layout_binding_combined1);
 
     CreateComputePipelineHelper compute_pipe(*this);
     compute_pipe.InitState();
-    compute_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_comp});
+    compute_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds_layout_comp});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-01687");
     compute_pipe.CreateComputePipeline();
@@ -2003,13 +2003,13 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
 
     {
         CreatePipelineHelper graphics_pipe(*this);
-        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_normal});
+        graphics_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds_layout_normal});
         graphics_pipe.CreateGraphicsPipeline();
     }
 
     {
         CreatePipelineHelper graphics_pipe(*this);
-        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_vert});
+        graphics_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds_layout_vert});
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
         graphics_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -2017,7 +2017,7 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
 
     {
         CreatePipelineHelper graphics_pipe(*this);
-        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_frag});
+        graphics_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds_layout_frag});
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
         graphics_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -2025,7 +2025,7 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
 
     {
         CreatePipelineHelper graphics_pipe(*this);
-        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_combined0, &ds_layout_combined1});
+        graphics_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds_layout_combined0, &ds_layout_combined1});
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
         graphics_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -2158,7 +2158,6 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkShaderObj fs_function(this, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkRenderpassObj render_pass(m_device);
 
     VkPipelineObj pipeline_combined(m_device);
     pipeline_combined.AddDefaultColorAttachment();
@@ -2195,13 +2194,13 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     OneOffDescriptorSet combined_descriptor_set(m_device, combined_bindings);
     OneOffDescriptorSet seperate_descriptor_set(m_device, seperate_bindings);
-    const VkPipelineLayoutObj combined_pipeline_layout(m_device, {&combined_descriptor_set.layout_});
-    const VkPipelineLayoutObj seperate_pipeline_layout(m_device, {&seperate_descriptor_set.layout_});
+    const vkt::PipelineLayout combined_pipeline_layout(*m_device, {&combined_descriptor_set.layout_});
+    const vkt::PipelineLayout seperate_pipeline_layout(*m_device, {&seperate_descriptor_set.layout_});
 
-    pipeline_combined.CreateVKPipeline(combined_pipeline_layout.handle(), render_pass.handle());
-    pipeline_seperate.CreateVKPipeline(seperate_pipeline_layout.handle(), render_pass.handle());
-    pipeline_unused.CreateVKPipeline(combined_pipeline_layout.handle(), render_pass.handle());
-    pipeline_function.CreateVKPipeline(combined_pipeline_layout.handle(), render_pass.handle());
+    pipeline_combined.CreateVKPipeline(combined_pipeline_layout.handle(), m_renderPass);
+    pipeline_seperate.CreateVKPipeline(seperate_pipeline_layout.handle(), m_renderPass);
+    pipeline_unused.CreateVKPipeline(combined_pipeline_layout.handle(), m_renderPass);
+    pipeline_function.CreateVKPipeline(combined_pipeline_layout.handle(), m_renderPass);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
@@ -2456,8 +2455,8 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj pipeline_dsl(m_device, bindings);
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&pipeline_dsl});
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
@@ -2754,8 +2753,8 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
@@ -3042,9 +3041,9 @@ TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     layout_binding.pImmutableSamplers = nullptr;
-    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
 
-    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};

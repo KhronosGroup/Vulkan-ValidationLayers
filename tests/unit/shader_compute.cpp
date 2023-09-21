@@ -727,7 +727,7 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_UNIVERSAL_1_6, SPV_SOURCE_ASM);
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-LocalSizeId-06434");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

@@ -1507,7 +1507,7 @@ TEST_F(VkVideoLayerTest, BeginCodingUnsupportedCodecOp) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    VkCommandPoolObj pool(DeviceObj(), queue_family_index);
+    vkt::CommandPool pool(*DeviceObj(), queue_family_index);
     VkCommandBufferObj cb(DeviceObj(), &pool);
 
     cb.begin();
@@ -4130,7 +4130,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
     create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, create_info);
 
-    VkCommandPoolObj cmd_pool(m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &cmd_pool);
 
     cb.begin();

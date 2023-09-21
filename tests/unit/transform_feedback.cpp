@@ -489,7 +489,7 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // A pool we can reset in.
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
@@ -625,12 +625,12 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     std::vector<const char *> device_extension_names;
     device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     VkDeviceObj test_device(0, gpu(), device_extension_names);
-    VkCommandPoolObj commandPool(&test_device, 0);
+    vkt::CommandPool commandPool(test_device, 0);
     VkCommandBufferObj commandBuffer(&test_device, &commandPool);
     vkt::Buffer counter_buffer2;
     counter_buffer2.init(test_device, buffer_create_info);
 
-    VkPipelineLayoutObj pipelineLayout(&test_device);
+    vkt::PipelineLayout pipelineLayout(test_device);
 
     VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     VkSubpassDescription subpass = {};

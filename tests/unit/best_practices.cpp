@@ -460,9 +460,9 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     // Don't care about actual data, just need to get to draw to flag error
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);  // VBO idx 1, but no VBO in PSO
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    // VBO idx 1, but no VBO in PSO
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     m_commandBuffer->Draw(1, 0, 0, 0);
 
     m_errorMonitor->VerifyFound();
@@ -1610,7 +1610,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
     dsl_binding_samp.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout_samp(m_device, {dsl_binding_samp});
+    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
 
     // Try to allocate 2 sets when pool only has 1 set
     VkDescriptorSet descriptor_sets[2];
@@ -2060,7 +2060,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::Framebuffer fb(*m_device, fb_info);
 
-    VkCommandPoolObj graphics_pool(m_device, graphics_queue->get_family_index());
+    vkt::CommandPool graphics_pool(*m_device, graphics_queue->get_family_index());
 
     VkCommandBufferObj graphics_buffer(m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, graphics_queue);
 
@@ -2093,13 +2093,13 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 
-    VkSamplerObj sampler(m_device);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    VkCommandPoolObj compute_pool(m_device, compute_queue->get_family_index());
+    vkt::CommandPool compute_pool(*m_device, compute_queue->get_family_index());
 
     VkCommandBufferObj compute_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, compute_queue);
 
@@ -2342,7 +2342,7 @@ TEST_F(VkBestPracticesLayerTest, DescriptorTypeNotInPool) {
     dsl_binding_uniform.stageFlags = VK_SHADER_STAGE_ALL;
     dsl_binding_uniform.pImmutableSamplers = nullptr;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding_sampler, dsl_binding_uniform});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding_sampler, dsl_binding_uniform});
 
     VkDescriptorSet descriptor_set;
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();

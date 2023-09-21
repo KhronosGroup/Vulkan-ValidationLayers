@@ -56,7 +56,7 @@ TEST_F(PositivePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
 
     pipe.CreateGraphicsPipeline();
 }

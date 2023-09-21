@@ -171,7 +171,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSets) {
         VK_NULL_HANDLE,  // Triggers 06754
     };
 
-    VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds2.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds2.layout_});
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754");
@@ -204,7 +204,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
         VK_NULL_HANDLE,
     };
 
-    VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds2.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds2.layout_});
 
     m_commandBuffer->begin();
 
@@ -563,9 +563,9 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
                       {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                   });
 
-    VkPipelineLayoutObj pipeline_layout_vs(m_device, {&ds.layout_, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr}, {},
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     CreatePipelineHelper pre_raster_lib(*this);
@@ -612,9 +612,9 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
                       {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                   });
 
-    VkPipelineLayoutObj pipeline_layout_vs(m_device, {&ds.layout_, nullptr}, {},
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, nullptr}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     CreatePipelineHelper pre_raster_lib(*this);
@@ -660,9 +660,9 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
                       {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                   });
 
-    VkPipelineLayoutObj pipeline_layout_vs(m_device, {&ds.layout_, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr}, {},
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     CreatePipelineHelper pre_raster_lib(*this);
@@ -743,11 +743,11 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
                                              });
 
     // We _vs and _fs layouts are identical, but we want them to be separate handles handles for the sake layout merging
-    VkPipelineLayoutObj pipeline_layout_vs(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_null(m_device, {&ds.layout_, nullptr, &ds_immutable_sampler.layout_}, {},
+    vkt::PipelineLayout pipeline_layout_null(*m_device, {&ds.layout_, nullptr, &ds_immutable_sampler.layout_}, {},
                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, ds2.set_};
@@ -1032,7 +1032,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
                                                 {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                             });
 
-        VkPipelineLayoutObj pipeline_layout(m_device, {&fs_ds.layout_});
+        vkt::PipelineLayout pipeline_layout(*m_device, {&fs_ds.layout_});
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
         vkt::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         CreatePipelineHelper vs_lib(*this);
@@ -1058,7 +1058,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
                                                 {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
                                             });
 
-        VkPipelineLayoutObj pipeline_layout(m_device, {&vs_ds.layout_});
+        vkt::PipelineLayout pipeline_layout(*m_device, {&vs_ds.layout_});
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
         vkt::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         CreatePipelineHelper vs_lib(*this);
@@ -1374,11 +1374,11 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     OneOffDescriptorSet ds_empty(m_device, {});  // empty set
 
     // vs and fs "do not use" set 1, so set it to null
-    VkPipelineLayoutObj pipeline_layout_lib(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
-                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_lib(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     // The final, linked layout will define something for set 1
-    VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds1.layout_, &ds2.layout_}, {},
-                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds1.layout_, &ds2.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     const std::array<VkDescriptorSet, 3> desc_sets_null = {ds.set_, VK_NULL_HANDLE, ds2.set_};
     const std::array<VkDescriptorSet, 3> desc_sets_empty = {ds.set_, ds_empty.set_, ds2.set_};
@@ -1717,8 +1717,8 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
 
     // pipeline_layout_lib is used for library creation, pipeline_layout_exe is used at link time for the executable pipeline, and
     // these layouts are incompatible
-    VkPipelineLayoutObj pipeline_layout_lib(m_device, {&ds.layout_}, {});
-    VkPipelineLayoutObj pipeline_layout_exe(m_device, {&ds2.layout_}, {});
+    vkt::PipelineLayout pipeline_layout_lib(*m_device, {&ds.layout_}, {});
+    vkt::PipelineLayout pipeline_layout_exe(*m_device, {&ds2.layout_}, {});
 
     CreatePipelineHelper vi_lib(*this);
     vi_lib.InitVertexInputLibInfo();

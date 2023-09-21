@@ -691,7 +691,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
     vkt::Shader shader(*m_device, createInfo);
     VkShaderEXT shaderHandle = shader.handle();
 
-    VkCommandPoolObj command_pool(m_device, graphics_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
 
@@ -727,7 +727,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
     vkt::Shader shader(*m_device, createInfo);
     VkShaderEXT shaderHandle = shader.handle();
 
-    VkCommandPoolObj command_pool(m_device, non_graphics_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
 
@@ -773,7 +773,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     vkt::Shader shader(*m_device, createInfo);
     VkShaderEXT shaderHandle = shader.handle();
 
-    VkCommandPoolObj command_pool(m_device, non_graphics_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
 
@@ -4599,7 +4599,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
 
-    VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_}, {pushConstRange});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pushConstRange});
 
     const vkt::Shader compShader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kComputeShaderGlsl),
                                  &descriptor_set.layout_.handle(), &pushConstRange);
@@ -6424,7 +6424,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
                       {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                   });
 
-    VkPipelineLayoutObj pipeline_layout(m_device, {&vert_descriptor_set.layout_, &frag_descriptor_set.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_, &frag_descriptor_set.layout_});
 
     static const char vert_src[] = R"glsl(
         #version 460
@@ -6756,7 +6756,7 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
 
-    VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     static const char frag_src[] = R"glsl(
         #version 460
@@ -7031,8 +7031,8 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     if (::testing::Test::IsSkipped()) return;
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     // Tests are assume that Float16 3*5 is not available
     char const* comp_src = R"glsl(

@@ -1249,8 +1249,8 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     VkShaderObj fs(this, fs_source.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkAttachmentDescription descs[2] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,

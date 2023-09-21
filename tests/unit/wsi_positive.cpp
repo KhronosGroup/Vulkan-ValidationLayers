@@ -898,7 +898,28 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
         GTEST_SKIP() << "We need VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT feature";
     }
 
-    VkRenderpassObj render_pass(m_device, format);
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attach;
+    subpass.colorAttachmentCount = 1;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = format;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkPipelineColorBlendAttachmentState pcbas = {};
     pcbas.blendEnable = VK_TRUE;  // !!!
@@ -1223,7 +1244,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     pipe.CreateGraphicsPipeline();
 
     // Create a protected command buffer/pool to use
-    VkCommandPoolObj protectedCommandPool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
 
     protectedCommandBuffer.begin();

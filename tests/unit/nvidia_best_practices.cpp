@@ -291,7 +291,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     auto build_geometry_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
 
     for (VkQueueObj *queue : queues) {
-        VkCommandPoolObj compute_pool(m_device, queue->get_family_index());
+        vkt::CommandPool compute_pool(*m_device, queue->get_family_index());
         VkCommandBufferObj cmd_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 
         cmd_buffer.begin();

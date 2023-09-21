@@ -767,6 +767,16 @@ class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
     PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info) {
         init(dev, info);
     }
+    PipelineLayout(const Device &dev, const std::vector<const DescriptorSetLayout *> &layouts = {},
+                   const std::vector<VkPushConstantRange> &push_constant_ranges = {},
+                   VkPipelineLayoutCreateFlags flags = static_cast<VkPipelineLayoutCreateFlags>(0)) {
+        VkPipelineLayoutCreateInfo info = vku::InitStructHelper();
+        info.flags = flags;
+        info.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
+        info.pPushConstantRanges = push_constant_ranges.data();
+
+        init(dev, info, layouts);
+    }
     ~PipelineLayout() noexcept;
     void destroy() noexcept;
 
@@ -799,6 +809,15 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
   public:
     DescriptorSetLayout() noexcept : NonDispHandle(){};
     DescriptorSetLayout(const Device &dev, const VkDescriptorSetLayoutCreateInfo &info) { init(dev, info); }
+    DescriptorSetLayout(const Device &dev, const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings = {},
+                        VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = nullptr) {
+        VkDescriptorSetLayoutCreateInfo info = vku::InitStructHelper(pNext);
+        info.flags = flags;
+        info.bindingCount = static_cast<uint32_t>(descriptor_set_bindings.size());
+        info.pBindings = descriptor_set_bindings.data();
+        init(dev, info);
+    }
+
     ~DescriptorSetLayout() noexcept;
     void destroy() noexcept;
 
@@ -878,6 +897,9 @@ class CommandPool : public internal::NonDispHandle<VkCommandPool> {
 
     explicit CommandPool() : NonDispHandle() {}
     explicit CommandPool(const Device &dev, const VkCommandPoolCreateInfo &info) { init(dev, info); }
+    explicit CommandPool(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0) {
+        init(dev, vkt::CommandPool::create_info(queue_family_index, flags));
+    }
 
     void init(const Device &dev, const VkCommandPoolCreateInfo &info);
 

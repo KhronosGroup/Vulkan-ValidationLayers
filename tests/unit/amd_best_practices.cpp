@@ -349,7 +349,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptor_sets[2] = {};
     VkDescriptorSetAllocateInfo alloc_info = {};
@@ -739,7 +739,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj secondary_cmd_buf(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo iinfo = vku::InitStructHelper();

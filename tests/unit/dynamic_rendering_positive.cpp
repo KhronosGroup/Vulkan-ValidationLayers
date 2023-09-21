@@ -63,8 +63,8 @@ TEST_F(PositiveDynamicRendering, Draw) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -105,8 +105,8 @@ TEST_F(PositiveDynamicRendering, DrawMultiBind) {
     const auto depth_format = FindSupportedDepthOnlyFormat(gpu());
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -192,8 +192,8 @@ TEST_F(PositiveDynamicRendering, PipeWithDiscard) {
     ds_ci.depthWriteEnable = VK_TRUE;
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -316,8 +316,8 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -394,8 +394,8 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     auto rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -449,8 +449,8 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkAttachmentReference attachment = {};
     attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -511,7 +511,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
 
     auto ms_ci = vku::InitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_ci.sampleShadingEnable = VK_TRUE;
@@ -526,7 +526,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipe.gp_ci_.pDepthStencilState = &ds_state;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&dsl});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -704,8 +704,8 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = {VK_FORMAT_UNDEFINED};
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -776,8 +776,8 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_formats = {VK_FORMAT_UNDEFINED};
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -910,8 +910,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 
@@ -1050,8 +1050,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
 

@@ -671,7 +671,7 @@ class VkBufferTest {
 struct OneOffDescriptorSet {
     VkDeviceObj *device_;
     VkDescriptorPool pool_;
-    VkDescriptorSetLayoutObj layout_;
+    vkt::DescriptorSetLayout layout_;
     VkDescriptorSet set_;
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
     std::vector<VkDescriptorBufferInfo> buffer_infos;
@@ -709,7 +709,7 @@ class BarrierQueueFamilyBase {
         uint32_t index;
         // We would use std::unique_ptr, but this triggers a compiler error on older compilers
         VkQueueObj *queue = nullptr;
-        VkCommandPoolObj *command_pool = nullptr;
+        vkt::CommandPool *command_pool = nullptr;
         VkCommandBufferObj *command_buffer = nullptr;
         VkCommandBufferObj *command_buffer2 = nullptr;
         ~QueueFamilyObjs();
