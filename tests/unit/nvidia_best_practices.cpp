@@ -288,7 +288,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 
     std::array<VkQueueObj *, 2> queues = {{graphics_queue, compute_queue}};
 
-    auto build_geometry_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+    auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
 
     for (VkQueueObj *queue : queues) {
         vkt::CommandPool compute_pool(*m_device, queue->get_family_index());
