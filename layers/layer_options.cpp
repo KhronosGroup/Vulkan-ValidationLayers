@@ -291,20 +291,20 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
     }
 }
 
-static void SetValidationSetting(VlLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
+static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
                                  const DisableFlags feature_disable, const char *setting) {
-    if (vlHasLayerSetting(layer_setting_set, setting)) {
+    if (vkuHasLayerSetting(layer_setting_set, setting)) {
         bool enabled = true;
-        vlGetLayerSettingValue(layer_setting_set, setting, enabled);
+        vkuGetLayerSettingValue(layer_setting_set, setting, enabled);
         disable_data[feature_disable] = !enabled;
     }
 }
 
-static void SetValidationSetting(VlLayerSettingSet layer_setting_set, CHECK_ENABLED &enable_data, const EnableFlags feature_enable,
+static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_ENABLED &enable_data, const EnableFlags feature_enable,
                                  const char *setting) {
-    if (vlHasLayerSetting(layer_setting_set, setting)) {
+    if (vkuHasLayerSetting(layer_setting_set, setting)) {
         bool enabled = true;
-        vlGetLayerSettingValue(layer_setting_set, setting, enabled);
+        vkuGetLayerSettingValue(layer_setting_set, setting, enabled);
         enable_data[feature_enable] = enabled;
     }
 }
@@ -335,53 +335,53 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // If not cleared, garbage has been seen in some Android run effecting the error message
     custom_stype_info.clear();
 
-    VlLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
-    vlCreateLayerSettingSet(OBJECT_LAYER_NAME, vlFindLayerSettingsCreateInfo(settings_data->create_info), nullptr, nullptr,
-                            &layer_setting_set);
+    VkuLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
+    vkuCreateLayerSettingSet(OBJECT_LAYER_NAME, vkuFindLayerSettingsCreateInfo(settings_data->create_info), nullptr, nullptr,
+                             &layer_setting_set);
 
-    vlSetLayerSettingCompatibilityNamespace(layer_setting_set, GetDefaultPrefix());
+    vkuSetLayerSettingCompatibilityNamespace(layer_setting_set, GetDefaultPrefix());
 
     // Read legacy "enables" flags for backward compatibility
     std::vector<std::string> enables;
-    if (vlHasLayerSetting(layer_setting_set, SETTING_ENABLES)) {
-        vlGetLayerSettingValues(layer_setting_set, SETTING_ENABLES, enables);
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_ENABLES)) {
+        vkuGetLayerSettingValues(layer_setting_set, SETTING_ENABLES, enables);
     }
     const std::string &string_enables = Merge(enables);
     SetLocalEnableSetting(string_enables, ",", settings_data->enables);
 
     // Read legacy "disables" flags for backward compatibility
     std::vector<std::string> disables;
-    if (vlHasLayerSetting(layer_setting_set, SETTING_DISABLES)) {
-        vlGetLayerSettingValues(layer_setting_set, SETTING_DISABLES, disables);
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_DISABLES)) {
+        vkuGetLayerSettingValues(layer_setting_set, SETTING_DISABLES, disables);
     }
     const std::string &string_disables = Merge(disables);
     SetLocalDisableSetting(string_disables, ",", settings_data->disables);
 
     // Fine Grained Locking
     *settings_data->fine_grained_locking = true;
-    if (vlHasLayerSetting(layer_setting_set, SETTING_FINE_GRAINED_LOCKING)) {
-        vlGetLayerSettingValue(layer_setting_set, SETTING_FINE_GRAINED_LOCKING, *settings_data->fine_grained_locking);
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_FINE_GRAINED_LOCKING)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_FINE_GRAINED_LOCKING, *settings_data->fine_grained_locking);
     }
 
     // Message ID Filtering
     std::vector<std::string> message_id_filter;
-    if (vlHasLayerSetting(layer_setting_set, SETTING_MESSAGE_ID_FILTER)) {
-        vlGetLayerSettingValues(layer_setting_set, SETTING_MESSAGE_ID_FILTER, message_id_filter);
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_MESSAGE_ID_FILTER)) {
+        vkuGetLayerSettingValues(layer_setting_set, SETTING_MESSAGE_ID_FILTER, message_id_filter);
     }
     const std::string &string_message_id_filter = Merge(message_id_filter);
     CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->message_filter_list);
 
     // Duplicate message limit
-    if (vlHasLayerSetting(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT)) {
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT)) {
         uint32_t config_limit_setting = 0;
-        vlGetLayerSettingValue(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
         if (config_limit_setting != 0) {
             *settings_data->duplicate_message_limit = config_limit_setting;
         }
     }
 
-    if (vlHasLayerSetting(layer_setting_set, SETTING_CUSTOM_STYPE_LIST)) {
-        vlGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_CUSTOM_STYPE_LIST)) {
+        vkuGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
     }
 
     const auto *validation_features_ext = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(settings_data->create_info);
@@ -408,9 +408,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation_queue_submit,
                              SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
 
-        if (vlHasLayerSetting(layer_setting_set, SETTING_VALIDATE_GPU_BASED)) {
+        if (vkuHasLayerSetting(layer_setting_set, SETTING_VALIDATE_GPU_BASED)) {
             std::string setting_value;
-            vlGetLayerSettingValue(layer_setting_set, SETTING_VALIDATE_GPU_BASED, setting_value);
+            vkuGetLayerSettingValue(layer_setting_set, SETTING_VALIDATE_GPU_BASED, setting_value);
             settings_data->enables[gpu_validation] = setting_value == "GPU_BASED_GPU_ASSISTED";
             settings_data->enables[debug_printf] = setting_value == "GPU_BASED_DEBUG_PRINTF";
         }
@@ -435,5 +435,5 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
     }
 
-    vlDestroyLayerSettingSet(layer_setting_set, nullptr);
+    vkuDestroyLayerSettingSet(layer_setting_set, nullptr);
 }
