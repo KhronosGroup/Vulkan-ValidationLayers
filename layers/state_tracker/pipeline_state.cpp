@@ -818,6 +818,12 @@ bool LAST_BOUND_STATE::IsDepthTestEnable() const {
                                                                          : pipeline_state->DepthStencilState()->depthTestEnable;
 }
 
+bool LAST_BOUND_STATE::IsDepthBoundTestEnable() const {
+    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)
+               ? cb_state.dynamic_state_value.depth_bounds_test_enable
+               : pipeline_state->DepthStencilState()->depthBoundsTestEnable;
+}
+
 bool LAST_BOUND_STATE::IsDepthWriteEnable() const {
     // "Depth writes are always disabled when depthTestEnable is VK_FALSE"
     if (!IsDepthTestEnable()) {

@@ -950,3 +950,39 @@ TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
+    TEST_DESCRIPTION("Dynamically set depthBoundsTestEnable and not call vkCmdSetDepthBounds before the draw");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+
+    // Need to set format framework uses for InitRenderTarget
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthTestEnable = VK_TRUE;  // ignored
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetDepthBoundsTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    // don't need vkCmdSetDepthBounds since test is disabled now
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

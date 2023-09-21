@@ -210,12 +210,12 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_boun
                                           vuid.dynamic_blend_constants_07835);
     }
 
-    if (const auto *ds_state = pipeline.DepthStencilState(); ds_state) {
-        if (ds_state->depthBoundsTestEnable == VK_TRUE) {
+    if (pipeline.DepthStencilState()) {
+        if (last_bound_state.IsDepthBoundTestEnable()) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS, objlist, loc,
                                               vuid.dynamic_depth_bounds_07836);
         }
-        if (ds_state->stencilTestEnable == VK_TRUE) {
+        if (last_bound_state.IsStencilTestEnable()) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, objlist, loc,
                                               vuid.dynamic_stencil_compare_mask_07837);
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, objlist, loc,
