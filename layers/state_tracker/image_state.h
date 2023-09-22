@@ -286,6 +286,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     const bool metal_imageview_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
     std::shared_ptr<IMAGE_STATE> image_state;
+    const bool is_depth_sliced;
 
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
                      VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
@@ -307,7 +308,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
     void Destroy() override;
 
-    bool IsDepthSliced() const;
+    bool IsDepthSliced() const { return is_depth_sliced; }
 
     VkOffset3D GetOffset() const;
     VkExtent3D GetExtent() const;
