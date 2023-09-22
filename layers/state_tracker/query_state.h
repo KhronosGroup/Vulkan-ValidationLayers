@@ -59,7 +59,13 @@ class QUERY_POOL_STATE : public BASE_NODE {
         auto guard = WriteLock();
         assert(query < query_states_.size());
         assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
-        query_states_[query][perf_pass] = state;
+        if (state == QUERYSTATE_RESET) {
+            for (auto &state : query_states_[query]) {
+                state = QUERYSTATE_RESET;
+            }
+        } else {
+            query_states_[query][perf_pass] = state;
+        }
     }
     QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const {
         auto guard = ReadLock();
