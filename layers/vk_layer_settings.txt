@@ -92,6 +92,12 @@ khronos_validation.enables =
 # Enable dispatch indirect checking
 #khronos_validation.validate_dispatch_indirect = true
 
+# Cache instrumented shaders rather than instrumenting them on every run
+# =====================
+# <LayerIdentifier>.use_instrumented_shader_cache
+# Enable instrumented shader caching
+#khronos_validation.use_instrumented_shader_cache = true
+
 # Use linear vma allocator for GPU-AV output buffers
 # =====================
 # <LayerIdentifier>.gpuav_vma_linear_output
