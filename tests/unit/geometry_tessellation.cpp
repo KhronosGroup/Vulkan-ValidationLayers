@@ -156,7 +156,6 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderDontWrite) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create GS declaring PointSize and writing to it
     static char const *gsSource = R"glsl(
@@ -195,7 +194,6 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {
     features.shaderTessellationAndGeometryPointSize = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
     // #version 450
@@ -270,7 +268,6 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockOrderMismatchVsGs) {
         GTEST_SKIP() << "Device does not support geometry shaders";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
     // #version 450
@@ -362,7 +359,6 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGs) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     static const char *gsSource = R"glsl(
         #version 450

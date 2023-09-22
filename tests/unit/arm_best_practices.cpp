@@ -213,7 +213,6 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -333,7 +332,6 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
 
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (IsPlatform(kMockICD)) {
@@ -442,7 +440,6 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
 
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (IsPlatform(kMockICD)) {
@@ -567,7 +564,6 @@ TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
 
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);

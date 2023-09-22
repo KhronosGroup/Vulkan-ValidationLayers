@@ -493,7 +493,6 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     // Make sure image features are disabled via portability extension
     portability_feature.mutableComparisonSamplers = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.compareEnable = VK_TRUE;  // Incompatible with portability setting
@@ -544,7 +543,6 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     portability_feature.shaderSampleRateInterpolationFunctions = VK_FALSE;  // Make sure interpolation functions are disabled
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderObj tsc_obj(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);

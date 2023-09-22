@@ -3281,22 +3281,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
             }
         )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe.SetViewport(m_viewports);
-    VkRect2D rect = {};
-    m_scissors.push_back(rect);
-    pipe.SetScissor(m_scissors);
-    VkPipelineDepthStencilStateCreateInfo pipe_ds_state_ci = vku::InitStructHelper();
-    pipe_ds_state_ci.depthTestEnable = VK_TRUE;
-    pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
-    pipe.SetDepthStencil(&pipe_ds_state_ci);
 
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = 0;
@@ -3307,7 +3292,15 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout});
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    pipe.ds_ci_.depthTestEnable = VK_TRUE;
+    pipe.ds_ci_.stencilTestEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -3327,7 +3320,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

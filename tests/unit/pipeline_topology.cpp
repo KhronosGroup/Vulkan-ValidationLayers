@@ -70,7 +70,6 @@ TEST_F(NegativePipelineTopology, PointSize) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -185,7 +184,6 @@ TEST_F(NegativePipelineTopology, PrimitiveTopology) {
     deviceFeatures.tessellationShader = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -258,7 +256,6 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
     ptl_restart_features.primitiveTopologyListRestart = false;
     ptl_restart_features.primitiveTopologyPatchListRestart = false;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ptl_restart_features));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -287,7 +284,6 @@ TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
 
     AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto set_info = [&](CreatePipelineHelper &helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };

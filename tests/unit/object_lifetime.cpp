@@ -371,10 +371,6 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-        VkViewport viewport = {0, 0, 16, 16, 0, 1};
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        VkRect2D scissor = {{0, 0}, {16, 16}};
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
         // Bind pipeline to cmd buffer - This causes crash on Mali
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
@@ -690,7 +686,6 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetLayoutBinding dsl_binding = {};

@@ -23,7 +23,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);

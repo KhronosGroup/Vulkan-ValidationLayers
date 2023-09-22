@@ -295,7 +295,6 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     // We previously had a bug where dynamic offset of inactive bindings was still being used
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     OneOffDescriptorSet descriptor_set(m_device,

@@ -1822,10 +1822,10 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
 
     vkt::RenderPass render_pass(test_device, rpci);
 
-    VkPipelineObj pipe(&test_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
+    CreatePipelineHelper pipe(*this);
+    pipe.device_ = &test_device;
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout ds_layout(test_device, {binding});
@@ -1835,7 +1835,9 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1892,16 +1894,16 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
     rpci.pAttachments = &attach_desc;
 
     vkt::RenderPass render_pass(test_device, rpci);
-
-    VkPipelineObj pipe(&test_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
     const vkt::PipelineLayout pipeline_layout(test_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.device_ = &test_device;
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -2022,17 +2024,17 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     rpci.pAttachments = &attach_desc;
 
     vkt::RenderPass render_pass(test_device, rpci);
-
-    VkPipelineObj pipe(&test_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
     const vkt::PipelineLayout pipeline_layout(test_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.device_ = &test_device;
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -2088,16 +2090,16 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
     rpci.pAttachments = &attach_desc;
 
     vkt::RenderPass render_pass(test_device, rpci);
-
-    VkPipelineObj pipe(&test_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
     const vkt::PipelineLayout pipeline_layout(test_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.device_ = &test_device;
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 

@@ -371,7 +371,6 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
         }
     )glsl";
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     for (const auto &test_struct : tests) {
@@ -419,7 +418,6 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
             {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
         };
         pipe.InitState();
-        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
         ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
 
         pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -428,11 +426,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-        VkViewport viewport = {0, 0, 16, 16, 0, 1};
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        VkRect2D scissor = {{0, 0}, {16, 16}};
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, nullptr);
 
@@ -460,7 +454,6 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageObj test_image(m_device);
@@ -502,10 +495,6 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
@@ -536,7 +525,6 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,

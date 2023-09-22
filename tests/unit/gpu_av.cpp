@@ -90,7 +90,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
@@ -390,15 +389,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         }
     }
 
-    VkViewport viewport = m_viewports[0];
-    VkRect2D scissors = m_scissors[0];
-
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
     for (const auto &iter : tests) {
-        VkResult err;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
         VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
                        iter.debug);
@@ -407,13 +402,15 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         VkShaderObj *gs = nullptr;
         VkShaderObj *tcs = nullptr;
         VkShaderObj *tes = nullptr;
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.shader_stages_.clear();
+        pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
         if (iter.geometry_source) {
             gs = new VkShaderObj(this, iter.geometry_source, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                  nullptr, "main", iter.debug);
-            pipe.AddShader(gs);
+            pipe.shader_stages_.push_back(gs->GetStageCreateInfo());
         }
         VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                          VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
@@ -428,21 +425,21 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                                   SPV_SOURCE_GLSL, nullptr, "main", iter.debug);
             tes = new VkShaderObj(this, iter.tess_eval_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, SPV_ENV_VULKAN_1_0,
                                   SPV_SOURCE_GLSL, nullptr, "main", iter.debug);
-            pipe.AddShader(tcs);
-            pipe.AddShader(tes);
-            pipe.SetTessellation(&tsci);
-            pipe.SetInputAssembly(&iasci);
+            pipe.shader_stages_.push_back(tcs->GetStageCreateInfo());
+            pipe.shader_stages_.push_back(tes->GetStageCreateInfo());
+            pipe.gp_ci_.pTessellationState = &tsci;
+            pipe.gp_ci_.pInputAssemblyState = &iasci;
         }
-        pipe.AddDefaultColorAttachment();
-        err = pipe.CreateVKPipeline(iter.pipeline_layout->handle(), renderPass());
-        ASSERT_VK_SUCCESS(err);
+
+        pipe.shader_stages_.push_back(fs.GetStageCreateInfo());
+        pipe.gp_ci_.layout = iter.pipeline_layout->handle();
+        pipe.CreateGraphicsPipeline();
+
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, iter.pipeline_layout->handle(), 0, 1,
                                   &iter.descriptor_set->set_, 0, nullptr);
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
@@ -570,27 +567,24 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     )glsl";
 
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+
     VkPipelineRobustnessCreateInfoEXT pipeline_robustness_ci = vku::InitStructHelper();
-    VkPipelineObj robust_pipe(m_device);
-    robust_pipe.AddShader(&vs);
-    robust_pipe.AddDefaultColorAttachment();
-    robust_pipe.DisableRasterization();
-    VkGraphicsPipelineCreateInfo gp_ci;
-    robust_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
-    gp_ci.pNext = &pipeline_robustness_ci;
     pipeline_robustness_ci.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
     pipeline_robustness_ci.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
-    robust_pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+
+    CreatePipelineHelper robust_pipe(*this);
+    robust_pipe.InitState();
+    robust_pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    robust_pipe.gp_ci_.layout = pipeline_layout.handle();
+    robust_pipe.gp_ci_.pNext = &pipeline_robustness_ci;
+    robust_pipe.CreateGraphicsPipeline();
+
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, robust_pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, robust_pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
@@ -699,21 +693,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         "}\n";
 
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
@@ -761,12 +752,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         m_commandBuffer->begin(&begin_info);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-            &descriptor_set.set_, 0, nullptr);
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+                                  &descriptor_set.set_, 0, nullptr);
         m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
         vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
@@ -780,12 +769,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->begin(&begin_info);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-            &descriptor_set.set_, 0, nullptr);
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+                                  &descriptor_set.set_, 0, nullptr);
         vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
@@ -832,7 +819,6 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
         features.pNext = &shader_object_features;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     if (shader_objects) {
         ASSERT_NO_FATAL_FAILURE(InitDynamicRenderTarget());
     } else {
@@ -853,7 +839,6 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
     vkt::Buffer buffer(*m_device, bci);
-    VkPipelineObj pipe(m_device);
 
     VkDescriptorBufferInfo buffer_info;
     buffer_info.buffer = buffer.handle();
@@ -891,12 +876,11 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-
-    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    ASSERT_VK_SUCCESS(err);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     if (shader_objects) {
@@ -913,15 +897,11 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
         SetDefaultDynamicStates(m_commandBuffer->handle());
     } else {
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     }
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_,
                               0, nullptr);
 
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     if (shader_objects) {
         m_commandBuffer->EndRendering();
@@ -1060,7 +1040,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
@@ -1083,9 +1062,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
 
     // Get device address of buffer to write to
     auto pBuffer = buffer1.address();
-
-    VkViewport viewport = m_viewports[0];
-    VkRect2D scissors = m_scissors[0];
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
@@ -1139,21 +1115,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         )glsl";
         VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddDefaultColorAttachment();
-        pipe.DisableRasterization();
-        err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-        ASSERT_VK_SUCCESS(err);
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+        pipe.gp_ci_.layout = pipeline_layout.handle();
+        pipe.CreateGraphicsPipeline();
 
         for (const auto &test : testcases) {
             m_commandBuffer->begin(&begin_info);
             m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                                  sizeof(test.push_constants), test.push_constants);
-            vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-            vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
             vk::CmdEndRenderPass(m_commandBuffer->handle());
             m_commandBuffer->end();
@@ -1208,20 +1181,17 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         )glsl";
         VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddDefaultColorAttachment();
-        pipe.DisableRasterization();
-        auto subcase_err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-        ASSERT_VK_SUCCESS(subcase_err);
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+        pipe.gp_ci_.layout = pipeline_layout.handle();
+        pipe.CreateGraphicsPipeline();
 
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
@@ -1235,10 +1205,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
             if (!test.error.empty()) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
             }
-            subcase_err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-            ASSERT_VK_SUCCESS(subcase_err);
-            subcase_err = vk::QueueWaitIdle(m_device->m_queue);
-            ASSERT_VK_SUCCESS(subcase_err);
+            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_device->m_queue);
             if (!test.error.empty()) {
                 m_errorMonitor->VerifyFound();
             }
@@ -1287,20 +1255,20 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         )glsl";
         VkShaderObj ms(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
                        true);
-        VkPipelineObj mesh_pipe(m_device);
-        mesh_pipe.AddShader(&ms);
-        mesh_pipe.AddDefaultColorAttachment();
-        mesh_pipe.DisableRasterization();
-        err = mesh_pipe.CreateVKPipeline(mesh_pipeline_layout.handle(), renderPass());
+
+        CreatePipelineHelper mesh_pipe(*this);
+        mesh_pipe.InitState();
+        mesh_pipe.shader_stages_ = {ms.GetStageCreateInfo()};
+        mesh_pipe.gp_ci_.layout = mesh_pipeline_layout.handle();
+        mesh_pipe.CreateGraphicsPipeline();
+
         ASSERT_VK_SUCCESS(err);
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
         VkDeviceAddress push_constants[2] = {pBuffer, 5};
         vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout.handle(), VK_SHADER_STAGE_MESH_BIT_NV, 0,
                              sizeof(push_constants), push_constants);
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
         vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
@@ -1370,21 +1338,15 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    ASSERT_VK_SUCCESS(pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass()));
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
@@ -1397,17 +1359,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     m_errorMonitor->VerifyFound();
 
     if (!IsDriver(VK_DRIVER_ID_MESA_RADV) && features13.dynamicRendering) {
-        VkPipelineObj dr_pipe(m_device);
-        dr_pipe.AddShader(&vs);
-        dr_pipe.AddDefaultColorAttachment();
-        dr_pipe.DisableRasterization();
-        ASSERT_VK_SUCCESS(dr_pipe.CreateVKPipeline(pipeline_layout.handle(), VK_NULL_HANDLE));
-
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
         vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
@@ -1478,21 +1432,15 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    ASSERT_VK_SUCCESS(pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass()));
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
@@ -1546,13 +1494,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    ASSERT_VK_SUCCESS(err);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-03122");
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
@@ -1561,19 +1506,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
     count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
@@ -1582,17 +1522,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-03121");
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // Offset of 4 should error
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
@@ -1612,9 +1549,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     count_buffer.memory().unmap();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
     index_buffer_create_info.size = 3 * sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -1625,8 +1560,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
     count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
@@ -1635,9 +1569,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153");
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     // Offset of 4 should error
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
@@ -1645,8 +1577,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1691,29 +1622,21 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    ASSERT_VK_SUCCESS(err);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawIndirectCommand-firstInstance-00501");
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
 
     // Now with an offset and indexed draw
@@ -1734,9 +1657,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
 
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
     index_buffer_create_info.size = 3 * sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -1747,8 +1668,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1982,22 +1902,17 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     buffer0.memory().unmap();
 
     // Destroy pipeline layout after creating pipeline
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
     {
         const vkt::PipelineLayout doomed_pipeline_layout(*m_device);
-        pipe.CreateVKPipeline(doomed_pipeline_layout.handle(), m_renderPass);
+        pipe.gp_ci_.layout = doomed_pipeline_layout.handle();
+        pipe.CreateGraphicsPipeline();
     }
+
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Unable to find pipeline layout to bind debug descriptor set");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -2522,15 +2437,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     vi.InitState();
     ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
-    VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state = vku::InitStructHelper();
-    dyn_state.dynamicStateCount = size(dyn_states);
-    dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout_vs.handle();
-    pre_raster.gp_ci_.pDynamicState = &dyn_state;
     pre_raster.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
@@ -2583,10 +2493,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    VkViewport viewport = {0, 0, 1, 1, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {1, 1}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();

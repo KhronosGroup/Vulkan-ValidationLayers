@@ -168,7 +168,6 @@ TEST_F(NegativeShaderPushConstants, Range) {
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *const vsSource = R"glsl(

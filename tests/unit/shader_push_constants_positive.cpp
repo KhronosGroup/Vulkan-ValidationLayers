@@ -276,7 +276,6 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     TEST_DESCRIPTION("Based on verified valid examples from internal Vulkan Spec issue #2168");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *const vsSource = R"glsl(
@@ -416,7 +415,6 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     TEST_DESCRIPTION("Test cases where creating pipeline with no use of push constants but still has ranges in layout");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Create set of Pipeline Layouts that cover variations of ranges

@@ -1168,7 +1168,6 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     static const char mesh_src[] = R"glsl(

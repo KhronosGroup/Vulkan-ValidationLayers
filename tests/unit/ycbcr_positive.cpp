@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 #include "generated/vk_extension_helper.h"
 
 void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
@@ -368,13 +369,13 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
     descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = renderPass();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -393,14 +394,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();

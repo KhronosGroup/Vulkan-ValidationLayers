@@ -708,7 +708,7 @@ class BarrierQueueFamilyBase {
     struct QueueFamilyObjs {
         uint32_t index;
         // We would use std::unique_ptr, but this triggers a compiler error on older compilers
-        VkQueueObj *queue = nullptr;
+        vkt::Queue *queue = nullptr;
         vkt::CommandPool *command_pool = nullptr;
         VkCommandBufferObj *command_buffer = nullptr;
         VkCommandBufferObj *command_buffer2 = nullptr;

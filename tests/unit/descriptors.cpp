@@ -1156,7 +1156,6 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
 TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt an image descriptor set update where image's bound memory has been freed.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1278,7 +1277,6 @@ TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1437,7 +1435,6 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     TEST_DESCRIPTION("Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive, but all have null buffers");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     OneOffDescriptorSet descriptor_set(m_device,
                                        {

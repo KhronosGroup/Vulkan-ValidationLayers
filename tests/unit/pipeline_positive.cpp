@@ -557,20 +557,12 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
     // Verify that the usage of gl_ViewportMask[] in the allowed vertex processing
     // stages does not cause any errors.
     for (auto stage : vertex_stages) {
-        VkPipelineInputAssemblyStateCreateInfo iaci = vku::InitStructHelper();
-        iaci.topology = (stage != TestStage::VERTEX) ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-        VkPipelineTessellationStateCreateInfo tsci = vku::InitStructHelper();
-        tsci.patchControlPoints = 3;
-
-        const vkt::PipelineLayout pl(*m_device);
-
-        VkPipelineObj pipe(m_device);
-        pipe.AddDefaultColorAttachment();
-        pipe.SetInputAssembly(&iaci);
-        pipe.SetViewport(vps);
-        pipe.SetScissor(scs);
-        pipe.AddShader(&fs);
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.ia_ci_.topology =
+            (stage != TestStage::VERTEX) ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        pipe.gp_ci_.renderPass = renderPass();
+        pipe.shader_stages_.clear();
 
         std::stringstream vs_src, tes_src, geom_src;
 
@@ -592,7 +584,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
             })";
 
         VkShaderObj vs(this, vs_src.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT);
-        pipe.AddShader(&vs);
+        pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
 
         std::unique_ptr<VkShaderObj> tes, geom;
 
@@ -613,9 +605,10 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
             tes_src << "}";
 
             tes = std::make_unique<VkShaderObj>(this, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-            pipe.AddShader(tes.get());
-            pipe.AddShader(&tcs);
-            pipe.SetTessellation(&tsci);
+            pipe.shader_stages_.push_back(tes.get()->GetStageCreateInfo());
+            pipe.shader_stages_.push_back(tcs.GetStageCreateInfo());
+            pipe.tess_ci_ = vku::InitStructHelper();
+            pipe.tess_ci_.patchControlPoints = 3;
         }
 
         if (stage >= TestStage::GEOMETRY) {
@@ -634,10 +627,11 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
                 })";
 
             geom = std::make_unique<VkShaderObj>(this, geom_src.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
-            pipe.AddShader(geom.get());
+            pipe.shader_stages_.push_back(geom.get()->GetStageCreateInfo());
         }
 
-        pipe.CreateVKPipeline(pl.handle(), renderPass());
+        pipe.shader_stages_.push_back(fs.GetStageCreateInfo());
+        pipe.CreateGraphicsPipeline();
     }
 }
 
@@ -755,19 +749,19 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     msaa.sampleShadingEnable = VK_FALSE;
     msaa.pSampleMask = &sampleMask;
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetMSAA(&msaa);
-
     VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.AddShader(&vs);
-
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipe.AddShader(&fs);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.pMultisampleState = &msaa;
 
     // Create pipeline and make sure that the usage of NV_sample_mask_override_coverage
     // in the fragment shader does not cause any errors.
-    pipe.CreateVKPipeline(pl.handle(), rp.handle());
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
@@ -1623,22 +1617,11 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
-        const vkt::PipelineLayout pl(*m_device);
-
-        VkPipelineObj pipe(m_device);
-        pipe.AddDefaultColorAttachment();
-
-        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-        pipe.AddShader(&vs);
-
-        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-        pipe.AddShader(&fs);
-
-        pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
-        const VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper(&depth_bias_representation);
-        pipe.SetRasterization(&raster_state);
-
-        pipe.CreateVKPipeline(pl.handle(), m_renderPass);
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
+        pipe.rs_state_ci_.pNext = &depth_bias_representation;
+        pipe.CreateGraphicsPipeline();
     };
 
     VkDepthBiasRepresentationInfoEXT depth_bias_representation = vku::InitStructHelper();

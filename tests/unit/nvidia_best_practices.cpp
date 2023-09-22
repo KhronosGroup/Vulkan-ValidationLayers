@@ -271,9 +271,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     GetPhysicalDeviceFeatures2(bda_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
-    VkQueueObj *graphics_queue = m_device->GetDefaultQueue();
+    vkt::Queue *graphics_queue = m_device->GetDefaultQueue();
 
-    VkQueueObj *compute_queue = nullptr;
+    vkt::Queue *compute_queue = nullptr;
     for (uint32_t i = 0; i < m_device->compute_queues().size(); ++i) {
         auto cqi = m_device->compute_queues()[i];
         if (cqi->get_family_index() != graphics_queue->get_family_index()) {
@@ -286,11 +286,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         GTEST_SKIP() << "Could not find a compute queue different from the graphics queue, skipping test";
     }
 
-    std::array<VkQueueObj *, 2> queues = {{graphics_queue, compute_queue}};
+    std::array<vkt::Queue *, 2> queues = {{graphics_queue, compute_queue}};
 
     auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
 
-    for (VkQueueObj *queue : queues) {
+    for (vkt::Queue *queue : queues) {
         vkt::CommandPool compute_pool(*m_device, queue->get_family_index());
         VkCommandBufferObj cmd_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 

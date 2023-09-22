@@ -26,7 +26,6 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // create 1 more than the warning limit for pipeline objects
@@ -61,7 +60,6 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -136,7 +134,6 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (m_device->queue_props.size() < 2) {
@@ -196,7 +193,6 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -227,7 +223,6 @@ TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -245,7 +240,6 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -276,7 +270,6 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -322,7 +315,6 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -636,7 +628,6 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     }
 
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     InitSwapchain();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -721,7 +712,6 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};

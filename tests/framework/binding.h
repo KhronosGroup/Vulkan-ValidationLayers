@@ -214,6 +214,9 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &compute_queues() { return queues_[COMPUTE]; }
     const std::vector<Queue *> &dma_queues() { return queues_[DMA]; }
 
+    vkt::Queue *GetDefaultQueue();
+    vkt::Queue *GetDefaultComputeQueue();
+
     typedef std::vector<std::unique_ptr<Queue>> QueueFamilyQueues;
     typedef std::vector<QueueFamilyQueues> QueueFamilies;
     const QueueFamilyQueues &queue_family_queues(uint32_t queue_family) const;

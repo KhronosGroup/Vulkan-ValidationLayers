@@ -1930,7 +1930,6 @@ TEST_F(VkLayerTest, ValidateStride) {
         GTEST_SKIP() << " Device graphic queue has timestampValidBits of 0, skipping.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();

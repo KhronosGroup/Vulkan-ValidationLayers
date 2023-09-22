@@ -440,7 +440,6 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
@@ -738,7 +737,6 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     // This test does not need for the shader to consume the vertex input
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-Shader-OutputNotConsumed");
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::vector<VkVertexInputBindingDescription> bindings(2, VkVertexInputBindingDescription{});
@@ -1403,7 +1401,6 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
@@ -1985,9 +1982,9 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkQueueObj *graphics_queue = m_device->GetDefaultQueue();
+    vkt::Queue *graphics_queue = m_device->GetDefaultQueue();
 
-    VkQueueObj *compute_queue = nullptr;
+    vkt::Queue *compute_queue = nullptr;
     for (uint32_t i = 0; i < m_device->compute_queues().size(); ++i) {
         auto cqi = m_device->compute_queues()[i];
         if (cqi->get_family_index() != graphics_queue->get_family_index()) {

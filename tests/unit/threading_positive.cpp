@@ -86,7 +86,6 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {

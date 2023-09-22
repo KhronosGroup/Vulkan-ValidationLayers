@@ -230,7 +230,6 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // We luck out b/c by default the framework creates CB w/ the
@@ -274,7 +273,6 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // We luck out b/c by default the framework creates CB w/ the
@@ -306,7 +304,6 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
 
 TEST_F(NegativeCommand, PushConstants) {
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineLayout pipeline_layout;
@@ -4975,8 +4972,6 @@ TEST_F(NegativeCommand, IndirectDraw) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4986,11 +4981,6 @@ TEST_F(NegativeCommand, IndirectDraw) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -5074,8 +5064,6 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5085,11 +5073,6 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(VkDrawIndirectCommand);
@@ -5164,8 +5147,6 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5175,11 +5156,6 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(VkDrawIndexedIndirectCommand);

@@ -19,7 +19,6 @@ TEST_F(PositivePipelineTopology, PointSizeWriteInFunction) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and write to it in a function call.
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -43,7 +42,6 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and writing to it
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -67,7 +65,6 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Never calls OpEmitVertex
     static char const *gsSource = R"glsl(
@@ -95,7 +92,6 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     const char *LoosePointSizeWrite = R"(
                                        OpCapability Shader
@@ -373,14 +369,16 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
 
     // Set polygonMode=FILL. No error is expected
     {
-        VkPipelineObj pipe(&test_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-        pipe.AddDefaultColorAttachment();
+        CreatePipelineHelper pipe(*this);
+        pipe.device_ = &test_device;
+        pipe.InitState();
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.gp_ci_.layout = pipeline_layout.handle();
+        pipe.gp_ci_.renderPass = render_pass.handle();
         // Set polygonMode to a good value
         rs_ci.polygonMode = VK_POLYGON_MODE_FILL;
-        pipe.SetRasterization(&rs_ci);
-        pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+        pipe.gp_ci_.pRasterizationState = &rs_ci;
+        pipe.CreateGraphicsPipeline();
     }
 }
 
@@ -393,7 +391,6 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
@@ -600,7 +597,6 @@ TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     const char *source = R"glsl(
         #version 450

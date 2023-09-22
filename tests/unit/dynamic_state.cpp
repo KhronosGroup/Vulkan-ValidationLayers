@@ -3051,7 +3051,6 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(sample_locations_props);
@@ -3622,11 +3621,10 @@ TEST_F(NegativeDynamicState, ViewportAndScissorUndefinedDrawState) {
         GTEST_SKIP() << "Device does not support multiple viewports/scissors; skipped.\n";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    VkRect2D scissor = {{0, 0}, {16, 16}};
 
     CreatePipelineHelper pipeline_dyn_vp(*this);
     pipeline_dyn_vp.InitState();
@@ -3643,15 +3641,13 @@ TEST_F(NegativeDynamicState, ViewportAndScissorUndefinedDrawState) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07831");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_vp.Handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 1, 1,
-                       &m_viewports[0]);  // Forgetting to set needed 0th viewport (PSO viewportCount == 1)
+    vk::CmdSetViewport(m_commandBuffer->handle(), 1, 1, &viewport);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07832");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_sc.Handle());
-    vk::CmdSetScissor(m_commandBuffer->handle(), 1, 1,
-                      &m_scissors[0]);  // Forgetting to set needed 0th scissor (PSO scissorCount == 1)
+    vk::CmdSetScissor(m_commandBuffer->handle(), 1, 1, &scissor);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
