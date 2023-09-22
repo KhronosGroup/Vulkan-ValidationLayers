@@ -632,6 +632,18 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
         single_parent_vuid = (len(handle_types) == 1)
 
+        # Parent type in parent/commonparent VUIDs: Device, PhysicalDevice or Instance
+        parent_type = 'Device'
+        for type in handle_types:
+            current_type = self.vk.handles[type].parent.type
+            if current_type in ['VK_OBJECT_TYPE_PHYSICAL_DEVICE', 'VK_OBJECT_TYPE_DISPLAY_KHR', 'VK_OBJECT_TYPE_DISPLAY_MODE_KHR']:
+                parent_type = 'PhysicalDevice'
+                # continue search in case instance parent exists
+            elif current_type == 'VK_OBJECT_TYPE_INSTANCE':
+                parent_type = 'Instance'
+                # end search
+                break
+
         # Process any objects in this structure and recurse for any sub-structs in this struct
         for member in members:
             if member.pointer and not member.const:
@@ -663,20 +675,32 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     chassis_parent_vuid = parent_vuid # keep parent vuid for "Checked by chassis" comment
                     parent_vuid = 'kVUIDUndefined'
 
+                parent_object_type = '' # empty value corresponds to C++ default parameter value (kVulkanObjectTypeDevice)
+                if parent_type != 'Device':
+                    parent_object_type = f', kVulkanObjectType{parent_type}'
+
+                # Special case: VUID-VkSwapchainCreateInfoKHR-commonparent
+                # This is a problematic VUID in the form it's defined in the spec 1.3.265. Details (internal link):
+                # https://gitlab.khronos.org/vulkan/vulkan/-/issues/2983
+                # Ideally such VUID should be split into two since there are two different parents:
+                # VkInstance for surface and VkDevice for oldSwapchain
+                if parentName == 'VkSwapchainCreateInfoKHR' and member.name == 'oldSwapchain':
+                    parent_object_type = ", kVulkanObjectTypeDevice"
+
                 if member.length:
                     location = f'{errorLoc}.dot(Field::{member.name}, {index})'
                     countName = f'{prefix}{member.length}'
                     pre_call_validate += f'''
                         if (({countName} > 0) && ({prefix}{member.name})) {{
                             for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
-                                skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location});
+                                skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});
                             }}
                         }}\n'''
                 elif 'basePipelineHandle' in member.name:
                     pre_call_validate += f'if (({prefix}flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && ({prefix}basePipelineIndex == -1))\n'
                     manual_vuid_index = parentName + '-' + member.name
                     param_vuid = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
-                    pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, false, {param_vuid}, {parent_vuid}, error_obj.location);\n'
+                    pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, false, {param_vuid}, {parent_vuid}, error_obj.location{parent_object_type});\n'
                 elif function_dispatchable_parameter:
                     pre_call_validate += f'// Checked by chassis: {member.name}: {param_vuid}\n'
                     if chassis_parent_vuid != 'kVUIDUndefined':
@@ -687,9 +711,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                         # Use case when for device-level API call we should use instance-level validation object
                         pre_call_validate += 'auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);\n'
                         pre_call_validate += 'auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();\n'
-                        pre_call_validate += f'skip |= instance_object_lifetimes->ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location});\n'
+                        pre_call_validate += f'skip |= instance_object_lifetimes->ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
                     else:
-                        pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location});\n'
+                        pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
 
             # Handle Structs that contain objects at some level
             elif member.type in self.vk.structs:

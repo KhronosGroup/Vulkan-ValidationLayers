@@ -2756,7 +2756,8 @@ bool ObjectLifetimes::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSu
     bool skip = false;
     // Checked by chassis: instance: "VUID-vkDestroySurfaceKHR-instance-parameter"
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, true, "VUID-vkDestroySurfaceKHR-surface-parameter",
-                           "VUID-vkDestroySurfaceKHR-surface-parent", error_obj.location.dot(Field::surface));
+                           "VUID-vkDestroySurfaceKHR-surface-parent", error_obj.location.dot(Field::surface),
+                           kVulkanObjectTypeInstance);
     skip |= ValidateDestroyObject(surface, kVulkanObjectTypeSurfaceKHR, pAllocator, "VUID-vkDestroySurfaceKHR-surface-01267",
                                   "VUID-vkDestroySurfaceKHR-surface-01268", error_obj.location);
 
@@ -2776,7 +2777,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysic
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent"
     skip |=
         ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-surface-parameter",
-                       "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent", error_obj.location.dot(Field::surface));
+                       "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent", error_obj.location.dot(Field::surface),
+                       kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -2789,7 +2791,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkP
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-commonparent"
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false,
                            "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-surface-parameter",
-                           "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-commonparent", error_obj.location.dot(Field::surface));
+                           "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-commonparent", error_obj.location.dot(Field::surface),
+                           kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -2803,7 +2806,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysic
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-commonparent"
     skip |=
         ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, true, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-parameter",
-                       "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-commonparent", error_obj.location.dot(Field::surface));
+                       "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-commonparent", error_obj.location.dot(Field::surface),
+                       kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -2817,7 +2821,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkP
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-commonparent"
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, true,
                            "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-parameter",
-                           "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-commonparent", error_obj.location.dot(Field::surface));
+                           "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-commonparent", error_obj.location.dot(Field::surface),
+                           kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -2833,10 +2838,10 @@ bool ObjectLifetimes::PreCallValidateCreateSwapchainKHR(VkDevice device, const V
         auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
         skip |= instance_object_lifetimes->ValidateObject(
             pCreateInfo->surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-VkSwapchainCreateInfoKHR-surface-parameter",
-            "VUID-VkSwapchainCreateInfoKHR-commonparent", pCreateInfo_loc.dot(Field::surface));
+            "VUID-VkSwapchainCreateInfoKHR-commonparent", pCreateInfo_loc.dot(Field::surface), kVulkanObjectTypeInstance);
         skip |= ValidateObject(pCreateInfo->oldSwapchain, kVulkanObjectTypeSwapchainKHR, true,
                                "VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parameter", "VUID-VkSwapchainCreateInfoKHR-commonparent",
-                               pCreateInfo_loc.dot(Field::oldSwapchain));
+                               pCreateInfo_loc.dot(Field::oldSwapchain), kVulkanObjectTypeDevice);
     }
 
     return skip;
@@ -2932,9 +2937,10 @@ bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevi
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent"
     auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
-    skip |= instance_object_lifetimes->ValidateObject(
-        surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-parameter",
-        "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent", error_obj.location.dot(Field::surface));
+    skip |= instance_object_lifetimes->ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false,
+                                                      "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-parameter",
+                                                      "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent",
+                                                      error_obj.location.dot(Field::surface), kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -2947,7 +2953,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhy
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDevicePresentRectanglesKHR-commonparent"
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false,
                            "VUID-vkGetPhysicalDevicePresentRectanglesKHR-surface-parameter",
-                           "VUID-vkGetPhysicalDevicePresentRectanglesKHR-commonparent", error_obj.location.dot(Field::surface));
+                           "VUID-vkGetPhysicalDevicePresentRectanglesKHR-commonparent", error_obj.location.dot(Field::surface),
+                           kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -2995,7 +3002,8 @@ bool ObjectLifetimes::PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physi
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkCreateDisplayModeKHR-physicalDevice-parameter"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkCreateDisplayModeKHR-display-parameter",
-                           "VUID-vkCreateDisplayModeKHR-display-parent", error_obj.location.dot(Field::display));
+                           "VUID-vkCreateDisplayModeKHR-display-parent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -3015,7 +3023,8 @@ bool ObjectLifetimes::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDe
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkGetDisplayPlaneCapabilitiesKHR-physicalDevice-parameter"
     skip |= ValidateObject(mode, kVulkanObjectTypeDisplayModeKHR, false, "VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parameter",
-                           "VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parent", error_obj.location.dot(Field::mode));
+                           "VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parent", error_obj.location.dot(Field::mode),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -3057,10 +3066,11 @@ bool ObjectLifetimes::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, 
             auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
             skip |= instance_object_lifetimes->ValidateObject(
                 pCreateInfos[index0].surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-VkSwapchainCreateInfoKHR-surface-parameter",
-                "VUID-VkSwapchainCreateInfoKHR-commonparent", index0_loc.dot(Field::surface));
-            skip |= ValidateObject(pCreateInfos[index0].oldSwapchain, kVulkanObjectTypeSwapchainKHR, true,
-                                   "VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parameter",
-                                   "VUID-VkSwapchainCreateInfoKHR-commonparent", index0_loc.dot(Field::oldSwapchain));
+                "VUID-VkSwapchainCreateInfoKHR-commonparent", index0_loc.dot(Field::surface), kVulkanObjectTypeInstance);
+            skip |=
+                ValidateObject(pCreateInfos[index0].oldSwapchain, kVulkanObjectTypeSwapchainKHR, true,
+                               "VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parameter", "VUID-VkSwapchainCreateInfoKHR-commonparent",
+                               index0_loc.dot(Field::oldSwapchain), kVulkanObjectTypeDevice);
         }
     }
 
@@ -4696,9 +4706,9 @@ bool ObjectLifetimes::PreCallValidateDestroyDebugReportCallbackEXT(VkInstance in
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: instance: "VUID-vkDestroyDebugReportCallbackEXT-instance-parameter"
-    skip |= ValidateObject(callback, kVulkanObjectTypeDebugReportCallbackEXT, true,
-                           "VUID-vkDestroyDebugReportCallbackEXT-callback-parameter",
-                           "VUID-vkDestroyDebugReportCallbackEXT-callback-parent", error_obj.location.dot(Field::callback));
+    skip |= ValidateObject(
+        callback, kVulkanObjectTypeDebugReportCallbackEXT, true, "VUID-vkDestroyDebugReportCallbackEXT-callback-parameter",
+        "VUID-vkDestroyDebugReportCallbackEXT-callback-parent", error_obj.location.dot(Field::callback), kVulkanObjectTypeInstance);
     skip |= ValidateDestroyObject(callback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator, kVUIDUndefined, kVUIDUndefined,
                                   error_obj.location);
 
@@ -5039,7 +5049,8 @@ bool ObjectLifetimes::PreCallValidateReleaseDisplayEXT(VkPhysicalDevice physical
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkReleaseDisplayEXT-physicalDevice-parameter"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkReleaseDisplayEXT-display-parameter",
-                           "VUID-vkReleaseDisplayEXT-display-parent", error_obj.location.dot(Field::display));
+                           "VUID-vkReleaseDisplayEXT-display-parent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -5050,7 +5061,8 @@ bool ObjectLifetimes::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice phys
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkAcquireXlibDisplayEXT-physicalDevice-parameter"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkAcquireXlibDisplayEXT-display-parameter",
-                           "VUID-vkAcquireXlibDisplayEXT-display-parent", error_obj.location.dot(Field::display));
+                           "VUID-vkAcquireXlibDisplayEXT-display-parent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -5075,7 +5087,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(Vk
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-commonparent"
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false,
                            "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-parameter",
-                           "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-commonparent", error_obj.location.dot(Field::surface));
+                           "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-commonparent", error_obj.location.dot(Field::surface),
+                           kVulkanObjectTypeInstance);
 
     return skip;
 }
@@ -5087,7 +5100,8 @@ bool ObjectLifetimes::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkD
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-commonparent"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkDisplayPowerControlEXT-display-parameter",
-                           "VUID-vkDisplayPowerControlEXT-commonparent", error_obj.location.dot(Field::display));
+                           "VUID-vkDisplayPowerControlEXT-commonparent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -5110,7 +5124,8 @@ bool ObjectLifetimes::PreCallValidateRegisterDisplayEventEXT(VkDevice device, Vk
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-commonparent"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkRegisterDisplayEventEXT-display-parameter",
-                           "VUID-vkRegisterDisplayEventEXT-commonparent", error_obj.location.dot(Field::display));
+                           "VUID-vkRegisterDisplayEventEXT-commonparent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -5245,7 +5260,8 @@ bool ObjectLifetimes::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstance in
     // Checked by chassis: instance: "VUID-vkDestroyDebugUtilsMessengerEXT-instance-parameter"
     skip |= ValidateObject(messenger, kVulkanObjectTypeDebugUtilsMessengerEXT, true,
                            "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parameter",
-                           "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parent", error_obj.location.dot(Field::messenger));
+                           "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parent", error_obj.location.dot(Field::messenger),
+                           kVulkanObjectTypeInstance);
     skip |= ValidateDestroyObject(messenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator, kVUIDUndefined, kVUIDUndefined,
                                   error_obj.location);
 
@@ -6396,7 +6412,8 @@ bool ObjectLifetimes::PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice physi
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkAcquireDrmDisplayEXT-physicalDevice-parameter"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkAcquireDrmDisplayEXT-display-parameter",
-                           "VUID-vkAcquireDrmDisplayEXT-display-parent", error_obj.location.dot(Field::display));
+                           "VUID-vkAcquireDrmDisplayEXT-display-parent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -6629,7 +6646,8 @@ bool ObjectLifetimes::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice phys
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkAcquireWinrtDisplayNV-physicalDevice-parameter"
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkAcquireWinrtDisplayNV-display-parameter",
-                           "VUID-vkAcquireWinrtDisplayNV-display-parent", error_obj.location.dot(Field::display));
+                           "VUID-vkAcquireWinrtDisplayNV-display-parent", error_obj.location.dot(Field::display),
+                           kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
