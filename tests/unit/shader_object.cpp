@@ -4542,9 +4542,9 @@ TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
 
-    uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
-    uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
-    uint32_t z_count_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
+    uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
+    uint32_t y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
+    uint32_t z_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[2];
 
     const vkt::Shader compShader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl));
@@ -4626,7 +4626,7 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
@@ -5933,7 +5933,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
 
-    uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
+    uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
 
     std::string cs_src = R"asm(
                OpCapability Shader
@@ -6588,7 +6588,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
                OpExecutionMode %main Invocations 1
                OpExecutionMode %main OutputTriangleStrip
                OpExecutionMode %main OutputVertices )";
-    geom_src += std::to_string(m_device->props.limits.maxGeometryOutputVertices + 1);
+    geom_src += std::to_string(m_device->phy().limits_.maxGeometryOutputVertices + 1);
     geom_src += R"(
                ; Debug Information
                OpSource GLSL 460
@@ -6670,7 +6670,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
                OpEntryPoint Geometry %main "main" %_
                OpExecutionMode %main Triangles
                OpExecutionMode %main Invocations )";
-    geom_src += std::to_string(m_device->props.limits.maxGeometryShaderInvocations + 1);
+    geom_src += std::to_string(m_device->phy().limits_.maxGeometryShaderInvocations + 1);
     geom_src += R"(
                OpExecutionMode %main OutputTriangleStrip
                OpExecutionMode %main OutputVertices 2
@@ -6865,7 +6865,7 @@ TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
 
     InitDynamicRenderTarget();
 
-    uint32_t count = m_device->props.limits.maxFragmentDualSrcAttachments + 1;
+    uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
 
     std::stringstream fsSource;
     fsSource << "#version 450\n";

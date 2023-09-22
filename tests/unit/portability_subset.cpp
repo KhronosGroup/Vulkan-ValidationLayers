@@ -25,8 +25,8 @@ TEST_F(NegativePortabilitySubset, Device) {
     vkt::PhysicalDevice phys_device(gpu());
 
     // request all queues
-    const std::vector<VkQueueFamilyProperties> queue_props = phys_device.queue_properties();
-    vkt::QueueCreateInfoArray queue_info(phys_device.queue_properties());
+    const std::vector<VkQueueFamilyProperties> queue_props = phys_device.queue_properties_;
+    vkt::QueueCreateInfoArray queue_info(phys_device.queue_properties_);
 
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;

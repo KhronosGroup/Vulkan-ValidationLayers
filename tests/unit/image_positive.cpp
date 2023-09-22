@@ -652,8 +652,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;
-    vk::QueuePresentKHR(m_device->m_queue, &present);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueuePresentKHR(m_default_queue, &present);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
@@ -1016,8 +1016,8 @@ TEST_F(PositiveImage, CopyImageSubresource) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_commandBuffer->begin();
 
@@ -1046,8 +1046,8 @@ TEST_F(PositiveImage, CopyImageSubresource) {
                            image_barriers);
     m_commandBuffer->end();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveImage, DescriptorSubresourceLayout) {
@@ -1157,8 +1157,8 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
                 cmd_buf.end();
-                vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-                vk::QueueWaitIdle(m_device->m_queue);
+                vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+                vk::QueueWaitIdle(m_default_queue);
                 cmd_buf.begin();
             }
 
@@ -1173,8 +1173,8 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
             cmd_buf.end();
 
             // Submit cmd buffer
-            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-            vk::QueueWaitIdle(m_device->m_queue);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_default_queue);
         }
     };
     do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -1358,8 +1358,8 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
                 cmd_buf.end();
-                vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-                vk::QueueWaitIdle(m_device->m_queue);
+                vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+                vk::QueueWaitIdle(m_default_queue);
                 cmd_buf.begin();
             }
 
@@ -1378,8 +1378,8 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             cmd_buf.end();
 
             // Submit cmd buffer
-            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-            vk::QueueWaitIdle(m_device->m_queue);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_default_queue);
         }
     };
     do_test(&image_3d, &view_2d, &other_image, &other_view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

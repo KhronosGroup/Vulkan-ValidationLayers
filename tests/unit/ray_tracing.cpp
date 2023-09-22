@@ -68,7 +68,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         GTEST_SKIP() << "Did not find required ray tracing properties";
     }
 
-    VkQueue ray_tracing_queue = m_device->m_queue;
+    VkQueue ray_tracing_queue = m_default_queue;
     uint32_t ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
@@ -964,7 +964,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                              /*width=*/1, /*height=*/1, /*depth=*/1);
 
             m_errorMonitor->VerifyFound();
-            const auto &limits = m_device->props.limits;
+            const auto &limits = m_device->phy().limits_;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-width-02469");
             uint32_t invalid_width = limits.maxComputeWorkGroupCount[0] + 1;
@@ -3062,7 +3062,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     // This test used to destroy buffers used for building the acceleration structure,
     // to see if there life span was correctly tracked.
@@ -3073,7 +3073,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     vk::DestroyAccelerationStructureKHR(m_device->handle(), build_geometry_info.GetDstAS()->handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
@@ -4251,7 +4251,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
     vk::DestroyBuffer(device(), ibo.handle(), nullptr);
@@ -4269,7 +4269,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     vk::DestroyAccelerationStructureNV(device(), bot_level_as.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {

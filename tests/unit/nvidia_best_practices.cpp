@@ -63,7 +63,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                              "UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory");
         vkt::Device test_device(gpu());
-        test_device.init(device_ci);
         m_errorMonitor->Finish();
     }
 }
@@ -183,7 +182,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     device_ci.pEnabledFeatures = &features;
 
     vkt::Device test_device(gpu());
-    test_device.init(device_ci);
 
     VkQueue graphics_queue = VK_NULL_HANDLE;
     VkQueue transfer_queue = VK_NULL_HANDLE;
@@ -271,7 +269,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     GetPhysicalDeviceFeatures2(bda_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
-    vkt::Queue *graphics_queue = m_device->GetDefaultQueue();
+    vkt::Queue *graphics_queue = m_device->graphics_queues()[0];
 
     vkt::Queue *compute_queue = nullptr;
     for (uint32_t i = 0; i < m_device->compute_queues().size(); ++i) {
@@ -407,7 +405,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     vkt::Device test_device(gpu());
-    test_device.init(device_ci);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.flags = 0;
@@ -572,7 +569,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    if (m_device->props.limits.maxGeometryOutputVertices <= 3) {
+    if (m_device->phy().limits_.maxGeometryOutputVertices <= 3) {
         GTEST_SKIP() << "Device doesn't support requried maxGeometryOutputVertices";
     }
 
@@ -1152,7 +1149,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer0.begin(&begin_info);
         command_buffer0.end();
 
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
 
         m_device->wait();
@@ -1174,7 +1171,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer1.end();
 
         for (int i = 0; i < 2; ++i) {
-            err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
             ASSERT_VK_SUCCESS(err);
 
             m_device->wait();
@@ -1197,7 +1194,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer2.begin(&begin_info);
         command_buffer2.end();
 
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
 
         m_device->wait();

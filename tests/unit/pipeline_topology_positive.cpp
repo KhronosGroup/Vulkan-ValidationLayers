@@ -331,7 +331,7 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
     // Artificially disable support for non-solid fill modes
     features.fillModeNonSolid = false;
     // The sacrificial device object
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
+    vkt::Device test_device(gpu(), device_extension_names, &features);
 
     VkAttachmentReference attach = {};
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;

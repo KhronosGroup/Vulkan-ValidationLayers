@@ -45,7 +45,7 @@ class CreatePipelineHelper {
     std::unique_ptr<VkShaderObj> vs_;
     std::unique_ptr<VkShaderObj> fs_;
     VkLayerTest &layer_test_;
-    VkDeviceObj *device_;
+    vkt::Device *device_;
     std::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
     // advantage of taking a VkLayerTest over vkt::Device is we can get the default renderpass from InitRenderTarget
     CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count = 1u);

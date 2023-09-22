@@ -158,9 +158,9 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
             // expect no errors
             m_commandBuffer->end();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
-            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
-            vk::QueueWaitIdle(m_device->m_queue);
+            vk::QueueWaitIdle(m_default_queue);
         } else {
             // Invalid to update binding 0 after being bound. But the error is actually
             // generated during vk::EndCommandBuffer

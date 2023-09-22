@@ -1025,11 +1025,11 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             VkSubmitInfo submit_info = vku::InitStructHelper();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cb.handle();
-            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
         }
 
         // Wait for the queue. After this set A should be no longer in use.
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 
         // Bind set B to a command buffer and submit the command buffer;
         {
@@ -1044,14 +1044,14 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             VkSubmitInfo submit_info = vku::InitStructHelper();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cb.handle();
-            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
         }
 
         // Update set A. It should not cause VU 03047 error.
         vkt::Buffer buffer2(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         update_set(set_A, buffer2);
 
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     }
 }
 

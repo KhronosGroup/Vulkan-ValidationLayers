@@ -808,7 +808,7 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    if (m_device->props.limits.maxGeometryOutputVertices == 0) {
+    if (m_device->phy().limits_.maxGeometryOutputVertices == 0) {
         GTEST_SKIP() << "Device doesn't support required maxGeometryOutputVertices";
     }
     std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment_state(2);
@@ -3880,7 +3880,7 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.offset.x = m_device->phy().properties().limits.maxFramebufferWidth - 16;
+    begin_rendering_info.renderArea.offset.x = m_device->phy().limits_.maxFramebufferWidth - 16;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-07815");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -3899,7 +3899,7 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
 
     begin_rendering_info.renderArea.offset.x = 0;
     begin_rendering_info.renderArea.extent.width = 32;
-    begin_rendering_info.renderArea.offset.y = m_device->phy().properties().limits.maxFramebufferHeight - 16;
+    begin_rendering_info.renderArea.offset.y = m_device->phy().limits_.maxFramebufferHeight - 16;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-07816");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -4670,7 +4670,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
 
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
-    const uint32_t max_color_attachments = m_device->phy().properties().limits.maxColorAttachments + 1;
+    const uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
     std::vector<VkRenderingAttachmentInfoKHR> color_attachments(max_color_attachments);
     for (auto &attachment : color_attachments) {
         attachment = vku::InitStructHelper();
@@ -5211,14 +5211,14 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 2;
     submit_info.pCommandBuffers = command_buffers;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-06014");
 
     submit_info.commandBufferCount = 1;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 
@@ -5227,8 +5227,8 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     command_buffers[1] = cmd_buffer3.handle();
     command_buffers[2] = cmd_buffer2.handle();
     submit_info.commandBufferCount = 3;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 
@@ -5236,8 +5236,8 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
 
     command_buffers[0] = cmd_buffer2.handle();
     submit_info.commandBufferCount = 1;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5296,14 +5296,14 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 2;
     submit_info.pCommandBufferInfos = command_buffer_submit_info;
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2KHR-commandBuffer-06010");
 
     submit_info.commandBufferInfoCount = 1;
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 
@@ -5312,8 +5312,8 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     command_buffer_submit_info[1].commandBuffer = cmd_buffer3.handle();
     command_buffer_submit_info[2].commandBuffer = cmd_buffer2.handle();
     submit_info.commandBufferInfoCount = 3;
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 
@@ -5321,8 +5321,8 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
 
     command_buffer_submit_info[0].commandBuffer = cmd_buffer2.handle();
     submit_info.commandBufferInfoCount = 1;
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6216,12 +6216,12 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderArea) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, 0}, {m_device->props.limits.maxFramebufferWidth + 1, 64}};
+    renderArea = {{0, 0}, {m_device->phy().limits_.maxFramebufferWidth + 1, 64}};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06168");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, 0}, {64, m_device->props.limits.maxFramebufferWidth + 1}};
+    renderArea = {{0, 0}, {64, m_device->phy().limits_.maxFramebufferWidth + 1}};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06169");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -6238,7 +6238,7 @@ TEST_F(NegativeDynamicRendering, MaxFramebufferLayers) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = m_device->props.limits.maxFramebufferLayers + 1;
+    begin_rendering_info.layerCount = m_device->phy().limits_.maxFramebufferLayers + 1;
     begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;

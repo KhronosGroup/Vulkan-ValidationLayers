@@ -1418,7 +1418,7 @@ TEST_F(NegativeDescriptorBuffer, ExtensionCombination) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 

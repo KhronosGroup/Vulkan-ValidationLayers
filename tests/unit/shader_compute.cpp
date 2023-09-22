@@ -20,7 +20,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
@@ -47,7 +47,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryBooleanOverLimit) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
     const uint32_t max_shared_bools = max_shared_memory_size / 4;
 
@@ -94,7 +94,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported";
     }
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
@@ -132,7 +132,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream cs_source;
@@ -159,7 +159,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream cs_source;
@@ -199,7 +199,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeWorkGroupSize");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    const VkPhysicalDeviceLimits limits = m_device->phy().properties().limits;
+    const VkPhysicalDeviceLimits limits = m_device->phy().limits_;
 
     // Make sure compute pipeline has a compute shader stage set
     const char *cs_source = R"glsl(
@@ -251,7 +251,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -290,7 +290,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -338,7 +338,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -382,7 +382,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
@@ -431,7 +431,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
@@ -745,16 +745,16 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
-    uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
-    uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
-    uint32_t z_count_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
+    uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
+    uint32_t y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
+    uint32_t z_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[2];
     if (std::max({x_count_limit, y_count_limit, z_count_limit}) == vvl::kU32Max) {
         GTEST_SKIP() << "device maxComputeWorkGroupCount limit reports UINT32_MAX";
     }
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
-    uint32_t y_size_limit = m_device->props.limits.maxComputeWorkGroupSize[1];
-    uint32_t z_size_limit = m_device->props.limits.maxComputeWorkGroupSize[2];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    uint32_t y_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[1];
+    uint32_t z_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[2];
 
     std::string spv_source = R"(
         OpCapability Shader
@@ -788,7 +788,7 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     y_size_limit = (y_size_limit > 1024) ? 1024 : y_size_limit;
     z_size_limit = (z_size_limit > 64) ? 64 : z_size_limit;
 
-    uint32_t invocations_limit = m_device->props.limits.maxComputeWorkGroupInvocations;
+    uint32_t invocations_limit = m_device->phy().limits_.maxComputeWorkGroupInvocations;
     x_size_limit = (x_size_limit > invocations_limit) ? invocations_limit : x_size_limit;
     invocations_limit /= x_size_limit;
     y_size_limit = (y_size_limit > invocations_limit) ? invocations_limit : y_size_limit;

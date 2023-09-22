@@ -259,7 +259,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     AddOptionalExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
     if (minTexelBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
@@ -368,7 +368,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
         GTEST_SKIP() << "Vulkan version 1.2 or less is required";
     }
 
-    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->props.limits.minTexelBufferOffsetAlignment;
+    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->phy().limits_.minTexelBufferOffsetAlignment;
     if (minTexelBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
     }
@@ -617,7 +617,7 @@ TEST_F(NegativeBuffer, VertexBufferOffset) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    const uint32_t maxVertexInputBindings = m_device->props.limits.maxVertexInputBindings;
+    const uint32_t maxVertexInputBindings = m_device->phy().limits_.maxVertexInputBindings;
     const VkDeviceSize vbo_size = 3 * sizeof(float);
     vkt::Buffer vbo(*m_device, vbo_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->begin();

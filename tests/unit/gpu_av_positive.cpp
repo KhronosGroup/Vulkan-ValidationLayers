@@ -118,8 +118,8 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
@@ -222,8 +222,8 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
@@ -345,8 +345,8 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     data[1] = 4;
     buffer0.memory().unmap();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 // Regression test for semaphore timeout with GPU-AV enabled:
@@ -377,7 +377,7 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreInfoCount = 1;
     submit_info.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     std::uint64_t counter = 0;
     ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
@@ -511,8 +511,8 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }

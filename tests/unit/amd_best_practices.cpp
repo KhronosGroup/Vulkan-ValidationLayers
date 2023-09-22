@@ -136,12 +136,12 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->queue_props.size() < 2) {
+    if (m_device->phy().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Test not supported by a single queue family device";
     }
 
-    std::vector<uint32_t> queueFamilies(m_device->queue_props.size());
-    for (size_t i = 0; i < m_device->queue_props.size(); i++) {
+    std::vector<uint32_t> queueFamilies(m_device->phy().queue_properties_.size());
+    for (size_t i = 0; i < m_device->phy().queue_properties_.size(); i++) {
         queueFamilies[i] = i;
     }
 
@@ -675,7 +675,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
                                          "UNASSIGNED-BestPractices-Submission-ReduceNumberOfSubmissions");
     m_errorMonitor->SetUnexpectedError("VUID-VkPresentInfoKHR-pImageIndices-01430");
 
-    vk::QueuePresentKHR(m_device->GetDefaultQueue()->handle(), &present_info);
+    vk::QueuePresentKHR(m_default_queue, &present_info);
 
     m_errorMonitor->VerifyFound();
 }

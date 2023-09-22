@@ -1246,7 +1246,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
         pre_raster_lib.InitState();
         tsci_bad = tsci;
-        tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
+        tsci_bad.patchControlPoints = m_device->phy().limits_.maxTessellationPatchSize + 1;
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
         pre_raster_lib.CreateGraphicsPipeline(false);

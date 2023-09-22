@@ -605,7 +605,7 @@ class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 class MultiDeviceTest : public VkLayerTest {
   public:
     ~MultiDeviceTest();
-    VkDeviceObj *m_second_device = nullptr;
+    vkt::Device *m_second_device = nullptr;
 };
 
 // Thread safety tests and other tests that implement non-trivial threading scenarios
@@ -627,9 +627,9 @@ class VkBufferTest {
 
     enum eTestConditions { eOffsetAlignment = 1 };
 
-    static bool GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage = 0);
+    static bool GetTestConditionValid(vkt::Device *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage = 0);
     // A constructor which performs validation tests within construction.
-    VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBufferUsage, eTestEnFlags aTestFlag = eNone);
+    VkBufferTest(vkt::Device *aVulkanDevice, VkBufferUsageFlags aBufferUsage, eTestEnFlags aTestFlag = eNone);
     ~VkBufferTest();
     bool GetBufferCurrent();
     const VkBuffer &GetBuffer();
@@ -647,7 +647,7 @@ class VkBufferTest {
 };
 
 struct OneOffDescriptorSet {
-    VkDeviceObj *device_;
+    vkt::Device *device_;
     VkDescriptorPool pool_;
     vkt::DescriptorSetLayout layout_;
     VkDescriptorSet set_;
@@ -657,7 +657,7 @@ struct OneOffDescriptorSet {
     std::vector<VkBufferView> buffer_views;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
-    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
+    OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
                         void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL,
                         int buffer_info_size = 10, int image_info_size = 10, int buffer_view_size = 10);
     ~OneOffDescriptorSet();
@@ -691,7 +691,7 @@ class BarrierQueueFamilyBase {
         VkCommandBufferObj *command_buffer = nullptr;
         VkCommandBufferObj *command_buffer2 = nullptr;
         ~QueueFamilyObjs();
-        void Init(VkDeviceObj *device, uint32_t qf_index, VkQueue qf_queue, VkCommandPoolCreateFlags cp_flags);
+        void Init(vkt::Device *device, uint32_t qf_index, VkQueue qf_queue, VkCommandPoolCreateFlags cp_flags);
     };
 
     struct Context {
@@ -865,9 +865,9 @@ VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, 
 
 bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type);
 
-void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
+void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
-void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
+void AllocateDisjointMemory(vkt::Device *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane);
 
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, const std::string &code = "");

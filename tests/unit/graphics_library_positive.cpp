@@ -286,7 +286,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
 
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.binding = 0;
-    vertex_input_binding_description.stride = m_device->props.limits.maxVertexInputBindingStride;
+    vertex_input_binding_description.stride = m_device->phy().limits_.maxVertexInputBindingStride;
     vertex_input_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     // Test when offset is greater than maximum.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};

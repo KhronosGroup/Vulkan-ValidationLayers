@@ -283,7 +283,7 @@ TEST_F(NegativeSubgroup, Features) {
     VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(subgroup_prop);
 
-    auto queue_family_properties = m_device->phy().queue_properties();
+    auto queue_family_properties = m_device->phy().queue_properties_;
 
     bool foundGraphics = false;
     bool foundCompute = false;
@@ -860,7 +860,7 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
         pipe.InitState();
         pipe.LateBindPipelineInfo();
         pipe.cp_ci_.stage.pNext = &subgroup_size_control;
-        if (size * size * 2 > m_device->props.limits.maxComputeWorkGroupInvocations) {
+        if (size * size * 2 > m_device->phy().limits_.maxComputeWorkGroupInvocations) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06432");
         }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02756");

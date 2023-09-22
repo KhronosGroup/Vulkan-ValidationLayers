@@ -57,7 +57,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->props.limits.minTexelBufferOffsetAlignment;
+    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->phy().limits_.minTexelBufferOffsetAlignment;
     if (minTexelBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
     }

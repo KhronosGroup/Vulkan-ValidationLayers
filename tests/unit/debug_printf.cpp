@@ -181,9 +181,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -208,9 +208,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[0]);
         }
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
@@ -236,9 +236,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[1]);
         }
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -292,9 +292,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         data[0] = 0;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
@@ -303,9 +303,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
             kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
@@ -314,9 +314,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                              "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -393,7 +393,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
     m_commandBuffer->QueueCommandBuffer();
-    VkResult err = vk::QueueWaitIdle(m_device->m_queue);
+    VkResult err = vk::QueueWaitIdle(m_default_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
 }
@@ -591,8 +591,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 
@@ -616,8 +616,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[0]);
         }
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
 
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -642,8 +642,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[1]);
         }
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 
@@ -708,8 +708,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         data[0] = 0;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
 
         data = (VkDeviceAddress *)buffer0.memory().map();
@@ -717,8 +717,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
             kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
 
         data = (VkDeviceAddress *)buffer0.memory().map();
@@ -726,8 +726,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                              "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -872,7 +872,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1021,7 +1021,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1184,9 +1184,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -1218,9 +1218,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[0]);
         }
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
@@ -1253,9 +1253,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[1]);
         }
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -1309,9 +1309,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         data[0] = 0;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
@@ -1320,9 +1320,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
             kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
@@ -1331,9 +1331,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                              "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -1425,6 +1425,6 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 }

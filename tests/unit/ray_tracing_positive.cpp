@@ -625,7 +625,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_0);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_0);
     }
 
     // Frame 1
@@ -666,7 +666,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_1);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_1);
     }
 
     // Frame 2
@@ -722,7 +722,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_2);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
@@ -798,7 +798,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_0);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_0);
     }
 
     // Frame 1
@@ -827,7 +827,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_1);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_1);
     }
 
     // Frame 2
@@ -858,7 +858,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_2);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
