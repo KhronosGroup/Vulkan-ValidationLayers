@@ -270,7 +270,6 @@ TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
 
 TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     TEST_DESCRIPTION("Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
-    VkResult err;
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -281,17 +280,16 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     command_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_command_buffer;
-    ASSERT_VK_SUCCESS(vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer);
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     VkCommandBuffer primary_command_buffer;
-    ASSERT_VK_SUCCESS(vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &primary_command_buffer));
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &primary_command_buffer);
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     command_buffer_begin_info.pInheritanceInfo = &command_buffer_inheritance_info;
 
-    err = vk::BeginCommandBuffer(secondary_command_buffer, &command_buffer_begin_info);
-    ASSERT_VK_SUCCESS(err);
+    vk::BeginCommandBuffer(secondary_command_buffer, &command_buffer_begin_info);
     VkImageObj image(m_device);
     image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
@@ -310,13 +308,11 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     img_barrier.subresourceRange.levelCount = 1;
     vk::CmdPipelineBarrier(secondary_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier);
-    err = vk::EndCommandBuffer(secondary_command_buffer);
-    ASSERT_VK_SUCCESS(err);
+    vk::EndCommandBuffer(secondary_command_buffer);
 
     // Now update primary cmd buffer to execute secondary and transitions image
     command_buffer_begin_info.pInheritanceInfo = nullptr;
-    err = vk::BeginCommandBuffer(primary_command_buffer, &command_buffer_begin_info);
-    ASSERT_VK_SUCCESS(err);
+    vk::BeginCommandBuffer(primary_command_buffer, &command_buffer_begin_info);
     vk::CmdExecuteCommands(primary_command_buffer, 1, &secondary_command_buffer);
     VkImageMemoryBarrier img_barrier2 = vku::InitStructHelper();
     img_barrier2.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -333,15 +329,12 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     img_barrier2.subresourceRange.levelCount = 1;
     vk::CmdPipelineBarrier(primary_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier2);
-    err = vk::EndCommandBuffer(primary_command_buffer);
-    ASSERT_VK_SUCCESS(err);
+    vk::EndCommandBuffer(primary_command_buffer);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &primary_command_buffer;
-    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::DeviceWaitIdle(m_device->device());
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::DeviceWaitIdle(m_device->device());
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &secondary_command_buffer);
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &primary_command_buffer);
 }
@@ -483,7 +476,6 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
 
 TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkResult err;
 
     // Record (empty!) command buffer that can be submitted multiple times
     // simultaneously.
@@ -494,29 +486,23 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
 
     VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
     VkFence fence;
-    err = vk::CreateFence(m_device->device(), &fci, nullptr, &fence);
-    ASSERT_VK_SUCCESS(err);
+    vk::CreateFence(m_device->device(), &fci, nullptr, &fence);
 
     VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
     VkSemaphore s1, s2;
-    err = vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s1);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s2);
-    ASSERT_VK_SUCCESS(err);
+    vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s1);
+    vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s2);
 
     // Submit CB once signaling s1, with fence so we can roll forward to its retirement.
     VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &m_commandBuffer->handle(), 1, &s1};
-    err = vk::QueueSubmit(m_default_queue, 1, &si, fence);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &si, fence);
 
     // Submit CB again, signaling s2.
     si.pSignalSemaphores = &s2;
-    err = vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
 
     // Wait for fence.
-    err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
-    ASSERT_VK_SUCCESS(err);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     // CB is still in flight from second submission, but semaphore s1 is no
     // longer in flight. delete it.

@@ -933,6 +933,8 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
     VkImageView depth_image_view =
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
@@ -1012,6 +1014,8 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
     VkImageView depth_image_view =
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
@@ -1122,6 +1126,8 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
     VkImageView depth_image_view =
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
@@ -1233,6 +1239,8 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
     VkImageView depth_image_view =
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));

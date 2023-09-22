@@ -620,7 +620,6 @@ TEST_F(NegativeImage, BlitLayout) {
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkResult err;
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -687,8 +686,7 @@ TEST_F(NegativeImage, BlitLayout) {
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_commandBuffer->reset(0);
     m_commandBuffer->begin();
@@ -701,8 +699,7 @@ TEST_F(NegativeImage, BlitLayout) {
     m_commandBuffer->end();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_commandBuffer->reset(0);
     m_commandBuffer->begin();
@@ -715,8 +712,7 @@ TEST_F(NegativeImage, BlitLayout) {
     m_commandBuffer->end();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Source image in invalid layout in the middle of CB
     m_commandBuffer->reset(0);
@@ -746,8 +742,7 @@ TEST_F(NegativeImage, BlitLayout) {
     m_commandBuffer->end();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Destination image in invalid layout in the middle of CB
     m_commandBuffer->reset(0);
@@ -767,8 +762,7 @@ TEST_F(NegativeImage, BlitLayout) {
     m_commandBuffer->end();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeImage, BlitOffsets) {
