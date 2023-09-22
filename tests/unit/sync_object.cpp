@@ -2105,7 +2105,6 @@ TEST_F(NegativeSyncObject, SubmitSignaledFence) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     m_commandBuffer->end();
 
     testFence.init(*m_device, fenceInfo);

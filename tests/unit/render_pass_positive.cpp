@@ -230,7 +230,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     }
 
     VkFormat depth_stencil_fmt = depth_format;
-    m_depthStencil->Init(m_device, 100, 100, depth_stencil_fmt,
+    m_depthStencil->Init(100, 100, 1, depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     VkAttachmentDescription att = {};
     VkAttachmentReference ref = {};
@@ -268,11 +268,12 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     rp_info.pSubpasses = &subpass;
     vkt::RenderPass rp(*m_device, rp_info);
 
-    VkImageView *depthView = m_depthStencil->BindInfo();
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = depthView;
+    fb_info.pAttachments = &depth_image_view;
     fb_info.width = 100;
     fb_info.height = 100;
     fb_info.layers = 1;

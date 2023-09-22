@@ -301,8 +301,11 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -332,7 +335,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     VkFramebufferCreateInfo &fbci = m_framebuffer_info;
     fbci.renderPass = rp.handle();
     fbci.attachmentCount = 1;
-    fbci.pAttachments = m_depthStencil->BindInfo();
+    fbci.pAttachments = &depth_image_view;
     vkt::Framebuffer fb(*m_device, fbci);
 
     // Enable dynamic color write enable

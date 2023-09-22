@@ -65,7 +65,6 @@ class VkDeviceObj : public vkt::Device {
 
 class VkImageObj;
 class VkCommandBufferObj;
-class VkDepthStencilObj;
 
 typedef enum {
     kGalaxyS10,
@@ -242,7 +241,7 @@ class VkRenderFramework : public VkTestFramework {
     bool m_clear_via_load_op;
     float m_depth_clear_color;
     uint32_t m_stencil_clear_color;
-    VkDepthStencilObj *m_depthStencil;
+    VkImageObj *m_depthStencil;
 
     // Requested extensions to enable at device creation time
     std::vector<const char *> m_required_extensions;
@@ -293,9 +292,6 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                          const VkImageMemoryBarrier *pImageMemoryBarriers);
     void PipelineBarrier2KHR(const VkDependencyInfoKHR *pDependencyInfo);
-    void ClearAllBuffers(const std::vector<std::unique_ptr<VkImageObj>> &color_objs, VkClearColorValue clear_color,
-                         VkDepthStencilObj *depth_stencil_obj, float depth_clear_value, uint32_t stencil_clear_value);
-    void PrepareAttachments(const std::vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
     void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
     void BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
     void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
@@ -447,24 +443,6 @@ class VkImageObj : public vkt::Image {
     VkDescriptorImageInfo m_descriptorImageInfo;
     uint32_t m_mipLevels;
     uint32_t m_arrayLayers;
-};
-
-class VkDepthStencilObj : public VkImageObj {
-  public:
-    VkDepthStencilObj(VkDeviceObj *device);
-    void Init(VkDeviceObj *device, uint32_t width, uint32_t height, VkFormat format,
-              VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkImageAspectFlags aspect = 0);
-    bool Initialized();
-    VkImageView *BindInfo();
-
-    VkFormat Format() const;
-
-  protected:
-    VkDeviceObj *m_device;
-    bool m_initialized;
-    vkt::ImageView m_imageView;
-    VkFormat m_depth_stencil_fmt;
-    VkImageView m_attachmentBindInfo;
 };
 
 class VkDescriptorSetObj : public vkt::DescriptorPool {

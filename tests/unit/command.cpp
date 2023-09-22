@@ -120,55 +120,85 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
 
 TEST_F(NegativeCommand, IndexBufferNotBound) {
     TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-07312");
-    VKTriangleTest(BsoFailIndexBuffer);
+    // Use DrawIndexed w/o an index buffer bound
+    m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, IndexBufferSize) {
-    TEST_DESCRIPTION("Run indexed draw call with bad index buffer size.");
-
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
-    VKTriangleTest(BsoFailIndexBufferBadSize);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeCommand, IndexBufferOffset) {
-    TEST_DESCRIPTION("Run indexed draw call with bad index buffer offset.");
-
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
-    VKTriangleTest(BsoFailIndexBufferBadOffset);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeCommand, IndexBufferBindSize) {
-    TEST_DESCRIPTION("Run bind index buffer with a size greater than the index buffer.");
-
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
-    VKTriangleTest(BsoFailIndexBufferBadMapSize);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeCommand, IndexBufferBindOffset) {
+TEST_F(NegativeCommand, IndexBufferSizeOffset) {
     TEST_DESCRIPTION("Run bind index buffer with an offset greater than the size of the index buffer.");
-
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_commandBuffer->BindIndexBuffer(&index_buffer, 512, VK_INDEX_TYPE_UINT16);
+
+    // draw one past the end of the buffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
-    VKTriangleTest(BsoFailIndexBufferBadMapOffset);
+    m_commandBuffer->DrawIndexed(256, 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // draw one too many indices
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_commandBuffer->DrawIndexed(257, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->BindIndexBuffer(&index_buffer, 0, VK_INDEX_TYPE_UINT16);
+
+    // draw one too many indices
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_commandBuffer->DrawIndexed(513, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // draw one past the end of the buffer using the offset
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_commandBuffer->DrawIndexed(512, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeCommand, MissingClearAttachment) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VKTriangleTest(BsoFailCmdClearAttachments);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_commandBuffer->Draw(3, 1, 0, 0);
+
+    VkClearAttachment color_attachment = {};
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.colorAttachment = 2;
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
 
@@ -180,7 +210,6 @@ TEST_F(NegativeCommand, SecondaryCommandbufferAsPrimary) {
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin();
-    secondary.ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     secondary.end();
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -212,7 +241,6 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin();
-    secondary.ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     secondary.end();
 
     VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
@@ -235,7 +263,6 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     // We luck out b/c by default the framework creates CB w/ the
     // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set
     m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
@@ -278,7 +305,6 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     // We luck out b/c by default the framework creates CB w/ the
     // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set
     m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
@@ -758,8 +784,11 @@ TEST_F(NegativeCommand, ClearAttachmentsDepth) {
         GTEST_SKIP() << "Couldn't find a stencil only image format";
     }
 
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
@@ -787,8 +816,11 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     m_depth_stencil_fmt = FindSupportedDepthOnlyFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                         VK_IMAGE_TILING_OPTIMAL);
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
@@ -6990,9 +7022,11 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
     int depth_attachment_index = 1;
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     m_commandBuffer->begin();
 

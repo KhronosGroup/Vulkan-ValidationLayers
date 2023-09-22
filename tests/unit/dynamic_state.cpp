@@ -19,22 +19,43 @@
 TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic depth bias
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    pipe.rs_state_ci_.lineWidth = 1.0f;
+    pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07834");
-    VKTriangleTest(BsoFailDepthBias);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, LineWidthNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Line Width dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic line width
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07833");
-    VKTriangleTest(BsoFailLineWidth);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -55,41 +76,88 @@ TEST_F(NegativeDynamicState, LineStippleNotBound) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    VkPipelineRasterizationLineStateCreateInfoEXT line_state = vku::InitStructHelper();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+
+    line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+    line_state.stippledLineEnable = VK_TRUE;
+    line_state.lineStippleFactor = 1;
+    line_state.lineStipplePattern = 0;
+    pipe.rs_state_ci_.pNext = &line_state;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07849");
-    VKTriangleTest(BsoFailLineStipple);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, ViewportNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Viewport dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic viewport state
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07831");
-    VKTriangleTest(BsoFailViewport);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, ScissorNotBound) {
     TEST_DESCRIPTION("Run a simple draw calls to validate failure when Scissor dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic scissor state
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07832");
-    VKTriangleTest(BsoFailScissor);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, BlendConstantsNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Blend Constants dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic blend constant state
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+    pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    pipe.cb_attachments_[0].blendEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07835");
-    VKTriangleTest(BsoFailBlend);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -101,42 +169,124 @@ TEST_F(NegativeDynamicState, DepthBoundsNotBound) {
     if (!m_device->phy().features().depthBounds) {
         GTEST_SKIP() << "Device does not support depthBounds test";
     }
-    // Dynamic depth bounds
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj depth_image(m_device);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                     VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView depth_image_view =
+        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &depth_image_view));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthWriteEnable = VK_TRUE;
+    pipe.ds_ci_.depthBoundsTestEnable = VK_TRUE;
+    pipe.gp_ci_.renderPass = renderPass();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07836");
-    VKTriangleTest(BsoFailDepthBounds);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, StencilReadNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Read dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic stencil read mask
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj depth_image(m_device);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                     VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView depth_image_view =
+        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &depth_image_view));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK);
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthWriteEnable = VK_TRUE;
+    pipe.ds_ci_.stencilTestEnable = VK_TRUE;
+    pipe.gp_ci_.renderPass = renderPass();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07837");
-    VKTriangleTest(BsoFailStencilReadMask);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, StencilWriteNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Write dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic stencil write mask
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj depth_image(m_device);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                     VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView depth_image_view =
+        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &depth_image_view));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthWriteEnable = VK_TRUE;
+    pipe.ds_ci_.stencilTestEnable = VK_TRUE;
+    pipe.gp_ci_.renderPass = renderPass();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07838");
-    VKTriangleTest(BsoFailStencilWriteMask);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, StencilRefNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Ref dynamic state is required but not correctly bound.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Dynamic stencil reference
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj depth_image(m_device);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                     VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView depth_image_view =
+        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &depth_image_view));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthWriteEnable = VK_TRUE;
+    pipe.ds_ci_.stencilTestEnable = VK_TRUE;
+    pipe.gp_ci_.renderPass = renderPass();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07839");
-    VKTriangleTest(BsoFailStencilReference);
+    m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3897,9 +4047,11 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     // Need to set format framework uses for InitRenderTarget
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     ds_ci.depthTestEnable = VK_TRUE;
