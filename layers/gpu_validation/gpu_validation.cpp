@@ -16,6 +16,10 @@
  */
 
 #include <cmath>
+#include <fstream>
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#include <unistd.h>
+#endif
 #include "utils/cast_utils.h"
 #include "utils/shader_utils.h"
 #include "gpu_validation/gpu_validation.h"
@@ -105,6 +109,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
     validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
     warn_on_robust_oob = GpuGetOption("khronos_validation.warn_on_robust_oob", true);
+    cache_instrumented_shaders = GpuGetOption("khronos_validation.use_instrumented_shader_cache", true);
     validate_instrumented_shaders = (GetEnvironment("VK_LAYER_GPUAV_VALIDATE_INSTRUMENTED_SHADERS").size() > 0);
 
     if (api_version < VK_API_VERSION_1_1) {
@@ -190,6 +195,32 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         }
     }
 
+    if (cache_instrumented_shaders) {
+        auto tmp_path = GetTempFilePath();
+        instrumented_shader_cache_path = tmp_path + "/instrumented_shader_cache";
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+        instrumented_shader_cache_path += "-" + std::to_string(getuid());
+#endif
+        instrumented_shader_cache_path += ".bin";
+
+        std::ifstream file_stream(instrumented_shader_cache_path, std::ifstream::in | std::ifstream::binary);
+        if (file_stream) {
+            uint32_t num_shaders = 0;
+            file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
+            for (uint32_t i = 0; i < num_shaders; ++i) {
+                uint32_t hash;
+                uint32_t shader_length;
+                std::vector<uint32_t> shader_code;
+                file_stream.read(reinterpret_cast<char *>(&hash), sizeof(uint32_t));
+                file_stream.read(reinterpret_cast<char *>(&shader_length), sizeof(uint32_t));
+                shader_code.resize(shader_length);
+                file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * shader_length);
+                instrumented_shaders.emplace(hash, std::make_pair(shader_length, std::move(shader_code)));
+            }
+        }
+        file_stream.close();
+    }
+
     CreateAccelerationStructureBuildValidationState(pCreateInfo);
 }
 
@@ -249,6 +280,23 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     pre_dispatch_validation_state.Destroy(device);
     if (app_buffer_device_addresses.buffer) {
         vmaDestroyBuffer(vmaAllocator, app_buffer_device_addresses.buffer, app_buffer_device_addresses.allocation);
+    }
+    if (cache_instrumented_shaders && !instrumented_shaders.empty()) {
+        std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
+        if (file_stream) {
+            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders.size());
+            file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
+            for (auto &record : instrumented_shaders) {
+                // Hash of shader
+                file_stream.write(reinterpret_cast<const char *>(&record.first), sizeof(uint32_t));
+                // Size of vector of code
+                auto vector_size = record.second.first;
+                file_stream.write(reinterpret_cast<const char *>(&vector_size), sizeof(uint32_t));
+                // Vector contents
+                file_stream.write(reinterpret_cast<const char *>(record.second.second.data()), vector_size * sizeof(uint32_t));
+            }
+            file_stream.close();
+        }
     }
     GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
 }
