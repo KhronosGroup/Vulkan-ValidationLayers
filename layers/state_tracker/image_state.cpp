@@ -435,7 +435,8 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_imageview_export(GetMetalExport(ci)),
 #endif
-      image_state(im) {
+      image_state(im),
+      is_depth_sliced(::IsDepthSliced(im->createInfo, *ci)) {
 }
 
 void IMAGE_VIEW_STATE::Destroy() {
@@ -445,8 +446,6 @@ void IMAGE_VIEW_STATE::Destroy() {
     }
     BASE_NODE::Destroy();
 }
-
-bool IMAGE_VIEW_STATE::IsDepthSliced() const { return ::IsDepthSliced(image_state->createInfo, create_info); }
 
 VkOffset3D IMAGE_VIEW_STATE::GetOffset() const {
     VkOffset3D result = {0, 0, 0};
