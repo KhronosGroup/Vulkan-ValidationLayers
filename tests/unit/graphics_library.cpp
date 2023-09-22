@@ -488,7 +488,6 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-08771");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }

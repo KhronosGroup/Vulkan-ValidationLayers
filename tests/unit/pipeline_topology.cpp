@@ -199,31 +199,31 @@ TEST_F(NegativePipelineTopology, PrimitiveTopology) {
     };
 
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     {
         topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
                                       "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 
     {
         topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
                                       "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 
     {
         topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
                                       "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
                                       "VUID-VkGraphicsPipelineCreateInfo-topology-08889"};
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);

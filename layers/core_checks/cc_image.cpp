@@ -2429,7 +2429,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
             auto *props = &phys_dev_ext_props.host_image_copy_properties;
             skip |= ValidateHostCopyImageLayout(device, transition.image, props->copySrcLayoutCount, props->pCopySrcLayouts,
                                                 transition.oldLayout, transition_loc.dot(Field::oldLayout), "pCopySrcLayouts",
-                                                "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09056");
+                                                "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09230");
         }
 
         const auto *props = &phys_dev_ext_props.host_image_copy_properties;
