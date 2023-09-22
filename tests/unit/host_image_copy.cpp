@@ -1402,7 +1402,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
         // layout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopySrcLayouts
         image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         transition_info.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09056");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09230");
         vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
         m_errorMonitor->VerifyFound();
         transition_info.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;

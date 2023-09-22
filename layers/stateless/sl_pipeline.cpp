@@ -535,11 +535,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                                 true, "VUID-VkPipelineShaderStageCreateInfo-sType-sType",
                                                 "VUID-VkGraphicsPipelineCreateInfo-pStages-06600",
                                                 "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
+                // Can be null with enough dynamic states
                 skip |= ValidateStructType(
                     create_info_loc.dot(Field::pRasterizationState), "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
-                    create_info.pRasterizationState, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, true,
-                    "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601",
-                    "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
+                    create_info.pRasterizationState, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, false,
+                    kVUIDUndefined, "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
             }
 
             // <VkDynamicState, index in pDynamicStates, hash for enum key>

@@ -1266,7 +1266,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     if (BufferFormatAndFeaturesSupported(gpu(), buffer_view_format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT not supported.";
     }
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-buffer-00934");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-buffer-08779");
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPhysicalDeviceFeatures device_features = {};

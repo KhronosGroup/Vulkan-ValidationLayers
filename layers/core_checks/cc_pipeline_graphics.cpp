@@ -274,21 +274,6 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
 bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
-    // If VK_EXT_graphics_pipeline_library is not enabled, a complete set of state must be defined at this point
-    std::string full_pipeline_state_msg;
-    if (!pipeline.vertex_input_state) {
-        full_pipeline_state_msg += "<vertex input> ";
-    }
-    if (!pipeline.pre_raster_state) {
-        full_pipeline_state_msg += "<pre-raster> ";
-    }
-    if (!pipeline.fragment_shader_state) {
-        full_pipeline_state_msg += "<fragment shader> ";
-    }
-    if (!pipeline.fragment_output_state) {
-        full_pipeline_state_msg += "<fragment output> ";
-    }
-
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
     if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
         ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
@@ -298,12 +283,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
     }
 
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        if (!pipeline.HasFullState()) {
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-None-06573", device, create_info_loc,
-                         "does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s].",
-                         VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, full_pipeline_state_msg.c_str());
-        } else if (!pipeline.PipelineLayoutState()) {
+        if (!pipeline.PipelineLayoutState()) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
                          "is not a valid pipeline layout, but %s is not enabled.", VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -315,22 +295,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
         const VkPipelineCreateFlags pipeline_flags = pipeline.create_flags;
         const bool is_library = (pipeline_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0;
 
-        if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
-            if (is_library) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device,
-                                 create_info_loc.dot(Field::flags),
-                                 "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
-                                 "graphicsPipelineLibrary feature is not enabled.",
-                                 string_VkPipelineCreateFlags(pipeline_flags).c_str());
-            }
-
-            if (!pipeline.HasFullState()) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607", device, create_info_loc,
-                                 "does not contain a complete set of state and "
-                                 "graphicsPipelineLibrary feature is not enabled. "
-                                 "The following state is missing: [ %s].",
-                                 full_pipeline_state_msg.c_str());
-            }
+        if (is_library && !enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device,
+                             create_info_loc.dot(Field::flags),
+                             "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
+                             "graphicsPipelineLibrary feature is not enabled.",
+                             string_VkPipelineCreateFlags(pipeline_flags).c_str());
         }
 
         if (pipeline.fragment_shader_state && !pipeline.pre_raster_state &&
@@ -807,35 +777,28 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE
     if (ia_state) {
         const VkPrimitiveTopology topology = ia_state->topology;
         if ((ia_state->primitiveRestartEnable == VK_TRUE) &&
-            (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST || topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
-             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST || topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY || topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-            if (IsExtEnabled(device_extensions.vk_ext_primitive_topology_list_restart)) {
-                if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-                    if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyPatchListRestart) {
-                        skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253", device, ia_loc,
-                                         "topology is %s and primitiveRestartEnable is VK_TRUE and the "
-                                         "primitiveTopologyPatchListRestart feature was not enabled.",
-                                         string_VkPrimitiveTopology(topology));
-                    }
-                } else if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyListRestart) {
-                    skip |= LogError(
-                        "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252", device, ia_loc,
-                        "topology is %s and primitiveRestartEnable is VK_TRUE and the primitiveTopologyListRestart feature "
-                        "was not enabled.",
-                         string_VkPrimitiveTopology(topology));
+            IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                                 VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+                                 VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
+            if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyPatchListRestart) {
+                    skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253", device, ia_loc,
+                                     "topology is %s and primitiveRestartEnable is VK_TRUE and the "
+                                     "primitiveTopologyPatchListRestart feature was not enabled.",
+                                     string_VkPrimitiveTopology(topology));
                 }
-            } else {
-                skip |= LogError( "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428", device, ia_loc,
-                                 "topology is %s and primitiveRestartEnable is VK_TRUE.",
-                                 string_VkPrimitiveTopology(topology));
+            } else if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyListRestart) {
+                skip |=
+                    LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252", device, ia_loc,
+                             "topology is %s and primitiveRestartEnable is VK_TRUE and the primitiveTopologyListRestart feature "
+                             "was not enabled.",
+                             string_VkPrimitiveTopology(topology));
             }
         }
         if ((enabled_features.core.geometryShader == VK_FALSE) &&
-            (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-             topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY ||
-             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
-             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY)) {
+            IsValueIn(topology,
+                      {VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
+                       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY})) {
             skip |= LogError( "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429", device, ia_loc,
                              "topology is %s and geometryShader feature was not enabled.",
                              string_VkPrimitiveTopology(topology));

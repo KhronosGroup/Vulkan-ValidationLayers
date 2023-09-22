@@ -604,7 +604,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
             if (!(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
                 const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-09201" : "VUID-VkBindBufferMemory-buffer-09201";
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-09201" : "VUID-vkBindBufferMemory-buffer-09201";
                 const LogObjectList objlist(buffer, memory);
                 skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
                                  "was created with the VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set,"
@@ -616,7 +616,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             if (enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay) {
                 if (!(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
                     const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-bufferDeviceAddressCaptureReplay-09200"
-                                                         : "VUID-VkBindBufferMemory-bufferDeviceAddressCaptureReplay-09200";
+                                                         : "VUID-vkBindBufferMemory-bufferDeviceAddressCaptureReplay-09200";
                     const LogObjectList objlist(buffer, memory);
                     skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
                                      "was created with the VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set,"
@@ -1208,7 +1208,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 if ((image_state->createInfo.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
                     !(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
                     const char *vuid =
-                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-09202" : "VUID-VkBindImageMemory-image-09202";
+                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-09202" : "VUID-vkBindImageMemory-image-09202";
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(vuid, objlist, loc.dot(Field::image),
                                      "was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set,"
