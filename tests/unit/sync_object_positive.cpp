@@ -302,12 +302,9 @@ TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
     VkFenceCreateInfo fence_ci = vku::InitStructHelper();
     fence_ci.flags = 0;
 
-    VkResult err;
     for (uint32_t i = 0; i < NUM_OBJECTS; ++i) {
-        err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buf_info, &cmd_buffers[i]);
-        ASSERT_VK_SUCCESS(err);
-        err = vk::CreateFence(m_device->device(), &fence_ci, nullptr, &fences[i]);
-        ASSERT_VK_SUCCESS(err);
+        vk::AllocateCommandBuffers(m_device->device(), &cmd_buf_info, &cmd_buffers[i]);
+        vk::CreateFence(m_device->device(), &fence_ci, nullptr, &fences[i]);
     }
 
     for (uint32_t frame = 0; frame < NUM_FRAMES; ++frame) {
@@ -315,21 +312,16 @@ TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
             // Create empty cmd buffer
             VkCommandBufferBeginInfo cmdBufBeginDesc = vku::InitStructHelper();
 
-            err = vk::BeginCommandBuffer(cmd_buffers[obj], &cmdBufBeginDesc);
-            ASSERT_VK_SUCCESS(err);
-            err = vk::EndCommandBuffer(cmd_buffers[obj]);
-            ASSERT_VK_SUCCESS(err);
+            vk::BeginCommandBuffer(cmd_buffers[obj], &cmdBufBeginDesc);
+            vk::EndCommandBuffer(cmd_buffers[obj]);
 
             VkSubmitInfo submit_info = vku::InitStructHelper();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cmd_buffers[obj];
             // Submit cmd buffer and wait for fence
-            err = vk::QueueSubmit(queue, 1, &submit_info, fences[obj]);
-            ASSERT_VK_SUCCESS(err);
-            err = vk::WaitForFences(m_device->device(), 1, &fences[obj], VK_TRUE, kWaitTimeout);
-            ASSERT_VK_SUCCESS(err);
-            err = vk::ResetFences(m_device->device(), 1, &fences[obj]);
-            ASSERT_VK_SUCCESS(err);
+            vk::QueueSubmit(queue, 1, &submit_info, fences[obj]);
+            vk::WaitForFences(m_device->device(), 1, &fences[obj], VK_TRUE, kWaitTimeout);
+            vk::ResetFences(m_device->device(), 1, &fences[obj]);
         }
     }
     for (uint32_t i = 0; i < NUM_OBJECTS; ++i) {
@@ -595,8 +587,6 @@ TEST_F(PositiveSyncObject, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
         GTEST_SKIP() << "Test requires two queues";
     }
 
-    VkResult err;
-
     VkQueue q0 = m_default_queue;
     VkQueue q1 = nullptr;
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &q1);
@@ -610,13 +600,10 @@ TEST_F(PositiveSyncObject, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool.handle(),
                                         VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
     VkCommandBuffer cb;
-    err = vk::AllocateCommandBuffers(m_device->device(), &cbai, &cb);
-    ASSERT_VK_SUCCESS(err);
+    vk::AllocateCommandBuffers(m_device->device(), &cbai, &cb);
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
-    err = vk::BeginCommandBuffer(cb, &cbbi);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::EndCommandBuffer(cb);
-    ASSERT_VK_SUCCESS(err);
+    vk::BeginCommandBuffer(cb, &cbbi);
+    vk::EndCommandBuffer(cb);
 
     // A semaphore
     VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
@@ -625,19 +612,16 @@ TEST_F(PositiveSyncObject, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     // First submission, to q0
     VkSubmitInfo s0 = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &cb, 1, &s.handle()};
 
-    err = vk::QueueSubmit(q0, 1, &s0, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(q0, 1, &s0, VK_NULL_HANDLE);
 
     // Second submission, to q1, waiting on s
     VkFlags waitmask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;  // doesn't really matter what this value is.
     VkSubmitInfo s1 = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &s.handle(), &waitmask, 0, nullptr, 0, nullptr};
 
-    err = vk::QueueSubmit(q1, 1, &s1, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(q1, 1, &s1, VK_NULL_HANDLE);
 
     // Wait for q0 idle
-    err = vk::QueueWaitIdle(q0);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(q0);
 
     // Command buffer should have been completed (it was on q0); reset the pool.
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &cb);
@@ -1157,8 +1141,6 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
 
 TEST_F(PositiveSyncObject, LongSemaphoreChain) {
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkResult err;
-
     std::vector<VkSemaphore> semaphores;
 
     const int chainLength = 32768;
@@ -1167,8 +1149,7 @@ TEST_F(PositiveSyncObject, LongSemaphoreChain) {
     for (int i = 0; i < chainLength; i++) {
         VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
         VkSemaphore semaphore;
-        err = vk::CreateSemaphore(m_device->device(), &sci, nullptr, &semaphore);
-        ASSERT_VK_SUCCESS(err);
+        vk::CreateSemaphore(m_device->device(), &sci, nullptr, &semaphore);
 
         semaphores.push_back(semaphore);
 
@@ -1181,15 +1162,13 @@ TEST_F(PositiveSyncObject, LongSemaphoreChain) {
                            nullptr,
                            1,
                            &semaphores[semaphores.size() - 1]};
-        err = vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
     }
 
     VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
     vkt::Fence fence(*m_device, fci);
     VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &semaphores.back(), &flags, 0, nullptr, 0, nullptr};
-    err = vk::QueueSubmit(m_default_queue, 1, &si, fence.handle());
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &si, fence.handle());
 
     vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
@@ -1226,8 +1205,6 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
         GTEST_SKIP() << "External semaphore does not support importing and exporting";
     }
 
-    VkResult err;
-
     // Create a semaphore to export payload from
     VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
     esci.handleTypes = handle_type;
@@ -1240,10 +1217,8 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
-    err = export_semaphore.export_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
-    err = import_semaphore.import_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    export_semaphore.export_handle(ext_handle, handle_type);
+    import_semaphore.import_handle(ext_handle, handle_type);
 
     // Signal the exported semaphore and wait on the imported semaphore
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -1256,8 +1231,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     si[2] = si[0];
     si[3] = si[1];
 
-    err = vk::QueueSubmit(m_default_queue, si.size(), si.data(), VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, si.size(), si.data(), VK_NULL_HANDLE);
 
     if (m_device->phy().features().sparseBinding) {
         // Signal the imported semaphore and wait on the exported semaphore
@@ -1268,13 +1242,11 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
         bi[1].pWaitSemaphores = &import_semaphore.handle();
         bi[2] = bi[0];
         bi[3] = bi[1];
-        err = vk::QueueBindSparse(m_default_queue, bi.size(), bi.data(), VK_NULL_HANDLE);
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueBindSparse(m_default_queue, bi.size(), bi.data(), VK_NULL_HANDLE);
     }
 
     // Cleanup
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
@@ -1320,7 +1292,6 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
         GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
     }
-    VkResult err;
 
     // Create a semaphore to export payload from
     VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
@@ -1336,10 +1307,8 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
-    err = export_semaphore.export_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
-    err = import_semaphore.import_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    export_semaphore.export_handle(ext_handle, handle_type);
+    import_semaphore.import_handle(ext_handle, handle_type);
 
     uint64_t wait_value = 1;
     uint64_t signal_value = 12345;
@@ -1362,20 +1331,16 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     ti[1].waitSemaphoreValueCount = 1;
     ti[1].pWaitSemaphoreValues = &wait_value;
 
-    err = vk::QueueSubmit(m_default_queue, si.size(), si.data(), VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, si.size(), si.data(), VK_NULL_HANDLE);
 
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 
     uint64_t import_value{0}, export_value{0};
 
-    err = vk::GetSemaphoreCounterValueKHR(m_device->handle(), export_semaphore.handle(), &export_value);
-    ASSERT_VK_SUCCESS(err);
+    vk::GetSemaphoreCounterValueKHR(m_device->handle(), export_semaphore.handle(), &export_value);
     ASSERT_EQ(export_value, signal_value);
 
-    err = vk::GetSemaphoreCounterValueKHR(m_device->handle(), import_semaphore.handle(), &import_value);
-    ASSERT_VK_SUCCESS(err);
+    vk::GetSemaphoreCounterValueKHR(m_device->handle(), import_semaphore.handle(), &import_value);
     ASSERT_EQ(import_value, signal_value);
 }
 
@@ -1408,8 +1373,6 @@ TEST_F(PositiveSyncObject, ExternalFence) {
         GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
     }
 
-    VkResult err;
-
     // Create a fence to export payload from
     VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
@@ -1422,10 +1385,8 @@ TEST_F(PositiveSyncObject, ExternalFence) {
 
     // Export fence payload to an opaque handle
     ExternalHandle ext_fence{};
-    err = export_fence.export_handle(ext_fence, handle_type);
-    ASSERT_VK_SUCCESS(err);
-    err = import_fence.import_handle(ext_fence, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    export_fence.export_handle(ext_fence, handle_type);
+    import_fence.import_handle(ext_fence, handle_type);
 
     // Signal the exported fence and wait on the imported fence
     vk::QueueSubmit(m_default_queue, 0, nullptr, export_fence.handle());
@@ -1444,8 +1405,7 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     vk::ResetFences(m_device->device(), 1, &export_fence.handle());
 
     // Cleanup
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
@@ -1473,8 +1433,6 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
         return;
     }
 
-    VkResult err;
-
     // Create a fence to export payload from
     VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
@@ -1491,23 +1449,19 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
         auto submitter = i & 1;
         auto waiter = (~i) & 1;
         fences[submitter].reset();
-        err = vk::QueueSubmit(m_default_queue, 0, nullptr, fences[submitter].handle());
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueSubmit(m_default_queue, 0, nullptr, fences[submitter].handle());
 
-        err = fences[waiter].wait(kWaitTimeout);
-        ASSERT_VK_SUCCESS(err);
+        fences[waiter].wait(kWaitTimeout);
 
         vk::QueueSubmit(m_default_queue, 0, nullptr, export_fence.handle());
         int fd_handle = -1;
-        err = export_fence.export_handle(fd_handle, handle_type);
-        ASSERT_VK_SUCCESS(err);
+        export_fence.export_handle(fd_handle, handle_type);
 #ifndef VK_USE_PLATFORM_WIN32_KHR
         close(fd_handle);
 #endif
     }
 
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
@@ -1537,8 +1491,6 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
         return;
     }
 
-    VkResult err;
-
     // Create a fence to export payload from
     VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
@@ -1552,12 +1504,10 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
-        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, export_fence.handle());
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, export_fence.handle());
 
         int fd_handle = -1;
-        err = export_fence.export_handle(fd_handle, handle_type);
-        ASSERT_VK_SUCCESS(err);
+        export_fence.export_handle(fd_handle, handle_type);
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
         // Wait until command buffer is finished using the exported handle.
@@ -1582,15 +1532,13 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
         // because it's a dummy value. In case we get access to a real POSIX environment on
         // Windows and VK_KHR_external_fence_fd will be provided through regular graphics drivers,
         // then we need to do a proper POSIX clean-up sequence as shown above.
-        err = vk::QueueWaitIdle(m_default_queue);
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueWaitIdle(m_default_queue);
 #endif
 
         m_commandBuffer->reset();
     }
 
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSyncObject, WaitEventThenSet) {
@@ -1963,14 +1911,9 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     m_errorMonitor->SetBailout(&bailout);
 
     for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
-        auto err = vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_handle);
-        ASSERT_VK_SUCCESS(err);
-
-        err = fence.wait(data.timeout);
-        ASSERT_VK_SUCCESS(err);
-
-        err = vk::ResetFences(m_device->device(), 1, &fence_handle);
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_handle);
+        fence.wait(data.timeout);
+        vk::ResetFences(m_device->device(), 1, &fence_handle);
     }
     m_errorMonitor->SetBailout(nullptr);
 

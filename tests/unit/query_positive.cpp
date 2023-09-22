@@ -505,7 +505,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         auto submit_info = vku::InitStruct<VkSubmitInfo>();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
-        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::DeviceWaitIdle(*m_device);
     }
 
@@ -535,7 +535,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         auto submit_info = vku::InitStruct<VkSubmitInfo>(&performance_query_submit_info);
         submit_info.commandBufferCount = 1u;
         submit_info.pCommandBuffers = &cmd_buffer.handle();
-        vk::QueueSubmit(m_device->m_queue, 1u, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
         vk::DeviceWaitIdle(*m_device);
     }
 

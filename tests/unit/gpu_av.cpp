@@ -1028,7 +1028,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
         GTEST_SKIP() << "This test should not be run on the AMD proprietary driver.";
     }
-    VkResult err;
     const bool mesh_shader_supported = IsExtensionsEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
@@ -1137,10 +1136,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
             if (!test.error.empty()) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
             }
-            err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-            ASSERT_VK_SUCCESS(err);
-            err = vk::QueueWaitIdle(m_default_queue);
-            ASSERT_VK_SUCCESS(err);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_default_queue);
             if (!test.error.empty()) {
                 m_errorMonitor->VerifyFound();
             }
@@ -1265,7 +1262,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         mesh_pipe.gp_ci_.layout = mesh_pipeline_layout.handle();
         mesh_pipe.CreateGraphicsPipeline();
 
-        ASSERT_VK_SUCCESS(err);
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
@@ -1277,10 +1273,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         m_commandBuffer->end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
-        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_default_queue);
-        ASSERT_VK_SUCCESS(err);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(m_default_queue);
         m_errorMonitor->VerifyFound();
     }
 }

@@ -192,6 +192,7 @@ class QueueCreateInfoArray {
 class Device : public internal::Handle<VkDevice> {
   public:
     explicit Device(VkPhysicalDevice phy) : phy_(phy) { init(); }
+    explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : phy_(phy) { init(info); }
     explicit Device(VkPhysicalDevice phy, std::vector<const char *> &extension_names, VkPhysicalDeviceFeatures *features = nullptr,
                     void *create_device_pnext = nullptr)
         : phy_(phy) {

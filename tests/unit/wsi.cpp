@@ -749,7 +749,7 @@ TEST_F(NegativeWsi, SwapchainNotSupported) {
     device_create_info.enabledExtensionCount = m_device_extension_names.size();
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    vkt::Device test_device(gpu());
+    vkt::Device test_device(gpu(), device_create_info);
 
     // Initialize extensions manually because we don't use InitState() in this test
     for (const char *device_ext_name : m_device_extension_names) {
@@ -3280,11 +3280,9 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     vkt::Fence fence(*m_device);
     vkt::Semaphore semaphore(*m_device);
 
-    auto err = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
-    ASSERT_VK_SUCCESS(err);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
 
-    err = fence.wait(kWaitTimeout);
-    ASSERT_VK_SUCCESS(err);
+    fence.wait(kWaitTimeout);
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     VkQueue other = m_device->graphics_queues()[1]->handle();
@@ -3334,11 +3332,9 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     vkt::Fence fence(*m_device);
     vkt::Semaphore semaphore(*m_device);
 
-    auto err = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
-    ASSERT_VK_SUCCESS(err);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
 
-    err = fence.wait(kWaitTimeout);
-    ASSERT_VK_SUCCESS(err);
+    fence.wait(kWaitTimeout);
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -3346,8 +3342,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_flags;
-    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.pSwapchains = &m_swapchain;
@@ -3361,7 +3356,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
 
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {

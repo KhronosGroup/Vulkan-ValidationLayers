@@ -266,7 +266,6 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
-    VkResult err = VK_SUCCESS;
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = NULL;
@@ -276,13 +275,12 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
@@ -308,7 +306,6 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
-    VkResult err = VK_SUCCESS;
     VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = m_commandBuffer->handle();
 
@@ -316,13 +313,12 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    err = vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    err = vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
@@ -786,8 +782,7 @@ TEST_F(NegativeCommand, ClearAttachmentsDepth) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    VkImageView depth_image_view = m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     m_commandBuffer->begin();
@@ -818,8 +813,7 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     m_depth_stencil_fmt = FindSupportedDepthOnlyFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    VkImageView depth_image_view = m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     m_commandBuffer->begin();

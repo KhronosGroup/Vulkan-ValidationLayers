@@ -220,16 +220,15 @@ TEST_F(PositiveRenderPass, BeginTransitionsAttachmentUnused) {
 TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     TEST_DESCRIPTION("Create a stencil-only attachment with a LOAD_OP set to CLEAR. stencil[Load|Store]Op used to be ignored.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    VkFormat depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageFormatProperties formatProps;
-    vk::GetPhysicalDeviceImageFormatProperties(gpu(), depth_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+    vk::GetPhysicalDeviceImageFormatProperties(gpu(), depth_stencil_fmt, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0,
                                                &formatProps);
     if (formatProps.maxExtent.width < 100 || formatProps.maxExtent.height < 100) {
         GTEST_SKIP() << "Image format max extent is too small";
     }
 
-    VkFormat depth_stencil_fmt = depth_format;
     m_depthStencil->Init(100, 100, 1, depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     VkAttachmentDescription att = {};
@@ -240,7 +239,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     att.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-    att.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     att.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkClearValue clear;
@@ -269,7 +268,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     vkt::RenderPass rp(*m_device, rp_info);
 
     VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+        m_depthStencil->targetView(depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;

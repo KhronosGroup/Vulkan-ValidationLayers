@@ -1165,7 +1165,6 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     vk::GetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
 
     vkt::Device device(phys_device_obj.handle());
-    device.init();
 }
 
 TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
@@ -1177,9 +1176,16 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     std::vector<VkQueueFamilyProperties> queue_family_props(1);
     uint32_t queue_count = static_cast<uint32_t>(queue_family_props.size());
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DevLimit-MissingQueryCount");
+    // might only be a queue_count of 1, so check and then do "real" test to make sure error is detected
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-BestPractices-DevLimit-CountMismatch");
     vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, queue_family_props.data());
     m_errorMonitor->VerifyFound();
+
+    if (queue_count > 1) {
+        m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DevLimit-CountMismatch");
+        vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, queue_family_props.data());
+        m_errorMonitor->VerifyFound();
+    }
 
     // Now get information correctly
     vkt::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties_);

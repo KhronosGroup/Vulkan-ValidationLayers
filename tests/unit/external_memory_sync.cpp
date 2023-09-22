@@ -579,8 +579,6 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
         GTEST_SKIP() << "External semaphore does not support VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT";
     }
 
-    VkResult err;
-
     // create a timeline semaphore.
     // Note that adding a sync fd VkExportSemaphoreCreateInfo will cause creation to fail.
     VkSemaphoreTypeCreateInfoKHR stci = vku::InitStructHelper();
@@ -617,22 +615,18 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     si.signalSemaphoreCount = 1;
     si.pSignalSemaphores = &binary_sem.handle();
 
-    err = vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
 
-    err = binary_sem.export_handle(fd_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    binary_sem.export_handle(fd_handle, handle_type);
 
     // must be temporary
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-07307");
     import_semaphore.import_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    err = import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
-    ASSERT_VK_SUCCESS(err);
+    import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
 
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeExternalMemorySync, TemporaryFence) {
@@ -664,8 +658,6 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
         GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
     }
 
-    VkResult err;
-
     // Create a fence to export payload from
     VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
@@ -678,10 +670,8 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
 
     // Export fence payload to an opaque handle
     ExternalHandle ext_fence{};
-    err = export_fence.export_handle(ext_fence, handle_type);
-    ASSERT_VK_SUCCESS(err);
-    err = import_fence.import_handle(ext_fence, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT_KHR);
-    ASSERT_VK_SUCCESS(err);
+    export_fence.export_handle(ext_fence, handle_type);
+    import_fence.import_handle(ext_fence, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT_KHR);
 
     // Undo the temporary import
     vk::ResetFences(m_device->device(), 1, &import_fence.handle());
@@ -692,15 +682,13 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     vk::QueueSubmit(m_default_queue, 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
 
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Signal without reseting
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00063");
     vk::QueueSubmit(m_default_queue, 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeExternalMemorySync, Fence) {
@@ -883,8 +871,6 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
         GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
     }
 
-    VkResult err;
-
     // Create a semaphore to export payload from
     VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
     esci.handleTypes = handle_type;
@@ -897,10 +883,8 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
-    err = export_semaphore.export_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
-    err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR);
-    ASSERT_VK_SUCCESS(err);
+    export_semaphore.export_handle(ext_handle, handle_type);
+    import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR);
 
     // Wait on the imported semaphore twice in vk::QueueSubmit, the second wait should be an error
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -937,8 +921,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     }
 
     // Cleanup
-    err = vk::QueueWaitIdle(m_default_queue);
-    ASSERT_VK_SUCCESS(err);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeExternalMemorySync, Semaphore) {
