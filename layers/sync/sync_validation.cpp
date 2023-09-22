@@ -1627,36 +1627,19 @@ struct ActionToOpsAdapter {
     void update(const Iterator &pos) const { action(pos); }
     const Action &action;
 };
-
-template <typename Action>
-void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const ResourceAccessRange &range, const Action &action) {
+template <typename Action, typename RangeGen>
+void UpdateMemoryAccessState(ResourceAccessRangeMap &accesses, const Action &action, RangeGen &&range_gen) {
     ActionToOpsAdapter<Action> ops{action};
-    infill_update_range(*accesses, range, ops);
+    for (; range_gen->non_empty(); ++range_gen) {
+        infill_update_range(accesses, *range_gen, ops);
+    }
 }
-
-// Give a comparable interface for range generators and ranges
 template <typename Action>
-void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const Action &action, ResourceAccessRange *range) {
-    assert(range);
-    UpdateMemoryAccessState(accesses, *range, action);
+void UpdateMemoryAccessRangeState(ResourceAccessRangeMap &accesses, Action &action, const ResourceAccessRange &range) {
+    ActionToOpsAdapter<Action> ops{action};
+    infill_update_range(accesses, range, ops);
 }
 
-template <typename Action, typename RangeGen>
-void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const Action &action, RangeGen *range_gen_arg) {
-    assert(range_gen_arg);
-    RangeGen &range_gen = *range_gen_arg;  // Non-const references must be * by style requirement but deref-ing * iterator is a pain
-    for (; range_gen->non_empty(); ++range_gen) {
-        UpdateMemoryAccessState(accesses, *range_gen, action);
-    }
-}
-
-template <typename Action, typename RangeGen>
-void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const Action &action, const RangeGen &range_gen_prebuilt) {
-    RangeGen range_gen(range_gen_prebuilt);  // RangeGenerators can be expensive to create from scratch... initialize from built
-    for (; range_gen->non_empty(); ++range_gen) {
-        UpdateMemoryAccessState(accesses, *range_gen, action);
-    }
-}
 struct UpdateMemoryAccessStateFunctor {
     using Iterator = ResourceAccessRangeMap::iterator;
     Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
@@ -1790,17 +1773,12 @@ class ResolvePendingBarrierFunctor : public ApplyBarrierOpsFunctor<NoopBarrierAc
     ResolvePendingBarrierFunctor(ResourceUsageTag tag) : Base(true, 0, tag) {}
 };
 
-void AccessContext::UpdateAccessState(SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const ResourceAccessRange &range, const ResourceUsageTag tag) {
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessState(&access_state_map_, range, action);
-}
-
 void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const ResourceAccessRange &range, const ResourceUsageTag tag) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
-    UpdateAccessState(current_usage, ordering_rule, range + base_address, tag);
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
+    UpdateMemoryAccessRangeState(access_state_map_, action, range + base_address);
 }
 
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -1809,7 +1787,7 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
     const auto base_address = ResourceBaseAddress(image);
     subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, base_address, false);
     UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessState(&access_state_map_, action, &range_gen);
+    UpdateMemoryAccessState(access_state_map_, action, range_gen);
 }
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
@@ -1819,7 +1797,7 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
     subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
                                                        base_address, false);
     UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessState(&access_state_map_, action, &range_gen);
+    UpdateMemoryAccessState(access_state_map_, action, range_gen);
 }
 
 void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
@@ -1828,7 +1806,7 @@ void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, Attachm
     if (!gen) return;
     subresource_adapter::ImageRangeGenerator range_gen(*gen);
     UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    ApplyUpdateAction(action, &range_gen);
+    ApplyUpdateAction(action, range_gen);
 }
 
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -1840,16 +1818,15 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
 }
 
 template <typename Action, typename RangeGen>
-void AccessContext::ApplyUpdateAction(const Action &action, RangeGen *range_gen_arg) {
-    assert(range_gen_arg);  //  Old Google C++ styleguide require non-const object pass by * not &, but this isn't an optional arg.
-    UpdateMemoryAccessState(&access_state_map_, action, range_gen_arg);
+void AccessContext::ApplyUpdateAction(const Action &action, RangeGen &range_gen) {
+    UpdateMemoryAccessState(access_state_map_, action, range_gen);
 }
 
 template <typename Action>
 void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action) {
     const std::optional<ImageRangeGen> &gen = view_gen.GetRangeGen(gen_type);
     if (!gen) return;
-    UpdateMemoryAccessState(&access_state_map_, action, *gen);
+    UpdateMemoryAccessState(access_state_map_, action, ImageRangeGen(*gen));
 }
 
 void AccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state,
@@ -1895,7 +1872,7 @@ void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_stat
 template <typename Action>
 void AccessContext::ApplyToContext(const Action &barrier_action) {
     // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
-    UpdateMemoryAccessState(&access_state_map_, kFullRange, barrier_action);
+    UpdateMemoryAccessRangeState(access_state_map_, barrier_action, kFullRange);
 }
 
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
@@ -6643,9 +6620,9 @@ struct SyncOpPipelineBarrierFunctorFactory {
     using ApplyFunctor = ApplyBarrierFunctor<BarrierOpFunctor>;
     using GlobalBarrierOpFunctor = PipelineBarrierOp;
     using GlobalApplyFunctor = ApplyBarrierOpsFunctor<GlobalBarrierOpFunctor>;
-    using BufferRange = ResourceAccessRange;
+    using BufferRange = SingleRangeGenerator<ResourceAccessRange>;
     using ImageRange = subresource_adapter::ImageRangeGenerator;
-    using GlobalRange = ResourceAccessRange;
+    using GlobalRange = SingleRangeGenerator<ResourceAccessRange>;
     using ImageState = syncval_state::ImageState;
 
     ApplyFunctor MakeApplyFunctor(QueueId queue_id, const SyncBarrier &barrier, bool layout_transition) const {
@@ -6679,10 +6656,9 @@ void SyncOpBarriers::ApplyBarriers(const Barriers &barriers, const FunctorFactor
     for (const auto &barrier : barriers) {
         const auto *state = barrier.GetState();
         if (state) {
-            auto *const accesses = &context->GetAccessStateMap();
             auto update_action = factory.MakeApplyFunctor(queue_id, barrier.barrier, barrier.IsLayoutTransition());
             auto range_gen = factory.MakeRangeGen(*state, barrier.Range());
-            UpdateMemoryAccessState(accesses, update_action, &range_gen);
+            UpdateMemoryAccessState(context->GetAccessStateMap(), update_action, range_gen);
         }
     }
 }
@@ -6695,7 +6671,7 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
         barriers_functor.EmplaceBack(factory.MakeGlobalBarrierOpFunctor(queue_id, barrier));
     }
     auto range_gen = factory.MakeGlobalRangeGen();
-    UpdateMemoryAccessState(&access_context->GetAccessStateMap(), barriers_functor, &range_gen);
+    UpdateMemoryAccessState(access_context->GetAccessStateMap(), barriers_functor, range_gen);
 }
 
 ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) {
@@ -8811,7 +8787,7 @@ void PresentedImage::UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsag
     // Intentional copy. The range_gen argument is not copied by the Update... call below
     subresource_adapter::ImageRangeGenerator generator = range_gen;
     UpdateMemoryAccessStateFunctor action(access_context, usage, SyncOrdering::kNonAttachment, tag);
-    UpdateMemoryAccessState(&access_context.GetAccessStateMap(), action, &generator);
+    UpdateMemoryAccessState(access_context.GetAccessStateMap(), action, generator);
 }
 
 QueueBatchContext::PresentResourceRecord::Base_::Record QueueBatchContext::PresentResourceRecord::MakeRecord() const {

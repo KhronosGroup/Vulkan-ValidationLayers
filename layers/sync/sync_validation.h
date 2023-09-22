@@ -1233,7 +1233,7 @@ class AccessContext {
     void ImportAsyncContexts(const AccessContext &from);
     void ClearAsyncContexts() { async_.clear(); }
     template <typename Action, typename RangeGen>
-    void ApplyUpdateAction(const Action &action, RangeGen *range_gen_arg);
+    void ApplyUpdateAction(const Action &action, RangeGen &range_gen);
     template <typename Action>
     void ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action);
     template <typename Action>
@@ -1305,8 +1305,6 @@ class AccessContext {
     HazardResult DetectAsyncHazard(const Detector &detector, const ResourceAccessRange &range, ResourceUsageTag async_tag) const;
     template <typename Detector>
     HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;
-    void UpdateAccessState(SyncStageAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceAccessRange &range,
-                           ResourceUsageTag tag);
 
     ResourceAccessRangeMap access_state_map_;
     std::vector<TrackBack> prev_;
