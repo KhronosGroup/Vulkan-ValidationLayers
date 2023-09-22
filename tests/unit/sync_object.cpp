@@ -2102,7 +2102,6 @@ TEST_F(NegativeSyncObject, SubmitSignaledFence) {
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();

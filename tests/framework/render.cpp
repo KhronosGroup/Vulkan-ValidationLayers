@@ -565,29 +565,6 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
 }
 
-void VkRenderFramework::InitViewport(uint32_t width, uint32_t height) {
-    VkViewport viewport;
-    VkRect2D scissor;
-    viewport.x = 0;
-    viewport.y = 0;
-    viewport.width = static_cast<float>(width);
-    viewport.height = static_cast<float>(height);
-    viewport.minDepth = 0.f;
-    viewport.maxDepth = 1.f;
-    m_viewports.push_back(viewport);
-
-    scissor.extent.width = width;
-    scissor.extent.height = height;
-    scissor.offset.x = 0;
-    scissor.offset.y = 0;
-    m_scissors.push_back(scissor);
-
-    m_width = width;
-    m_height = height;
-}
-
-void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
-
 bool VkRenderFramework::InitSurface() {
     // NOTE: Currently InitSurface can leak the WIN32 handle if called multiple times without first calling DestroySurfaceContext.
     // This is intentional. Each swapchain/surface combo needs a unique HWND.
@@ -1066,16 +1043,6 @@ void VkDeviceObj::SetDeviceQueue() {
     ASSERT_NE(true, graphics_queues().empty());
     m_queue_obj = graphics_queues()[0];
     m_queue = m_queue_obj->handle();
-}
-
-VkQueueObj *VkDeviceObj::GetDefaultQueue() {
-    if (graphics_queues().empty()) return nullptr;
-    return graphics_queues()[0];
-}
-
-VkQueueObj *VkDeviceObj::GetDefaultComputeQueue() {
-    if (compute_queues().empty()) return nullptr;
-    return compute_queues()[0];
 }
 
 VkDescriptorSetObj::VkDescriptorSetObj(VkDeviceObj *device) : m_device(device), m_nextSlot(0) {}
@@ -1719,203 +1686,7 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework *frame
     return {};
 }
 
-VkPipelineObj::VkPipelineObj(VkDeviceObj *device) {
-    m_device = device;
-
-    m_vi_state = vku::InitStructHelper();
-    m_vi_state.flags = 0;
-    m_vi_state.vertexBindingDescriptionCount = 0;
-    m_vi_state.pVertexBindingDescriptions = nullptr;
-    m_vi_state.vertexAttributeDescriptionCount = 0;
-    m_vi_state.pVertexAttributeDescriptions = nullptr;
-
-    m_ia_state = vku::InitStructHelper();
-    m_ia_state.flags = 0;
-    m_ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    m_ia_state.primitiveRestartEnable = VK_FALSE;
-
-    m_te_state = nullptr;
-
-    m_vp_state = vku::InitStructHelper();
-    m_vp_state.flags = 0;
-    m_vp_state.viewportCount = 1;
-    m_vp_state.scissorCount = 1;
-    m_vp_state.pViewports = nullptr;
-    m_vp_state.pScissors = nullptr;
-
-    m_rs_state = vku::InitStructHelper(&m_line_state);
-    m_rs_state.flags = 0;
-    m_rs_state.depthClampEnable = VK_FALSE;
-    m_rs_state.rasterizerDiscardEnable = VK_FALSE;
-    m_rs_state.polygonMode = VK_POLYGON_MODE_FILL;
-    m_rs_state.cullMode = VK_CULL_MODE_BACK_BIT;
-    m_rs_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    m_rs_state.depthBiasEnable = VK_FALSE;
-    m_rs_state.depthBiasConstantFactor = 0.0f;
-    m_rs_state.depthBiasClamp = 0.0f;
-    m_rs_state.depthBiasSlopeFactor = 0.0f;
-    m_rs_state.lineWidth = 1.0f;
-
-    m_line_state = vku::InitStructHelper();
-    m_line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
-    m_line_state.stippledLineEnable = VK_FALSE;
-    m_line_state.lineStippleFactor = 0;
-    m_line_state.lineStipplePattern = 0;
-
-    m_ms_state = vku::InitStructHelper();
-    m_ms_state.flags = 0;
-    m_ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    m_ms_state.sampleShadingEnable = VK_FALSE;
-    m_ms_state.minSampleShading = 0.0f;
-    m_ms_state.pSampleMask = nullptr;
-    m_ms_state.alphaToCoverageEnable = VK_FALSE;
-    m_ms_state.alphaToOneEnable = VK_FALSE;
-
-    m_ds_state = nullptr;
-
-    memset(&m_cb_state, 0, sizeof(m_cb_state));
-    m_cb_state = vku::InitStructHelper();
-    m_cb_state.blendConstants[0] = 1.0f;
-    m_cb_state.blendConstants[1] = 1.0f;
-    m_cb_state.blendConstants[2] = 1.0f;
-    m_cb_state.blendConstants[3] = 1.0f;
-
-    memset(&m_pd_state, 0, sizeof(m_pd_state));
-}
-
-void VkPipelineObj::AddShader(VkShaderObj *shader) { m_shaderStages.push_back(shader->GetStageCreateInfo()); }
-
-void VkPipelineObj::AddShader(VkPipelineShaderStageCreateInfo const &createInfo) { m_shaderStages.push_back(createInfo); }
-
-void VkPipelineObj::AddVertexInputAttribs(VkVertexInputAttributeDescription *vi_attrib, uint32_t count) {
-    m_vi_state.pVertexAttributeDescriptions = vi_attrib;
-    m_vi_state.vertexAttributeDescriptionCount = count;
-}
-
-void VkPipelineObj::AddVertexInputBindings(VkVertexInputBindingDescription *vi_binding, uint32_t count) {
-    m_vi_state.pVertexBindingDescriptions = vi_binding;
-    m_vi_state.vertexBindingDescriptionCount = count;
-}
-
-void VkPipelineObj::AddColorAttachment(uint32_t binding, const VkPipelineColorBlendAttachmentState &att) {
-    if (binding + 1 > m_colorAttachments.size()) {
-        m_colorAttachments.resize(binding + 1);
-    }
-    m_colorAttachments[binding] = att;
-}
-
-void VkPipelineObj::SetDepthStencil(const VkPipelineDepthStencilStateCreateInfo *ds_state) { m_ds_state = ds_state; }
-
-void VkPipelineObj::SetViewport(const vector<VkViewport> &viewports) {
-    m_viewports = viewports;
-    // If we explicitly set a null viewport, pass it through to create info
-    // but preserve viewportCount because it musn't change
-    if (m_viewports.size() == 0) {
-        m_vp_state.pViewports = nullptr;
-    }
-}
-
-void VkPipelineObj::SetScissor(const vector<VkRect2D> &scissors) {
-    m_scissors = scissors;
-    // If we explicitly set a null scissor, pass it through to create info
-    // but preserve scissorCount because it musn't change
-    if (m_scissors.size() == 0) {
-        m_vp_state.pScissors = nullptr;
-    }
-}
-
-void VkPipelineObj::MakeDynamic(VkDynamicState state) {
-    /* Only add a state once */
-    if (const auto search = std::find(m_dynamic_state_enables.begin(), m_dynamic_state_enables.end(), state);
-        search != m_dynamic_state_enables.end()) {
-        return;
-    }
-    m_dynamic_state_enables.push_back(state);
-}
-
-void VkPipelineObj::SetMSAA(const VkPipelineMultisampleStateCreateInfo *ms_state) { m_ms_state = *ms_state; }
-
-void VkPipelineObj::SetInputAssembly(const VkPipelineInputAssemblyStateCreateInfo *ia_state) { m_ia_state = *ia_state; }
-
-void VkPipelineObj::SetRasterization(const VkPipelineRasterizationStateCreateInfo *rs_state) { m_rs_state = *rs_state; }
-
-void VkPipelineObj::SetTessellation(const VkPipelineTessellationStateCreateInfo *te_state) { m_te_state = te_state; }
-
-void VkPipelineObj::SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state) { m_line_state = *line_state; }
-
-void VkPipelineObj::InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci) {
-    gp_ci->stageCount = m_shaderStages.size();
-    gp_ci->pStages = m_shaderStages.size() ? m_shaderStages.data() : nullptr;
-
-    gp_ci->pVertexInputState = &m_vi_state;
-    gp_ci->pInputAssemblyState = &m_ia_state;
-
-    gp_ci->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    gp_ci->pNext = NULL;
-    gp_ci->flags = 0;
-
-    m_cb_state.attachmentCount = m_colorAttachments.size();
-    m_cb_state.pAttachments = m_colorAttachments.data();
-
-    if (m_viewports.size() > 0) {
-        m_vp_state.viewportCount = m_viewports.size();
-        m_vp_state.pViewports = m_viewports.data();
-    } else {
-        if (std::find(m_dynamic_state_enables.cbegin(), m_dynamic_state_enables.cend(), VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ==
-            m_dynamic_state_enables.cend()) {
-            MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
-            m_vp_state.viewportCount = 1;
-        } else {
-            m_vp_state.viewportCount = 0;
-        }
-        m_vp_state.pViewports = nullptr;
-    }
-
-    if (m_scissors.size() > 0) {
-        m_vp_state.scissorCount = m_scissors.size();
-        m_vp_state.pScissors = m_scissors.data();
-    } else {
-        if (std::find(m_dynamic_state_enables.cbegin(), m_dynamic_state_enables.cend(), VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) ==
-            m_dynamic_state_enables.cend()) {
-            MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
-        }
-        m_vp_state.scissorCount = 1;
-        m_vp_state.pScissors = nullptr;
-    }
-
-    memset(&m_pd_state, 0, sizeof(m_pd_state));
-    if (m_dynamic_state_enables.size() > 0) {
-        m_pd_state = vku::InitStructHelper();
-        m_pd_state.dynamicStateCount = m_dynamic_state_enables.size();
-        m_pd_state.pDynamicStates = m_dynamic_state_enables.data();
-        gp_ci->pDynamicState = &m_pd_state;
-    }
-
-    gp_ci->subpass = 0;
-    gp_ci->pViewportState = &m_vp_state;
-    gp_ci->pRasterizationState = &m_rs_state;
-    gp_ci->pMultisampleState = &m_ms_state;
-    gp_ci->pDepthStencilState = m_ds_state;
-    gp_ci->pColorBlendState = &m_cb_state;
-    gp_ci->pTessellationState = m_te_state;
-}
-
-VkResult VkPipelineObj::CreateVKPipeline(VkPipelineLayout layout, VkRenderPass render_pass, VkGraphicsPipelineCreateInfo *gp_ci) {
-    VkGraphicsPipelineCreateInfo info = {};
-
-    // if not given a CreateInfo, create and initialize a local one.
-    if (gp_ci == nullptr) {
-        gp_ci = &info;
-        InitGraphicsPipelineCreateInfo(gp_ci);
-    }
-
-    gp_ci->layout = layout;
-    gp_ci->renderPass = render_pass;
-
-    return init_try(*m_device, *gp_ci);
-}
-
-void VkCommandBufferObj::Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
+void VkCommandBufferObj::Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level, vkt::Queue *queue) {
     m_device = device;
     if (queue) {
         m_queue = queue;
@@ -1930,7 +1701,7 @@ void VkCommandBufferObj::Init(VkDeviceObj *device, const vkt::CommandPool *pool,
 }
 
 VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level,
-                                       VkQueueObj *queue) {
+                                       vkt::Queue *queue) {
     Init(device, pool, level, queue);
 }
 

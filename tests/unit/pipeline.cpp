@@ -113,7 +113,6 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    VkPipelineObj pipeline(m_device);
     // Create a renderPass with two color attachments
     VkAttachmentReference attachments[2] = {};
     attachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -144,23 +143,17 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     vkt::RenderPass renderpass(*m_device, rpci);
     ASSERT_TRUE(renderpass.initialized());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipeline.AddShader(&vs);
-    pipeline.AddShader(&fs);
-
-    VkPipelineColorBlendAttachmentState att_state1 = {}, att_state2 = {};
-    att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-    att_state1.blendEnable = VK_TRUE;
-    att_state2.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-    att_state2.blendEnable = VK_FALSE;
-    pipeline.AddColorAttachment(0, att_state1);
-    pipeline.AddColorAttachment(1, att_state2);
-    pipeline.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
-    pipeline.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
+    CreatePipelineHelper pipe(*this, 2);
+    pipe.InitState();
+    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.renderPass = renderpass.handle();
+    pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    pipe.cb_attachments_[0].blendEnable = VK_TRUE;
+    pipe.cb_attachments_[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    pipe.cb_attachments_[1].blendEnable = VK_FALSE;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605");
-    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -190,7 +183,6 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    VkPipelineObj pipeline(m_device);
     // Create a renderPass with two color attachments
     VkAttachmentReference attachment = {};
     attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -213,16 +205,14 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     rpci.pAttachments = &attach_desc;
 
     vkt::RenderPass rp(*m_device, rpci);
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipeline.AddShader(&vs);
-    pipeline.AddShader(&fs);
 
-    VkPipelineColorBlendAttachmentState att_state = {};
-    att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-    att_state.blendEnable = VK_TRUE;
-    pipeline.AddColorAttachment(0, att_state);
-    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    pipe.cb_attachments_[0].blendEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
 }
@@ -368,7 +358,6 @@ TEST_F(NegativePipeline, ShaderStageName) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -397,7 +386,6 @@ TEST_F(NegativePipeline, ShaderStageBit) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Make sure compute pipeline has a compute shader stage set
     char const *csSource = R"glsl(
@@ -560,24 +548,19 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper pipeline_1(*this);
+    pipeline_1.InitState();
+    pipeline_1.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    pipeline_1.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipeline_1.gp_ci_.renderPass = renderpass.handle();
+    pipeline_1.CreateGraphicsPipeline();
 
-    VkPipelineObj pipeline_1(m_device);
-    pipeline_1.AddShader(&vs);
-    pipeline_1.AddShader(&fs);
-    VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
-    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    pipeline_1.SetMSAA(&ms_state);
-
-    VkPipelineObj pipeline_2(m_device);
-    pipeline_2.AddShader(&vs);
-    pipeline_2.AddShader(&fs);
-    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
-    pipeline_2.SetMSAA(&ms_state);
-
-    pipeline_1.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
-    pipeline_2.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
+    CreatePipelineHelper pipeline_2(*this);
+    pipeline_2.InitState();
+    pipeline_2.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+    pipeline_2.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipeline_2.gp_ci_.renderPass = renderpass.handle();
+    pipeline_2.CreateGraphicsPipeline();
 
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
     rpbinfo.renderPass = renderpass.handle();
@@ -588,13 +571,13 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rpbinfo);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.Handle());
 
     // VkPhysicalDeviceFeatures::variableMultisampleRate is false,
     // the two pipelines refer to the same subpass, one that does not use any attachment,
     // BUT the secondly created pipeline has a different sample samples count than the 1st, this is illegal
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_2.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_2.Handle());
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -623,7 +606,6 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    VkPipelineObj pipeline(m_device);
     // Create a renderPass with two attachments (0=Color, 1=Input)
     VkAttachmentReference attachmentRefs[2] = {};
     attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -675,16 +657,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
         }
     )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderObj fs_sampleRate(this, sampleRateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipeline.AddShader(&vs);
-    pipeline.AddShader(&fs);
-
-    VkPipelineColorBlendAttachmentState att_state1 = {};
-    att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-    att_state1.blendEnable = VK_TRUE;
-    pipeline.AddColorAttachment(0, att_state1);
 
     VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
     ms_state.flags = 0;
@@ -694,35 +667,38 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     ms_state.pSampleMask = nullptr;
     ms_state.alphaToCoverageEnable = VK_FALSE;
     ms_state.alphaToOneEnable = VK_FALSE;
-    pipeline.SetMSAA(&ms_state);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.renderPass = renderpass.handle();
+    pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    pipe.cb_attachments_[0].blendEnable = VK_TRUE;
+    pipe.gp_ci_.pMultisampleState = &ms_state;
 
     // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // but where sample count of input attachment doesnt match rasterizationSamples
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899");
-    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state.sampleShadingEnable = VK_TRUE;
-    pipeline.SetMSAA(&ms_state);
+    pipe.gp_ci_.renderPass = renderpass2.handle();
 
     // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // and with sampleShadingEnable enabled in the pipeline
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-sampleShadingEnable-04900");
-    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass2.handle());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     ms_state.sampleShadingEnable = VK_FALSE;
-    VkPipelineObj pipeline2(m_device);
-    pipeline2.SetMSAA(&ms_state);
-    pipeline2.AddColorAttachment(0, att_state1);
-    pipeline2.AddShader(&vs);
-    pipeline2.AddShader(&fs_sampleRate);
+    pipe.shader_stages_[1] = fs_sampleRate.GetStageCreateInfo();
 
     // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // and with SampleRateShading capability enabled in the SPIR-V fragment shader
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-SampleRateShading-06378");
-    pipeline2.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass2.handle());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1116,14 +1092,6 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
@@ -1160,7 +1128,11 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 0, nullptr};
     vkt::RenderPass rp(*m_device, rpci);
 
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
 }
@@ -2088,7 +2060,6 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -2157,35 +2128,21 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     )glsl";
     VkShaderObj fs_function(this, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-
-    VkPipelineObj pipeline_combined(m_device);
-    pipeline_combined.AddDefaultColorAttachment();
-    pipeline_combined.SetViewport(m_viewports);
-    pipeline_combined.SetScissor(m_scissors);
-    pipeline_combined.AddShader(&vs);
-    VkPipelineObj pipeline_seperate(m_device);
-    pipeline_seperate.AddDefaultColorAttachment();
-    pipeline_seperate.SetViewport(m_viewports);
-    pipeline_seperate.SetScissor(m_scissors);
-    pipeline_seperate.AddShader(&vs);
-    VkPipelineObj pipeline_unused(m_device);
-    pipeline_unused.AddDefaultColorAttachment();
-    pipeline_unused.SetViewport(m_viewports);
-    pipeline_unused.SetScissor(m_scissors);
-    pipeline_unused.AddShader(&vs);
-    VkPipelineObj pipeline_function(m_device);
-    pipeline_function.AddDefaultColorAttachment();
-    pipeline_function.SetViewport(m_viewports);
-    pipeline_function.SetScissor(m_scissors);
-    pipeline_function.AddShader(&vs);
+    CreatePipelineHelper pipeline_combined(*this);
+    pipeline_combined.InitState();
+    CreatePipelineHelper pipeline_seperate(*this);
+    pipeline_seperate.InitState();
+    CreatePipelineHelper pipeline_unused(*this);
+    pipeline_unused.InitState();
+    CreatePipelineHelper pipeline_function(*this);
+    pipeline_function.InitState();
 
     // 4 different pipelines for 4 different shaders
     // 3 are invalid and 1 (pipeline_unused) is valid
-    pipeline_combined.AddShader(&fs_combined);
-    pipeline_seperate.AddShader(&fs_seperate);
-    pipeline_unused.AddShader(&fs_unused);
-    pipeline_function.AddShader(&fs_function);
+    pipeline_combined.shader_stages_[1] = fs_combined.GetStageCreateInfo();
+    pipeline_seperate.shader_stages_[1] = fs_seperate.GetStageCreateInfo();
+    pipeline_unused.shader_stages_[1] = fs_unused.GetStageCreateInfo();
+    pipeline_function.shader_stages_[1] = fs_function.GetStageCreateInfo();
 
     OneOffDescriptorSet::Bindings combined_bindings = {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
@@ -2197,10 +2154,15 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     const vkt::PipelineLayout combined_pipeline_layout(*m_device, {&combined_descriptor_set.layout_});
     const vkt::PipelineLayout seperate_pipeline_layout(*m_device, {&seperate_descriptor_set.layout_});
 
-    pipeline_combined.CreateVKPipeline(combined_pipeline_layout.handle(), m_renderPass);
-    pipeline_seperate.CreateVKPipeline(seperate_pipeline_layout.handle(), m_renderPass);
-    pipeline_unused.CreateVKPipeline(combined_pipeline_layout.handle(), m_renderPass);
-    pipeline_function.CreateVKPipeline(combined_pipeline_layout.handle(), m_renderPass);
+    pipeline_combined.gp_ci_.layout = combined_pipeline_layout.handle();
+    pipeline_seperate.gp_ci_.layout = seperate_pipeline_layout.handle();
+    pipeline_unused.gp_ci_.layout = combined_pipeline_layout.handle();
+    pipeline_function.gp_ci_.layout = combined_pipeline_layout.handle();
+
+    pipeline_combined.CreateGraphicsPipeline();
+    pipeline_seperate.CreateGraphicsPipeline();
+    pipeline_unused.CreateGraphicsPipeline();
+    pipeline_function.CreateGraphicsPipeline();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
@@ -2245,7 +2207,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Unused is a valid version of the combined pipeline/descriptors
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
                               &combined_descriptor_set.set_, 0, nullptr);
     m_commandBuffer->Draw(1, 0, 0, 0);
@@ -2253,19 +2215,19 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     // Test magFilter
     {
         // Same descriptor set as combined test
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
         m_commandBuffer->Draw(1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Draw with invalid combined image sampler
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
         m_commandBuffer->Draw(1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Same error, but not with seperate descriptors
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.Handle());
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0,
                                   1, &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
@@ -2282,19 +2244,19 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
                                   1, &combined_descriptor_set.set_, 0, nullptr);
 
         // Same descriptor set as combined test
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
         m_commandBuffer->Draw(1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Draw with invalid combined image sampler
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
         m_commandBuffer->Draw(1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Same error, but not with seperate descriptors
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.Handle());
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0,
                                   1, &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");

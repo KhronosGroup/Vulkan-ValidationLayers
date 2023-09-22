@@ -640,16 +640,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     VkDeviceObj test_device(0, gpu());
     VkShaderObj vs2(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     vs2.InitFromGLSLTry(false, &test_device);
-    VkPipelineObj featureless_pipe(&test_device);
-    featureless_pipe.AddShader(&vs2);
-    featureless_pipe.AddDefaultColorAttachment();
-    VkGraphicsPipelineCreateInfo gp_ci;
-    featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
-    auto ms_state = *gp_ci.pRasterizationState;
-    ms_state.rasterizerDiscardEnable = VK_TRUE;
-    featureless_pipe.SetRasterization(&ms_state);
-    featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
-    gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+
     const vkt::PipelineLayout test_pipeline_layout(test_device);
 
     VkAttachmentReference attach = {};
@@ -676,7 +667,15 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     vkt::RenderPass render_pass(test_device, rpci);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368");
-    featureless_pipe.CreateVKPipeline(test_pipeline_layout.handle(), render_pass.handle(), &gp_ci);
+    CreatePipelineHelper featureless_pipe(*this);
+    featureless_pipe.device_ = &test_device;
+    featureless_pipe.InitState();
+    featureless_pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    featureless_pipe.shader_stages_ = {vs2.GetStageCreateInfo()};
+    featureless_pipe.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+    featureless_pipe.gp_ci_.layout = test_pipeline_layout.handle();
+    featureless_pipe.gp_ci_.renderPass = render_pass.handle();
+    featureless_pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 

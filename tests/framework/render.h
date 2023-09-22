@@ -39,7 +39,6 @@ using vkt::MakeVkHandles;
 static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
 static constexpr VkDeviceSize kZeroDeviceSize{0};
 
-typedef vkt::Queue VkQueueObj;
 class VkDeviceObj : public vkt::Device {
   public:
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj);
@@ -55,14 +54,12 @@ class VkDeviceObj : public vkt::Device {
 
     VkDevice device() { return handle(); }
     void SetDeviceQueue();
-    VkQueueObj *GetDefaultQueue();
-    VkQueueObj *GetDefaultComputeQueue();
 
     uint32_t id;
     VkPhysicalDeviceProperties props;
     std::vector<VkQueueFamilyProperties> queue_props;
 
-    VkQueueObj *m_queue_obj = nullptr;
+    vkt::Queue *m_queue_obj = nullptr;
     VkQueue m_queue;
 };
 
@@ -123,8 +120,6 @@ class VkRenderFramework : public VkTestFramework {
     void InitFramework(void * /*unused compatibility parameter*/ = NULL, void *instance_pnext = NULL);
     void ShutdownFramework();
 
-    void InitViewport(uint32_t width, uint32_t height);
-    void InitViewport();
      // Functions to modify the VkRenderFramework surface & swapchain variables
     bool InitSurface();
     void DestroySurface();
@@ -285,15 +280,14 @@ class VkRenderFramework : public VkTestFramework {
 };
 
 class VkDescriptorSetObj;
-class VkPipelineObj;
 
 class VkCommandBufferObj : public vkt::CommandBuffer {
   public:
     VkCommandBufferObj() : vkt::CommandBuffer() {}
     VkCommandBufferObj(VkDeviceObj *device, const vkt::CommandPool *pool,
-                       VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, VkQueueObj *queue = nullptr);
+                       VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, vkt::Queue *queue = nullptr);
     void Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-              VkQueueObj *queue = nullptr);
+              vkt::Queue *queue = nullptr);
     void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
@@ -345,7 +339,7 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
 
   protected:
     VkDeviceObj *m_device;
-    VkQueueObj *m_queue;
+    vkt::Queue *m_queue;
 };
 
 class VkImageObj : public vkt::Image {
@@ -597,54 +591,4 @@ class VkShaderObj : public vkt::ShaderModule {
     VkDeviceObj &m_device;
     const char *m_source;
     spv_target_env m_spv_env;
-};
-
-class VkPipelineObj : public vkt::Pipeline {
-  public:
-    VkPipelineObj(VkDeviceObj *device);
-    void AddShader(VkShaderObj *shaderObj);
-    void AddShader(VkPipelineShaderStageCreateInfo const &createInfo);
-    void AddVertexInputAttribs(VkVertexInputAttributeDescription *vi_attrib, uint32_t count);
-    void AddVertexInputBindings(VkVertexInputBindingDescription *vi_binding, uint32_t count);
-    void AddColorAttachment(uint32_t binding, const VkPipelineColorBlendAttachmentState &att);
-    void MakeDynamic(VkDynamicState state);
-
-    void AddDefaultColorAttachment(VkColorComponentFlags writeMask = 0xf /*=R|G|B|A*/) {
-        VkPipelineColorBlendAttachmentState att = {};
-        att.blendEnable = VK_FALSE;
-        att.colorWriteMask = writeMask;
-        AddColorAttachment(0, att);
-    }
-
-    void SetDepthStencil(const VkPipelineDepthStencilStateCreateInfo *);
-    void SetMSAA(const VkPipelineMultisampleStateCreateInfo *ms_state);
-    void SetInputAssembly(const VkPipelineInputAssemblyStateCreateInfo *ia_state);
-    void SetRasterization(const VkPipelineRasterizationStateCreateInfo *rs_state);
-    void SetTessellation(const VkPipelineTessellationStateCreateInfo *te_state);
-    void SetViewport(const std::vector<VkViewport> &viewports);
-    void SetScissor(const std::vector<VkRect2D> &scissors);
-    void SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state);
-    void DisableRasterization() { m_rs_state.rasterizerDiscardEnable = VK_TRUE; }
-
-    void InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci);
-
-    VkResult CreateVKPipeline(VkPipelineLayout layout, VkRenderPass render_pass, VkGraphicsPipelineCreateInfo *gp_ci = nullptr);
-
-  protected:
-    VkPipelineVertexInputStateCreateInfo m_vi_state;
-    VkPipelineInputAssemblyStateCreateInfo m_ia_state;
-    VkPipelineRasterizationStateCreateInfo m_rs_state;
-    VkPipelineColorBlendStateCreateInfo m_cb_state;
-    VkPipelineDepthStencilStateCreateInfo const *m_ds_state;
-    VkPipelineViewportStateCreateInfo m_vp_state;
-    VkPipelineMultisampleStateCreateInfo m_ms_state;
-    VkPipelineTessellationStateCreateInfo const *m_te_state;
-    VkPipelineDynamicStateCreateInfo m_pd_state;
-    VkPipelineRasterizationLineStateCreateInfoEXT m_line_state;
-    std::vector<VkDynamicState> m_dynamic_state_enables;
-    std::vector<VkViewport> m_viewports;
-    std::vector<VkRect2D> m_scissors;
-    VkDeviceObj *m_device;
-    std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
-    std::vector<VkPipelineColorBlendAttachmentState> m_colorAttachments;
 };

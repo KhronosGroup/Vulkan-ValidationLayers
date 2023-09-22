@@ -639,14 +639,18 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     vkt::RenderPass renderpass(test_device, rp_info);
     ASSERT_TRUE(renderpass.handle());
 
-    VkPipelineObj pipeline(&test_device);
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     vs.InitFromGLSLTry(false, &test_device);
     fs.InitFromGLSLTry(false, &test_device);
-    pipeline.AddShader(&vs);
-    pipeline.AddShader(&fs);
-    pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass.handle());
+
+    CreatePipelineHelper pipeline(*this);
+    pipeline.device_ = &test_device;
+    pipeline.InitState();
+    pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipeline.gp_ci_.layout = pipelineLayout.handle();
+    pipeline.gp_ci_.renderPass = renderpass.handle();
+    pipeline.CreateGraphicsPipeline();
 
     m_renderPassBeginInfo.renderPass = renderpass.handle();
     VkFramebufferCreateInfo fbci = {
@@ -656,11 +660,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     m_renderPassBeginInfo.framebuffer = fb.handle();
     m_renderPassBeginInfo.renderPass = renderpass.handle();
     commandBuffer.begin();
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(commandBuffer.handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(commandBuffer.handle(), 0, 1, &scissor);
-    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Handle());
     commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
     if (!tf_properties.transformFeedbackDraw) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288");

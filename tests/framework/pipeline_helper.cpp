@@ -14,6 +14,9 @@
 
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count)
     : cb_attachments_(color_attachments_count), layer_test_(test) {
+    // default VkDevice, can be overwritten if multi-device tests
+    device_ = layer_test_.DeviceObj();
+
     // InitDescriptorSetInfo
     dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
@@ -40,9 +43,9 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     scissor_ = {{0, 0}, {64, 64}};
     vp_state_ci_ = vku::InitStructHelper();
     vp_state_ci_.viewportCount = 1;
-    vp_state_ci_.pViewports = &viewport_;  // ignored if dynamic
+    vp_state_ci_.pViewports = &viewport_;
     vp_state_ci_.scissorCount = 1;
-    vp_state_ci_.pScissors = &scissor_;  // ignored if dynamic
+    vp_state_ci_.pScissors = &scissor_;
 
     // InitRasterizationInfo
     rs_state_ci_ = vku::InitStructHelper(&line_state_ci_);
@@ -107,13 +110,12 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
 }
 
 CreatePipelineHelper::~CreatePipelineHelper() {
-    VkDevice device = layer_test_.device();
     if (pipeline_cache_ != VK_NULL_HANDLE) {
-        vk::DestroyPipelineCache(device, pipeline_cache_, nullptr);
+        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
         pipeline_cache_ = VK_NULL_HANDLE;
     }
     if (pipeline_ != VK_NULL_HANDLE) {
-        vk::DestroyPipeline(device, pipeline_, nullptr);
+        vk::DestroyPipeline(device_->handle(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
 }
@@ -209,23 +211,22 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
 }
 
 void CreatePipelineHelper::InitState() {
-    descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
+    descriptor_set_.reset(new OneOffDescriptorSet(device_, dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());
 
     const std::vector<VkPushConstantRange> push_ranges(
         pipeline_layout_ci_.pPushConstantRanges,
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-    pipeline_layout_ =
-        vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+    pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
 
     InitPipelineCache();
 }
 
 void CreatePipelineHelper::InitPipelineCache() {
     if (pipeline_cache_ != VK_NULL_HANDLE) {
-        vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
+        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
     }
-    VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    VkResult err = vk::CreatePipelineCache(device_->handle(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -253,7 +254,7 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind) {
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    return vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
+    return vk::CreateGraphicsPipelines(device_->handle(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
 }
 
 CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : layer_test_(test) {

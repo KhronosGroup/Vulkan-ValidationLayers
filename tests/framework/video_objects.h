@@ -943,7 +943,7 @@ class VideoContext {
     VkVideoSessionKHR Session() { return session_; }
     VkVideoSessionParametersKHR SessionParams() { return session_params_; }
     VkQueryPool StatusQueryPool() { return status_query_pool_; }
-    VkQueueObj& Queue() { return queue_; }
+    vkt::Queue& Queue() { return queue_; }
     VkCommandBufferObj& CmdBuffer() { return cmd_buffer_; }
 
     BitstreamBuffer& Bitstream() { return *bitstream_; }
@@ -961,12 +961,12 @@ class VideoContext {
   private:
     VideoDecodeInfo Decode() { return VideoDecodeInfo(config_, *bitstream_, dpb_.get(), decode_output_.get()); }
 
-    VkQueueObj GetQueue(VkDeviceObj* device, const VideoConfig& config) const {
+    vkt::Queue GetQueue(VkDeviceObj* device, const VideoConfig& config) const {
         VkQueue queue = VK_NULL_HANDLE;
         if (config.QueueFamilyIndex() != VK_QUEUE_FAMILY_IGNORED) {
             vk::GetDeviceQueue(device->device(), config.QueueFamilyIndex(), 0, &queue);
         }
-        return VkQueueObj(queue, config.QueueFamilyIndex());
+        return vkt::Queue(queue, config.QueueFamilyIndex());
     }
 
     void Init(bool protected_content) {
@@ -1034,7 +1034,7 @@ class VideoContext {
     const VideoConfig config_{};
 
     VkDeviceObj* device_{};
-    VkQueueObj queue_;
+    vkt::Queue queue_;
     vkt::CommandPool cmd_pool_{};
     VkCommandBufferObj cmd_buffer_{};
 

@@ -354,8 +354,6 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineObj pipe(m_device);
-
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
@@ -389,18 +387,19 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
 
     rpci.pAttachments = attach_desc;
     vkt::RenderPass renderpass(*m_device, rpci);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
 
-    VkPipelineColorBlendAttachmentState att_state1 = {};
-    att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-    att_state1.blendEnable = VK_FALSE;
-
-    pipe.AddColorAttachment(0, att_state1);
-    pipe.AddColorAttachment(1, att_state1);
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(input_attribs, 3);
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
+    CreatePipelineHelper pipe(*this, 2);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.renderPass = renderpass.handle();
+    pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    pipe.cb_attachments_[0].blendEnable = VK_FALSE;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {

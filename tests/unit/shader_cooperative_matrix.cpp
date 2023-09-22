@@ -112,7 +112,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRUnsupportedStage) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vtSource = R"glsl(

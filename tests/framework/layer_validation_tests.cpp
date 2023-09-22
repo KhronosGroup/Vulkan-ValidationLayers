@@ -13,6 +13,7 @@
 #include "utils/cast_utils.h"
 #include "generated/enum_flag_bits.h"
 #include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 #include "utils/vk_layer_utils.h"
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
@@ -517,85 +518,68 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
 void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     ASSERT_TRUE(m_device && m_device->initialized());  // VKTriangleTest assumes Init() has finished
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj ps(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&ps);
+    CreatePipelineHelper pipe(*this);
 
     bool failcase_needs_depth = false;  // to mark cases that need depth attachment
 
     vkt::Buffer index_buffer;
 
+    VkPipelineRasterizationLineStateCreateInfoEXT line_state = vku::InitStructHelper();
     switch (failCase) {
         case BsoFailLineWidth: {
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_WIDTH);
-            VkPipelineInputAssemblyStateCreateInfo ia_state = vku::InitStructHelper();
-            ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            pipelineobj.SetInputAssembly(&ia_state);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
+            pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             break;
         }
         case BsoFailLineStipple: {
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT);
-            VkPipelineInputAssemblyStateCreateInfo ia_state = vku::InitStructHelper();
-            ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            pipelineobj.SetInputAssembly(&ia_state);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT);
+            pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
-            VkPipelineRasterizationLineStateCreateInfoEXT line_state =
-                vku::InitStructHelper();
             line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
             line_state.stippledLineEnable = VK_TRUE;
             line_state.lineStippleFactor = 1;
             line_state.lineStipplePattern = 0;
-            pipelineobj.SetLineState(&line_state);
+            pipe.rs_state_ci_.pNext = &line_state;
             break;
         }
         case BsoFailDepthBias: {
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
-            VkPipelineRasterizationStateCreateInfo rs_state = vku::InitStructHelper();
-            rs_state.depthBiasEnable = VK_TRUE;
-            rs_state.lineWidth = 1.0f;
-            pipelineobj.SetRasterization(&rs_state);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
+            pipe.rs_state_ci_.lineWidth = 1.0f;
+            pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
             break;
         }
         case BsoFailViewport: {
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
             break;
         }
         case BsoFailScissor: {
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
             break;
         }
         case BsoFailBlend: {
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
-            VkPipelineColorBlendAttachmentState att_state = {};
-            att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-            att_state.blendEnable = VK_TRUE;
-            pipelineobj.AddColorAttachment(0, att_state);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+            pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+            pipe.cb_attachments_[0].blendEnable = VK_TRUE;
             break;
         }
         case BsoFailDepthBounds: {
             failcase_needs_depth = true;
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
             break;
         }
         case BsoFailStencilReadMask: {
             failcase_needs_depth = true;
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK);
             break;
         }
         case BsoFailStencilWriteMask: {
             failcase_needs_depth = true;
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
             break;
         }
         case BsoFailStencilReference: {
             failcase_needs_depth = true;
-            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
             break;
         }
 
@@ -666,13 +650,12 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         ds_ci.front = stencil;
         ds_ci.back = stencil;
 
-        pipelineobj.SetDepthStencil(&ds_ci);
-        pipelineobj.SetViewport(m_viewports);
-        pipelineobj.SetScissor(m_scissors);
+        pipe.ds_ci_ = ds_ci;
         descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-        VkResult err = pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        ASSERT_VK_SUCCESS(err);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineobj.handle());
+        pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+        pipe.gp_ci_.renderPass = renderPass();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         m_commandBuffer->BindDescriptorSet(descriptorSet);
     }
 
@@ -1277,7 +1260,7 @@ BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {
 void BarrierQueueFamilyBase::QueueFamilyObjs::Init(VkDeviceObj *device, uint32_t qf_index, VkQueue qf_queue,
                                                    VkCommandPoolCreateFlags cp_flags) {
     index = qf_index;
-    queue = new VkQueueObj(qf_queue, qf_index);
+    queue = new vkt::Queue(qf_queue, qf_index);
     command_pool = new vkt::CommandPool(*device, qf_index, cp_flags);
     command_buffer = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     command_buffer2 = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);

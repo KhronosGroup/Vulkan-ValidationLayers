@@ -34,7 +34,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     if (!no_gfx) {
         GTEST_SKIP() << "Required queue families not present (non-graphics capable required)";
     }
-    VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
+    vkt::Queue *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
@@ -84,7 +84,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     if (!no_gfx) {
         GTEST_SKIP() << "Required queue families not present (non-graphics capable required)";
     }
-    VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
+    vkt::Queue *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);

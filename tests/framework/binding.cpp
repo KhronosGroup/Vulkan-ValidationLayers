@@ -335,6 +335,16 @@ const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_fami
     return queue_families_[queue_family];
 }
 
+Queue *Device::GetDefaultQueue() {
+    if (graphics_queues().empty()) return nullptr;
+    return graphics_queues()[0];
+}
+
+Queue *Device::GetDefaultComputeQueue() {
+    if (compute_queues().empty()) return nullptr;
+    return compute_queues()[0];
+}
+
 void Device::init_formats() {
     // For each 1.0 core format, undefined = first, 12x12_SRGB_BLOCK = last
     for (int f = VK_FORMAT_UNDEFINED; f <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; f++) {

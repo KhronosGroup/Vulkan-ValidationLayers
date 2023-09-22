@@ -498,7 +498,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     const VkDevice device_h = device();
     VkQueue queue_h;
     vk::GetDeviceQueue(device(), queue_family, queue_index, &queue_h);
-    VkQueueObj queue_o(queue_h, queue_family);
+    vkt::Queue queue_o(queue_h, queue_family);
 
     const VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool.handle(),
                                               VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
