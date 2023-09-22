@@ -792,6 +792,60 @@ EShLanguage VkTestFramework::FindLanguage(const VkShaderStageFlagBits shader_typ
     }
 }
 
+struct GlslangTargetEnv {
+    GlslangTargetEnv(const spv_target_env env) {
+        switch (env) {
+            case SPV_ENV_UNIVERSAL_1_0:
+                language_version = glslang::EShTargetSpv_1_0;
+                break;
+            case SPV_ENV_UNIVERSAL_1_1:
+                language_version = glslang::EShTargetSpv_1_1;
+                break;
+            case SPV_ENV_UNIVERSAL_1_2:
+                language_version = glslang::EShTargetSpv_1_2;
+                break;
+            case SPV_ENV_UNIVERSAL_1_3:
+                language_version = glslang::EShTargetSpv_1_3;
+                break;
+            case SPV_ENV_UNIVERSAL_1_4:
+                language_version = glslang::EShTargetSpv_1_4;
+                break;
+            case SPV_ENV_UNIVERSAL_1_5:
+                language_version = glslang::EShTargetSpv_1_5;
+                break;
+            case SPV_ENV_UNIVERSAL_1_6:
+                language_version = glslang::EShTargetSpv_1_6;
+                break;
+            case SPV_ENV_VULKAN_1_0:
+                client_version = glslang::EShTargetVulkan_1_0;
+                break;
+            case SPV_ENV_VULKAN_1_1:
+                client_version = glslang::EShTargetVulkan_1_1;
+                language_version = glslang::EShTargetSpv_1_3;
+                break;
+            case SPV_ENV_VULKAN_1_2:
+                client_version = glslang::EShTargetVulkan_1_2;
+                language_version = glslang::EShTargetSpv_1_5;
+                break;
+            case SPV_ENV_VULKAN_1_3:
+                client_version = glslang::EShTargetVulkan_1_3;
+                language_version = glslang::EShTargetSpv_1_6;
+                break;
+            default:
+                assert(false && "Invalid SPIR-V environment");
+                break;
+        }
+    }
+
+    operator glslang::EShTargetLanguageVersion() const { return language_version; }
+
+    operator glslang::EShTargetClientVersion() const { return client_version; }
+
+  private:
+    glslang::EShTargetLanguageVersion language_version = glslang::EShTargetSpv_1_0;
+    glslang::EShTargetClientVersion client_version = glslang::EShTargetVulkan_1_0;
+};
+
 //
 // Compile a given string containing GLSL into SPV for use by VK
 // Return value of false means an error was encountered.
@@ -816,7 +870,7 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
 
     EShLanguage stage = FindLanguage(shader_type);
     glslang::TShader *shader = new glslang::TShader(stage);
-    VkShaderObj::GlslangTargetEnv glslang_env(spv_env);
+    GlslangTargetEnv glslang_env(spv_env);
     shader->setEnvTarget(glslang::EshTargetSpv, glslang_env);
     shader->setEnvClient(glslang::EShClientVulkan, glslang_env);
 

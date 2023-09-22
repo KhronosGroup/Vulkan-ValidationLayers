@@ -527,64 +527,6 @@ class VkShaderObj : public vkt::ShaderModule {
                                                       const VkSpecializationInfo *spec_info = nullptr,
                                                       const char *entry_point = "main");
 
-    struct GlslangTargetEnv {
-        GlslangTargetEnv(const spv_target_env env) {
-            switch (env) {
-                case SPV_ENV_UNIVERSAL_1_0:
-                    language_version = glslang::EShTargetSpv_1_0;
-                    break;
-                case SPV_ENV_UNIVERSAL_1_1:
-                    language_version = glslang::EShTargetSpv_1_1;
-                    break;
-                case SPV_ENV_UNIVERSAL_1_2:
-                    language_version = glslang::EShTargetSpv_1_2;
-                    break;
-                case SPV_ENV_UNIVERSAL_1_3:
-                    language_version = glslang::EShTargetSpv_1_3;
-                    break;
-                case SPV_ENV_UNIVERSAL_1_4:
-                    language_version = glslang::EShTargetSpv_1_4;
-                    break;
-                case SPV_ENV_UNIVERSAL_1_5:
-                    language_version = glslang::EShTargetSpv_1_5;
-                    break;
-                case SPV_ENV_UNIVERSAL_1_6:
-                    language_version = glslang::EShTargetSpv_1_6;
-                    break;
-                case SPV_ENV_VULKAN_1_0:
-                    client_version = glslang::EShTargetVulkan_1_0;
-                    break;
-                case SPV_ENV_VULKAN_1_1:
-                    client_version = glslang::EShTargetVulkan_1_1;
-                    language_version = glslang::EShTargetSpv_1_3;
-                    break;
-                case SPV_ENV_VULKAN_1_2:
-                    client_version = glslang::EShTargetVulkan_1_2;
-                    language_version = glslang::EShTargetSpv_1_5;
-                    break;
-                case SPV_ENV_VULKAN_1_3:
-                    client_version = glslang::EShTargetVulkan_1_3;
-                    language_version = glslang::EShTargetSpv_1_6;
-                    break;
-                default:
-                    assert(false && "Invalid SPIR-V environment");
-                    break;
-            }
-        }
-
-        operator glslang::EShTargetLanguageVersion() const {
-            return language_version;
-        }
-
-        operator glslang::EShTargetClientVersion() const {
-            return client_version;
-        }
-
-      private:
-        glslang::EShTargetLanguageVersion language_version = glslang::EShTargetSpv_1_0;
-        glslang::EShTargetClientVersion client_version = glslang::EShTargetVulkan_1_0;
-    };
-
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
     VkRenderFramework &m_framework;
