@@ -933,8 +933,9 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
     CreatePipelineHelper vi_lib(*this);
@@ -1011,8 +1012,9 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
     CreatePipelineHelper vi_lib(*this);
@@ -1084,11 +1086,12 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
-    depth_attachment.imageView = *m_depthStencil->BindInfo();
+    depth_attachment.imageView =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
@@ -1119,8 +1122,9 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     CreatePipelineHelper fs_lib(*this);
     {
@@ -1229,8 +1233,9 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    VkImageView depth_image_view =
+        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
     // Create an executable pipeline with rasterization disabled
     // Pass rendering info with null pointers that should be ignored

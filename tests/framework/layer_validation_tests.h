@@ -70,26 +70,6 @@ using std::vector;
 // Mesh and VertexFormat Data
 //--------------------------------------------------------------------------------------
 
-enum BsoFailSelect {
-    BsoFailNone,
-    BsoFailLineWidth,
-    BsoFailDepthBias,
-    BsoFailViewport,
-    BsoFailScissor,
-    BsoFailBlend,
-    BsoFailDepthBounds,
-    BsoFailStencilReadMask,
-    BsoFailStencilWriteMask,
-    BsoFailStencilReference,
-    BsoFailCmdClearAttachments,
-    BsoFailIndexBuffer,
-    BsoFailIndexBufferBadSize,
-    BsoFailIndexBufferBadOffset,
-    BsoFailIndexBufferBadMapSize,
-    BsoFailIndexBufferBadMapOffset,
-    BsoFailLineStipple,
-};
-
 // Static arrays helper
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
@@ -172,8 +152,6 @@ class VkLayerTest : public VkLayerTestBase {
   public:
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
     const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
-
-    void VKTriangleTest(BsoFailSelect failCase);
 
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);

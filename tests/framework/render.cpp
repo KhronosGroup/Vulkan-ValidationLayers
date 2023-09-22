@@ -556,7 +556,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_device->SetDeviceQueue();
 
-    m_depthStencil = new VkDepthStencilObj(m_device);
+    m_depthStencil = new VkImageObj(m_device);
 
     m_render_target_fmt = GetRenderTargetFormat();
 
@@ -1722,41 +1722,6 @@ void VkCommandBufferObj::PipelineBarrier2KHR(const VkDependencyInfoKHR *pDepende
     fpCmdPipelineBarrier2KHR(handle(), pDependencyInfo);
 }
 
-void VkCommandBufferObj::ClearAllBuffers(const vector<std::unique_ptr<VkImageObj>> &color_objs, VkClearColorValue clear_color,
-                                         VkDepthStencilObj *depth_stencil_obj, float depth_clear_value,
-                                         uint32_t stencil_clear_value) {
-    // whatever we want to do, we do it to the whole buffer
-    VkImageSubresourceRange subrange = {};
-    // srRange.aspectMask to be set later
-    subrange.baseMipLevel = 0;
-    // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
-    subrange.levelCount = 1;  // VK_REMAINING_MIP_LEVELS;
-    subrange.baseArrayLayer = 0;
-    // TODO: Mesa crashing with VK_REMAINING_ARRAY_LAYERS
-    subrange.layerCount = 1;  // VK_REMAINING_ARRAY_LAYERS;
-
-    const VkImageLayout clear_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-    for (const auto &color_obj : color_objs) {
-        subrange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        color_obj->Layout(VK_IMAGE_LAYOUT_UNDEFINED);
-        color_obj->SetLayout(this, subrange.aspectMask, clear_layout);
-        ClearColorImage(color_obj->image(), clear_layout, &clear_color, 1, &subrange);
-    }
-
-    if (depth_stencil_obj && depth_stencil_obj->Initialized()) {
-        subrange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        if (vkuFormatIsDepthOnly(depth_stencil_obj->format())) subrange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (vkuFormatIsStencilOnly(depth_stencil_obj->format())) subrange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-
-        depth_stencil_obj->Layout(VK_IMAGE_LAYOUT_UNDEFINED);
-        depth_stencil_obj->SetLayout(this, subrange.aspectMask, clear_layout);
-
-        VkClearDepthStencilValue clear_value = {depth_clear_value, stencil_clear_value};
-        ClearDepthStencilImage(depth_stencil_obj->handle(), clear_layout, &clear_value, 1, &subrange);
-    }
-}
-
 void VkCommandBufferObj::FillBuffer(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize fill_size, uint32_t data) {
     vk::CmdFillBuffer(handle(), buffer, offset, fill_size, data);
 }
@@ -1796,21 +1761,6 @@ void VkCommandBufferObj::BuildAccelerationStructure(vkt::AccelerationStructure *
 
     vkCmdBuildAccelerationStructureNV(handle(), &as->info(), instanceData, 0, VK_FALSE, as->handle(), VK_NULL_HANDLE, scratchBuffer,
                                       0);
-}
-
-void VkCommandBufferObj::PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts,
-                                            VkDepthStencilObj *depth_stencil_att) {
-    for (const auto &color_att : color_atts) {
-        color_att->SetLayout(this, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    }
-
-    if (depth_stencil_att && depth_stencil_att->Initialized()) {
-        VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        if (vkuFormatIsDepthOnly(depth_stencil_att->Format())) aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (vkuFormatIsStencilOnly(depth_stencil_att->Format())) aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-
-        depth_stencil_att->SetLayout(this, aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    }
 }
 
 void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents) {
@@ -1938,47 +1888,4 @@ void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
 
 void VkCommandBufferObj::BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType) {
     vk::CmdBindIndexBuffer(handle(), indexBuffer->handle(), offset, indexType);
-}
-
-bool VkDepthStencilObj::Initialized() { return m_initialized; }
-VkDepthStencilObj::VkDepthStencilObj(VkDeviceObj *device) : VkImageObj(device) { m_initialized = false; }
-
-VkImageView *VkDepthStencilObj::BindInfo() { return &m_attachmentBindInfo; }
-
-VkFormat VkDepthStencilObj::Format() const { return this->m_depth_stencil_fmt; }
-
-void VkDepthStencilObj::Init(VkDeviceObj *device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
-                             VkImageAspectFlags aspect) {
-    VkImageViewCreateInfo view_info = vku::InitStructHelper();
-
-    m_device = device;
-    m_initialized = true;
-    m_depth_stencil_fmt = format;
-
-    /* create image */
-    VkImageObj::Init(width, height, 1, m_depth_stencil_fmt, usage, VK_IMAGE_TILING_OPTIMAL);
-
-    // allows for overriding by caller
-    if (aspect == 0) {
-        aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (vkuFormatIsDepthOnly(format))
-            aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-        else if (vkuFormatIsStencilOnly(format))
-            aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
-    SetLayout(aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-    view_info.image = VK_NULL_HANDLE;
-    view_info.subresourceRange.aspectMask = aspect;
-    view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = 1;
-    view_info.subresourceRange.baseArrayLayer = 0;
-    view_info.subresourceRange.layerCount = 1;
-    view_info.flags = 0;
-    view_info.format = m_depth_stencil_fmt;
-    view_info.image = handle();
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    m_imageView.init(*m_device, view_info);
-
-    m_attachmentBindInfo = m_imageView.handle();
 }
