@@ -53,12 +53,10 @@ void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
     }
 }
 
-bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed,
-                                              const char *invalid_handle_vuid, const char *wrong_parent_vuid,
+bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
                                               const Location &loc) const {
-    if (null_allowed && (object == HandleToUint64(VK_NULL_HANDLE))) return false;
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-    return CheckObjectValidity(object, object_type, invalid_handle_vuid, wrong_parent_vuid, loc);
+    return CheckObjectValidity(object, object_type, invalid_handle_vuid, kVUIDUndefined, loc, kVulkanObjectTypeDevice);
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -896,8 +894,9 @@ bool ObjectLifetimes::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalDevic
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter"
 
-    skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkGetDisplayModePropertiesKHR-display-parameter",
-                           "VUID-vkGetDisplayModePropertiesKHR-display-parent", error_obj.location);
+    skip |=
+        ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkGetDisplayModePropertiesKHR-display-parameter",
+                       "VUID-vkGetDisplayModePropertiesKHR-display-parent", error_obj.location, kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -941,8 +940,9 @@ bool ObjectLifetimes::PreCallValidateGetDisplayModeProperties2KHR(VkPhysicalDevi
     bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkGetDisplayModeProperties2KHR-physicalDevice-parameter"
 
-    skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkGetDisplayModeProperties2KHR-display-parameter",
-                           "VUID-vkGetDisplayModeProperties2KHR-display-parent", error_obj.location);
+    skip |=
+        ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkGetDisplayModeProperties2KHR-display-parameter",
+                       "VUID-vkGetDisplayModeProperties2KHR-display-parent", error_obj.location, kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -1016,8 +1016,8 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectNameEXT-device-parameter"
 
-    skip |= ValidateAnonymousObject(pNameInfo->objectHandle, pNameInfo->objectType, false,
-                                    "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590", kVUIDUndefined, error_obj.location);
+    skip |= ValidateAnonymousObject(pNameInfo->objectHandle, pNameInfo->objectType,
+                                    "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590", error_obj.location);
 
     return skip;
 }
@@ -1027,8 +1027,8 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectTagEXT-device-parameter"
 
-    skip |= ValidateAnonymousObject(pTagInfo->objectHandle, pTagInfo->objectType, false,
-                                    "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910", kVUIDUndefined, error_obj.location);
+    skip |= ValidateAnonymousObject(pTagInfo->objectHandle, pTagInfo->objectType,
+                                    "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910", error_obj.location);
 
     return skip;
 }

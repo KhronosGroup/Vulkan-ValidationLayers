@@ -116,8 +116,8 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) const;
     bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const Location &loc) const;
     bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const;
-    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_vuid,
-                                 const char *wrong_parent_vuid, const Location &loc) const;
+    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
+                                 const Location &loc) const;
     bool ValidateAccelerationStructures(const char *dst_handle_vuid, uint32_t count,
                                         const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const;
 
@@ -134,7 +134,7 @@ class ObjectLifetimes : public ValidationObject {
     }
 
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
-                             const char *wrong_parent_vuid, const Location &loc) const {
+                             const char *wrong_parent_vuid, const Location &loc, VulkanObjectType parent_type) const {
         constexpr bool skip = false;
 
         // If this instance of lifetime validation tracks the object, report success
@@ -142,43 +142,58 @@ class ObjectLifetimes : public ValidationObject {
             return skip;
         }
         // Object not found, look for it in other device object maps
-        bool found = false;
-        VkDevice other_device = VK_NULL_HANDLE;
+        const ObjectLifetimes *other_lifetimes = nullptr;
         for (const auto &other_device_data : layer_data_map) {
-            const auto other_lifetimes = other_device_data.second->GetValidationObject<ObjectLifetimes>();
-            if (other_lifetimes && other_lifetimes != this && other_lifetimes->TracksObject(object_handle, object_type)) {
-                other_device = other_lifetimes->device;
-                found = true;
+            const auto lifetimes = other_device_data.second->GetValidationObject<ObjectLifetimes>();
+            if (lifetimes && lifetimes != this && lifetimes->TracksObject(object_handle, object_type)) {
+                other_lifetimes = lifetimes;
                 break;
             }
         }
-        // Report about findings.
-        if (!found) {
-            // Object was not found anywhere
+        // Object was not found anywhere
+        if (!other_lifetimes) {
             return LogError(invalid_handle_vuid, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
                             object_handle);
-        } else if (wrong_parent_vuid != kVUIDUndefined) {
-            // Object found on other device and device error code is provided
-            const LogObjectList objlist(instance, device, other_device);
-            return LogError(wrong_parent_vuid, objlist, loc,
-                            "Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
-                            ") was created, allocated or retrieved from %s.",
-                            FormatHandle(device).c_str(), object_string[object_type], object_handle,
-                            FormatHandle(other_device).c_str());
-        } else {
-            // Object was found on other device, but it's not a device error.
-            // TODO: this could be an instance-level error, we need to add support for this.
+        }
+        // Anonymous object validation does not check parent, only that the object exists
+        if (wrong_parent_vuid == kVUIDUndefined) {
             return skip;
         }
+        // Object found on another device
+        LogObjectList objlist;
+        std::string handle_str;
+        std::string other_handle_str;
+        if (parent_type == kVulkanObjectTypeDevice) {
+            objlist = LogObjectList(instance, device, other_lifetimes->device);
+            handle_str = FormatHandle(device);
+            other_handle_str = FormatHandle(other_lifetimes->device);
+        } else if (parent_type == kVulkanObjectTypeInstance) {
+            objlist = LogObjectList(instance, other_lifetimes->instance);
+            handle_str = FormatHandle(instance);
+            other_handle_str = FormatHandle(other_lifetimes->instance);
+        } else if (parent_type == kVulkanObjectTypePhysicalDevice) {
+            objlist = LogObjectList(instance, physical_device, other_lifetimes->physical_device);
+            handle_str = FormatHandle(physical_device);
+            other_handle_str = FormatHandle(other_lifetimes->physical_device);
+        } else {
+            assert(false);
+            return skip;
+        }
+        return LogError(wrong_parent_vuid, objlist, loc,
+                        "(%s 0x%" PRIxLEAST64
+                        ") was created, allocated or retrieved from %s, but command is using (or its dispatchable parameter is "
+                        "associated with) %s",
+                        object_string[object_type], object_handle, other_handle_str.c_str(), handle_str.c_str());
     }
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_vuid,
-                        const char *wrong_parent_vuid, const Location &loc) const {
+                        const char *wrong_parent_vuid, const Location &loc,
+                        VulkanObjectType parent_type = kVulkanObjectTypeDevice) const {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
-        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_vuid, wrong_parent_vuid, loc);
+        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_vuid, wrong_parent_vuid, loc, parent_type);
     }
 
     template <typename T1>
