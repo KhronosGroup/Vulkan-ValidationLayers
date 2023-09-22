@@ -145,6 +145,7 @@ core_validation_sources = [
   "layers/vulkan/generated/gpu_as_inspection_comp.h",
   "layers/vulkan/generated/gpu_pre_dispatch_comp.h",
   "layers/vulkan/generated/gpu_pre_draw_vert.h",
+  "layers/vulkan/generated/inst_functions_comp.h",
   "layers/vulkan/generated/spirv_grammar_helper.cpp",
   "layers/vulkan/generated/spirv_grammar_helper.h",
   "layers/vulkan/generated/spirv_tools_commit_id.h",
