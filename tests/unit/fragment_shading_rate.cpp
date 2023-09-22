@@ -846,7 +846,7 @@ TEST_F(NegativeFragmentShadingRate, DeviceFeatureCombinations) {
     GetPhysicalDeviceFeatures2(fsr_query_features);
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
@@ -2692,7 +2692,7 @@ TEST_F(NegativeFragmentShadingRate, ImageMaxLimitsQCOM) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;

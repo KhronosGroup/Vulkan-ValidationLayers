@@ -33,7 +33,7 @@ TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     // Create an array of DSLs, one larger than the physical limit
-    const auto excess_layouts = 1 + m_device->phy().properties().limits.maxBoundDescriptorSets;
+    const auto excess_layouts = 1 + m_device->phy().limits_.maxBoundDescriptorSets;
     std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout.handle());
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -133,22 +133,22 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     bool descriptor_indexing =
         IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
-    uint32_t max_uniform_buffers = m_device->phy().properties().limits.maxPerStageDescriptorUniformBuffers;
-    uint32_t max_storage_buffers = m_device->phy().properties().limits.maxPerStageDescriptorStorageBuffers;
-    uint32_t max_sampled_images = m_device->phy().properties().limits.maxPerStageDescriptorSampledImages;
-    uint32_t max_storage_images = m_device->phy().properties().limits.maxPerStageDescriptorStorageImages;
-    uint32_t max_samplers = m_device->phy().properties().limits.maxPerStageDescriptorSamplers;
+    uint32_t max_uniform_buffers = m_device->phy().limits_.maxPerStageDescriptorUniformBuffers;
+    uint32_t max_storage_buffers = m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
+    uint32_t max_sampled_images = m_device->phy().limits_.maxPerStageDescriptorSampledImages;
+    uint32_t max_storage_images = m_device->phy().limits_.maxPerStageDescriptorStorageImages;
+    uint32_t max_samplers = m_device->phy().limits_.maxPerStageDescriptorSamplers;
     uint32_t max_combined = std::min(max_samplers, max_sampled_images);
-    uint32_t max_input_attachments = m_device->phy().properties().limits.maxPerStageDescriptorInputAttachments;
+    uint32_t max_input_attachments = m_device->phy().limits_.maxPerStageDescriptorInputAttachments;
 
-    uint32_t sum_dyn_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffersDynamic;
-    uint32_t sum_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffers;
-    uint32_t sum_dyn_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffersDynamic;
-    uint32_t sum_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffers;
-    uint32_t sum_sampled_images = m_device->phy().properties().limits.maxDescriptorSetSampledImages;
-    uint32_t sum_storage_images = m_device->phy().properties().limits.maxDescriptorSetStorageImages;
-    uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
-    uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
+    uint32_t sum_dyn_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffersDynamic;
+    uint32_t sum_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffers;
+    uint32_t sum_dyn_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffersDynamic;
+    uint32_t sum_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffers;
+    uint32_t sum_sampled_images = m_device->phy().limits_.maxDescriptorSetSampledImages;
+    uint32_t sum_storage_images = m_device->phy().limits_.maxDescriptorSetStorageImages;
+    uint32_t sum_samplers = m_device->phy().limits_.maxDescriptorSetSamplers;
+    uint32_t sum_input_attachments = m_device->phy().limits_.maxDescriptorSetInputAttachments;
 
     VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
         vku::InitStructHelper();
@@ -443,21 +443,21 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     const bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
-    uint32_t max_uniform_buffers = m_device->phy().properties().limits.maxPerStageDescriptorUniformBuffers;
-    uint32_t max_storage_buffers = m_device->phy().properties().limits.maxPerStageDescriptorStorageBuffers;
-    uint32_t max_sampled_images = m_device->phy().properties().limits.maxPerStageDescriptorSampledImages;
-    uint32_t max_storage_images = m_device->phy().properties().limits.maxPerStageDescriptorStorageImages;
-    uint32_t max_samplers = m_device->phy().properties().limits.maxPerStageDescriptorSamplers;
-    uint32_t max_input_attachments = m_device->phy().properties().limits.maxPerStageDescriptorInputAttachments;
+    uint32_t max_uniform_buffers = m_device->phy().limits_.maxPerStageDescriptorUniformBuffers;
+    uint32_t max_storage_buffers = m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
+    uint32_t max_sampled_images = m_device->phy().limits_.maxPerStageDescriptorSampledImages;
+    uint32_t max_storage_images = m_device->phy().limits_.maxPerStageDescriptorStorageImages;
+    uint32_t max_samplers = m_device->phy().limits_.maxPerStageDescriptorSamplers;
+    uint32_t max_input_attachments = m_device->phy().limits_.maxPerStageDescriptorInputAttachments;
 
-    uint32_t sum_dyn_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffersDynamic;
-    uint32_t sum_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffers;
-    uint32_t sum_dyn_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffersDynamic;
-    uint32_t sum_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffers;
-    uint32_t sum_sampled_images = m_device->phy().properties().limits.maxDescriptorSetSampledImages;
-    uint32_t sum_storage_images = m_device->phy().properties().limits.maxDescriptorSetStorageImages;
-    uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
-    uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
+    uint32_t sum_dyn_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffersDynamic;
+    uint32_t sum_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffers;
+    uint32_t sum_dyn_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffersDynamic;
+    uint32_t sum_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffers;
+    uint32_t sum_sampled_images = m_device->phy().limits_.maxDescriptorSetSampledImages;
+    uint32_t sum_storage_images = m_device->phy().limits_.maxDescriptorSetStorageImages;
+    uint32_t sum_samplers = m_device->phy().limits_.maxDescriptorSetSamplers;
+    uint32_t sum_input_attachments = m_device->phy().limits_.maxDescriptorSetInputAttachments;
 
     VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
         vku::InitStructHelper();

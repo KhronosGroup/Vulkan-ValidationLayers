@@ -548,13 +548,13 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
 
-    m_device = new VkDeviceObj(0, gpu_, m_device_extension_names, features, create_device_pnext);
+    m_device = new vkt::Device(gpu_, m_device_extension_names, features, create_device_pnext);
 
     for (const char *device_ext_name : m_device_extension_names) {
         vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
     }
 
-    m_device->SetDeviceQueue();
+    m_default_queue = m_device->graphics_queues()[0]->handle();
 
     m_depthStencil = new VkImageObj(m_device);
 
@@ -1012,40 +1012,7 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = VK_NULL_HANDLE;
 }
 
-VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vkt::Device(obj), id(id) {
-    init();
-
-    props = phy().properties();
-    queue_props = phy().queue_properties();
-}
-
-VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, vector<const char *> &extension_names,
-                         VkPhysicalDeviceFeatures *features, void *create_device_pnext)
-    : vkt::Device(obj), id(id) {
-    init(extension_names, features, create_device_pnext);
-
-    props = phy().properties();
-    queue_props = phy().queue_properties();
-}
-
-std::optional<uint32_t> VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) {
-    for (uint32_t i = 0; i < size32(queue_props); i++) {
-        const auto flags = queue_props[i].queueFlags;
-        const bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;
-        if (matches && ((flags & without) == 0) && (queue_props[i].queueCount > 0)) {
-            return i;
-        }
-    }
-    return {};
-}
-
-void VkDeviceObj::SetDeviceQueue() {
-    ASSERT_NE(true, graphics_queues().empty());
-    m_queue_obj = graphics_queues()[0];
-    m_queue = m_queue_obj->handle();
-}
-
-VkDescriptorSetObj::VkDescriptorSetObj(VkDeviceObj *device) : m_device(device), m_nextSlot(0) {}
+VkDescriptorSetObj::VkDescriptorSetObj(vkt::Device *device) : m_device(device), m_nextSlot(0) {}
 
 VkDescriptorSetObj::~VkDescriptorSetObj() noexcept {
     if (m_set) {
@@ -1136,7 +1103,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
     }
 }
 
-VkImageObj::VkImageObj(VkDeviceObj *dev) {
+VkImageObj::VkImageObj(vkt::Device *dev) {
     m_device = dev;
     m_descriptorImageInfo.imageView = VK_NULL_HANDLE;
     m_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1606,7 +1573,7 @@ VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkSha
 
 bool VkShaderObj::InitFromGLSL(bool debug) {
     std::vector<uint32_t> spv;
-    m_framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, m_source, spv, debug, m_spv_env);
+    m_framework.GLSLtoSPV(&m_device.phy().limits_, m_stage_info.stage, m_source, spv, debug, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
@@ -1620,11 +1587,11 @@ bool VkShaderObj::InitFromGLSL(bool debug) {
 // Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module
 // creation due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when
 // tests are found to crash on a CI device
-VkResult VkShaderObj::InitFromGLSLTry(bool debug, const VkDeviceObj *custom_device) {
+VkResult VkShaderObj::InitFromGLSLTry(bool debug, const vkt::Device *custom_device) {
     std::vector<uint32_t> spv;
     // 99% of tests just use the framework's VkDevice, but this allows for tests to use custom device object
     // Can't set at contructor time since all reference members need to be initialized then.
-    VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->props.limits : m_device.props.limits;
+    VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->phy().limits_ : m_device.phy().limits_;
     m_framework.GLSLtoSPV(&limits, m_stage_info.stage, m_source, spv, debug, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
@@ -1686,12 +1653,12 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework *frame
     return {};
 }
 
-void VkCommandBufferObj::Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level, vkt::Queue *queue) {
+void VkCommandBufferObj::Init(vkt::Device *device, const vkt::CommandPool *pool, VkCommandBufferLevel level, vkt::Queue *queue) {
     m_device = device;
     if (queue) {
         m_queue = queue;
     } else {
-        m_queue = m_device->GetDefaultQueue();
+        m_queue = m_device->graphics_queues()[0];
     }
     assert(m_queue);
 
@@ -1700,7 +1667,7 @@ void VkCommandBufferObj::Init(VkDeviceObj *device, const vkt::CommandPool *pool,
     init(*device, create_info);
 }
 
-VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level,
+VkCommandBufferObj::VkCommandBufferObj(vkt::Device *device, const vkt::CommandPool *pool, VkCommandBufferLevel level,
                                        vkt::Queue *queue) {
     Init(device, pool, level, queue);
 }

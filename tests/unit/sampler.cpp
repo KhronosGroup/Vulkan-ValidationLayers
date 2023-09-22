@@ -87,7 +87,7 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
     sampler_info.maxAnisotropy = sampler_info_ref.maxAnisotropy;
 
     // maxAnisotropy out-of-bounds high.
-    sampler_info.maxAnisotropy = NearestGreater(m_device->phy().properties().limits.maxSamplerAnisotropy);
+    sampler_info.maxAnisotropy = NearestGreater(m_device->phy().limits_.maxSamplerAnisotropy);
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-anisotropyEnable-01071");
     sampler_info.maxAnisotropy = sampler_info_ref.maxAnisotropy;
 
@@ -190,7 +190,7 @@ TEST_F(NegativeSampler, BasicUsage) {
     sampler_info.maxLod = sampler_info_ref.maxLod;
 
     // Larger mipLodBias than max limit
-    sampler_info.mipLodBias = NearestGreater(m_device->phy().properties().limits.maxSamplerLodBias);
+    sampler_info.mipLodBias = NearestGreater(m_device->phy().limits_.maxSamplerLodBias);
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-mipLodBias-01069");
     sampler_info.mipLodBias = sampler_info_ref.mipLodBias;
 }

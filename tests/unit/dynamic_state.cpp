@@ -361,7 +361,7 @@ TEST_F(NegativeDynamicState, SetScissorParamMultiviewport) {
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    const auto max_scissors = m_device->props.limits.maxViewports;
+    const auto max_scissors = m_device->phy().limits_.maxViewports;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissor-pScissors-parameter");
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, max_scissors, nullptr);
@@ -620,19 +620,19 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    std::vector<VkBuffer> buffers(m_device->props.limits.maxVertexInputBindings + 1ull, buffer.handle());
+    std::vector<VkBuffer> buffers(m_device->phy().limits_.maxVertexInputBindings + 1ull, buffer.handle());
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     commandBuffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-firstBinding-03355");
-    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), m_device->props.limits.maxVertexInputBindings, 1, buffers.data(),
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), m_device->phy().limits_.maxVertexInputBindings, 1, buffers.data(),
                                  offsets.data(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-firstBinding-03356");
-    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, m_device->props.limits.maxVertexInputBindings + 1, buffers.data(),
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, m_device->phy().limits_.maxVertexInputBindings + 1, buffers.data(),
                                  offsets.data(), 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -651,7 +651,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindVertexBuffers2-pBuffers-parameter");
         VkBuffer buffers2[1] = {VK_NULL_HANDLE};
         VkDeviceSize offsets2[1] = {16};
-        VkDeviceSize strides[1] = {m_device->props.limits.maxVertexInputBindingStride + 1ull};
+        VkDeviceSize strides[1] = {m_device->phy().limits_.maxVertexInputBindingStride + 1ull};
         vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
         m_errorMonitor->VerifyFound();
 
@@ -784,7 +784,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    std::vector<VkBuffer> buffers(m_device->props.limits.maxVertexInputBindings + 1ull, buffer.handle());
+    std::vector<VkBuffer> buffers(m_device->phy().limits_.maxVertexInputBindings + 1ull, buffer.handle());
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
     CreatePipelineHelper pipe(*this);
@@ -2288,10 +2288,10 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
-        std::vector<VkVertexInputBindingDescription2EXT> bindings(m_device->props.limits.maxVertexInputBindings + 1u, binding);
+        std::vector<VkVertexInputBindingDescription2EXT> bindings(m_device->phy().limits_.maxVertexInputBindings + 1u, binding);
         for (uint32_t i = 0; i < bindings.size(); ++i) bindings[i].binding = i;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791");
-        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), m_device->props.limits.maxVertexInputBindings + 1u, bindings.data(), 0,
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), m_device->phy().limits_.maxVertexInputBindings + 1u, bindings.data(), 0,
                                  nullptr);
         m_errorMonitor->VerifyFound();
     }
@@ -2302,11 +2302,11 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
         VkVertexInputAttributeDescription2EXT attribute = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
-        std::vector<VkVertexInputAttributeDescription2EXT> attributes(m_device->props.limits.maxVertexInputAttributes + 1u,
+        std::vector<VkVertexInputAttributeDescription2EXT> attributes(m_device->phy().limits_.maxVertexInputAttributes + 1u,
                                                                       attribute);
         for (uint32_t i = 0; i < attributes.size(); ++i) attributes[i].location = i;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792");
-        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, m_device->props.limits.maxVertexInputAttributes + 1u,
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, m_device->phy().limits_.maxVertexInputAttributes + 1u,
                                  attributes.data());
         m_errorMonitor->VerifyFound();
     }
@@ -2348,7 +2348,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     {
         VkVertexInputBindingDescription2EXT binding = {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
                                                        nullptr,
-                                                       m_device->props.limits.maxVertexInputBindings + 1u,
+                                                       m_device->phy().limits_.maxVertexInputBindings + 1u,
                                                        0,
                                                        VK_VERTEX_INPUT_RATE_VERTEX,
                                                        1};
@@ -2362,7 +2362,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         VkVertexInputBindingDescription2EXT binding = {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
                                                        nullptr,
                                                        0,
-                                                       m_device->props.limits.maxVertexInputBindingStride + 1u,
+                                                       m_device->phy().limits_.maxVertexInputBindingStride + 1u,
                                                        VK_VERTEX_INPUT_RATE_VERTEX,
                                                        1};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-stride-04797");
@@ -2394,7 +2394,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
         VkVertexInputAttributeDescription2EXT attribute = {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
                                                            nullptr,
-                                                           m_device->props.limits.maxVertexInputAttributes + 1u,
+                                                           m_device->phy().limits_.maxVertexInputAttributes + 1u,
                                                            0,
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
@@ -2410,7 +2410,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         VkVertexInputAttributeDescription2EXT attribute = {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
                                                            nullptr,
                                                            0,
-                                                           m_device->props.limits.maxVertexInputBindings + 1u,
+                                                           m_device->phy().limits_.maxVertexInputBindings + 1u,
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-binding-06229");
@@ -2420,13 +2420,13 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     }
 
     // VUID-VkVertexInputAttributeDescription2EXT-offset-06230
-    if (m_device->props.limits.maxVertexInputAttributeOffset <
-        std::numeric_limits<decltype(m_device->props.limits.maxVertexInputAttributeOffset)>::max()) {
+    if (m_device->phy().limits_.maxVertexInputAttributeOffset <
+        std::numeric_limits<decltype(m_device->phy().limits_.maxVertexInputAttributeOffset)>::max()) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
         VkVertexInputAttributeDescription2EXT attribute = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
-            m_device->props.limits.maxVertexInputAttributeOffset + 1u};
+            m_device->phy().limits_.maxVertexInputAttributeOffset + 1u};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-offset-06230");
         vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
@@ -2799,7 +2799,7 @@ TEST_F(NegativeDynamicState, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    uint32_t count = m_device->props.limits.maxFragmentDualSrcAttachments + 1;
+    uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(count));
 
     std::stringstream fsSource;
@@ -2967,7 +2967,7 @@ TEST_F(NegativeDynamicState, ColorWriteEnableAttachmentCount) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // need a valid array to index into
-    std::vector<VkBool32> color_write_enable(m_device->props.limits.maxColorAttachments + 1, VK_TRUE);
+    std::vector<VkBool32> color_write_enable(m_device->phy().limits_.maxColorAttachments + 1, VK_TRUE);
 
     CreatePipelineHelper helper(*this);
     helper.InitState();
@@ -2985,7 +2985,7 @@ TEST_F(NegativeDynamicState, ColorWriteEnableAttachmentCount) {
 
     // over the limit
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-06656");
-    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), m_device->props.limits.maxColorAttachments + 1,
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), m_device->phy().limits_.maxColorAttachments + 1,
                                   color_write_enable.data());
     m_errorMonitor->VerifyFound();
 
@@ -3445,11 +3445,11 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
     };
 
     // not necessarily boundary values (unspecified cast rounding), but guaranteed to be over limit
-    const auto one_past_max_w = NearestGreater(static_cast<float>(m_device->props.limits.maxViewportDimensions[0]));
-    const auto one_past_max_h = NearestGreater(static_cast<float>(m_device->props.limits.maxViewportDimensions[1]));
+    const auto one_past_max_w = NearestGreater(static_cast<float>(m_device->phy().limits_.maxViewportDimensions[0]));
+    const auto one_past_max_h = NearestGreater(static_cast<float>(m_device->phy().limits_.maxViewportDimensions[1]));
 
-    const auto min_bound = m_device->props.limits.viewportBoundsRange[0];
-    const auto max_bound = m_device->props.limits.viewportBoundsRange[1];
+    const auto min_bound = m_device->phy().limits_.viewportBoundsRange[0];
+    const auto max_bound = m_device->phy().limits_.viewportBoundsRange[1];
     const auto one_before_min_bounds = NearestSmaller(min_bound);
     const auto one_past_max_bounds = NearestGreater(max_bound);
 
@@ -3499,7 +3499,7 @@ TEST_F(NegativeDynamicState, SetViewportParamMaintenance1) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    const auto &limits = m_device->props.limits;
+    const auto &limits = m_device->phy().limits_;
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-height-01773");
@@ -3561,7 +3561,7 @@ TEST_F(NegativeDynamicState, SetViewportParamMultiviewport) {
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    const auto max_viewports = m_device->props.limits.maxViewports;
+    const auto max_viewports = m_device->phy().limits_.maxViewports;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-pViewports-parameter");
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, max_viewports, nullptr);
@@ -4166,7 +4166,7 @@ TEST_F(NegativeDynamicState, Viewport) {
     ASSERT_NO_FATAL_FAILURE(Init(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->props.limits.maxViewports < 3) {
+    if (m_device->phy().limits_.maxViewports < 3) {
         GTEST_SKIP() << "maxViewports is not large enough";
     }
 
@@ -4385,7 +4385,7 @@ TEST_F(NegativeDynamicState, MultiViewport) {
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"}},
     };
 
-    const auto max_viewports = m_device->phy().properties().limits.maxViewports;
+    const auto max_viewports = m_device->phy().limits_.maxViewports;
     const bool max_viewports_maxxed = max_viewports == std::numeric_limits<decltype(max_viewports)>::max();
     if (max_viewports_maxxed) {
         printf("VkPhysicalDeviceLimits::maxViewports is UINT32_MAX -- skipping part of test requiring to exceed maxViewports.\n");

@@ -684,10 +684,10 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    err = vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueWaitIdle(m_default_queue);
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->reset(0);
@@ -699,9 +699,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueWaitIdle(m_default_queue);
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->reset(0);
@@ -713,9 +713,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueWaitIdle(m_default_queue);
     ASSERT_VK_SUCCESS(err);
 
     // Source image in invalid layout in the middle of CB
@@ -744,9 +744,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueWaitIdle(m_default_queue);
     ASSERT_VK_SUCCESS(err);
 
     // Destination image in invalid layout in the middle of CB
@@ -765,9 +765,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    err = vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueWaitIdle(m_default_queue);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1185,7 +1185,7 @@ TEST_F(NegativeImage, MinImageTransferGranularity) {
     TEST_DESCRIPTION("Tests for validation of Queue Family property minImageTransferGranularity.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto queue_family_properties = m_device->phy().queue_properties();
+    auto queue_family_properties = m_device->phy().queue_properties_;
     auto large_granularity_family =
         std::find_if(queue_family_properties.begin(), queue_family_properties.end(), [](VkQueueFamilyProperties family_properties) {
             VkExtent3D family_granularity = family_properties.minImageTransferGranularity;
@@ -3509,7 +3509,7 @@ TEST_F(NegativeImage, MaxLimitsFramebuffer) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
@@ -3718,7 +3718,7 @@ TEST_F(NegativeImage, Stencil) {
     // test vkCreateImage as well for this case
     CreateImageTest(*this, &image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
 
     if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
         // depth-stencil format image with VkImageStencilUsageCreateInfo with
@@ -4787,7 +4787,7 @@ TEST_F(NegativeImage, MultiSampleImageView) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
     }

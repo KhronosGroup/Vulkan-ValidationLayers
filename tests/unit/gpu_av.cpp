@@ -447,15 +447,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = iter.index;
         buffer0.memory().unmap();
 
-        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(m_default_queue);
         m_errorMonitor->VerifyFound();
         delete gs;
         delete tcs;
         delete tes;
     }
-    auto c_queue = m_device->GetDefaultComputeQueue();
-    if (c_queue && descriptor_indexing) {
+
+    if (m_device->compute_queues().empty()) {
+        return;
+    }
+    if (descriptor_indexing) {
         char const *csSource =
             "#version 450\n"
             "#extension GL_EXT_nonuniform_qualifier : enable\n "
@@ -502,16 +505,16 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = 5;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Stage = Compute");
-        vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(m_default_queue);
         m_errorMonitor->VerifyFound();
         // Out of Bounds
         data = (uint32_t *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Stage = Compute");
-        vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(m_default_queue);
         m_errorMonitor->VerifyFound();
         vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
     }
@@ -741,7 +744,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         } else {
             m_errorMonitor->VerifyFound();
         }
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 
     if (multi_draw && multi_draw_features.multiDraw) {
@@ -1134,9 +1137,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
             if (!test.error.empty()) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
             }
-            err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
             ASSERT_VK_SUCCESS(err);
-            err = vk::QueueWaitIdle(m_device->m_queue);
+            err = vk::QueueWaitIdle(m_default_queue);
             ASSERT_VK_SUCCESS(err);
             if (!test.error.empty()) {
                 m_errorMonitor->VerifyFound();
@@ -1205,8 +1208,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
             if (!test.error.empty()) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
             }
-            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-            vk::QueueWaitIdle(m_device->m_queue);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_default_queue);
             if (!test.error.empty()) {
                 m_errorMonitor->VerifyFound();
             }
@@ -1274,9 +1277,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         m_commandBuffer->end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
-        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
-        err = vk::QueueWaitIdle(m_device->m_queue);
+        err = vk::QueueWaitIdle(m_default_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
     }
@@ -1355,7 +1358,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 
     if (!IsDriver(VK_DRIVER_ID_MESA_RADV) && features13.dynamicRendering) {
@@ -1370,7 +1373,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1452,7 +1455,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     vkt::Fence null_fence;
     // use vkQueueSumit2
     m_commandBuffer->QueueCommandBuffer(null_fence, true, true);
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 }
 
@@ -1513,7 +1516,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
     count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
@@ -1529,7 +1532,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
@@ -1560,7 +1563,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
     count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
@@ -1577,7 +1580,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1636,7 +1639,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 
     // Now with an offset and indexed draw
@@ -1668,7 +1671,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1707,8 +1710,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    auto c_queue = m_device->GetDefaultComputeQueue();
-    if (nullptr == c_queue) {
+    if (m_device->compute_queues().empty()) {
         GTEST_SKIP() << "Compute not supported";
     }
 
@@ -1804,8 +1806,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
     vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
 
     uint32_t *data = (uint32_t *)buffer0.memory().map();
@@ -1824,7 +1826,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
     VkPhysicalDeviceProperties properties;
     vk::GetPhysicalDeviceProperties(phys_devices[m_gpu_index], &properties);
-    if (m_device->props.limits.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1)
+    if (m_device->phy().limits_.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1)
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     vk::DestroyInstance(test_inst, NULL);
 
@@ -1869,8 +1871,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
                               nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
-    vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
     vk::DestroyPipelineLayout(m_device->handle(), pl_layout, NULL);
     vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
     for (uint32_t i = 0; i < set_count; i++) {
@@ -1893,8 +1895,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
-    vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
     vk::DestroyPipeline(m_device->handle(), c_pipeline2, nullptr);
     data = (uint32_t *)buffer0.memory().map();
     if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
@@ -2131,7 +2133,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
@@ -2148,7 +2150,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 }
 
@@ -2329,7 +2331,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         } else {
             m_errorMonitor->VerifyFound();
         }
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 }
 
@@ -2529,7 +2531,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         } else {
             m_errorMonitor->VerifyFound();
         }
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 }
 
@@ -2639,7 +2641,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
@@ -2656,6 +2658,6 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 }

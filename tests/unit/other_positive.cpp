@@ -218,7 +218,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
     // We're not creating a valid m_device, but the phy wrapper is useful
     vkt::PhysicalDevice physical_device(gpu());
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
@@ -247,7 +247,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
         // If the features were not captured correctly, this should cause an error
         sampler_ci.anisotropyEnable = VK_TRUE;
-        sampler_ci.maxAnisotropy = physical_device.properties().limits.maxSamplerAnisotropy;
+        sampler_ci.maxAnisotropy = physical_device.limits_.maxSamplerAnisotropy;
 
         VkSampler sampler = VK_NULL_HANDLE;
         err = vk::CreateSampler(device, &sampler_ci, nullptr, &sampler);
@@ -491,7 +491,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto queue_family = DeviceObj()->GetDefaultQueue()->get_family_index();
+    const auto queue_family = m_device->graphics_queues()[0]->get_family_index();
     constexpr uint32_t queue_index = 0;
     vkt::CommandPool command_pool(*DeviceObj(), queue_family);
 
@@ -625,7 +625,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
 
     // Get Metal Device and Metal Command Queue in 1 call
     {
-        const VkQueue queue = m_device->m_queue;
+        const VkQueue queue = m_default_queue;
 
         VkExportMetalCommandQueueInfoEXT queueInfo = vku::InitStructHelper();
         queueInfo.queue = queue;

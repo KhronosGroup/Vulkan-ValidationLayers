@@ -118,7 +118,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     vk::CmdEndRenderPass(*m_commandBuffer);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 // Image transition ensures that image data is made visible and available when necessary.
@@ -472,7 +472,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     submit.pCommandBufferInfos = &command_buffer_info;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -480,8 +480,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_device->m_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
@@ -535,7 +535,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -543,6 +543,6 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_device->m_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 }

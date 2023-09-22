@@ -293,11 +293,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
@@ -386,11 +386,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
@@ -474,11 +474,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     vk::QueueWaitIdle(sparse_queue);
 }
 
@@ -545,7 +545,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-parameter");
-    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -592,6 +592,6 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-flags-parameter");
-    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }

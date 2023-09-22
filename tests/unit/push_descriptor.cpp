@@ -39,7 +39,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     // Create a buffer to be used for invalid updates
     VkBufferCreateInfo buff_ci = vku::InitStructHelper();
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buff_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
+    buff_ci.size = m_device->phy().limits_.minUniformBufferOffsetAlignment;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Buffer buffer(*m_device, buff_ci);
 
@@ -628,7 +628,7 @@ TEST_F(NegativePushDescriptor, DescriptorUpdateTemplateEntryWithInlineUniformBlo
     // Create a buffer to be used for invalid updates
     VkBufferCreateInfo buff_ci = vku::InitStructHelper();
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buff_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
+    buff_ci.size = m_device->phy().limits_.minUniformBufferOffsetAlignment;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Buffer buffer(*m_device, buff_ci);
 
@@ -764,7 +764,7 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto const min_alignment = m_device->props.limits.minUniformBufferOffsetAlignment;
+    auto const min_alignment = m_device->phy().limits_.minUniformBufferOffsetAlignment;
     if (min_alignment == 0) {
         GTEST_SKIP() << "minUniformBufferOffsetAlignment is zero";
     }

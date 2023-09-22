@@ -486,7 +486,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     submit_info.pWaitDstStageMask = &stage_mask;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -494,8 +494,8 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_device->m_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
@@ -542,15 +542,15 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.pWaitDstStageMask = &stage_mask;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_device->m_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(PositiveWsi, SwapchainImageLayout) {
@@ -646,7 +646,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     submit_info.pSignalSemaphores = NULL;
     vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(m_device->device(), 1, &fence.handle());
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence.handle());
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, fence.handle());
     vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
@@ -730,7 +730,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    vk::QueuePresentKHR(m_device->m_queue, &present);
+    vk::QueuePresentKHR(m_default_queue, &present);
 
     // Presenting image multiple times is valid in the shared present mode.
     //
@@ -743,7 +743,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     // of a shared presentable image after a present. The application must call vkQueuePresentKHR to guarantee an update. However,
     // the presentation engine may update from it at any time.
     for (uint32_t i = 0; i < 5; ++i) {
-        vk::QueuePresentKHR(m_device->m_queue, &present);
+        vk::QueuePresentKHR(m_default_queue, &present);
     }
 }
 

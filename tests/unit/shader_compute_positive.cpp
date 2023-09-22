@@ -21,9 +21,9 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSize) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
-    uint32_t y_size_limit = m_device->props.limits.maxComputeWorkGroupSize[1];
-    uint32_t z_size_limit = m_device->props.limits.maxComputeWorkGroupSize[2];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    uint32_t y_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[1];
+    uint32_t z_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[2];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -62,7 +62,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeSpecConstantUnder) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -161,7 +161,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeIdSpecConstant) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
@@ -222,7 +222,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSizeId) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -261,7 +261,7 @@ TEST_F(PositiveShaderCompute, SharedMemorySpecConstantOp) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     if (max_shared_ints < 16 * 7) {

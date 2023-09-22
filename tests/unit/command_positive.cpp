@@ -84,8 +84,8 @@ TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveCommand, ClearAttachmentsCalledInSecondaryCB) {
@@ -338,7 +338,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &primary_command_buffer;
-    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
     err = vk::DeviceWaitIdle(m_device->device());
     ASSERT_VK_SUCCESS(err);
@@ -506,12 +506,12 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
 
     // Submit CB once signaling s1, with fence so we can roll forward to its retirement.
     VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &m_commandBuffer->handle(), 1, &s1};
-    err = vk::QueueSubmit(m_device->m_queue, 1, &si, fence);
+    err = vk::QueueSubmit(m_default_queue, 1, &si, fence);
     ASSERT_VK_SUCCESS(err);
 
     // Submit CB again, signaling s2.
     si.pSignalSemaphores = &s2;
-    err = vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
+    err = vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
 
     // Wait for fence.
@@ -711,8 +711,8 @@ TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
     submit_info.commandBufferCount = 1;
     VkCommandBuffer handles[] = {commandBuffer.handle()};
     submit_info.pCommandBuffers = handles;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
@@ -739,8 +739,8 @@ TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmdBuffer;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
@@ -940,8 +940,8 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffer) {
     submit_info.commandBufferCount = size32(command_buffers);
     submit_info.pCommandBuffers = command_buffers.data();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
@@ -979,8 +979,8 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
     submit_info.commandBufferCount = size32(command_buffers);
     submit_info.pCommandBuffers = command_buffers.data();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {

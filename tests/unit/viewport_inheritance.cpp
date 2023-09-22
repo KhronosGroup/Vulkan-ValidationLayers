@@ -246,7 +246,7 @@ class ViewportInheritanceTestData {
         return true;
     }
 
-    ViewportInheritanceTestData(VkDeviceObj* p_device_obj, VkPhysicalDevice physical_device) noexcept
+    ViewportInheritanceTestData(vkt::Device* p_device_obj, VkPhysicalDevice physical_device) noexcept
         : m_colorImageObj(p_device_obj) {
         m_device = p_device_obj->handle();
 

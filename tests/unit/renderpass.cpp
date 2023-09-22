@@ -481,7 +481,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 1u, &subpass, 0u, nullptr);
 
     // Test too many color attachments
-    const uint32_t max_color_attachments = m_device->props.limits.maxColorAttachments;
+    const uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments;
     const uint32_t too_big_max_attachments = 65536 + 1;  // let's say this is too much to allocate
     if (max_color_attachments >= too_big_max_attachments) {
         printf("VkPhysicalDeviceLimits::maxColorAttachments is too large to practically test against -- skipping part of test.\n");
@@ -1712,14 +1712,14 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyRenderPass-renderPass-00873");
     vk::DestroyRenderPass(m_device->device(), rp.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     // Wait for queue to complete so we can safely destroy rp
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->SetUnexpectedError("If renderPass is not VK_NULL_HANDLE, renderPass must be a valid VkRenderPass handle");
     m_errorMonitor->SetUnexpectedError("Was it created? Has it already been destroyed?");
 }
@@ -2288,7 +2288,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
     fb_info.pAttachments = ivs;
 
     // Request fb that exceeds max width
-    fb_info.width = m_device->props.limits.maxFramebufferWidth + 1;
+    fb_info.width = m_device->phy().limits_.maxFramebufferWidth + 1;
     fb_info.height = 100;
     fb_info.layers = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-width-00886");
@@ -2304,7 +2304,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
 
     // Request fb that exceeds max height
     fb_info.width = 100;
-    fb_info.height = m_device->props.limits.maxFramebufferHeight + 1;
+    fb_info.height = m_device->phy().limits_.maxFramebufferHeight + 1;
     fb_info.layers = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-height-00888");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04534");
@@ -2320,7 +2320,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
     // Request fb that exceeds max layers
     fb_info.width = 100;
     fb_info.height = 100;
-    fb_info.layers = m_device->props.limits.maxFramebufferLayers + 1;
+    fb_info.layers = m_device->phy().limits_.maxFramebufferLayers + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-layers-00890");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04535");
     vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
@@ -4000,7 +4000,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     vk::CreateImage(device(), &image_create_info, nullptr, &bad_flag_image);
     m_errorMonitor->VerifyFound();
 
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();

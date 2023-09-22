@@ -235,10 +235,9 @@ Device::~Device() noexcept { destroy(); }
 
 void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext) {
     // request all queues
-    const std::vector<VkQueueFamilyProperties> queue_props = phy_.queue_properties();
-    QueueCreateInfoArray queue_info(phy_.queue_properties());
-    for (uint32_t i = 0; i < (uint32_t)queue_props.size(); i++) {
-        if (queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    QueueCreateInfoArray queue_info(phy_.queue_properties_);
+    for (uint32_t i = 0; i < (uint32_t)phy_.queue_properties_.size(); i++) {
+        if (phy_.queue_properties_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             graphics_queue_node_index_ = i;
             break;
         }
@@ -289,18 +288,13 @@ void Device::init(const VkDeviceCreateInfo &info) {
 }
 
 void Device::init_queues(const VkDeviceCreateInfo &info) {
-    uint32_t queue_node_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, NULL);
-    EXPECT(queue_node_count >= 1);
-
-    std::vector<VkQueueFamilyProperties> queue_props(queue_node_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, queue_props.data());
+    uint32_t queue_node_count = phy_.queue_properties_.size();
 
     queue_families_.resize(queue_node_count);
     for (uint32_t i = 0; i < info.queueCreateInfoCount; i++) {
         const auto &queue_create_info = info.pQueueCreateInfos[i];
         auto queue_family_i = queue_create_info.queueFamilyIndex;
-        const auto &queue_family_prop = queue_props[queue_family_i];
+        const auto &queue_family_prop = phy_.queue_properties_[queue_family_i];
 
         QueueFamilyQueues &queue_storage = queue_families_[queue_family_i];
         queue_storage.reserve(queue_create_info.queueCount);
@@ -335,29 +329,30 @@ const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_fami
     return queue_families_[queue_family];
 }
 
-Queue *Device::GetDefaultQueue() {
-    if (graphics_queues().empty()) return nullptr;
-    return graphics_queues()[0];
-}
-
-Queue *Device::GetDefaultComputeQueue() {
-    if (compute_queues().empty()) return nullptr;
-    return compute_queues()[0];
+std::optional<uint32_t> Device::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) {
+    for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
+        const auto flags = phy_.queue_properties_[i].queueFlags;
+        const bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;
+        if (matches && ((flags & without) == 0) && (phy_.queue_properties_[i].queueCount > 0)) {
+            return i;
+        }
+    }
+    return {};
 }
 
 void Device::init_formats() {
     // For each 1.0 core format, undefined = first, 12x12_SRGB_BLOCK = last
     for (int f = VK_FORMAT_UNDEFINED; f <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; f++) {
         const VkFormat fmt = static_cast<VkFormat>(f);
-        const VkFormatProperties props = format_properties(fmt);
+        const VkFormatProperties format_props = format_properties(fmt);
 
-        if (props.linearTilingFeatures) {
-            const Format tmp = {fmt, VK_IMAGE_TILING_LINEAR, props.linearTilingFeatures};
+        if (format_props.linearTilingFeatures) {
+            const Format tmp = {fmt, VK_IMAGE_TILING_LINEAR, format_props.linearTilingFeatures};
             formats_.push_back(tmp);
         }
 
-        if (props.optimalTilingFeatures) {
-            const Format tmp = {fmt, VK_IMAGE_TILING_OPTIMAL, props.optimalTilingFeatures};
+        if (format_props.optimalTilingFeatures) {
+            const Format tmp = {fmt, VK_IMAGE_TILING_OPTIMAL, format_props.optimalTilingFeatures};
             formats_.push_back(tmp);
         }
     }

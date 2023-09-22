@@ -33,7 +33,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features));
-    auto queueFamilyProperties = m_device->phy().queue_properties();
+    auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
 
@@ -119,7 +119,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto queueFamilyProperties = m_device->phy().queue_properties();
+    auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
@@ -287,7 +287,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto queueFamilyProperties = m_device->phy().queue_properties();
+    auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
@@ -391,7 +391,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto queueFamilyProperties = m_device->phy().queue_properties();
+    auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
@@ -557,7 +557,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto queueFamilyProperties = m_device->phy().queue_properties();
+    auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
@@ -815,7 +815,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto queueFamilyProperties = m_device->phy().queue_properties();
+    auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
@@ -1047,7 +1047,7 @@ TEST_F(NegativeQuery, HostyResetDevice) {
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
     // Create a second device with the feature enabled.
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     auto features = m_device->phy().features();
 
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&host_query_reset_features);
@@ -1090,7 +1090,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1120,7 +1120,7 @@ TEST_F(NegativeQuery, PoolCreate) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
 
     VkDevice local_device;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
@@ -1291,7 +1291,7 @@ TEST_F(NegativeQuery, PreciseBit) {
 
     // Test for precise bit when precise feature is not available
     features.occlusionQueryPrecise = false;
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
+    vkt::Device test_device(gpu(), device_extension_names, &features);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
@@ -1373,8 +1373,8 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Attempt to obtain partial results.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-00818");
@@ -1440,13 +1440,13 @@ TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyQueryPool-queryPool-00793");
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     // Now that cmd buffer done we can safely destroy query_pool
     m_errorMonitor->SetUnexpectedError("If queryPool is not VK_NULL_HANDLE, queryPool must be a valid VkQueryPool handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove QueryPool obj");
@@ -1716,7 +1716,7 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
@@ -1726,13 +1726,13 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     } while (res != VK_SUCCESS);
 
     // Submit the command buffer again, making query pool in use and invalid to destroy
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyQueryPool-queryPool-00793");
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 

@@ -424,7 +424,7 @@ bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHan
     return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
 }
 
-void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
+void AllocateDisjointMemory(vkt::Device *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
     VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
     image_plane_req.planeAspect = plane;
@@ -750,7 +750,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &
     return true;
 }
 
-bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
+bool VkBufferTest::GetTestConditionValid(vkt::Device *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
     if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {
         return true;
     }
@@ -768,16 +768,16 @@ bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlag
         vk::DestroyBuffer(aVulkanDevice->device(), vulkanBuffer, nullptr);
         offset_limit = memory_reqs.alignment;
     } else if ((VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) & aBufferUsage) {
-        offset_limit = aVulkanDevice->props.limits.minTexelBufferOffsetAlignment;
+        offset_limit = aVulkanDevice->phy().limits_.minTexelBufferOffsetAlignment;
     } else if (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT & aBufferUsage) {
-        offset_limit = aVulkanDevice->props.limits.minUniformBufferOffsetAlignment;
+        offset_limit = aVulkanDevice->phy().limits_.minUniformBufferOffsetAlignment;
     } else if (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT & aBufferUsage) {
-        offset_limit = aVulkanDevice->props.limits.minStorageBufferOffsetAlignment;
+        offset_limit = aVulkanDevice->phy().limits_.minStorageBufferOffsetAlignment;
     }
     return eOffsetAlignment < offset_limit;
 }
 
-VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBufferUsage, eTestEnFlags aTestFlag)
+VkBufferTest::VkBufferTest(vkt::Device *aVulkanDevice, VkBufferUsageFlags aBufferUsage, eTestEnFlags aTestFlag)
     : AllocateCurrent(true),
       BoundCurrent(false),
       CreateCurrent(false),
@@ -837,7 +837,7 @@ VkBufferTest::~VkBufferTest() {
     }
 }
 
-void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
+void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
     vkt::CommandPool pool(*device, device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buf(device, &pool);
 
@@ -954,7 +954,7 @@ void VkBufferTest::TestDoubleDestroy() {
     vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
 }
 
-OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings,
+OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
                                          VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext, int buffer_info_size,
                                          int image_info_size, int buffer_view_size)
@@ -1077,7 +1077,7 @@ BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {
     delete queue;
 }
 
-void BarrierQueueFamilyBase::QueueFamilyObjs::Init(VkDeviceObj *device, uint32_t qf_index, VkQueue qf_queue,
+void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, uint32_t qf_index, VkQueue qf_queue,
                                                    VkCommandPoolCreateFlags cp_flags) {
     index = qf_index;
     queue = new vkt::Queue(qf_queue, qf_index);
@@ -1090,7 +1090,7 @@ BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<ui
     if (0 == queue_family_indices.size()) {
         return;  // This is invalid
     }
-    VkDeviceObj *device_obj = layer_test->DeviceObj();
+    vkt::Device *device_obj = layer_test->DeviceObj();
     queue_families.reserve(queue_family_indices.size());
     default_index = queue_family_indices[0];
     for (auto qfi : queue_family_indices) {
@@ -1109,7 +1109,7 @@ void BarrierQueueFamilyBase::Context::Reset() {
 }
 
 void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
-    VkDeviceObj *device_obj = context_->layer_test->DeviceObj();
+    vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
     image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families,
                 image_memory);
@@ -1131,7 +1131,7 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
 }
 
 void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
-    VkDeviceObj *device_obj = context_->layer_test->DeviceObj();
+    vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
     image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families,
                 image_memory);

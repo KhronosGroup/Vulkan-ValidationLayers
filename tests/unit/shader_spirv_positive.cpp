@@ -161,9 +161,9 @@ TEST_F(PositiveShaderSpirv, GroupDecorations) {
         dslb[i].pImmutableSamplers = NULL;
         dslb[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
     }
-    if (m_device->props.limits.maxPerStageDescriptorStorageBuffers < dslb_size) {
+    if (m_device->phy().limits_.maxPerStageDescriptorStorageBuffers < dslb_size) {
         GTEST_SKIP() << "Needed storage buffer bindings (" << dslb_size << ") exceeds this devices limit of "
-                     << m_device->props.limits.maxPerStageDescriptorStorageBuffers;
+                     << m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
     }
 
     CreateComputePipelineHelper pipe(*this);
@@ -645,8 +645,8 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Make sure spec constants were updated correctly
     void *pData;

@@ -20,7 +20,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto index = m_device->graphics_queue_node_index_;
-    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+    if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
     if (!m_device->phy().features().sparseBinding) {
@@ -83,10 +83,10 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     bindSparseInfo.imageOpaqueBindCount = 1;
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
-    vk::QueueBindSparse(m_device->m_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSparseImage, BindFreeMemory) {
@@ -95,7 +95,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto index = m_device->graphics_queue_node_index_;
-    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+    if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
     if (!m_device->phy().features().sparseResidencyImage2D) {
@@ -144,13 +144,13 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
     // Bind to the memory
-    vk::QueueBindSparse(m_device->m_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
 
     // Bind back to NULL
     bind.memory = VK_NULL_HANDLE;
-    vk::QueueBindSparse(m_device->m_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Free the memory, then use the image in a new command buffer
     memory.destroy();
@@ -179,10 +179,10 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSparseImage, BindMetadata) {
@@ -191,7 +191,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto index = m_device->graphics_queue_node_index_;
-    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+    if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
     if (!m_device->phy().features().sparseResidencyImage2D) {
@@ -259,10 +259,10 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     bind_info.imageOpaqueBindCount = 1;
     bind_info.pImageOpaqueBinds = &opaque_bind_info;
 
-    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveSparseImage, OpImageSparse) {
@@ -271,7 +271,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto index = m_device->graphics_queue_node_index_;
-    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+    if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
     if (!m_device->phy().features().sparseResidencyImage2D) {

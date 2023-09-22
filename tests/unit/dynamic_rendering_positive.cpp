@@ -372,9 +372,9 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = static_cast<uint32_t>(cbs.size());
     submit.pCommandBuffers = cbs.data();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
@@ -755,9 +755,9 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
@@ -837,9 +837,9 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = static_cast<uint32_t>(cbs.size());
     submit.pCommandBuffers = cbs.data();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {

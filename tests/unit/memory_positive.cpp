@@ -216,7 +216,7 @@ TEST_F(PositiveMemory, NonCoherentMapping) {
     VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
     mem_reqs.memoryTypeBits = 0xFFFFFFFF;
-    const VkDeviceSize atom_size = m_device->props.limits.nonCoherentAtomSize;
+    const VkDeviceSize atom_size = m_device->phy().limits_.nonCoherentAtomSize;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.memoryTypeIndex = 0;
 

@@ -39,30 +39,6 @@ using vkt::MakeVkHandles;
 static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
 static constexpr VkDeviceSize kZeroDeviceSize{0};
 
-class VkDeviceObj : public vkt::Device {
-  public:
-    VkDeviceObj(uint32_t id, VkPhysicalDevice obj);
-    VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
-                VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr);
-
-    // Find a queue family with and without desired capabilities
-    std::optional<uint32_t> QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true);
-    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
-        // an all_bits match with 0 matches all
-        return QueueFamilyMatching(VkQueueFlags(0), capabilities, true /* all_bits with */);
-    }
-
-    VkDevice device() { return handle(); }
-    void SetDeviceQueue();
-
-    uint32_t id;
-    VkPhysicalDeviceProperties props;
-    std::vector<VkQueueFamilyProperties> queue_props;
-
-    vkt::Queue *m_queue_obj = nullptr;
-    VkQueue m_queue;
-};
-
 class VkImageObj;
 class VkCommandBufferObj;
 
@@ -104,7 +80,7 @@ class VkRenderFramework : public VkTestFramework {
   public:
     VkInstance instance() const { return instance_; }
     VkDevice device() const { return m_device->device(); }
-    VkDeviceObj *DeviceObj() const { return m_device; }
+    vkt::Device *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu() const;
     VkRenderPass renderPass() const { return m_renderPass; }
     const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
@@ -181,7 +157,7 @@ class VkRenderFramework : public VkTestFramework {
                                     const VkSpecializationInfo *spec_info = nullptr, const spv_target_env env = SPV_ENV_VULKAN_1_0,
                                     bool debug = false) {
         std::vector<uint32_t> spv;
-        GLSLtoSPV(&m_device->props.limits, stage, code, spv, debug, env);
+        GLSLtoSPV(&m_device->phy().limits_, stage, code, spv, debug, env);
         return spv;
     }
 
@@ -203,7 +179,7 @@ class VkRenderFramework : public VkTestFramework {
     VkPhysicalDeviceProperties physDevProps_;
 
     uint32_t m_gpu_index;
-    VkDeviceObj *m_device;
+    vkt::Device *m_device;
     vkt::CommandPool *m_commandPool;
     VkCommandBufferObj *m_commandBuffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
@@ -242,6 +218,8 @@ class VkRenderFramework : public VkTestFramework {
     float m_depth_clear_color;
     uint32_t m_stencil_clear_color;
     VkImageObj *m_depthStencil;
+    // first graphics queue, used must often, don't overwrite, use Device class
+    VkQueue m_default_queue;
 
     // Requested extensions to enable at device creation time
     std::vector<const char *> m_required_extensions;
@@ -283,9 +261,9 @@ class VkDescriptorSetObj;
 class VkCommandBufferObj : public vkt::CommandBuffer {
   public:
     VkCommandBufferObj() : vkt::CommandBuffer() {}
-    VkCommandBufferObj(VkDeviceObj *device, const vkt::CommandPool *pool,
+    VkCommandBufferObj(vkt::Device *device, const vkt::CommandPool *pool,
                        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, vkt::Queue *queue = nullptr);
-    void Init(VkDeviceObj *device, const vkt::CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    void Init(vkt::Device *device, const vkt::CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
               vkt::Queue *queue = nullptr);
     void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
@@ -334,13 +312,13 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
     }
 
   protected:
-    VkDeviceObj *m_device;
+    vkt::Device *m_device;
     vkt::Queue *m_queue;
 };
 
 class VkImageObj : public vkt::Image {
   public:
-    VkImageObj(VkDeviceObj *dev);
+    VkImageObj(vkt::Device *dev);
     bool IsCompatible(VkImageUsageFlags usages, VkFormatFeatureFlags2 features);
 
   public:
@@ -434,10 +412,10 @@ class VkImageObj : public vkt::Image {
     VkImageLayout Layout() const { return m_descriptorImageInfo.imageLayout; }
     uint32_t width() const { return extent().width; }
     uint32_t height() const { return extent().height; }
-    VkDeviceObj *device() const { return m_device; }
+    vkt::Device *device() const { return m_device; }
 
   protected:
-    VkDeviceObj *m_device;
+    vkt::Device *m_device;
 
     vkt::ImageView m_targetView;
     VkDescriptorImageInfo m_descriptorImageInfo;
@@ -447,7 +425,7 @@ class VkImageObj : public vkt::Image {
 
 class VkDescriptorSetObj : public vkt::DescriptorPool {
   public:
-    VkDescriptorSetObj(VkDeviceObj *device);
+    VkDescriptorSetObj(vkt::Device *device);
     ~VkDescriptorSetObj() noexcept;
 
     int AppendDummy();
@@ -459,7 +437,7 @@ class VkDescriptorSetObj : public vkt::DescriptorPool {
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_layout.handle(); }
 
   protected:
-    VkDeviceObj *m_device;
+    vkt::Device *m_device;
     std::vector<VkDescriptorSetLayoutBinding> m_layout_bindings;
     std::map<VkDescriptorType, int> m_type_counts;
     int m_nextSlot;
@@ -490,7 +468,7 @@ class VkShaderObj : public vkt::ShaderModule {
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
     bool InitFromGLSL(bool debug = false);
-    VkResult InitFromGLSLTry(bool debug = false, const VkDeviceObj *custom_device = nullptr);
+    VkResult InitFromGLSLTry(bool debug = false, const vkt::Device *custom_device = nullptr);
     bool InitFromASM();
     VkResult InitFromASMTry();
 
@@ -508,7 +486,7 @@ class VkShaderObj : public vkt::ShaderModule {
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
     VkRenderFramework &m_framework;
-    VkDeviceObj &m_device;
+    vkt::Device &m_device;
     const char *m_source;
     spv_target_env m_spv_env;
 };

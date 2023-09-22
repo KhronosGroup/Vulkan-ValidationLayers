@@ -221,7 +221,7 @@ TEST_F(NegativeCommand, SecondaryCommandbufferAsPrimary) {
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -250,7 +250,7 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -276,14 +276,14 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 }
@@ -316,14 +316,14 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    err = vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    err = vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    err = vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    err = vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 }
@@ -346,7 +346,7 @@ TEST_F(NegativeCommand, PushConstants) {
         char const *msg;
     };
 
-    const uint32_t too_big = m_device->props.limits.maxPushConstantsSize + 0x4;
+    const uint32_t too_big = m_device->phy().limits_.maxPushConstantsSize + 0x4;
     const std::array<PipelineLayoutTestCase, 10> range_tests = {{
         {{VK_SHADER_STAGE_VERTEX_BIT, 0, 0}, "VUID-VkPushConstantRange-size-00296"},
         {{VK_SHADER_STAGE_VERTEX_BIT, 0, 1}, "VUID-VkPushConstantRange-size-00297"},
@@ -1017,9 +1017,9 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     submit_info.commandBufferCount = 2;
     submit_info.pCommandBuffers = duplicates;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, simultaneous_use_message);
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Set one time use and now look for one time submit
     duplicates[0] = duplicates[1] = cmd_bufs[1];
@@ -1029,9 +1029,9 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     vk::EndCommandBuffer(cmd_bufs[1]);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00071");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
@@ -1155,7 +1155,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewType-07752");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1580,7 +1580,7 @@ TEST_F(NegativeCommand, ImageBufferCopy) {
 
     // Bail if any dimension of transfer granularity is 0.
     auto index = m_device->graphics_queue_node_index_;
-    auto queue_family_properties = m_device->phy().queue_properties();
+    auto queue_family_properties = m_device->phy().queue_properties_;
     if ((queue_family_properties[index].minImageTransferGranularity.depth == 0) ||
         (queue_family_properties[index].minImageTransferGranularity.width == 0) ||
         (queue_family_properties[index].minImageTransferGranularity.height == 0)) {
@@ -4499,7 +4499,7 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (m_device->queue_props.size() < 2) {
+    if (m_device->phy().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Need 2 different queues for testing skipping.";
     }
 
@@ -5056,7 +5056,7 @@ TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->props.limits.maxDrawIndirectCount < 2) {
+    if (m_device->phy().limits_.maxDrawIndirectCount < 2) {
         GTEST_SKIP() << "maxDrawIndirectCount is too low";
     }
 
@@ -5326,7 +5326,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->phy().properties().limits.maxViewports <= 1) {
+    if (m_device->phy().limits_.maxViewports <= 1) {
         GTEST_SKIP() << "Device doesn't support multiple viewports";
     }
 
@@ -5550,7 +5550,7 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     // Bind pipeline that has dynamic w-scaling enabled
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_dynamic.Handle());
 
-    const auto max_vps = m_device->props.limits.maxViewports;
+    const auto max_vps = m_device->phy().limits_.maxViewports;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324");
     vk::CmdSetViewportWScalingNV(m_commandBuffer->handle(), 1, max_vps, scale.data());

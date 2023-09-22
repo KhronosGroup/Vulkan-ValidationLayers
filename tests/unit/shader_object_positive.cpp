@@ -463,8 +463,8 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     VkSubmitInfo submitInfo = vku::InitStructHelper();
     submitInfo.commandBufferCount = 1u;
     submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
@@ -635,8 +635,8 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     VkSubmitInfo submitInfo = vku::InitStructHelper();
     submitInfo.commandBufferCount = 1u;
     submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveShaderObject, ComputeShader) {
@@ -723,8 +723,8 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     VkSubmitInfo submitInfo = vku::InitStructHelper();
     submitInfo.commandBufferCount = 1u;
     submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
@@ -875,8 +875,8 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     VkSubmitInfo submitInfo = vku::InitStructHelper();
     submitInfo.commandBufferCount = 1u;
     submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveShaderObject, FailCreateShaders) {

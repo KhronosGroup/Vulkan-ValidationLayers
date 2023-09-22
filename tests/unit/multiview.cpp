@@ -777,7 +777,7 @@ TEST_F(NegativeMultiview, Features) {
     multiview_features.multiview = VK_FALSE;
 
     vkt::PhysicalDevice physical_device(gpu());
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {

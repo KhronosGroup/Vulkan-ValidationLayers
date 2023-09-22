@@ -15,7 +15,7 @@ TEST_F(MultiDeviceTest, CommonParentFillBuffer) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto features = m_device->phy().features();
-    m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
@@ -40,7 +40,7 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     auto features = m_device->phy().features();
-    m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
@@ -80,7 +80,7 @@ TEST_F(MultiDeviceTest, CommonParentBindImage) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     auto features = m_device->phy().features();
-    m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkImageObj image(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -113,7 +113,7 @@ TEST_F(MultiDeviceTest, CommonParentImageView) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto features = m_device->phy().features();
-    m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkImageObj image(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -140,7 +140,7 @@ TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto features = m_device->phy().features();
-    m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 0;

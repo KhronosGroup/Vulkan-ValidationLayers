@@ -105,7 +105,7 @@ class VideoConfig {
 
 class BitstreamBuffer {
   public:
-    BitstreamBuffer(VkDeviceObj* device, const VideoConfig& config, VkDeviceSize size, bool is_protected = false)
+    BitstreamBuffer(vkt::Device* device, const VideoConfig& config, VkDeviceSize size, bool is_protected = false)
         : device_(device), size_(size), memory_(VK_NULL_HANDLE), buffer_(VK_NULL_HANDLE) {
         VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
         profile_list.profileCount = 1;
@@ -162,7 +162,7 @@ class BitstreamBuffer {
         vk::FreeMemory(device_->device(), memory_, nullptr);
     }
 
-    VkDeviceObj* device_{};
+    vkt::Device* device_{};
     VkDeviceSize size_{};
     VkDeviceMemory memory_{};
     VkBuffer buffer_{};
@@ -184,7 +184,7 @@ class VideoPictureResource {
     }
 
   protected:
-    VideoPictureResource(VkDeviceObj* device)
+    VideoPictureResource(vkt::Device* device)
         : device_(device),
           memory_(VK_NULL_HANDLE),
           image_(VK_NULL_HANDLE),
@@ -266,7 +266,7 @@ class VideoPictureResource {
     }
 
   private:
-    VkDeviceObj* device_{};
+    vkt::Device* device_{};
     VkDeviceMemory memory_{};
     VkImage image_{};
     VkImageView image_view_{};
@@ -276,7 +276,7 @@ class VideoPictureResource {
 
 class VideoDecodeOutput : public VideoPictureResource {
   public:
-    VideoDecodeOutput(VkDeviceObj* device, const VideoConfig& config, bool is_protected = false)
+    VideoDecodeOutput(vkt::Device* device, const VideoConfig& config, bool is_protected = false)
         : VideoPictureResource(device), picture_(vku::InitStruct<VkVideoPictureResourceInfoKHR>()) {
         VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
         profile_list.profileCount = 1;
@@ -298,7 +298,7 @@ class VideoDecodeOutput : public VideoPictureResource {
 
 class VideoDPB : public VideoPictureResource {
   public:
-    VideoDPB(VkDeviceObj* device, const VideoConfig& config, bool is_protected = false) : VideoPictureResource(device) {
+    VideoDPB(vkt::Device* device, const VideoConfig& config, bool is_protected = false) : VideoPictureResource(device) {
         VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
         profile_list.profileCount = 1;
         profile_list.pProfiles = config.Profile();
@@ -869,7 +869,7 @@ class VideoContext {
         PFN_vkDestroyVideoSessionParametersKHR DestroyVideoSessionParametersKHR;
     } vk{};
 
-    explicit VideoContext(VkDeviceObj* device, const VideoConfig& config, bool protected_content = false)
+    explicit VideoContext(vkt::Device* device, const VideoConfig& config, bool protected_content = false)
         : vk(),
           config_(config),
           device_(device),
@@ -961,7 +961,7 @@ class VideoContext {
   private:
     VideoDecodeInfo Decode() { return VideoDecodeInfo(config_, *bitstream_, dpb_.get(), decode_output_.get()); }
 
-    vkt::Queue GetQueue(VkDeviceObj* device, const VideoConfig& config) const {
+    vkt::Queue GetQueue(vkt::Device* device, const VideoConfig& config) const {
         VkQueue queue = VK_NULL_HANDLE;
         if (config.QueueFamilyIndex() != VK_QUEUE_FAMILY_IGNORED) {
             vk::GetDeviceQueue(device->device(), config.QueueFamilyIndex(), 0, &queue);
@@ -1033,7 +1033,7 @@ class VideoContext {
 
     const VideoConfig config_{};
 
-    VkDeviceObj* device_{};
+    vkt::Device* device_{};
     vkt::Queue queue_;
     vkt::CommandPool cmd_pool_{};
     VkCommandBufferObj cmd_buffer_{};

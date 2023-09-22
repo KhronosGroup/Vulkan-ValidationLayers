@@ -147,14 +147,13 @@ class NonDispHandle : public Handle<T> {
 
 class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
   public:
-    explicit PhysicalDevice(VkPhysicalDevice phy) : Handle(phy) {
-        memory_properties_ = memory_properties();
-        device_properties_ = properties();
-    }
+    explicit PhysicalDevice(VkPhysicalDevice phy)
+        : Handle(phy),
+          properties_(properties()),
+          limits_(properties_.limits),
+          memory_properties_(memory_properties()),
+          queue_properties_(queue_properties()) {}
 
-    VkPhysicalDeviceProperties properties() const;
-    VkPhysicalDeviceMemoryProperties memory_properties() const;
-    std::vector<VkQueueFamilyProperties> queue_properties() const;
     VkPhysicalDeviceFeatures features() const;
 
     bool set_memory_type(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkMemoryPropertyFlags properties,
@@ -166,13 +165,17 @@ class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
     // vkEnumerateLayers()
     std::vector<VkLayerProperties> layers() const;
 
+    const VkPhysicalDeviceProperties properties_;
+    const VkPhysicalDeviceLimits limits_;
+    const VkPhysicalDeviceMemoryProperties memory_properties_;
+    const std::vector<VkQueueFamilyProperties> queue_properties_;
+
   private:
     void add_extension_dependencies(uint32_t dependency_count, VkExtensionProperties *depencency_props,
                                     std::vector<VkExtensionProperties> &ext_list);
-
-    VkPhysicalDeviceMemoryProperties memory_properties_;
-
-    VkPhysicalDeviceProperties device_properties_;
+    VkPhysicalDeviceProperties properties() const;
+    std::vector<VkQueueFamilyProperties> queue_properties() const;
+    VkPhysicalDeviceMemoryProperties memory_properties() const;
 };
 
 class QueueCreateInfoArray {
@@ -188,7 +191,13 @@ class QueueCreateInfoArray {
 
 class Device : public internal::Handle<VkDevice> {
   public:
-    explicit Device(VkPhysicalDevice phy) : phy_(phy) {}
+    explicit Device(VkPhysicalDevice phy) : phy_(phy) { init(); }
+    explicit Device(VkPhysicalDevice phy, std::vector<const char *> &extension_names, VkPhysicalDeviceFeatures *features = nullptr,
+                    void *create_device_pnext = nullptr)
+        : phy_(phy) {
+        init(extension_names, features, create_device_pnext);
+    }
+
     ~Device() noexcept;
     void destroy() noexcept;
 
@@ -201,6 +210,7 @@ class Device : public internal::Handle<VkDevice> {
         init(extensions);
     };
 
+    VkDevice device() { return handle(); }
     const PhysicalDevice &phy() const { return phy_; }
 
     std::vector<const char *> GetEnabledExtensions() { return enabled_extensions_; }
@@ -214,14 +224,20 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &compute_queues() { return queues_[COMPUTE]; }
     const std::vector<Queue *> &dma_queues() { return queues_[DMA]; }
 
-    vkt::Queue *GetDefaultQueue();
-    vkt::Queue *GetDefaultComputeQueue();
-
     typedef std::vector<std::unique_ptr<Queue>> QueueFamilyQueues;
     typedef std::vector<QueueFamilyQueues> QueueFamilies;
     const QueueFamilyQueues &queue_family_queues(uint32_t queue_family) const;
 
+    // Find a queue family with and without desired capabilities
+    std::optional<uint32_t> QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true);
+    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
+        // an all_bits match with 0 matches all
+        return QueueFamilyMatching(VkQueueFlags(0), capabilities, true /* all_bits with */);
+    }
+
     uint32_t graphics_queue_node_index_;
+
+    const PhysicalDevice phy_;
 
     struct Format {
         VkFormat format;
@@ -274,8 +290,6 @@ class Device : public internal::Handle<VkDevice> {
 
     void init_queues(const VkDeviceCreateInfo &info);
     void init_formats();
-
-    PhysicalDevice phy_;
 
     std::vector<const char *> enabled_extensions_;
 

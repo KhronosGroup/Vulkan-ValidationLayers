@@ -589,7 +589,7 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
     // Incompatible memory type
     uint32_t invalid_mem_type_index = vvl::kU32Max;
     uint32_t invalid_mem_type_req_index = vvl::kU32Max;
-    auto mem_props = m_device->phy().memory_properties();
+    auto mem_props = m_device->phy().memory_properties_;
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         uint32_t mem_type_bits = mem_reqs[i].memoryRequirements.memoryTypeBits;
         for (uint32_t mem_type_index = 0; mem_type_index < mem_props.memoryTypeCount; ++mem_type_index) {

@@ -265,9 +265,9 @@ TEST_F(NegativeSyncObject, Barriers) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
@@ -714,7 +714,7 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
-    const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
+    const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
     const std::optional<uint32_t> queue_family_index =
         m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
     if (!queue_family_index) {
@@ -785,9 +785,9 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
@@ -1153,7 +1153,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
-    const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
+    const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
     const std::optional<uint32_t> queue_family_index =
         m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
     if (!queue_family_index) {
@@ -1204,9 +1204,9 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
@@ -1253,9 +1253,9 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
@@ -1291,9 +1291,9 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (queue_family_count == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (queue_family_count == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
 
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
@@ -1382,7 +1382,8 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
         // Need a third queue family to test this.
         uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
         for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
-            if (candidate != submit_family && candidate != other_family && m_device->queue_props[candidate].queueCount != 0) {
+            if (candidate != submit_family && candidate != other_family &&
+                m_device->phy().queue_properties_[candidate].queueCount != 0) {
                 third_family = candidate;
                 break;
             }
@@ -1506,9 +1507,9 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
 
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
@@ -1570,9 +1571,9 @@ TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     img_barrier_template.subresourceRange.levelCount = 0;
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
@@ -1756,9 +1757,9 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
 
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
@@ -2118,8 +2119,8 @@ TEST_F(NegativeSyncObject, SubmitSignaledFence) {
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, testFence.handle());
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, testFence.handle());
+    vk::QueueWaitIdle(m_default_queue);
 
     m_errorMonitor->VerifyFound();
 }
@@ -2153,15 +2154,16 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         wait_submit.pWaitSemaphores = &semaphore.handle();
         wait_submit.pWaitDstStageMask = &stage_flags;
 
-        vk::QueueSubmit(m_device->m_queue, 1, &signal_submit, VK_NULL_HANDLE);
-        vk::QueueSubmit(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1, &signal_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1, &wait_submit, VK_NULL_HANDLE);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
         vk::QueueSubmit(other, 1, &wait_submit, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
         vk::QueueWaitIdle(other);
     }
-    if (m_device->queue_props[m_device->m_queue_obj->get_family_index()].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+    if (m_device->phy().queue_properties_[m_device->graphics_queues()[0]->get_family_index()].queueFlags &
+        VK_QUEUE_SPARSE_BINDING_BIT) {
         VkBindSparseInfo signal_bind = vku::InitStructHelper();
         signal_bind.signalSemaphoreCount = 1;
         signal_bind.pSignalSemaphores = &semaphore.handle();
@@ -2170,14 +2172,14 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         wait_bind.waitSemaphoreCount = 1;
         wait_bind.pWaitSemaphores = &semaphore.handle();
 
-        vk::QueueBindSparse(m_device->m_queue, 1, &signal_bind, VK_NULL_HANDLE);
-        vk::QueueBindSparse(m_device->m_queue, 1, &wait_bind, VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue, 1, &signal_bind, VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue, 1, &wait_bind, VK_NULL_HANDLE);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueBindSparse-pWaitSemaphores-01116");
         vk::QueueBindSparse(other, 1, &wait_bind, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
         vk::QueueWaitIdle(other);
     }
 
@@ -2199,13 +2201,13 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         wait_submit.waitSemaphoreInfoCount = 1;
         wait_submit.pWaitSemaphoreInfos = &wait_sem_info;
 
-        vk::QueueSubmit2KHR(m_device->m_queue, 1, &signal_submit, VK_NULL_HANDLE);
-        vk::QueueSubmit2KHR(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 1, &signal_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 1, &wait_submit, VK_NULL_HANDLE);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-semaphore-03871");
         vk::QueueSubmit2KHR(other, 1, &wait_submit, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
         vk::QueueWaitIdle(other);
     }
 }
@@ -2224,11 +2226,11 @@ TEST_F(NegativeSyncObject, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
 
     VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
-        vk::QueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2407,13 +2409,13 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     submit_info.signalSemaphoreCount = 2;
     submit_info.pSignalSemaphores = semaphore;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-03241");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     uint64_t values[2] = {signalValue, 0 /*ignored*/};
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 2;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = values;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     // the indexes in pWaitSemaphores and pWaitSemaphoreValues should match
     VkSemaphore reversed[2] = {semaphore[1], semaphore[0]};
@@ -2428,7 +2430,7 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     timeline_semaphore_submit_info.pSignalSemaphoreValues = nullptr;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 2;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = reversed_values;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     // if we only signal a binary semaphore we don't need a 'values' array
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 0;
@@ -2439,9 +2441,9 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     submit_info.pWaitSemaphores = nullptr;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &extra_binary;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     vk::DestroySemaphore(m_device->device(), semaphore[0], nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
     vk::DestroySemaphore(m_device->device(), extra_binary, nullptr);
@@ -2479,7 +2481,7 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     submit_info[0].pSignalSemaphores = &semaphore;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitSemaphores-03239");
-    vk::QueueSubmit(m_device->m_queue, 1, submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
@@ -2495,7 +2497,7 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     submit_info[1].pWaitSemaphores = &semaphore;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitSemaphores-03239");
-    vk::QueueSubmit(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 2, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -2542,14 +2544,14 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
 
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-03241");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-03240");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     signalValue = 5;
@@ -2564,17 +2566,17 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
 
     // Check for re-signalling an already completed value (5)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pSignalSemaphores-03242");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Submit (6)
     signalValue++;
-    auto err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    auto err = vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
 
     // Check against a pending value (6)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pSignalSemaphores-03242");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     {
@@ -2592,7 +2594,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
         submit_info2.pSignalSemaphores = signal_sems;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pSignalSemaphores-03242");
-        vk::QueueSubmit(m_device->m_queue, 1, &submit_info2, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info2, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2602,7 +2604,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &bigValue;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pSignalSemaphores-03244");
-        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         if (signalValue < vvl::kU64Max) {
@@ -2616,11 +2618,11 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
             timeline_semaphore_submit_info.pWaitSemaphoreValues = &waitValue;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitSemaphores-03243");
-            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
         }
     }
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
@@ -2637,7 +2639,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto index = m_device->graphics_queue_node_index_;
-    if ((m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == 0) {
+    if ((m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == 0) {
         GTEST_SKIP() << "Sparse binding not supported, skipping test";
     }
 
@@ -2668,14 +2670,14 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     // error for both signal and wait
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pWaitSemaphores-03246");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pWaitSemaphores-03246");
-    vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     submit_info.pNext = &timeline_semaphore_submit_info;
 
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pNext-03248");
-    vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
@@ -2684,7 +2686,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     submit_info.waitSemaphoreCount = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pNext-03247");
-    vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     signalValue = 5;
@@ -2700,17 +2702,17 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
 
     // Check for re-signalling an already completed value (5)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pSignalSemaphores-03249");
-    vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Submit (6)
     signalValue++;
-    auto err = vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    auto err = vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
 
     // Check against a pending value (6)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pSignalSemaphores-03249");
-    vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     {
@@ -2728,7 +2730,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
         submit_info2.pSignalSemaphores = signal_sems;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pSignalSemaphores-03249");
-        vk::QueueBindSparse(m_device->m_queue, 1, &submit_info2, VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue, 1, &submit_info2, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2738,7 +2740,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &bigValue;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pSignalSemaphores-03251");
-        vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         if (signalValue < vvl::kU64Max) {
@@ -2751,11 +2753,11 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
             timeline_semaphore_submit_info.pWaitSemaphoreValues = &waitValue;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindSparseInfo-pWaitSemaphores-03250");
-            vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueBindSparse(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
         }
     }
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
@@ -2797,17 +2799,17 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
 
     // Check for re-signalling an already completed value (5)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Submit (6)
     signal_sem_info.value++;
-    auto err = vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    auto err = vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
 
     // Check against a pending value (6)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     {
@@ -2821,7 +2823,7 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
         submit_info.pSignalSemaphoreInfos = double_signal_info;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2834,7 +2836,7 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
         submit_info.pSignalSemaphoreInfos = &signal_sem_info;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03884");
-        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         if (signal_sem_info.value < vvl::kU64Max) {
@@ -2850,11 +2852,11 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
             submit_info.pWaitSemaphoreInfos = &wait_sem_info;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03883");
-            vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
         }
     }
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
@@ -2888,7 +2890,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         submit_info[0].signalSemaphoreCount = 1;
         submit_info[0].pSignalSemaphores = &semaphore[1].handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-03238");
-        vk::QueueSubmit(m_device->m_queue, 1, submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 1, submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         submit_info[1] = vku::InitStructHelper();
@@ -2899,18 +2901,19 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         submit_info[1].pSignalSemaphores = &semaphore[2].handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-03238");
-        vk::QueueSubmit(m_device->m_queue, 2, &submit_info[0], VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue, 2, &submit_info[0], VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         submit_info[2] = vku::InitStructHelper();
         submit_info[2].signalSemaphoreCount = 1;
         submit_info[2].pSignalSemaphores = &semaphore[0].handle();
 
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info[2], VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info[2], VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 2, submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     }
-    if (m_device->queue_props[m_device->m_queue_obj->get_family_index()].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+    if (m_device->phy().queue_properties_[m_device->graphics_queues()[0]->get_family_index()].queueFlags &
+        VK_QUEUE_SPARSE_BINDING_BIT) {
         vkt::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
         semaphore[1].init(*m_device, semaphore_create_info);
@@ -2925,7 +2928,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         bind_info[0].pSignalSemaphores = &semaphore[1].handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueBindSparse-pWaitSemaphores-03245");
-        vk::QueueBindSparse(m_device->m_queue, 1, &bind_info[0], VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue, 1, &bind_info[0], VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         bind_info[1] = vku::InitStructHelper();
@@ -2935,16 +2938,16 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         bind_info[1].pSignalSemaphores = &semaphore[2].handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueBindSparse-pWaitSemaphores-03245");
-        vk::QueueBindSparse(m_device->m_queue, 2, bind_info, VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue, 2, bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         bind_info[2] = vku::InitStructHelper();
         bind_info[2].signalSemaphoreCount = 1;
         bind_info[2].pSignalSemaphores = &semaphore[0].handle();
 
-        ASSERT_VK_SUCCESS(vk::QueueBindSparse(m_device->m_queue, 1, &bind_info[2], VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueBindSparse(m_device->m_queue, 2, bind_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueBindSparse(m_default_queue, 1, &bind_info[2], VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueBindSparse(m_default_queue, 2, bind_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     }
 
     if (IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
@@ -2968,7 +2971,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         submit_info[0].pSignalSemaphoreInfos = &sem_info[1];
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-semaphore-03873");
-        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info[0], VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info[0], VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         submit_info[1] = vku::InitStructHelper();
@@ -2978,16 +2981,16 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         submit_info[1].pSignalSemaphoreInfos = &sem_info[2];
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-semaphore-03873");
-        vk::QueueSubmit2KHR(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 2, submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         submit_info[2] = vku::InitStructHelper();
         submit_info[2].signalSemaphoreInfoCount = 1;
         submit_info[2].pSignalSemaphoreInfos = &sem_info[0];
 
-        ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info[2], VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info[2], VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_default_queue, 2, submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     }
 }
 
@@ -3208,7 +3211,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     submit_info.pWaitSemaphores = &(semaphore[1]);
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &(semaphore[0]);
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     semaphore_signal_info.value = 25;
 
@@ -3238,7 +3241,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
         semaphore_signal_info.value--;
         ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 
         vk::DestroySemaphore(m_device->device(), sem, nullptr);
 
@@ -3269,20 +3272,20 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
             timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
             timeline_semaphore_submit_info.pSignalSemaphoreValues = &offendingValue;
 
-            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
             semaphore_signal_info.semaphore = timeline_sem;
             semaphore_signal_info.value = 1;
             vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
 
-            ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+            ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 
             vk::DestroySemaphore(m_device->device(), binary_sem, nullptr);
             vk::DestroySemaphore(m_device->device(), timeline_sem, nullptr);
         }
     }
 
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     vk::DestroySemaphore(m_device->device(), semaphore[0], nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
 }
@@ -3339,19 +3342,19 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     signal_info.value = 11;
     wait_info.value = 11;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03881");
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // signal value == current value
     signal_info.value = 10;
     wait_info.value = 5;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     signal_info.value = 20;
     wait_info.semaphore = semaphore[1].handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     semaphore_signal_info.value = 25;
 
@@ -3378,16 +3381,16 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
         signal_info.semaphore = binary_sem.handle();
         signal_info.value = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
-        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
         semaphore_signal_info.semaphore = timeline_sem.handle();
         semaphore_signal_info.value = 1;
         vk::SignalSemaphore(m_device->device(), &semaphore_signal_info);
 
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
     }
 
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(NegativeSyncObject, SemaphoreCounterType) {
@@ -3431,8 +3434,8 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
@@ -3455,9 +3458,9 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-parameter");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
@@ -3476,7 +3479,7 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     commandBuffer2.begin();
     vk::CmdWaitEvents(commandBuffer2.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -3484,8 +3487,8 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     commandBuffer2.end();
 
     submit_info.pCommandBuffers = &commandBuffer2.handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
@@ -3504,7 +3507,7 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     commandBuffer2.begin();
     // wrong srcStageMask
@@ -3514,9 +3517,9 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
 
     submit_info.pCommandBuffers = &commandBuffer2.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-parameter");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
@@ -3537,13 +3540,13 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     submit_info.pCommandBuffers = &cb1.handle();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_commandBuffer->begin();
     m_commandBuffer->end();
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, queue_forward_progress_message);
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     vk::DeviceWaitIdle(m_device->device());
@@ -3567,7 +3570,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
 
     uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
 
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = m_device->phy().queue_properties_;
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 

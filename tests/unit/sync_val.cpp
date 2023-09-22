@@ -423,7 +423,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
         vk::CmdEndRenderPass(*m_commandBuffer);
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 
     // RAW hazard: clear render target then copy from it.
@@ -456,7 +456,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
 
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 
     // RAW hazard: two regions with a single pixel overlap, otherwise the same as the previous scenario.
@@ -490,7 +490,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
 
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 
     // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no errors.
@@ -521,7 +521,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
         vk::CmdEndRenderPass(*m_commandBuffer);
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
-        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(m_default_queue);
     }
 }
 
@@ -1965,7 +1965,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     // CmdCopyQueryPoolResults
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+    if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
     uint32_t queue_count;
@@ -2423,7 +2423,7 @@ struct CreateRenderPassHelper {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkClearColorValue ccv = {};
 
-    VkDeviceObj* dev;
+    vkt::Device* dev;
     const static uint32_t kDefaultImageSize = 64;
     uint32_t width = kDefaultImageSize;
     uint32_t height = kDefaultImageSize;
@@ -2449,7 +2449,7 @@ struct CreateRenderPassHelper {
     VkRenderPassBeginInfo render_pass_begin;
     std::vector<VkClearValue> clear_colors;
 
-    CreateRenderPassHelper(VkDeviceObj* dev_)
+    CreateRenderPassHelper(vkt::Device* dev_)
         : dev(dev_),
           image_color(std::make_shared<VkImageObj>(dev)),
           image_input(std::make_shared<VkImageObj>(dev)),
@@ -3935,7 +3935,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
@@ -4329,7 +4329,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
 }
 
 struct QSTestContext {
-    VkDeviceObj* dev;
+    vkt::Device* dev;
     uint32_t q_fam = ~0U;
     VkQueue q0 = VK_NULL_HANDLE;
     VkQueue q1 = VK_NULL_HANDLE;
@@ -4358,7 +4358,7 @@ struct QSTestContext {
 
     VkCommandBufferObj* current_cb = nullptr;
 
-    QSTestContext(VkDeviceObj* device, vkt::Queue* force_q0 = nullptr, vkt::Queue* force_q1 = nullptr);
+    QSTestContext(vkt::Device* device, vkt::Queue* force_q0 = nullptr, vkt::Queue* force_q1 = nullptr);
     VkCommandBuffer InitFromPool(VkCommandBufferObj& cb_obj);
     bool Valid() const { return q1 != VK_NULL_HANDLE; }
 
@@ -4437,7 +4437,7 @@ struct QSTestContext {
     void RecordCopy(VkCommandBufferObj& cb, vkt::Buffer& from, vkt::Buffer& to) { RecordCopy(cb, from, to, full_buffer); }
 };
 
-QSTestContext::QSTestContext(VkDeviceObj* device, vkt::Queue* force_q0, vkt::Queue* force_q1)
+QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Queue* force_q1)
     : dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {
     if (force_q0) {
         q0 = force_q0->handle();
@@ -4601,7 +4601,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    QSTestContext test(m_device, m_device->m_queue_obj);
+    QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -4666,7 +4666,7 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    QSTestContext test(m_device, m_device->m_queue_obj);
+    QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -4697,7 +4697,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    QSTestContext test(m_device, m_device->m_queue_obj);
+    QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -4737,7 +4737,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    QSTestContext test(m_device, m_device->m_queue_obj);
+    QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -5086,7 +5086,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     submit2.commandBufferCount = 2;
     submit2.pCommandBuffers = two_cbs;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit2, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_device->wait();  // quiesce the system for the next subtest
@@ -5135,7 +5135,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     cb1.end();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit2, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_device->wait();  // and quiesce the system
@@ -5182,7 +5182,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     std::vector<bool> image_used(images.size(), false);
 
     const VkCommandBuffer cb = m_commandBuffer->handle();
-    const VkQueue q = m_device->m_queue;
+    const VkQueue q = m_default_queue;
     const VkDevice dev = m_device->handle();
 
     VkFenceCreateInfo fence_ci = vku::InitStructHelper();
@@ -5398,7 +5398,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     submit.pCommandBufferInfos = &command_buffer_info;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
@@ -5408,7 +5408,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     present.pImageIndices = &image_index;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    vk::QueuePresentKHR(m_device->m_queue, &present);
+    vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5458,7 +5458,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
@@ -5468,6 +5468,6 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     present.pImageIndices = &image_index;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    vk::QueuePresentKHR(m_device->m_queue, &present);
+    vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
 }

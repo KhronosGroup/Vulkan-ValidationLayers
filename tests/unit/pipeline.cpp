@@ -1420,7 +1420,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
                           combinations[0].coverageReductionMode, true,
                           "VUID-VkGraphicsPipelineCreateInfo-coverageReductionMode-02722"});
 
-    VkSampleCountFlags fb_sample_counts = m_device->phy().properties().limits.framebufferDepthSampleCounts;
+    VkSampleCountFlags fb_sample_counts = m_device->phy().limits_.framebufferDepthSampleCounts;
     int max_sample_count = VK_SAMPLE_COUNT_64_BIT;
     while (max_sample_count > VK_SAMPLE_COUNT_1_BIT) {
         if (fb_sample_counts & max_sample_count) {
@@ -1824,10 +1824,8 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     TEST_DESCRIPTION("Check that validation path catches pipeline layout inconsistencies for bind vs. dispatch");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto c_queue = m_device->GetDefaultComputeQueue();
-    if (nullptr == c_queue) {
-        printf("Compute not supported, skipping test\n");
-        return;
+    if (m_device->compute_queues().empty()) {
+        GTEST_SKIP() << "compute queue not supported";
     }
 
     uint32_t qfi = 0;

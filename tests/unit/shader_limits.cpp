@@ -91,8 +91,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (m_device->phy().properties().limits.minTexelGatherOffset <= -100 ||
-        m_device->phy().properties().limits.maxTexelGatherOffset >= 100) {
+    if (m_device->phy().limits_.minTexelGatherOffset <= -100 || m_device->phy().limits_.maxTexelGatherOffset >= 100) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
     }
 
@@ -175,7 +174,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->phy().properties().limits.minTexelOffset <= -100 || m_device->phy().properties().limits.maxTexelOffset >= 100) {
+    if (m_device->phy().limits_.minTexelOffset <= -100 || m_device->phy().limits_.maxTexelOffset >= 100) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
     }
 
@@ -274,7 +273,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    uint32_t count = m_device->props.limits.maxFragmentDualSrcAttachments + 1;
+    uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(count));
 
     std::stringstream fsSource;

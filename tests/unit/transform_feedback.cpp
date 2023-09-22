@@ -624,7 +624,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
 
     std::vector<const char *> device_extension_names;
     device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    VkDeviceObj test_device(0, gpu(), device_extension_names);
+    vkt::Device test_device(gpu(), device_extension_names);
     vkt::CommandPool commandPool(test_device, 0);
     VkCommandBufferObj commandBuffer(&test_device, &commandPool);
     vkt::Buffer counter_buffer2;

@@ -44,7 +44,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         std::vector<uint32_t> shader;
         VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
         VkShaderModule module;
-        this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
+        this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
         module_create_info.pCode = shader.data();
         // Introduce failure by making codeSize a non-multiple of 4
         module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
@@ -1777,7 +1777,7 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     VkPhysicalDeviceShaderImageFootprintFeaturesNV image_footprint_features = vku::InitStructHelper();
     image_footprint_features.imageFootprint = VK_FALSE;
 
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &image_footprint_features);
+    vkt::Device test_device(gpu(), device_extension_names, &features, &image_footprint_features);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1856,7 +1856,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features = vku::InitStructHelper();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_FALSE;
 
-    VkDeviceObj test_device(0, gpu(), m_device_extension_names, &features, &fragment_shader_barycentric_features);
+    vkt::Device test_device(gpu(), m_device_extension_names, &features, &fragment_shader_barycentric_features);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1924,7 +1924,7 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     compute_shader_derivatives_features.computeDerivativeGroupLinear = VK_FALSE;
     compute_shader_derivatives_features.computeDerivativeGroupQuads = VK_FALSE;
 
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &compute_shader_derivatives_features);
+    vkt::Device test_device(gpu(), device_extension_names, &features, &compute_shader_derivatives_features);
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     const vkt::DescriptorSetLayout dsl(test_device, {binding});
@@ -1987,7 +1987,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     fragment_shader_interlock_features.fragmentShaderPixelInterlock = VK_FALSE;
     fragment_shader_interlock_features.fragmentShaderShadingRateInterlock = VK_FALSE;
 
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &fragment_shader_interlock_features);
+    vkt::Device test_device(gpu(), device_extension_names, &features, &fragment_shader_interlock_features);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -2053,7 +2053,7 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote_features = vku::InitStructHelper();
     demote_features.shaderDemoteToHelperInvocation = VK_FALSE;
 
-    VkDeviceObj test_device(0, gpu(), m_device_extension_names, &features, &demote_features);
+    vkt::Device test_device(gpu(), m_device_extension_names, &features, &demote_features);
 
     char const *fsSource = R"glsl(
         #version 450

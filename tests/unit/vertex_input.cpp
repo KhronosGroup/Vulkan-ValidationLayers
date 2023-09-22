@@ -63,7 +63,7 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
@@ -222,7 +222,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
 
     // Test when binding is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings.
     VkVertexInputBindingDescription vertex_input_binding_description{};
-    vertex_input_binding_description.binding = m_device->props.limits.maxVertexInputBindings;
+    vertex_input_binding_description.binding = m_device->phy().limits_.maxVertexInputBindings;
 
     const auto set_binding = [&](CreatePipelineHelper &helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
@@ -241,7 +241,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindingStride) {
 
     // Test when stride is greater than VkPhysicalDeviceLimits::maxVertexInputBindingStride.
     VkVertexInputBindingDescription vertex_input_binding_description{};
-    vertex_input_binding_description.stride = m_device->props.limits.maxVertexInputBindingStride + 1;
+    vertex_input_binding_description.stride = m_device->phy().limits_.maxVertexInputBindingStride + 1;
 
     const auto set_binding = [&](CreatePipelineHelper &helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
@@ -260,7 +260,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
 
     // Test when location is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputAttributes.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
-    vertex_input_attribute_description.location = m_device->props.limits.maxVertexInputAttributes;
+    vertex_input_attribute_description.location = m_device->phy().limits_.maxVertexInputAttributes;
 
     const auto set_attribute = [&](CreatePipelineHelper &helper) {
         helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
@@ -282,7 +282,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
 
     // Test when binding is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
-    vertex_input_attribute_description.binding = m_device->props.limits.maxVertexInputBindings;
+    vertex_input_attribute_description.binding = m_device->phy().limits_.maxVertexInputBindings;
 
     const auto set_attribute = [&](CreatePipelineHelper &helper) {
         helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
@@ -312,7 +312,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
 
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.binding = 0;
-    vertex_input_binding_description.stride = m_device->props.limits.maxVertexInputBindingStride;
+    vertex_input_binding_description.stride = m_device->phy().limits_.maxVertexInputBindingStride;
     vertex_input_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     // Test when offset is greater than maximum.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
@@ -336,7 +336,7 @@ TEST_F(NegativeVertexInput, BindingDescriptions) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const uint32_t binding_count = m_device->props.limits.maxVertexInputBindings + 1;
+    const uint32_t binding_count = m_device->phy().limits_.maxVertexInputBindings + 1;
 
     std::vector<VkVertexInputBindingDescription> input_bindings(binding_count);
     for (uint32_t i = 0; i < binding_count; ++i) {
@@ -379,7 +379,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
     input_binding.stride = 4;
     input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    const uint32_t attribute_count = m_device->props.limits.maxVertexInputAttributes + 1;
+    const uint32_t attribute_count = m_device->phy().limits_.maxVertexInputAttributes + 1;
     std::vector<VkVertexInputAttributeDescription> input_attribs(attribute_count);
     for (uint32_t i = 0; i < attribute_count; ++i) {
         input_attribs[i].binding = 0;

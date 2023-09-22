@@ -42,7 +42,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
     }
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
 
     std::stringstream csSource;
@@ -94,7 +94,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayoutSpe
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
     }
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
     const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
 
@@ -152,7 +152,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
@@ -175,7 +175,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryBooleanAtLimit) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
     const uint32_t max_shared_bools = max_shared_memory_size / 4;
 

@@ -610,7 +610,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     submitInfo.pWaitSemaphores = &semaphore;
     submitInfo.pWaitDstStageMask = &stageFlags;
     submitInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitSemaphores-parameter");
@@ -620,13 +620,13 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Set a null pointer for pWaitSemaphores
     submitInfo.pWaitSemaphores = nullptr;
     submitInfo.pWaitDstStageMask = &stageFlags;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
     submitInfo.pWaitSemaphores = &semaphore;
     submitInfo.pWaitDstStageMask = nullptr;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateRenderPass-pCreateInfo-parameter");
@@ -1086,7 +1086,7 @@ TEST_F(VkLayerTest, InvalidStructSType) {
     // Expected to trigger an error with
     // StatelessValidation::ValidateStructTypeArray
     VkSubmitInfo submit_info = {};
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1169,7 +1169,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_flags;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1214,7 +1214,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
     }
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
@@ -1255,7 +1255,7 @@ TEST_F(VkLayerTest, LeakABuffer) {
     }
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
@@ -1397,7 +1397,7 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
     ASSERT_NO_FATAL_FAILURE(Init());  // assumes it initializes all queue families on vk::CreateDevice
 
     // This test is meaningless unless we have multiple queue families
-    auto queue_family_properties = m_device->phy().queue_properties();
+    auto queue_family_properties = m_device->phy().queue_properties_;
     std::vector<uint32_t> queue_families;
     for (uint32_t i = 0; i < queue_family_properties.size(); ++i)
         if (queue_family_properties[i].queueCount > 0) queue_families.push_back(i);
@@ -1436,7 +1436,7 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper();
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&pd_features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
@@ -1493,7 +1493,7 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
     }
 
     vkt::PhysicalDevice physical_device(gpu());
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -1533,7 +1533,7 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     }
 
     vkt::PhysicalDevice physical_device(gpu());
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -1626,7 +1626,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     variable_features.variablePointersStorageBuffer = VK_FALSE;
 
     vkt::PhysicalDevice physical_device(gpu());
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -1725,7 +1725,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
     // Signal the semaphore so the next test can wait on it.
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
@@ -1734,11 +1734,11 @@ TEST_F(VkLayerTest, StageMaskHost) {
     submit_info.pWaitDstStageMask = &stage_flags;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Need to ensure semaphore is not in use before the test ends and it gets destroyed
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
@@ -1752,7 +1752,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     si.pCommandBuffers = &m_commandBuffer->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
-    vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
@@ -1762,7 +1762,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     // m_commandBuffer->end();
 
     // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00072");
-    // vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
+    // vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
     // m_errorMonitor->VerifyFound();
 }
 
@@ -1777,7 +1777,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
@@ -1814,7 +1814,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
 
     vkt::PhysicalDevice physical_device(gpu_);
     VkPhysicalDeviceFeatures features = physical_device.features();
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     const char *extension_names[1] = {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
@@ -1945,8 +1945,8 @@ TEST_F(VkLayerTest, ValidateStride) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     char data_space;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02828");
@@ -2018,7 +2018,7 @@ TEST_F(VkLayerTest, ValidateStride) {
         vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 100, 2);
         m_errorMonitor->VerifyFound();
 
-        auto draw_count = m_device->phy().properties().limits.maxDrawIndirectCount;
+        auto draw_count = m_device->phy().limits_.maxDrawIndirectCount;
         if (draw_count != vvl::kU32Max) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-02719");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00476");
@@ -2275,7 +2275,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
 
     VkDeviceCreateInfo create_info = vku::InitStructHelper();
     create_info.pNext = &create_device_pnext;
@@ -2320,7 +2320,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
     device_create_info.pNext = &pd_features2;
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -2644,7 +2644,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     VkExportMetalObjectsInfoEXT export_metal_objects_info = vku::InitStructHelper();
     VkExportMetalDeviceInfoEXT metal_device_info = vku::InitStructHelper();
     VkExportMetalCommandQueueInfoEXT metal_command_queue_info = vku::InitStructHelper();
-    metal_command_queue_info.queue = m_device->m_queue;
+    metal_command_queue_info.queue = m_default_queue;
     export_metal_objects_info.pNext = &metal_device_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06791");
     vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);

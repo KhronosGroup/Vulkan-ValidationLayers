@@ -30,7 +30,7 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     features.geometryShader = false;
     features.tessellationShader = false;
     // The sacrificial device object
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
+    vkt::Device test_device(gpu(), device_extension_names, &features);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
@@ -75,7 +75,7 @@ TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
     ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->props.limits.maxGeometryOutputVertices == 0) {
+    if (m_device->phy().limits_.maxGeometryOutputVertices == 0) {
         GTEST_SKIP() << "Device doesn't support geometry shaders";
     }
 
@@ -101,7 +101,7 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
     ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->phy().properties().limits.maxTessellationPatchSize == 0) {
+    if (m_device->phy().limits_.maxTessellationPatchSize == 0) {
         GTEST_SKIP() << "patchControlPoints not supported";
     }
 
@@ -411,7 +411,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
             "#version 450\n"
             "\n";
         // Input components
-        const uint32_t maxTescInComp = m_device->props.limits.maxTessellationControlPerVertexInputComponents + overflow;
+        const uint32_t maxTescInComp = m_device->phy().limits_.maxTessellationControlPerVertexInputComponents + overflow;
         const uint32_t numInVec4 = maxTescInComp / 4;
         uint32_t inLocation = 0;
         if (overflow == 2) {
@@ -434,7 +434,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
         }
 
         // Output components
-        const uint32_t maxTescOutComp = m_device->props.limits.maxTessellationControlPerVertexOutputComponents + overflow;
+        const uint32_t maxTescOutComp = m_device->phy().limits_.maxTessellationControlPerVertexOutputComponents + overflow;
         const uint32_t numOutVec4 = maxTescOutComp / 4;
         uint32_t outLocation = 0;
         if (overflow == 2) {
@@ -530,7 +530,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
             "layout (triangles) in;\n"
             "\n";
         // Input components
-        const uint32_t maxTeseInComp = m_device->props.limits.maxTessellationEvaluationInputComponents + overflow;
+        const uint32_t maxTeseInComp = m_device->phy().limits_.maxTessellationEvaluationInputComponents + overflow;
         const uint32_t numInVec4 = maxTeseInComp / 4;
         uint32_t inLocation = 0;
         if (overflow == 2) {
@@ -553,7 +553,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
         }
 
         // Output components
-        const uint32_t maxTeseOutComp = m_device->props.limits.maxTessellationEvaluationOutputComponents + overflow;
+        const uint32_t maxTeseOutComp = m_device->phy().limits_.maxTessellationEvaluationOutputComponents + overflow;
         const uint32_t numOutVec4 = maxTeseOutComp / 4;
         uint32_t outLocation = 0;
         if (overflow == 2) {
@@ -649,7 +649,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
             "layout(invocations=1) in;\n";
 
         // Input components
-        const uint32_t maxGeomInComp = m_device->props.limits.maxGeometryInputComponents + overflow;
+        const uint32_t maxGeomInComp = m_device->phy().limits_.maxGeometryInputComponents + overflow;
         const uint32_t numInVec4 = maxGeomInComp / 4;
         uint32_t inLocation = 0;
         if (overflow == 2) {
@@ -672,7 +672,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
         }
 
         // Output components
-        const uint32_t maxGeomOutComp = m_device->props.limits.maxGeometryOutputComponents + overflow;
+        const uint32_t maxGeomOutComp = m_device->phy().limits_.maxGeometryOutputComponents + overflow;
         const uint32_t numOutVec4 = maxGeomOutComp / 4;
         uint32_t outLocation = 0;
         if (overflow == 2) {
@@ -695,7 +695,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
         }
 
         // Finalize
-        int max_vertices = overflow ? (m_device->props.limits.maxGeometryTotalOutputComponents / maxGeomOutComp + 1) : 1;
+        int max_vertices = overflow ? (m_device->phy().limits_.maxGeometryTotalOutputComponents / maxGeomOutComp + 1) : 1;
         gsSourceStr += "layout(triangle_strip, max_vertices = " + std::to_string(max_vertices) +
                        ") out;\n"
                        "\n"
@@ -759,10 +759,10 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
                )";
         if (overflow) {
             gsSourceStr += "OpExecutionMode %main Invocations " +
-                           std::to_string(m_device->props.limits.maxGeometryShaderInvocations + 1) +
+                           std::to_string(m_device->phy().limits_.maxGeometryShaderInvocations + 1) +
                            "\n\
                 OpExecutionMode %main OutputVertices " +
-                           std::to_string(m_device->props.limits.maxGeometryOutputVertices + 1);
+                           std::to_string(m_device->phy().limits_.maxGeometryOutputVertices + 1);
         } else {
             gsSourceStr += R"(
                OpExecutionMode %main Invocations 1
@@ -920,7 +920,7 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
                                       "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
 
-    tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
+    tsci_bad.patchControlPoints = m_device->phy().limits_.maxTessellationPatchSize + 1;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
                                       "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
 }

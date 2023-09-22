@@ -72,7 +72,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     qfi[0] = 0;
     CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
-    if (m_device->queue_props.size() > 2) {
+    if (m_device->phy().queue_properties_.size() > 2) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pSubmits-04626");
 
         // Create buffer shared to queue families 1 and 2, but submitted on queue family 0
@@ -316,7 +316,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = m_device->phy().queue_properties_;
     for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
         if (q_props[i].queueFlags == VK_QUEUE_TRANSFER_BIT) {
             only_transfer_queueFamilyIndex = i;
@@ -353,7 +353,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
 TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     TEST_DESCRIPTION("vkCreateCommandPool with bad queue");
     ASSERT_NO_FATAL_FAILURE(Init());
-    const size_t queue_count = vkt::PhysicalDevice(gpu()).queue_properties().size();
+    const size_t queue_count = m_device->phy().queue_properties_.size();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     vkt::CommandPool commandPool(*m_device, queue_count + 1);
     m_errorMonitor->VerifyFound();

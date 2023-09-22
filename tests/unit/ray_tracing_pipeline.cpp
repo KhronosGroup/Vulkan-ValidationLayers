@@ -1038,8 +1038,8 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->phy().properties().limits.maxPerStageResources,
-         VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->phy().limits_.maxPerStageResources, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+         nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}};
 
     const vkt::DescriptorSetLayout ds_layout(*m_device, layout_bindings);

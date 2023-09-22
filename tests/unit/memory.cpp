@@ -25,7 +25,7 @@ TEST_F(NegativeMemory, MapMemory) {
     VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
 
-    const VkDeviceSize atom_size = m_device->props.limits.nonCoherentAtomSize;
+    const VkDeviceSize atom_size = m_device->phy().limits_.nonCoherentAtomSize;
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;

@@ -778,7 +778,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     // Signal the semaphore so the next test can wait on it.
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
@@ -788,10 +788,10 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-04095");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-04096");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(m_default_queue);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     // #version 450
@@ -977,12 +977,13 @@ TEST_F(NegativeMesh, DrawCmds) {
     vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
-    if (m_device->props.limits.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->props.limits.maxDrawIndirectCount)) {
+    if (m_device->phy().limits_.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->phy().limits_.maxDrawIndirectCount)) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
         vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0,
-                                        m_device->props.limits.maxDrawIndirectCount + 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+                                        m_device->phy().limits_.maxDrawIndirectCount + 1,
+                                        sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_errorMonitor->VerifyFound();
     }
 

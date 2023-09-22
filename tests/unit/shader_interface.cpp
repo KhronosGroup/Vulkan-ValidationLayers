@@ -172,7 +172,7 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
-        const uint32_t maxVsOutComp = m_device->props.limits.maxVertexOutputComponents + overflow;
+        const uint32_t maxVsOutComp = m_device->phy().limits_.maxVertexOutputComponents + overflow;
         std::string vsSourceStr = "#version 450\n\n";
         const uint32_t numVec4 = maxVsOutComp / 4;
         uint32_t location = 0;
@@ -242,7 +242,7 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // To make the test simple, just make sure max is 128 or less (most HW is 64 or 128)
-    if (m_device->props.limits.maxVertexOutputComponents > 128 || m_device->props.limits.maxFragmentInputComponents > 128) {
+    if (m_device->phy().limits_.maxVertexOutputComponents > 128 || m_device->phy().limits_.maxFragmentInputComponents > 128) {
         GTEST_SKIP() << "maxVertexOutputComponents or maxFragmentInputComponents too high for test";
     }
     // vec4 == 4 components
@@ -303,7 +303,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
-        const uint32_t maxFsInComp = m_device->props.limits.maxFragmentInputComponents + overflow;
+        const uint32_t maxFsInComp = m_device->phy().limits_.maxFragmentInputComponents + overflow;
         std::string fsSourceStr = "#version 450\n\n";
         const uint32_t numVec4 = maxFsInComp / 4;
         uint32_t location = 0;
