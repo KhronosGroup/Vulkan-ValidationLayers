@@ -278,31 +278,6 @@ std::string DebugPrintf::FindFormatString(vvl::span<const uint32_t> pgm, uint32_
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
-void snprintf_with_malloc(std::stringstream &shader_message, const DPFSubstring &substring, size_t needed, void *values) {
-    char *buffer = static_cast<char *>(malloc((needed + 1) * sizeof(char)));  // Add 1 for terminator
-    if (substring.longval) {
-        snprintf(buffer, needed, substring.string.c_str(), substring.longval);
-    } else if (!substring.needs_value) {
-        snprintf(buffer, needed, substring.string.c_str());
-    } else {
-        switch (substring.type) {
-            case varunsigned:
-                needed = snprintf(buffer, needed, substring.string.c_str(), *static_cast<uint32_t *>(values) - 1);
-                break;
-
-            case varsigned:
-                needed = snprintf(buffer, needed, substring.string.c_str(), *static_cast<int32_t *>(values) - 1);
-                break;
-
-            case varfloat:
-                needed = snprintf(buffer, needed, substring.string.c_str(), *static_cast<float *>(values) - 1);
-                break;
-        }
-    }
-    shader_message << buffer;
-    free(buffer);
-}
-
 void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                              uint32_t operation_index, uint32_t *const debug_output_buffer) {
     // Word         Content
@@ -344,10 +319,9 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         // Break the format string into strings with 1 or 0 value
         auto format_substrings = ParseFormatString(format_string);
         void *values = static_cast<void *>(&debug_record->values);
-        const uint32_t static_size = 1024;
         // Sprintf each format substring into a temporary string then add that to the message
         for (auto &substring : format_substrings) {
-            char temp_string[static_size];
+            std::string temp_string;
             size_t needed = 0;
             std::vector<std::string> format_strings = {"%ul", "%lu", "%lx"};
             size_t ul_pos = 0;
@@ -368,34 +342,40 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
                 } else {
                     substring.string.replace(ul_pos + 1, 2, PRIu64);
                 }
-                needed = snprintf(temp_string, static_size, substring.string.c_str(), substring.longval);
+                // +1 for null terminator
+                needed = std::snprintf(nullptr, 0, substring.string.c_str(), substring.longval) + 1;
+                temp_string.resize(needed);
+                std::snprintf(&temp_string[0], needed, substring.string.c_str(), substring.longval);
             } else {
                 if (substring.needs_value) {
                     switch (substring.type) {
                         case varunsigned:
-                            needed = snprintf(temp_string, static_size, substring.string.c_str(), *static_cast<uint32_t *>(values));
+                            // +1 for null terminator
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<uint32_t *>(values)) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<uint32_t *>(values));
                             break;
 
                         case varsigned:
-                            needed = snprintf(temp_string, static_size, substring.string.c_str(), *static_cast<int32_t *>(values));
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<int32_t *>(values)) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<int32_t *>(values));
                             break;
 
                         case varfloat:
-                            needed = snprintf(temp_string, static_size, substring.string.c_str(), *static_cast<float *>(values));
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<float *>(values)) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<float *>(values));
                             break;
                     }
                     values = static_cast<uint32_t *>(values) + 1;
                 } else {
-                    needed = snprintf(temp_string, static_size, substring.string.c_str());
+                    needed = std::snprintf(nullptr, 0, substring.string.c_str()) + 1;
+                    temp_string.resize(needed);
+                    std::snprintf(&temp_string[0], needed, substring.string.c_str());
                 }
             }
-
-            if (needed < static_size) {
-                shader_message << temp_string;
-            } else {
-                // Static buffer not big enough for message, use malloc to get enough
-                snprintf_with_malloc(shader_message, substring, needed, values);
-            }
+            shader_message << temp_string.c_str();
         }
 
         if (verbose) {
