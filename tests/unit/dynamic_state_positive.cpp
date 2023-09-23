@@ -986,3 +986,72 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicState, ViewportInheritance) {
+    TEST_DESCRIPTION("Dynamically set viewport multiple times");
+
+    AddRequiredExtensions(VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto inherited_viewport_scissor_features = vku::InitStruct<VkPhysicalDeviceInheritedViewportScissorFeaturesNV>();
+    GetPhysicalDeviceFeatures2(inherited_viewport_scissor_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &inherited_viewport_scissor_features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.vp_state_ci_.viewportCount = 2u;
+    pipe.vp_state_ci_.scissorCount = 2u;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferObj cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj set_state(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkViewport viewports[2] = {{0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}};
+    const VkRect2D scissors[2] = {{{0, 0}, {100u, 100u}}, {{0, 0}, {100u, 100u}}};
+
+    auto viewport_scissor_inheritance = vku::InitStruct<VkCommandBufferInheritanceViewportScissorInfoNV>();
+    viewport_scissor_inheritance.viewportScissor2D = VK_TRUE;
+    viewport_scissor_inheritance.viewportDepthCount = 2u;
+    viewport_scissor_inheritance.pViewportDepths = viewports;
+
+    auto hinfo = vku::InitStruct<VkCommandBufferInheritanceInfo>(&viewport_scissor_inheritance);
+    hinfo.renderPass = m_renderPass;
+    hinfo.subpass = 0;
+    hinfo.framebuffer = m_framebuffer;
+
+    auto info = vku::InitStruct<VkCommandBufferBeginInfo>();
+    info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    info.pInheritanceInfo = &hinfo;
+
+    cmd_buffer.begin(&info);
+    vk::CmdBindPipeline(cmd_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(cmd_buffer.handle(), 3, 1, 0, 0);
+    cmd_buffer.end();
+
+    set_state.begin();
+    vk::CmdSetViewport(set_state.handle(), 1u, 1u, &viewports[1]);
+    set_state.end();
+
+    m_commandBuffer->begin();
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0u, 2u, viewports);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0u, 1u, viewports);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0u, 2u, scissors);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &cmd_buffer.handle());
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+}
