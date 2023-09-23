@@ -2943,7 +2943,9 @@ void ValidationStateTracker::PostCallRecordCmdSetViewport(VkCommandBuffer comman
     cb_state->viewportMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
 
-    cb_state->dynamic_state_value.viewports.resize(firstViewport + viewportCount);
+    if (cb_state->dynamic_state_value.viewports.size() < firstViewport + viewportCount) {
+        cb_state->dynamic_state_value.viewports.resize(firstViewport + viewportCount);
+    }
     for (size_t i = 0; i < viewportCount; ++i) {
         cb_state->dynamic_state_value.viewports[firstViewport + i] = pViewports[i];
     }
