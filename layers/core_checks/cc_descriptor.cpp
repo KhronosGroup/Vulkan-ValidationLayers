@@ -298,15 +298,14 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                            ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
                                     const LogObjectList objlist(commandBuffer, pDescriptorSets[set_idx],
                                                                 buffer_descriptor->GetBuffer());
-                                    skip |=
-                                        LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979", objlist,
-                                                 error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
-                                                 "is %" PRIu32
-                                                 ", which when added to the "
-                                                 "buffer descriptor's range (0x%" PRIxLEAST64
-                                                 ") is greater than the size of the buffer (0x%" PRIxLEAST64
-                                                 ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
-                                                 offset, bound_range, buffer_state->createInfo.size, set_idx, binding_index, j);
+                                    skip |= LogError(
+                                        "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979", objlist,
+                                        error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                        "is %" PRIu32 ", which when added to the buffer descriptor's range (0x%" PRIxLEAST64
+                                        ") and offset (0x%" PRIxLEAST64 ") is greater than the size of the buffer (0x%" PRIxLEAST64
+                                        ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
+                                        offset, bound_range, bound_offset, buffer_state->createInfo.size, set_idx, binding_index,
+                                        j);
                                 }
                             }
                             cur_dyn_offset++;
