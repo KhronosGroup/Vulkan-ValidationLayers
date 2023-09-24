@@ -400,8 +400,7 @@ class ViewportInheritanceTestData {
     }
 };
 
-// Disabled https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6082
-TEST_F(NegativeViewportInheritance, DISABLED_BasicUsage) {
+TEST_F(NegativeViewportInheritance, BasicUsage) {
     TEST_DESCRIPTION("Simple correct and incorrect usage of VK_NV_inherited_viewport_scissor");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -504,7 +503,6 @@ TEST_F(NegativeViewportInheritance, DISABLED_BasicUsage) {
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
-        } else {
         }
         std::array<VkCommandBuffer, 2> secondaries = {should_fail ? static_state_cmd : subpass_cmd,
                                                       should_fail ? subpass_cmd : static_state_cmd};
@@ -527,7 +525,6 @@ TEST_F(NegativeViewportInheritance, DISABLED_BasicUsage) {
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
-        } else {
         }
 
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
@@ -664,8 +661,7 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-// Disabled https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6082
-TEST_F(NegativeViewportInheritance, DISABLED_MultiViewport) {
+TEST_F(NegativeViewportInheritance, MultiViewport) {
     TEST_DESCRIPTION("VK_NV_inherited_viewport_scissor tests with multiple viewports/scissors");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
