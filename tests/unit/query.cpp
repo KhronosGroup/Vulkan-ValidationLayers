@@ -2633,3 +2633,47 @@ TEST_F(NegativeQuery, CmdExecuteCommandsActiveQueries) {
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
+    TEST_DESCRIPTION("Begin a query in secondary command buffer that is already active in primary command buffer");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    VkPhysicalDeviceFeatures features;
+    GetPhysicalDeviceFeatures(&features);
+    if (features.inheritedQueries == VK_FALSE) {
+        GTEST_SKIP() << "inheritedQueries feature is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_create_info.queryCount = 2;
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
+    cbii.renderPass = m_renderPass;
+    cbii.framebuffer = m_framebuffer;
+    cbii.occlusionQueryEnable = VK_TRUE;
+
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.pInheritanceInfo = &cbii;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.begin(&cbbi);
+    vk::CmdBeginQuery(secondary.handle(), query_pool.handle(), 1u, 0u);
+    vk::CmdEndQuery(secondary.handle(), query_pool.handle(), 1u);
+    secondary.end();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0u, 0u);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00105");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0u);
+    m_commandBuffer->end();
+}
