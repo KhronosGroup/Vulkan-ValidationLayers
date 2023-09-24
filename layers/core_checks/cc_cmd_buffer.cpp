@@ -538,7 +538,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
             if (query_pool_state && active_types.count(query_pool_state->createInfo.queryType)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), sub_cb_state.commandBuffer(), query_object.pool);
-                skip |= LogError(kVUID_Core_DrawState_InvalidSecondaryCommandBuffer, objlist, cb_loc,
+                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00105", objlist, cb_loc,
                                  "called with invalid %s which has invalid active %s"
                                  " of type %s but a query of that type has been started on secondary command buffer %s.",
                                  FormatHandle(cb_state).c_str(), FormatHandle(query_object.pool).c_str(),
