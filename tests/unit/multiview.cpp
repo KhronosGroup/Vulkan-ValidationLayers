@@ -1239,6 +1239,11 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
 
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
+
+    if (!multiview_features.multiview) {
+        GTEST_SKIP() << "Multiview support is required";
+    }
+
     multiview_features.multiviewTessellationShader = VK_FALSE;
     multiview_features.multiviewGeometryShader = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

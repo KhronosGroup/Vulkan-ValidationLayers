@@ -1763,9 +1763,11 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     TEST_DESCRIPTION(
         "Attempts to create an Image View with a view type that does not match the image type it is being created from.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
-    const bool maintenance1_support = IsExtensionsEnabled(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    const bool maintenance1_support =
+        IsExtensionsEnabled(VK_KHR_MAINTENANCE_1_EXTENSION_NAME) || DeviceValidationVersion() >= VK_API_VERSION_1_1;
 
     VkPhysicalDeviceMemoryProperties memProps;
     vk::GetPhysicalDeviceMemoryProperties(m_device->phy().handle(), &memProps);
@@ -2665,6 +2667,7 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
     if (device_features.imageCubeArray == false) {
         VkImageCreateInfo cubeImageInfo = imageInfo;
         cubeImageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        cubeImageInfo.arrayLayers = 6;
         VkImageObj cubeImage(m_device);
         cubeImage.init(&cubeImageInfo);
         ASSERT_TRUE(cubeImage.initialized());

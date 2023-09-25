@@ -286,6 +286,10 @@ TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    if (!m_device->phy().features().tessellationShader) {
+        GTEST_SKIP() << "Device does not support tessellation shaders";
+    }
+
     auto set_info = [&](CreatePipelineHelper &helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };
     const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
                            ? "VUID-VkGraphicsPipelineCreateInfo-topology-08889"
