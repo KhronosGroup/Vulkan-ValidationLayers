@@ -54,6 +54,10 @@ if (UPDATE_DEPS)
     list(APPEND update_dep_command "--dir" )
     list(APPEND update_dep_command "${UPDATE_DEPS_DIR}")
 
+    if (VVL_ENABLE_ASAN)
+        list(APPEND update_dep_command "--asan" )
+    endif()
+
     if (NOT BUILD_TESTS)
         list(APPEND update_dep_command "--optional=tests")
     endif()
