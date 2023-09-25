@@ -497,7 +497,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         sep = ', '
-                        test = sep.join(self.vt.vuid_to_tests[vuid])
+                        test = sep.join(sorted(self.vt.vuid_to_tests[vuid]))
                     row.append(test)
                     row.append(db_entry['type'])
                     row.append(db_entry['api'])
@@ -531,7 +531,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         sep = ', '
-                        test = sep.join(self.vt.vuid_to_tests[vuid])
+                        test = sep.join(sorted(self.vt.vuid_to_tests[vuid]))
                     hfile.write('<th>%s</th>' % test)
                     hfile.write('<th>%s</th>' % db_entry['type'])
                     hfile.write('<th>%s</th>' % db_entry['api'])
