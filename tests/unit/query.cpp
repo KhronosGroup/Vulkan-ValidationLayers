@@ -970,14 +970,15 @@ TEST_F(NegativeQuery, HostResetFirstQuery) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostyResetBadRange) {
+TEST_F(NegativeQuery, HostResetBadRange) {
     TEST_DESCRIPTION("Bad range in vkResetQueryPoolEXT");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
+    if (!AreRequiredExtensionsEnabled() || (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
+                                            DeviceValidationVersion() < VK_API_VERSION_1_1)) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
@@ -995,15 +996,15 @@ TEST_F(NegativeQuery, HostyResetBadRange) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostyResetQueryPool) {
+TEST_F(NegativeQuery, HostResetQueryPool) {
     TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
+    if (!AreRequiredExtensionsEnabled() || (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
+                                            DeviceValidationVersion() < VK_API_VERSION_1_1)) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
@@ -1025,15 +1026,15 @@ TEST_F(NegativeQuery, HostyResetQueryPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostyResetDevice) {
+TEST_F(NegativeQuery, HostResetDevice) {
     TEST_DESCRIPTION("Device not matching queryPool in vkResetQueryPoolEXT");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
+    if (!AreRequiredExtensionsEnabled() || (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
+                                            DeviceValidationVersion() < VK_API_VERSION_1_1)) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
