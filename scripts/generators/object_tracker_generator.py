@@ -184,6 +184,10 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             handle = handle.parent
         return False
 
+    def allComments(self, lines: list[str]) -> bool:
+        not_empty_lines = [line for line in lines.splitlines() if line.strip()]
+        return all(line.startswith('//') for line in not_empty_lines)
+
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -229,7 +233,12 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             terminator = ';\n' if 'ValidationCache' in command.name else ' override;\n'
 
-            if pre_call_validate:
+            # If a function has manual implementation we still need to generate its signature in the header file
+            function_signature_for_no_autogen = command.name in self.no_autogen_list and not command.name == 'vkCreateInstance'
+
+            generate_pre_call_validate = (pre_call_validate and not self.allComments(pre_call_validate)) or function_signature_for_no_autogen
+
+            if generate_pre_call_validate:
                 prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
                 out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
@@ -325,13 +334,19 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             # Output PreCallValidateAPI function if necessary
             if pre_call_validate:
                 prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
-                out.append(f'''
-                    bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
-                        bool skip = false;
+                if self.allComments(pre_call_validate):
+                     out.append(f'''
+                        // {command.name}:
                         {pre_call_validate}
-                        return skip;
-                    }}
-                    ''')
+                        ''')
+                else:
+                    out.append(f'''
+                        bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
+                            bool skip = false;
+                            {pre_call_validate}
+                            return skip;
+                        }}
+                        ''')
 
             # Output PreCallRecordAPI function if necessary
             if pre_call_record:
@@ -417,6 +432,16 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 # TODO: Currently just brute force check all VUs, but shuold be smarter what makes these `-parameter` VUs
                 paramVUID = f'"{vuid_string}"' if vuid_string in self.valid_vuids else "kVUIDUndefined"
 
+                # Do not generate validation code for the function's dispatchable parameter (the first one).
+                # Validation of such parameters is always successful based on the model of how the chassis
+                # dispactches the calls to ValidationObject. If invalid handle is used it will cause
+                # crash/corruption on the chassis level (in get_dispatch_key or later). And if correct handle
+                # is passed, then due to the mapping done by get_dispatch_key() the handle will belong to the
+                # retrieved validation object, which guarantees positive result of the parenting test.
+                # Consider TODO: add validation of function's dispatchable handles at the chassis level during
+                # `get_dispatch_key`, to replace crash/undefined behavior with actual VUID.
+                function_dispatchable_parameter = (member == members[0]) and self.vk.handles[member.type].dispatchable
+
                 # TODO: Revise object 'parent' handling.  Each object definition in the XML specifies a parent, this should
                 #       all be handled in codegen (or at least called out)
                 # These objects do not have a VkDevice as their (ultimate) parent objecs, so skip the current code-gen'd parent checks
@@ -463,6 +488,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     manual_vuid_index = parentName + '-' + member.name
                     paramVUID = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
                     pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, false, {paramVUID}, {parentVUID}, error_obj.location);\n'
+                elif function_dispatchable_parameter:
+                    pre_call_validate += f'// Checked by chassis: {member.name}: {paramVUID}\n'
                 else:
                     location = f'{errorLoc}.dot(Field::{member.name})'
                     pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});\n'
