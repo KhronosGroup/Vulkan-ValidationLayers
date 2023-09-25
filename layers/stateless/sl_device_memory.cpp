@@ -191,7 +191,7 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     }
     const auto &create_info = *(pInfo->pCreateInfo);
     if (vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416", device, loc,
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device, loc,
                          "pNext chain contains VkImageSwapchainCreateInfoKHR.");
     }
     if (vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
@@ -201,11 +201,11 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
 
     if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
         if (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
-            skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
                              "is VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.");
         } else if ((create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL) &&
                    !IsOnlyOneValidPlaneAspect(create_info.format, pInfo->planeAspect)) {
-            skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06419", device, loc.dot(Field::planeAspect),
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419", device, loc.dot(Field::planeAspect),
                              "is %s but is invalid for %s.", string_VkImageAspectFlags(pInfo->planeAspect).c_str(),
                              string_VkFormat(create_info.format));
         }
