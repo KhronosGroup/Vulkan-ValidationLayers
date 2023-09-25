@@ -330,7 +330,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -389,7 +389,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -448,7 +448,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (!features2.features.shaderInt64) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -483,7 +483,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 1024;
     vkt::Buffer buffer(*m_device, buffer_ci);
@@ -527,8 +527,8 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(&mesh_shader_features);
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper(&mesh_shader_features);
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -865,8 +865,8 @@ TEST_F(NegativeAtomic, Float2) {
     }
 
     // Still check for proper 16-bit storage/float support for most tests
-    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
-    auto storage_16_bit_features = vku::InitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
+    VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper();
+    VkPhysicalDevice16BitStorageFeatures storage_16_bit_features = vku::InitStructHelper(&float16int8_features);
     auto features2 = GetPhysicalDeviceFeatures2(storage_16_bit_features);
 
     const bool support_16_bit =
@@ -1175,10 +1175,10 @@ TEST_F(NegativeAtomic, Float2WidthMismatch) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();  // need maintenance4
-    auto atomic_float2_features = vku::InitStruct<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(&features13);
-    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&atomic_float2_features);
-    auto storage_16_bit_features = vku::InitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();  // need maintenance4
+    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT atomic_float2_features = vku::InitStructHelper(&features13);
+    VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper(&atomic_float2_features);
+    VkPhysicalDevice16BitStorageFeatures storage_16_bit_features = vku::InitStructHelper(&float16int8_features);
     GetPhysicalDeviceFeatures2(storage_16_bit_features);
     if (!float16int8_features.shaderFloat16 || !storage_16_bit_features.storageBuffer16BitAccess ||
         !atomic_float2_features.shaderBufferFloat16AtomicMinMax) {
@@ -1243,7 +1243,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto atomic_float_features = vku::InitStruct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 

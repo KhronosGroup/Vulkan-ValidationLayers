@@ -76,7 +76,7 @@ TEST_F(PositiveWsi, CreateWaylandSurface) {
         ASSERT_TRUE(version > 0);
     }
 
-    auto surface_create_info = vku::InitStruct<VkWaylandSurfaceCreateInfoKHR>();
+    VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
     surface_create_info.display = display;
     surface_create_info.surface = surface;
 
@@ -117,7 +117,7 @@ TEST_F(PositiveWsi, CreateXcbSurface) {
     xcb_window_t xcb_window = xcb_generate_id(xcb_connection);
     ASSERT_TRUE(xcb_window != 0);
 
-    auto surface_create_info = vku::InitStruct<VkXcbSurfaceCreateInfoKHR>();
+    VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
     surface_create_info.connection = xcb_connection;
     surface_create_info.window = xcb_window;
 
@@ -161,7 +161,7 @@ TEST_F(PositiveWsi, CreateX11Surface) {
                                                   BlackPixel(x11_display, screen), WhitePixel(x11_display, screen));
 
     VkSurfaceKHR vulkan_surface;
-    auto surface_create_info = vku::InitStruct<VkXlibSurfaceCreateInfoKHR>();
+    VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
     surface_create_info.dpy = x11_display;
     surface_create_info.window = x11_window;
     vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
@@ -199,15 +199,15 @@ TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
 
     const POINT pt_zero = {0, 0};
 
-    auto fullscreen_exclusive_win32_info = vku::InitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
+    VkSurfaceFullScreenExclusiveWin32InfoEXT fullscreen_exclusive_win32_info = vku::InitStructHelper();
     fullscreen_exclusive_win32_info.hmonitor = MonitorFromPoint(pt_zero, MONITOR_DEFAULTTOPRIMARY);
-    auto fullscreen_exclusive_info = vku::InitStruct<VkSurfaceFullScreenExclusiveInfoEXT>(&fullscreen_exclusive_win32_info);
+    VkSurfaceFullScreenExclusiveInfoEXT fullscreen_exclusive_info = vku::InitStructHelper(&fullscreen_exclusive_win32_info);
     fullscreen_exclusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
 
-    auto surface_info = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>(&fullscreen_exclusive_info);
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&fullscreen_exclusive_info);
     surface_info.surface = m_surface;
 
-    auto surface_caps = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->phy(), &surface_info, &surface_caps);
 }
 #endif
@@ -246,7 +246,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = m_surface_formats[0].format;
     image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
@@ -265,17 +265,17 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
     vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
 
-    auto bind_swapchain_info = vku::InitStruct<VkBindImageMemorySwapchainInfoKHR>();
+    VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
     bind_swapchain_info.swapchain = m_swapchain;
     bind_swapchain_info.imageIndex = 0;
 
-    auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
     bind_info.image = image_from_swapchain.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
@@ -352,7 +352,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
         GTEST_SKIP() << "minImageExtent is not large enough";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = m_surface_formats[0].format;
     image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
@@ -371,24 +371,24 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
     vkt::Image peer_image(*m_device, image_create_info, vkt::no_mem);
 
-    auto bind_devicegroup_info = vku::InitStruct<VkBindImageMemoryDeviceGroupInfo>();
+    VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = vku::InitStructHelper();
     std::array<uint32_t, 1> deviceIndices = {{0}};
     bind_devicegroup_info.deviceIndexCount = static_cast<uint32_t>(deviceIndices.size());
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
 
-    auto bind_swapchain_info = vku::InitStruct<VkBindImageMemorySwapchainInfoKHR>(&bind_devicegroup_info);
+    VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper(&bind_devicegroup_info);
     bind_swapchain_info.swapchain = m_swapchain;
     bind_swapchain_info.imageIndex = 0;
 
-    auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
     bind_info.image = peer_image.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
@@ -407,7 +407,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 
     m_commandBuffer->begin();
 
-    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     img_barrier.image = swapchain_images[image_index];
@@ -457,7 +457,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     ASSERT_VK_SUCCESS(
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
-    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -478,7 +478,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
 
     constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.waitSemaphoreCount = 1;
@@ -488,7 +488,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     submit_info.pSignalSemaphores = &submit_semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
 
-    auto present = vku::InitStruct<VkPresentInfoKHR>();
+    VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
     present.pWaitSemaphores = &submit_semaphore.handle();
     present.swapchainCount = 1;
@@ -517,7 +517,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index));
     ASSERT_VK_SUCCESS(vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout));
 
-    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -538,14 +538,14 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
 
     constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.pWaitDstStageMask = &stage_mask;
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
     ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
 
-    auto present = vku::InitStruct<VkPresentInfoKHR>();
+    VkPresentInfoKHR present = vku::InitStructHelper();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
@@ -577,7 +577,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.attachmentCount = 1;
     rpci.pAttachments = attach;
     rpci.subpassCount = 1;
@@ -589,7 +589,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     vkt::RenderPass rp2(*m_device, rpci);
     ASSERT_TRUE(rp2.initialized());
 
-    auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = swapchainImages[image_index];
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = m_surface_formats[0].format;
@@ -598,7 +598,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, ivci);
     ASSERT_TRUE(view.initialized());
-    auto fci = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fci = vku::InitStructHelper();
     fci.renderPass = rp1.handle();
     fci.attachmentCount = 1;
     fci.pAttachments = &view.handle();
@@ -688,9 +688,9 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
         GTEST_SKIP() << "Cannot find supported shared present mode";
     }
 
-    auto shared_present_capabilities = vku::InitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
-    auto capabilities = vku::InitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
-    auto surface_info = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR capabilities = vku::InitStructHelper(&shared_present_capabilities);
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
     surface_info.surface = m_surface;
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
 
@@ -699,7 +699,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
         GTEST_SKIP() << "Driver was suppose to support VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT";
     }
 
-    auto swapchain_create_info = vku::InitStruct<VkSwapchainCreateInfoKHR>();
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = 1;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
@@ -725,7 +725,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
 
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR);
 
-    auto present = vku::InitStruct<VkPresentInfoKHR>();
+    VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
@@ -787,10 +787,10 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    auto surface_full_screen_exlusive_info = vku::InitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
+    VkSurfaceFullScreenExclusiveInfoEXT surface_full_screen_exlusive_info = vku::InitStructHelper();
     surface_full_screen_exlusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_DEFAULT_EXT;
 
-    auto swapchain_create_info = vku::InitStruct<VkSwapchainCreateInfoKHR>(&surface_full_screen_exlusive_info);
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&surface_full_screen_exlusive_info);
     swapchain_create_info.flags = 0;
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
@@ -840,12 +840,12 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive2) {
 
     const POINT pt_zero = {0, 0};
 
-    auto fullscreen_exclusive_win32_info = vku::InitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
+    VkSurfaceFullScreenExclusiveWin32InfoEXT fullscreen_exclusive_win32_info = vku::InitStructHelper();
     fullscreen_exclusive_win32_info.hmonitor = MonitorFromPoint(pt_zero, MONITOR_DEFAULTTOPRIMARY);
-    auto surface_full_screen_exlusive_info = vku::InitStruct<VkSurfaceFullScreenExclusiveInfoEXT>(&fullscreen_exclusive_win32_info);
+    VkSurfaceFullScreenExclusiveInfoEXT surface_full_screen_exlusive_info = vku::InitStructHelper(&fullscreen_exclusive_win32_info);
     surface_full_screen_exlusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
 
-    auto swapchain_create_info = vku::InitStruct<VkSwapchainCreateInfoKHR>(&surface_full_screen_exlusive_info);
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&surface_full_screen_exlusive_info);
     swapchain_create_info.flags = 0;
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
@@ -1083,7 +1083,7 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = m_surface_formats[0].format;
     image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
@@ -1097,7 +1097,7 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
 
     image_create_info.pNext = &image_swapchain_create_info;
@@ -1106,11 +1106,11 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     int i = 0;
     for (auto &image : images) {
         image.init_no_mem(*m_device, image_create_info);
-        auto bind_swapchain_info = vku::InitStruct<VkBindImageMemorySwapchainInfoKHR>();
+        VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
         bind_swapchain_info.swapchain = m_swapchain;
         bind_swapchain_info.imageIndex = i++;
 
-        auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+        VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
         bind_info.image = image.handle();
         bind_info.memory = VK_NULL_HANDLE;
         bind_info.memoryOffset = 0;
@@ -1143,7 +1143,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
@@ -1280,18 +1280,18 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
     // (although this is implementation dependant)
     const auto present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
-    auto surface_present_mode = vku::InitStruct<VkSurfacePresentModeEXT>();
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
-    auto surface_info = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>(&surface_present_mode);
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
     surface_info.surface = m_surface;
 
-    auto surface_caps = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->phy(), &surface_info, &surface_caps);
 
-    auto swapchain_present_mode_create_info = vku::InitStruct<VkSwapchainPresentModesCreateInfoEXT>();
+    VkSwapchainPresentModesCreateInfoEXT swapchain_present_mode_create_info = vku::InitStructHelper();
     swapchain_present_mode_create_info.presentModeCount = 1;
     swapchain_present_mode_create_info.pPresentModes = &present_mode;
-    auto swapchain_create_info = vku::InitStruct<VkSwapchainCreateInfoKHR>(&swapchain_present_mode_create_info);
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&swapchain_present_mode_create_info);
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;

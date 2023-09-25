@@ -262,8 +262,8 @@ if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOr
     GTEST_SKIP() << "Failed to load device profile layer.";
 }
 
-auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>();
-auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
+VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
 // Removes unwanted support
 fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(gpu(), image_format, &fmt_props);

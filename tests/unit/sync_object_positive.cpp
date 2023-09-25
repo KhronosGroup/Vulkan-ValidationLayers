@@ -26,7 +26,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -76,7 +76,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -745,7 +745,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -1229,9 +1229,9 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     VkResult err;
 
     // Create a semaphore to export payload from
-    auto esci = vku::InitStruct<VkExportSemaphoreCreateInfoKHR>();
+    VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
     esci.handleTypes = handle_type;
-    auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&esci);
+    VkSemaphoreCreateInfo sci = vku::InitStructHelper(&esci);
 
     vkt::Semaphore export_semaphore(*m_device, sci);
 
@@ -1301,18 +1301,18 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     // Check for external semaphore import and export capability
-    auto tci = vku::InitStruct<VkSemaphoreTypeCreateInfoKHR>();
+    VkSemaphoreTypeCreateInfoKHR tci = vku::InitStructHelper();
     tci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    auto esi = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>(&tci);
+    VkPhysicalDeviceExternalSemaphoreInfoKHR esi = vku::InitStructHelper(&tci);
     esi.handleType = handle_type;
 
-    auto esp = vku::InitStruct<VkExternalSemaphorePropertiesKHR>();
+    VkExternalSemaphorePropertiesKHR esp = vku::InitStructHelper();
 
     vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
@@ -1323,11 +1323,11 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     VkResult err;
 
     // Create a semaphore to export payload from
-    auto esci = vku::InitStruct<VkExportSemaphoreCreateInfoKHR>();
+    VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
     esci.handleTypes = handle_type;
-    auto stci = vku::InitStruct<VkSemaphoreTypeCreateInfoKHR>(&esci);
+    VkSemaphoreTypeCreateInfoKHR stci = vku::InitStructHelper(&esci);
     stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
-    auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&stci);
+    VkSemaphoreCreateInfo sci = vku::InitStructHelper(&stci);
 
     vkt::Semaphore export_semaphore(*m_device, sci);
 
@@ -1398,9 +1398,9 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     }
 
     // Check for external fence import and export capability
-    auto efi = vku::InitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
     efi.handleType = handle_type;
-    auto efp = vku::InitStruct<VkExternalFencePropertiesKHR>();
+    VkExternalFencePropertiesKHR efp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1411,9 +1411,9 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     VkResult err;
 
     // Create a fence to export payload from
-    auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
+    VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
-    auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
+    VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
 
     // Create a fence to import payload into
@@ -1462,9 +1462,9 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     }
 
     // Check for external fence import and export capability
-    auto efi = vku::InitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
     efi.handleType = handle_type;
-    auto efp = vku::InitStruct<VkExternalFencePropertiesKHR>();
+    VkExternalFencePropertiesKHR efp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1476,9 +1476,9 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     VkResult err;
 
     // Create a fence to export payload from
-    auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
+    VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
-    auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
+    VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
 
     fci.pNext = nullptr;
@@ -1527,9 +1527,9 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     }
 
     // Check for external fence export capability
-    auto efi = vku::InitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
     efi.handleType = handle_type;
-    auto efp = vku::InitStruct<VkExternalFencePropertiesKHR>();
+    VkExternalFencePropertiesKHR efp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR)) {
@@ -1540,16 +1540,16 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     VkResult err;
 
     // Create a fence to export payload from
-    auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
+    VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
-    auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
+    VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
 
     for (uint32_t i = 0; i < 1000; i++) {
         m_commandBuffer->begin();
         m_commandBuffer->end();
 
-        auto submit_info = vku::InitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, export_fence.handle());
@@ -1698,7 +1698,7 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -1747,10 +1747,10 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vk::CmdCopyBuffer(cb1.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
     cb1.end();
 
-    auto semaphore_type_create_info = vku::InitStruct<VkSemaphoreTypeCreateInfoKHR>();
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
+    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
     vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     // timeline values, Begins will be signaled by host, Ends by the queues
@@ -1762,14 +1762,14 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     uint64_t submit_wait_value = kQ0Begin;
     uint64_t submit_signal_value = kQ0End;
 
-    auto timeline_semaphore_submit_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
+    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = &submit_wait_value;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &submit_signal_value;
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
+    VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_semaphore_submit_info);
     submit_info.pWaitDstStageMask = &stageFlags;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
@@ -1788,14 +1788,14 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vk::QueueSubmit(q1->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // signal semaphore to allow q0 to proceed
-    auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
+    VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
     signal_info.semaphore = semaphore.handle();
     signal_info.value = kQ0Begin;
     vk::SignalSemaphoreKHR(m_device->device(), &signal_info);
 
     // buffer_a is only used by the q0 commands
     uint64_t wait_info_value = kQ0End;
-    auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
+    VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &wait_info_value;
@@ -1904,7 +1904,7 @@ struct FenceSemRaceData {
 
 void WaitTimelineSem(FenceSemRaceData *data) {
     uint64_t wait_value = data->wait_value;
-    auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
+    VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &data->sem;
     wait_info.pValues = &wait_value;
@@ -1927,28 +1927,28 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    auto fence_ci = vku::InitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_ci = vku::InitStructHelper();
     vkt::Fence fence(*m_device, fence_ci);
     auto fence_handle = fence.handle();
 
-    auto timeline_ci = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
+    VkSemaphoreTypeCreateInfo timeline_ci = vku::InitStructHelper();
     timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     timeline_ci.initialValue = 0;
 
-    auto sem_ci = vku::InitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+    VkSemaphoreCreateInfo sem_ci = vku::InitStructHelper(&timeline_ci);
     vkt::Semaphore sem(*m_device, sem_ci);
     auto sem_handle = sem.handle();
 
     uint64_t signal_value = 1;
-    auto timeline_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
+    VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
     timeline_info.signalSemaphoreValueCount = 1;
     timeline_info.pSignalSemaphoreValues = &signal_value;
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_info);
+    VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_info);
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &sem_handle;
 
@@ -1994,19 +1994,19 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
 
-    auto fence_create_info = vku::InitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vkt::Fence fence(*m_device, fence_create_info);
 
     vkt::Semaphore sem(*m_device);
 
-    auto pool_create_info = vku::InitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     std::optional<vkt::CommandPool> command_pool(vvl::in_place, *m_device, pool_create_info);
 
     // create a raw command buffer because we'll just the destroy the pool.
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    auto alloc_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.commandPool = command_pool->handle();
     alloc_info.commandBufferCount = 1;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -2017,7 +2017,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     err = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, sem.handle(), VK_NULL_HANDLE, &image_index);
     ASSERT_VK_SUCCESS(err);
 
-    auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     err = vk::BeginCommandBuffer(command_buffer, &begin_info);
     ASSERT_VK_SUCCESS(err);
 
@@ -2035,7 +2035,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     err = vk::EndCommandBuffer(command_buffer);
     ASSERT_VK_SUCCESS(err);
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence.handle());
@@ -2047,11 +2047,11 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
 
 struct SemBufferRaceData {
     SemBufferRaceData(VkDeviceObj &dev_) : dev(dev_) {
-        auto timeline_ci = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
+        VkSemaphoreTypeCreateInfo timeline_ci = vku::InitStructHelper();
         timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
         timeline_ci.initialValue = 0;
 
-        auto sem_ci = vku::InitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+        VkSemaphoreCreateInfo sem_ci = vku::InitStructHelper(&timeline_ci);
         sem.init(dev, sem_ci);
     }
 
@@ -2067,7 +2067,7 @@ struct SemBufferRaceData {
     virtual VkResult Wait(uint64_t sem_value) = 0;
 
     virtual VkResult Signal(uint64_t sem_value) {
-        auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
+        VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
         signal_info.semaphore = sem.handle();
         signal_info.value = sem_value;
         return vk::SignalSemaphoreKHR(dev.handle(), &signal_info);
@@ -2095,14 +2095,14 @@ struct SemBufferRaceData {
 
     void Run(vkt::CommandPool &command_pool, ErrorMonitor &error_mon) {
         uint64_t gpu_wait_value, gpu_signal_value;
-        auto timeline_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
+        VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
         timeline_info.waitSemaphoreValueCount = 1;
         timeline_info.pWaitSemaphoreValues = &gpu_wait_value;
         timeline_info.signalSemaphoreValueCount = 1;
         timeline_info.pSignalSemaphoreValues = &gpu_signal_value;
 
         VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_info);
+        VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_info);
         submit_info.waitSemaphoreCount = 1;
         submit_info.pWaitSemaphores = &sem.handle();
         submit_info.pWaitDstStageMask = &wait_stage;
@@ -2164,7 +2164,7 @@ struct WaitTimelineSemThreadData : public SemBufferRaceData {
     WaitTimelineSemThreadData(VkDeviceObj &dev_) : SemBufferRaceData(dev_) {}
 
     VkResult Wait(uint64_t sem_value) {
-        auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
+        VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &sem.handle();
         wait_info.pValues = &sem_value;
@@ -2180,7 +2180,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     WaitTimelineSemThreadData data(*m_device);
@@ -2208,7 +2208,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -2217,14 +2217,14 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     }
 
     // Create exportable timeline semaphore
-    auto semaphore_type_create_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 0;
 
-    auto export_info = vku::InitStruct<VkExportSemaphoreCreateInfo>(&semaphore_type_create_info);
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_create_info);
     export_info.handleTypes = handle_type;
 
-    const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&export_info);
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore semaphore(*m_device, create_info);
 
     // This caused original issue: exported semaphore failed to retire queue operations.
@@ -2233,17 +2233,17 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
 
     // Put semaphore to work
     const uint64_t signal_value = 1;
-    auto timeline_submit_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
+    VkTimelineSemaphoreSubmitInfo timeline_submit_info = vku::InitStructHelper();
     timeline_submit_info.signalSemaphoreValueCount = 1;
     timeline_submit_info.pSignalSemaphoreValues = &signal_value;
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_submit_info);
+    VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_submit_info);
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     // This wait (with exported semaphore) should properly retire all queue operations
-    auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
+    VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &signal_value;
@@ -2268,14 +2268,14 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
     subpass_dependency.srcAccessMask = VK_ACCESS_INDEX_READ_BIT;
     subpass_dependency.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.dependencyCount = 1;
     rpci.pDependencies = &subpass_dependency;
     const vkt::RenderPass rp(*m_device, rpci);
 
-    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = rp;
     fbci.width = m_width;
     fbci.height = m_height;
@@ -2285,7 +2285,7 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
     m_renderPassBeginInfo.renderPass = rp;
     m_renderPassBeginInfo.framebuffer = fb;
 
-    auto barrier = vku::InitStruct<VkMemoryBarrier>();
+    VkMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcAccessMask = VK_ACCESS_INDEX_READ_BIT;
     barrier.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
 
@@ -2309,13 +2309,13 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // HOST stage as source
     vkt::Buffer buffer(*m_device, 32);
-    auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier2>();
+    VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
     buffer_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
@@ -2325,7 +2325,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.size = VK_WHOLE_SIZE;
 
-    auto buffer_dependency = vku::InitStruct<VkDependencyInfo>();
+    VkDependencyInfo buffer_dependency = vku::InitStructHelper();
     buffer_dependency.bufferMemoryBarrierCount = 1;
     buffer_dependency.pBufferMemoryBarriers = &buffer_barrier;
 
@@ -2336,7 +2336,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     // HOST stage as destination
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier2>();
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     image_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
@@ -2348,7 +2348,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     image_barrier.image = image.handle();
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    auto image_dependency = vku::InitStruct<VkDependencyInfo>();
+    VkDependencyInfo image_dependency = vku::InitStructHelper();
     image_dependency.imageMemoryBarrierCount = 1;
     image_dependency.pImageMemoryBarriers = &image_barrier;
 

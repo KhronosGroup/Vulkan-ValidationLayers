@@ -61,7 +61,7 @@ void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) 
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto tf_features = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pNextFeatures);
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT tf_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(tf_features);
     if (tf_features.transformFeedback == VK_FALSE) {
         GTEST_SKIP() << "transformFeedback not supported";
@@ -94,7 +94,7 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     {
-        auto info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo info = vku::InitStructHelper();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 4;
         vkt::Buffer buffer(*m_device, info);
@@ -158,10 +158,10 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     {
-        auto tf_properties = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
         GetPhysicalDeviceProperties2(tf_properties);
 
-        auto info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo info = vku::InitStructHelper();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 8;
         vkt::Buffer const buffer_obj(*m_device, info);
@@ -203,7 +203,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     }
 
     {
-        auto info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo info = vku::InitStructHelper();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 8;
         vkt::Buffer const buffer_obj(*m_device, info);
@@ -262,7 +262,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
 
     // Don't set VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT.
     {
-        auto info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo info = vku::InitStructHelper();
         info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         info.size = 4;
         vkt::Buffer const buffer_obj(*m_device, info);
@@ -278,7 +278,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     {
         vkt::Buffer buffer;
         {
-            auto info = vku::InitStruct<VkBufferCreateInfo>();
+            VkBufferCreateInfo info = vku::InitStructHelper();
             info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
             info.size = 4;
             buffer.init_no_mem(*m_device, info);
@@ -314,7 +314,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     {
-        auto tf_properties = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
         GetPhysicalDeviceProperties2(tf_properties);
 
         // Request a firstCounterBuffer that is too large.
@@ -339,7 +339,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
 
     // Request an out-of-bounds location.
     {
-        auto info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo info = vku::InitStructHelper();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
         info.size = 4;
         vkt::Buffer const buffer_obj(*m_device, info);
@@ -362,7 +362,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
 
     // Don't set VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT.
     {
-        auto info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo info = vku::InitStructHelper();
         info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         info.size = 4;
         vkt::Buffer const buffer_obj(*m_device, info);
@@ -410,7 +410,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
             vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
 
             {
-                auto tf_properties = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+                VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
                 GetPhysicalDeviceProperties2(tf_properties);
 
                 // Request a firstCounterBuffer that is too large.
@@ -435,7 +435,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
 
             // Request an out-of-bounds location.
             {
-                auto info = vku::InitStruct<VkBufferCreateInfo>();
+                VkBufferCreateInfo info = vku::InitStructHelper();
                 info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
                 info.size = 4;
                 vkt::Buffer const buffer_obj(*m_device, info);
@@ -458,7 +458,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
 
             // Don't set VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT.
             {
-                auto info = vku::InitStruct<VkBufferCreateInfo>();
+                VkBufferCreateInfo info = vku::InitStructHelper();
                 info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
                 info.size = 4;
                 vkt::Buffer const buffer_obj(*m_device, info);
@@ -584,7 +584,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto tf_properties = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(tf_properties);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -680,16 +680,16 @@ TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto transform_feedback_features = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     transform_feedback_features.geometryStreams = VK_FALSE;  // Invalid
 
     // Extension enabled via VK_EXT_transform_feedback dependency
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&transform_feedback_features);
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&transform_feedback_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    auto rasterization_state_stream_ci = vku::InitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
+    VkPipelineRasterizationStateStreamCreateInfoEXT rasterization_state_stream_ci = vku::InitStructHelper();
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
     pipe.InitState();
 
@@ -735,7 +735,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto transform_feedback_props = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
 
     // seen sometimes when using profiles and will crash
@@ -1098,7 +1098,7 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto transform_feedback_features = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     transform_feedback_features.geometryStreams = VK_TRUE;
 
     // Extension enabled via dependencies
@@ -1106,7 +1106,7 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto transfer_feedback_props = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transfer_feedback_props);
 
     if (!transfer_feedback_props.transformFeedbackRasterizationStreamSelect &&
@@ -1115,7 +1115,7 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     }
 
     CreatePipelineHelper pipe(*this);
-    auto rasterization_state_stream_ci = vku::InitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
+    VkPipelineRasterizationStateStreamCreateInfoEXT rasterization_state_stream_ci = vku::InitStructHelper();
     rasterization_state_stream_ci.rasterizationStream = transfer_feedback_props.maxTransformFeedbackStreams;
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
     pipe.InitState();
@@ -1156,7 +1156,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.attachmentCount = 1;
     rpci.pAttachments = attach;
     rpci.subpassCount = 2;
@@ -1170,7 +1170,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = rp.handle();
     fbci.attachmentCount = 1;
     fbci.pAttachments = &imageView;
@@ -1190,7 +1190,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.renderPass = rp.handle();
     rpbi.framebuffer = fb.handle();
     rpbi.renderArea.offset = {0, 0};
@@ -1216,7 +1216,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    auto info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo info = vku::InitStructHelper();
     info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
     info.size = 4;
     vkt::Buffer const buffer_obj(*m_device, info);

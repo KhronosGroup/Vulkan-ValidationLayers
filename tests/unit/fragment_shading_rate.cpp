@@ -215,7 +215,7 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
@@ -268,15 +268,15 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.primitiveFragmentShadingRateWithMultipleViewports) {
         GTEST_SKIP() << "Test requires primitiveFragmentShadingRateWithMultipleViewports to be unsupported.";
     }
 
-    auto eds_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&eds_features);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper(&eds_features);
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
     if (!fsr_features.primitiveFragmentShadingRate) {
@@ -423,8 +423,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
-    auto fdm_features = vku::InitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(&multiview_features);
+    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper(&multiview_features);
     auto features2 = GetPhysicalDeviceFeatures2(fdm_features);
 
     if (fdm_features.fragmentDensityMap != VK_TRUE) {
@@ -435,7 +435,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -446,10 +446,10 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     auto rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
 
     // Create a renderPass with viewMask 0
-    auto subpass = vku::InitStruct<VkSubpassDescription2>();
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
     subpass.viewMask = 0;
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo2>(&rpfdmi);
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper(&rpfdmi);
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -463,7 +463,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 2,
                                              VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    auto fb_info = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView;
@@ -514,7 +514,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     features2 = vku::InitStructHelper(&density_map2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto density_map2_properties = vku::InitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
+    VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties = vku::InitStructHelper();
     auto properties2 = GetPhysicalDeviceProperties2(density_map2_properties);
 
     // Test sampler parameters
@@ -934,10 +934,10 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
     if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
         GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::attachmentFragmentShadingRate not supported.";
@@ -945,24 +945,24 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto attach = vku::InitStruct<VkAttachmentReference2KHR>();
+    VkAttachmentReference2KHR attach = vku::InitStructHelper();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
     attach.attachment = 0;
 
-    auto fsr_attachment = vku::InitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = vku::InitStructHelper();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     fsr_attachment.pFragmentShadingRateAttachment = &attach;
 
     // Create a renderPass with a single fsr attachment
-    auto subpass = vku::InitStruct<VkSubpassDescription2KHR>(&fsr_attachment);
+    VkSubpassDescription2KHR subpass = vku::InitStructHelper(&fsr_attachment);
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo2KHR>();
+    VkRenderPassCreateInfo2KHR rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -975,7 +975,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT);
 
-    auto fb_info = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView;
@@ -1004,11 +1004,11 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
                         "investigation.";
     }
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
-    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
+    VkPhysicalDeviceMultiviewFeaturesKHR multiview_features = vku::InitStructHelper();
     if (IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         fsr_features.pNext = &multiview_features;
     }
@@ -1024,24 +1024,24 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto attach = vku::InitStruct<VkAttachmentReference2>();
+    VkAttachmentReference2 attach = vku::InitStructHelper();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
     attach.attachment = 0;
 
-    auto fsr_attachment = vku::InitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = vku::InitStructHelper();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     fsr_attachment.pFragmentShadingRateAttachment = &attach;
 
     // Create a renderPass with a single fsr attachment
-    auto subpass = vku::InitStruct<VkSubpassDescription2>(&fsr_attachment);
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&fsr_attachment);
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo2>();
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -1059,7 +1059,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     const auto imageView = image.targetView(image_view_ci);
 
-    auto fb_info = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView;
@@ -1114,7 +1114,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
     if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
@@ -1123,27 +1123,27 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    auto attach = vku::InitStruct<VkAttachmentReference2>();
+    VkAttachmentReference2 attach = vku::InitStructHelper();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
     attach.attachment = 0;
 
-    auto fsr_attachment = vku::InitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = vku::InitStructHelper();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     fsr_attachment.pFragmentShadingRateAttachment = &attach;
 
     // Create a renderPass with a single fsr attachment
-    auto subpass = vku::InitStruct<VkSubpassDescription2>(&fsr_attachment);
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&fsr_attachment);
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo2>();
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -1250,11 +1250,11 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
     // Create a render pass without a Fragment Shading Rate attachment
-    auto col_attach = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 col_attach = vku::InitStructHelper();
     col_attach.format = VK_FORMAT_R8G8B8A8_UNORM;
     col_attach.samples = VK_SAMPLE_COUNT_1_BIT;
     col_attach.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1295,7 +1295,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
     VkSubpassDescription2 fsr_subpass_2 = vku::InitStructHelper(&fsr_attachment_2);
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1457,7 +1457,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(fsr_features);
 
     if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
@@ -1502,7 +1502,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     // Create a view with the fragment shading rate attachment usage, but that doesn't support it
     CreateImageViewTest(*this, &createinfo, "VUID-VkImageViewCreateInfo-usage-04550");
 
-    auto fsrProperties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsrProperties);
 
     if (!fsrProperties.layeredShadingRateAttachments) {
@@ -1619,7 +1619,7 @@ TEST_F(NegativeFragmentShadingRate, PipelineCombinerOpsLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
@@ -1902,7 +1902,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapAttachmentCount) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto fdm_features = vku::InitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(fdm_features);
     if (fdm_features.fragmentDensityMap != VK_TRUE) {
         GTEST_SKIP() << "requires fragmentDensityMap feature";
@@ -1910,7 +1910,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapAttachmentCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1919,14 +1919,14 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapAttachmentCount) {
     VkAttachmentReference ref = {};
     ref.attachment = 1;
     ref.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-    auto rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>();
+    VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = vku::InitStructHelper();
     rpfdmi.fragmentDensityMapAttachment = ref;
 
     // Create a renderPass with viewMask 0
-    auto subpass = vku::InitStruct<VkSubpassDescription2>();
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
     subpass.viewMask = 0;
 
-    auto render_pass_ci = vku::InitStruct<VkRenderPassCreateInfo2>(&rpfdmi);
+    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper(&rpfdmi);
     render_pass_ci.subpassCount = 1;
     render_pass_ci.pSubpasses = &subpass;
     render_pass_ci.attachmentCount = 1;
@@ -1948,7 +1948,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported";
@@ -2025,7 +2025,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
                                                         size32(preserve), preserve.data());
 
     // Create a renderPass with a single color attachment for fragment density map
-    auto fragment_density_map_create_info = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>();
+    VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_create_info = vku::InitStructHelper();
     fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_GENERAL;
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo2>(&fragment_density_map_create_info, 0u, size32(attachments),
@@ -2038,7 +2038,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     subpass.viewMask = 0x3u;
     rp2[1].init(*m_device, rpci, true);
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8_UNORM;
     image_create_info.extent.width = 16;
@@ -2095,7 +2095,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
 
     // Create view attachment
     VkImageView iv[7];
-    auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = fdm_image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R8G8_UNORM;
@@ -2144,7 +2144,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     ASSERT_TRUE(iv6.initialized());
     iv[6] = iv6.handle();
 
-    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.flags = 0;
     fbci.width = 16;
     fbci.height = 16;
@@ -2165,13 +2165,13 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp2[1].handle(), fb2.handle(), VkRect2D{{0, 0}, {16u, 16u}}, 0u, nullptr);
 
     if (rp2Supported) {
-        auto offsetting = vku::InitStruct<VkSubpassFragmentDensityMapOffsetEndInfoQCOM>();
-        auto subpassEndInfo = vku::InitStruct<VkSubpassEndInfoKHR>(&offsetting);
+        VkSubpassFragmentDensityMapOffsetEndInfoQCOM offsetting = vku::InitStructHelper();
+        VkSubpassEndInfoKHR subpassEndInfo = vku::InitStructHelper(&offsetting);
         VkOffset2D m_vOffsets[2];
         offsetting.pFragmentDensityOffsets = m_vOffsets;
         offsetting.fragmentDensityOffsetCount = 2;
 
-        auto fdm_offset_properties = vku::InitStruct<VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM>();
+        VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM fdm_offset_properties = vku::InitStructHelper();
         GetPhysicalDeviceProperties2(fdm_offset_properties);
 
         m_vOffsets[0].x = 1;
@@ -2275,7 +2275,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     }
 
     // Create a device that enables shading_rate_image but disables multiViewport
-    auto shading_rate_image_features = vku::InitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
     if (!shading_rate_image_features.shadingRateImage) {
         GTEST_SKIP() << "shadingRateImage not supported";
@@ -2552,7 +2552,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     }
 
     // Create a device that enables shading_rate_image but disables multiViewport
-    auto shading_rate_image_features = vku::InitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
     if (!shading_rate_image_features.shadingRateImage) {
         GTEST_SKIP() << "shadingRateImage not supported";
@@ -2624,11 +2624,11 @@ TEST_F(NegativeFragmentShadingRate, StageUsage) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2Features>();
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
 
-    auto query_pool_create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
@@ -2659,11 +2659,11 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2Features>();
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
 
-    auto query_pool_create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
@@ -2693,7 +2693,7 @@ TEST_F(NegativeFragmentShadingRate, ImageMaxLimitsQCOM) {
     }
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
-    auto image_ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8_UNORM;

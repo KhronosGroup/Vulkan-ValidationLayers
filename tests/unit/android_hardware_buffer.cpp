@@ -1432,10 +1432,10 @@ TEST_F(NegativeAndroidHardwareBuffer, DeviceImageMemoryReq) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto external_format = vku::InitStruct<VkExternalFormatANDROID>();
+    VkExternalFormatANDROID external_format = vku::InitStructHelper();
     external_format.externalFormat = 0;
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>(&external_format);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&external_format);
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.arrayLayers = 1;
     image_create_info.extent = {64, 64, 1};
@@ -1446,10 +1446,10 @@ TEST_F(NegativeAndroidHardwareBuffer, DeviceImageMemoryReq) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto image_memory_req = vku::InitStruct<VkDeviceImageMemoryRequirements>();
+    VkDeviceImageMemoryRequirements image_memory_req = vku::InitStructHelper();
     image_memory_req.pCreateInfo = &image_create_info;
     image_memory_req.planeAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    auto out_memory_req = vku::InitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 out_memory_req = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pNext-06996");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &image_memory_req, &out_memory_req);
     m_errorMonitor->VerifyFound();
@@ -1480,7 +1480,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBProperties) {
     ahb_desc.stride = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
-    auto ahb_props = vku::InitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-parameter");
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), nullptr, &ahb_props);
     m_errorMonitor->VerifyFound();
@@ -1517,15 +1517,15 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
     vkt::Buffer buffer;
-    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>(&ext_buf_info);
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = 512;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
-    auto ahb_props = vku::InitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
-    auto import_ahb_Info = vku::InitStruct<VkImportAndroidHardwareBufferInfoANDROID>();
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper();
     import_ahb_Info.buffer = nullptr;  // invalid
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);

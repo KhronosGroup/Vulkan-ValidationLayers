@@ -24,7 +24,7 @@ TEST_F(PositiveMesh, BasicUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (mesh_shader_features.meshShader == VK_FALSE) {
         GTEST_SKIP() << "Mesh shader feature not supported";
@@ -78,7 +78,7 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
     }
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (mesh_shader_features.meshShader != VK_TRUE) {
@@ -132,7 +132,7 @@ TEST_F(PositiveMesh, PointSize) {
     }
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (mesh_shader_features.meshShader != VK_TRUE) {

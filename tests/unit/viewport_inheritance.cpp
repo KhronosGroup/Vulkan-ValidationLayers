@@ -931,7 +931,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto discard_rect_props = vku::InitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rect_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(discard_rect_props);
     if (discard_rect_props.maxDiscardRectangles < 1) {
         GTEST_SKIP() << "maxDiscardRectangles property is less than 1.";

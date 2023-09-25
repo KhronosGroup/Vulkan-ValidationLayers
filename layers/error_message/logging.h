@@ -114,7 +114,7 @@ struct LoggingLabel {
     bool Empty() const { return name.empty(); }
 
     VkDebugUtilsLabelEXT Export() const {
-        auto out = vku::InitStruct<VkDebugUtilsLabelEXT>();
+        VkDebugUtilsLabelEXT out = vku::InitStructHelper();
         out.pLabelName = name.c_str();
         std::copy(color.cbegin(), color.cend(), out.color);
         return out;

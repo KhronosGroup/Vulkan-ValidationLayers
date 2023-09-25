@@ -29,8 +29,8 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
         GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
     }
 
-    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>(pNextFeatures);
-    auto ycbcr_features = vku::InitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(pNextFeatures);
+    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
+    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceFeatures2 features2;
     if (use_12) {
         features2 = GetPhysicalDeviceFeatures2(features11);
@@ -54,7 +54,7 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    auto image_createinfo = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_createinfo = vku::InitStructHelper();
     image_createinfo.imageType = VK_IMAGE_TYPE_2D;
     image_createinfo.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
     image_createinfo.extent = {128, 128, 1};
@@ -65,10 +65,10 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
     image_createinfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_createinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    auto image_mem_reqs = vku::InitStruct<VkDeviceImageMemoryRequirements>();
+    VkDeviceImageMemoryRequirements image_mem_reqs = vku::InitStructHelper();
     image_mem_reqs.pCreateInfo = &image_createinfo;
     image_mem_reqs.planeAspect = VK_IMAGE_ASPECT_NONE;
-    auto mem_reqs_2 = vku::InitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 mem_reqs_2 = vku::InitStructHelper();
     vk::GetDeviceImageMemoryRequirements(device(), &image_mem_reqs, &mem_reqs_2);
 }
 

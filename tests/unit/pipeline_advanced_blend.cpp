@@ -28,7 +28,7 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto blend_operation_advanced = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(blend_operation_advanced);
 
     if (!blend_operation_advanced.advancedBlendAllOperations) {
@@ -87,7 +87,7 @@ TEST_F(NegativePipelineAdvancedBlend, MaxBlendAttachment) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto blend_operation_advanced_props = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(blend_operation_advanced_props);
     if (blend_operation_advanced_props.advancedBlendMaxColorAttachments > 2) {
         GTEST_SKIP() << "advancedBlendMaxColorAttachments is too high";
@@ -124,7 +124,7 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto blend_operation_advanced_props = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(blend_operation_advanced_props);
 
     if (blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
@@ -133,7 +133,7 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
         GTEST_SKIP() << "All VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT properties are enabled; nothing to test";
     }
 
-    auto color_blend_advanced = vku::InitStruct<VkPipelineColorBlendAdvancedStateCreateInfoEXT>();
+    VkPipelineColorBlendAdvancedStateCreateInfoEXT color_blend_advanced = vku::InitStructHelper();
     color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_DISJOINT_EXT;
     color_blend_advanced.dstPremultiplied = VK_FALSE;
     color_blend_advanced.srcPremultiplied = VK_FALSE;
@@ -170,7 +170,7 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto blend_operation_advanced = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(blend_operation_advanced);
 
     if (blend_operation_advanced.advancedBlendAllOperations) {

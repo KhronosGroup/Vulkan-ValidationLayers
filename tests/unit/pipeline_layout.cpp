@@ -55,7 +55,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto density_map2_properties = vku::InitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
+    VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties = vku::InitStructHelper();
     auto properties2 = GetPhysicalDeviceProperties2(density_map2_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1034,7 +1034,7 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mut_features = vku::InitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mut_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mut_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mut_features));
 

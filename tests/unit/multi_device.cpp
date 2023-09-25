@@ -17,7 +17,7 @@ TEST_F(MultiDeviceTest, CommonParentFillBuffer) {
     auto features = m_device->phy().features();
     m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_ci.queueFamilyIndexCount = 0;
@@ -42,7 +42,7 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     auto features = m_device->phy().features();
     m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_ci.queueFamilyIndexCount = 0;
@@ -142,14 +142,14 @@ TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
     auto features = m_device->phy().features();
     m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
 
-    auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 0;
     vkt::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
 
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     cs.InitFromGLSLTry(false, m_second_device);
 
-    auto pipeline_ci = vku::InitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
     pipeline_ci.layout = pipeline_layout.handle();
     pipeline_ci.stage = cs.GetStageCreateInfo();
     vkt::Pipeline pipeline(*m_second_device, pipeline_ci);

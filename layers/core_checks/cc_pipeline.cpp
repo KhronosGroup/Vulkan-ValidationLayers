@@ -169,7 +169,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
 
     // vkGetPipelineExecutablePropertiesKHR will not have struct to validate further
     if (pExecutableInfo) {
-        auto pi = vku::InitStruct<VkPipelineInfoKHR>();
+        VkPipelineInfoKHR pi = vku::InitStructHelper();
         pi.pipeline = pExecutableInfo->pipeline;
 
         // We could probably cache this instead of fetching it every time

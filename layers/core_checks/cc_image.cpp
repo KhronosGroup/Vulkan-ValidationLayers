@@ -62,8 +62,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
             }
         }
 
-        auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
+        VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
         drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
@@ -176,8 +176,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>();
-    auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
     image_format_info.type = pCreateInfo->imageType;
     image_format_info.format = pCreateInfo->format;
     image_format_info.tiling = pCreateInfo->tiling;
@@ -227,7 +227,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     } else {
         auto *modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
         auto *explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
-        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
         drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
@@ -478,12 +478,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
         // Check external memory handle types compatibility
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
-        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
         external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
         vvl::PnextChainScopedAdd scoped_add_ext_img_info(&image_format_info, &external_image_info);
 
-        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>();
-        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
+        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper();
+        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
         VkExternalMemoryHandleTypeFlags compatible_types = 0;
         if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
@@ -491,7 +491,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         } else {
             auto modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
             auto explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
-            auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+            VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
             drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
             drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
             drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
@@ -1457,8 +1457,8 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
-        auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
+        VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
 
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
@@ -2211,11 +2211,11 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
         } else {
             // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
             assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
-            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
             DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
-            auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
-            auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
+            VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_state.createInfo.format, &fmt_props_2);
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties{fmt_drm_props.drmFormatModifierCount};
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();

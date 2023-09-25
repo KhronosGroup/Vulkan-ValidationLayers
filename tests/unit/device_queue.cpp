@@ -26,12 +26,12 @@ TEST_F(NegativeDeviceQueue, FamilyIndex) {
     uint32_t queue_family_index = queue_family_count;
 
     float priority = 1.0f;
-    auto device_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
     device_queue_ci.queueFamilyIndex = queue_family_index;
     device_queue_ci.queueCount = 1;
     device_queue_ci.pQueuePriorities = &priority;
 
-    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
@@ -228,7 +228,7 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     device_queue_ci[1].queueCount = 1;
     device_queue_ci[1].pQueuePriorities = &priorities[1];
 
-    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 2;
     device_ci.pQueueCreateInfos = device_queue_ci;
     device_ci.enabledLayerCount = 0;
@@ -256,12 +256,12 @@ TEST_F(NegativeDeviceQueue, QueueCount) {
     std::vector<float> priorities(invalid_count);
     std::fill(priorities.begin(), priorities.end(), 0.0f);
 
-    auto device_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
     device_queue_ci.queueFamilyIndex = 0;
     device_queue_ci.queueCount = queue_props[0].queueCount + 1;
     device_queue_ci.pQueuePriorities = priorities.data();
 
-    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
@@ -284,11 +284,11 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
     std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_props.data());
 
-    auto device_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
     device_queue_ci.queueFamilyIndex = 0;
     device_queue_ci.queueCount = 1;
 
-    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;

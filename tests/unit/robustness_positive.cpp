@@ -24,7 +24,7 @@ TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescript
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (robustness2_features.nullDescriptor != VK_TRUE) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
@@ -61,7 +61,7 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (!robustness2_features.nullDescriptor) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
@@ -106,7 +106,7 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto pipeline_robustness_features = vku::InitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    VkPhysicalDevicePipelineRobustnessFeaturesEXT pipeline_robustness_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(pipeline_robustness_features);
     if (!pipeline_robustness_features.pipelineRobustness) {
         GTEST_SKIP() << "pipelineRobustness is not supported";
@@ -115,7 +115,7 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
-    auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_info = vku::InitStructHelper();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
     pipe.cp_ci_.pNext = &pipeline_robustness_info;
     pipe.CreateComputePipeline();

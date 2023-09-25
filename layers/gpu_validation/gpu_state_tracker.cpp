@@ -70,7 +70,7 @@ VkResult UtilDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescripto
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             pool_count * num_bindings_in_set,
         };
-        auto desc_pool_info = vku::InitStruct<VkDescriptorPoolCreateInfo>();
+        VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         desc_pool_info.maxSets = pool_count;
         desc_pool_info.poolSizeCount = 1;
@@ -301,7 +301,7 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
                 if (bda_features) {
                     bda_features->bufferDeviceAddress = VK_TRUE;
                 } else {
-                    auto new_bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+                    VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
                     new_bda_features.bufferDeviceAddress = VK_TRUE;
                     new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
                     modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
@@ -336,7 +336,7 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
             if (bda_features) {
                 bda_features->bufferDeviceAddress = VK_TRUE;
             } else {
-                auto new_bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+                VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
                 new_bda_features.bufferDeviceAddress = VK_TRUE;
                 new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
                 modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
@@ -456,7 +456,7 @@ void gpu_utils_state::Queue::SubmitBarrier() {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 
-        auto pool_create_info = vku::InitStruct<VkCommandPoolCreateInfo>();
+        VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
         pool_create_info.queueFamilyIndex = queueFamilyIndex;
         result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
@@ -465,7 +465,7 @@ void gpu_utils_state::Queue::SubmitBarrier() {
             return;
         }
 
-        auto buffer_alloc_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
+        VkCommandBufferAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         buffer_alloc_info.commandPool = barrier_command_pool_;
         buffer_alloc_info.commandBufferCount = 1;
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -482,10 +482,10 @@ void gpu_utils_state::Queue::SubmitBarrier() {
         state_.vkSetDeviceLoaderData(state_.device, barrier_command_buffer_);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
-        auto command_buffer_begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         result = DispatchBeginCommandBuffer(barrier_command_buffer_, &command_buffer_begin_info);
         if (result == VK_SUCCESS) {
-            auto memory_barrier = vku::InitStruct<VkMemoryBarrier>();
+            VkMemoryBarrier memory_barrier = vku::InitStructHelper();
             memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
             memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
             DispatchCmdPipelineBarrier(barrier_command_buffer_, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0,
@@ -494,7 +494,7 @@ void gpu_utils_state::Queue::SubmitBarrier() {
         }
     }
     if (barrier_command_buffer_ != VK_NULL_HANDLE) {
-        auto submit_info = vku::InitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &barrier_command_buffer_;
         DispatchQueueSubmit(QUEUE_STATE::Queue(), 1, &submit_info, VK_NULL_HANDLE);
@@ -949,7 +949,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                 const auto &spirv_state = stage.spirv_state;
 
                 VkShaderModule shader_module;
-                auto create_info = vku::InitStruct<VkShaderModuleCreateInfo>();
+                VkShaderModuleCreateInfo create_info = vku::InitStructHelper();
                 create_info.pCode = spirv_state->words_.data();
                 create_info.codeSize = spirv_state->words_.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);

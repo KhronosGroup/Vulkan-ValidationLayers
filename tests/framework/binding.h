@@ -1233,7 +1233,7 @@ struct GraphicsPipelineFromLibraries {
 
     GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkPipelineLayout layout)
         : GraphicsPipelineFromLibraries(libs) {
-        auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = layout;
         pipe.init(dev, exe_pipe_ci);
         pipe.initialized();

@@ -21,7 +21,7 @@ TEST_F(NegativeShaderObject, SpirvCodeSize) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]) - 2u;
@@ -44,7 +44,7 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -66,7 +66,7 @@ TEST_F(NegativeShaderObject, InvalidFlags) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -101,7 +101,7 @@ TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08414");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -110,7 +110,7 @@ TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -134,7 +134,7 @@ TEST_F(NegativeShaderObject, VertexNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -158,7 +158,7 @@ TEST_F(NegativeShaderObject, TessellationControlNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -182,7 +182,7 @@ TEST_F(NegativeShaderObject, TessellationEvaluationNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -206,7 +206,7 @@ TEST_F(NegativeShaderObject, GeometryNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -230,7 +230,7 @@ TEST_F(NegativeShaderObject, FragmentNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -250,7 +250,7 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -259,7 +259,7 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
     createInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -279,7 +279,7 @@ TEST_F(NegativeShaderObject, MeshNextStage) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08436");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -288,7 +288,7 @@ TEST_F(NegativeShaderObject, MeshNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     createInfo.nextStage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -308,7 +308,7 @@ TEST_F(NegativeShaderObject, TaskNVNextStage) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -317,7 +317,7 @@ TEST_F(NegativeShaderObject, TaskNVNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_NV, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TASK_BIT_NV;
     createInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -337,7 +337,7 @@ TEST_F(NegativeShaderObject, MeshNVNextStage) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08436");
 
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -346,7 +346,7 @@ TEST_F(NegativeShaderObject, MeshNVNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_NV, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_MESH_BIT_NV;
     createInfo.nextStage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -372,7 +372,7 @@ TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
 
     auto ptr = reinterpret_cast<std::uintptr_t>(spv.data()) + sizeof(uint8_t);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -397,7 +397,7 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
 
     auto ptr = reinterpret_cast<std::uintptr_t>(spv.data()) + sizeof(uint8_t);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -420,7 +420,7 @@ TEST_F(NegativeShaderObject, InvalidStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -447,8 +447,8 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_3);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -461,14 +461,14 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto vertCreateInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT vertCreateInfo = vku::InitStructHelper();
     vertCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     vertCreateInfo.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
     vertCreateInfo.pCode = vert_spv.data();
     vertCreateInfo.pName = "main";
 
-    auto taskCreateInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT taskCreateInfo = vku::InitStructHelper();
     taskCreateInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
     taskCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     taskCreateInfo.codeSize = task_spv.size() * sizeof(task_spv[0]);
@@ -500,8 +500,8 @@ TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -514,14 +514,14 @@ TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto vertCreateInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT vertCreateInfo = vku::InitStructHelper();
     vertCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     vertCreateInfo.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
     vertCreateInfo.pCode = vert_spv.data();
     vertCreateInfo.pName = "main";
 
-    auto meshCreateInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT meshCreateInfo = vku::InitStructHelper();
     meshCreateInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     meshCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     meshCreateInfo.codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
@@ -556,7 +556,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     features2.features.tessellationShader = VK_FALSE;
     features2.features.geometryShader = VK_FALSE;
@@ -571,7 +571,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
 
-        auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
         createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
         createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
         createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -589,7 +589,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
 
-        auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
         createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
         createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
         createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -613,8 +613,8 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&shaderObjectFeatures);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&shaderObjectFeatures);
     GetPhysicalDeviceFeatures2(maintenance4Features);
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -635,7 +635,7 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
 
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-        auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
         createInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
         createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
         createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -652,7 +652,7 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
 
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-        auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
         createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
         createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
         createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -681,7 +681,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -717,7 +717,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -744,8 +744,8 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -763,7 +763,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -793,7 +793,7 @@ TEST_F(NegativeShaderObject, NonUniqueShadersBind) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -830,7 +830,7 @@ TEST_F(NegativeShaderObject, InvalidShaderStageBind) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -862,7 +862,7 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -942,7 +942,7 @@ TEST_F(NegativeShaderObject, DrawWithoutBindingMeshShadersWhenEnabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08689");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08690");
 
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     InitBasicShaderObject(&meshShaderFeatures);
     if (::testing::Test::IsSkipped()) return;
@@ -978,7 +978,7 @@ TEST_F(NegativeShaderObject, InvalidShaderCreateInfoFlags) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1007,7 +1007,7 @@ TEST_F(NegativeShaderObject, LinkSingleStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1061,8 +1061,8 @@ TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -1103,8 +1103,8 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -1146,8 +1146,8 @@ TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -1324,8 +1324,8 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (!shaderObjectFeatures.shaderObject) {
         GTEST_SKIP() << "Test requires (unsupported) shaderObject , skipping.";
@@ -1338,7 +1338,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1367,7 +1367,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationControlNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1391,7 +1391,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationEvaluationNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1415,7 +1415,7 @@ TEST_F(NegativeShaderObject, InvalidGeometryNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1439,7 +1439,7 @@ TEST_F(NegativeShaderObject, InvalidFragmentNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.nextStage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1459,7 +1459,7 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -1471,7 +1471,7 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
     createInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1491,7 +1491,7 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08436");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -1500,7 +1500,7 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1580,7 +1580,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1u;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1u;
@@ -1592,7 +1592,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    auto framebuffer_info = vku::InitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
     framebuffer_info.renderPass = render_pass.handle();
     framebuffer_info.attachmentCount = 1;
     framebuffer_info.pAttachments = &image_view;
@@ -1608,7 +1608,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     clear_value.color.float32[2] = 0.25f;
     clear_value.color.float32[3] = 0.0f;
 
-    auto beginInfo = vku::InitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo beginInfo = vku::InitStructHelper();
     beginInfo.renderPass = render_pass.handle();
     beginInfo.framebuffer = framebuffer.handle();
     beginInfo.renderArea.extent.width = 32;
@@ -1758,7 +1758,7 @@ TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08637");
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    auto shadingRateImageFeatures = vku::InitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&shadingRateImageFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
@@ -1802,7 +1802,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetExclusiveScissorEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-exclusiveScissor-09235");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
-    auto exclusiveScissorFeatures = vku::InitStruct<VkPhysicalDeviceExclusiveScissorFeaturesNV>();
+    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusiveScissorFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&exclusiveScissorFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
@@ -1831,7 +1831,7 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08638");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
-    auto exclusiveScissorFeatures = vku::InitStruct<VkPhysicalDeviceExclusiveScissorFeaturesNV>();
+    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusiveScissorFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&exclusiveScissorFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
@@ -1934,8 +1934,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (shaderObjectFeatures.shaderObject == VK_FALSE) {
         GTEST_SKIP() << "shaderObject not supported.";
@@ -2031,7 +2031,7 @@ TEST_F(NegativeShaderObject, MissingColorWriteEnable) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08646");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
-    auto color_write_enable_features = vku::InitStruct<VkPhysicalDeviceColorWriteEnableFeaturesEXT>();
+    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable_features = vku::InitStructHelper();
     InitBasicShaderObject(&color_write_enable_features);
     if (::testing::Test::IsSkipped()) return;
     if (!color_write_enable_features.colorWriteEnable) {
@@ -2061,7 +2061,7 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08647");
 
-    auto color_write_enable_features = vku::InitStruct<VkPhysicalDeviceColorWriteEnableFeaturesEXT>();
+    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable_features = vku::InitStructHelper();
     InitBasicShaderObject(&color_write_enable_features);
     if (::testing::Test::IsSkipped()) return;
     if (!color_write_enable_features.colorWriteEnable) {
@@ -2097,7 +2097,7 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    auto renderingInfo = vku::InitStruct<VkRenderingInfoKHR>();
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
     renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 2u;
@@ -2379,8 +2379,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOpEnableEXT) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (shaderObjectFeatures.shaderObject == VK_FALSE) {
         GTEST_SKIP() << "shaderObject not supported.";
@@ -2493,7 +2493,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetFragmentShadingRateKHR) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pipelineFragmentShadingRate-09238");
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
     InitBasicShaderObject(&fsr_features);
     if (::testing::Test::IsSkipped()) return;
     if (!fsr_features.pipelineFragmentShadingRate) {
@@ -2546,7 +2546,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08660");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    auto transformFeedbackFeatures = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transformFeedbackFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&transformFeedbackFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (transformFeedbackFeatures.geometryStreams == VK_FALSE) {
@@ -2630,7 +2630,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08663");
 
-    auto depthClipEnableFeatures = vku::InitStruct<VkPhysicalDeviceDepthClipEnableFeaturesEXT>();
+    VkPhysicalDeviceDepthClipEnableFeaturesEXT depthClipEnableFeatures = vku::InitStructHelper();
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
     InitBasicShaderObject(&depthClipEnableFeatures);
     if (::testing::Test::IsSkipped()) return;
@@ -2844,7 +2844,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipNegativeOneToOneEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08673");
 
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
-    auto depthClipControlFeatures = vku::InitStruct<VkPhysicalDeviceDepthClipControlFeaturesEXT>();
+    VkPhysicalDeviceDepthClipControlFeaturesEXT depthClipControlFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&depthClipControlFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (depthClipControlFeatures.depthClipControl == VK_FALSE) {
@@ -3079,7 +3079,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08681");
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    auto shadingRateImageFeatures = vku::InitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&shadingRateImageFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
@@ -3109,7 +3109,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-shadingRateImage-09234");
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    auto shadingRateImageFeatures = vku::InitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&shadingRateImageFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
@@ -3140,7 +3140,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-shadingRateImage-09233");
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    auto shadingRateImageFeatures = vku::InitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&shadingRateImageFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
@@ -3170,7 +3170,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRepresentativeFragmentTestEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08682");
 
     AddRequiredExtensions(VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME);
-    auto representativeFragmentTestFeatures = vku::InitStruct<VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV>();
+    VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV representativeFragmentTestFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&representativeFragmentTestFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (representativeFragmentTestFeatures.representativeFragmentTest == VK_FALSE) {
@@ -3199,7 +3199,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageReductionModeNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08683");
 
     AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
-    auto coverageReductionFeatures = vku::InitStruct<VkPhysicalDeviceCoverageReductionModeFeaturesNV>();
+    VkPhysicalDeviceCoverageReductionModeFeaturesNV coverageReductionFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&coverageReductionFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (coverageReductionFeatures.coverageReductionMode == VK_FALSE) {
@@ -3263,8 +3263,8 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (!shaderObjectFeatures.shaderObject) {
         GTEST_SKIP() << "shaderObject not supported.";
@@ -3307,8 +3307,8 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (!shaderObjectFeatures.shaderObject) {
         GTEST_SKIP() << "shaderObject not supported.";
@@ -3351,8 +3351,8 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (!shaderObjectFeatures.shaderObject) {
         GTEST_SKIP() << "shaderObject not supported.";
@@ -3414,7 +3414,7 @@ TEST_F(NegativeShaderObject, MissingTaskShaderBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08689");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -3449,7 +3449,7 @@ TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08690");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -3486,8 +3486,8 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -3531,8 +3531,8 @@ TEST_F(NegativeShaderObject, MeshShaderWithMissingTaskShader) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -3581,8 +3581,8 @@ TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -3602,7 +3602,7 @@ TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
                                  GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3));
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
-    auto meshCreateInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT meshCreateInfo = vku::InitStructHelper();
     meshCreateInfo.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
     meshCreateInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     meshCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -3641,8 +3641,8 @@ TEST_F(NegativeShaderObject, VertAndTaskShadersBound) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.taskShader == VK_FALSE) {
@@ -3657,7 +3657,7 @@ TEST_F(NegativeShaderObject, VertAndTaskShadersBound) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
-    auto meshCreateInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT meshCreateInfo = vku::InitStructHelper();
     meshCreateInfo.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
     meshCreateInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     meshCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -3866,8 +3866,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08880");
 
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
-    auto attachmentFeedbackLoopDynamicStateFeatures =
-        vku::InitStruct<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT attachmentFeedbackLoopDynamicStateFeatures =
+        vku::InitStructHelper();
     InitBasicShaderObject(&attachmentFeedbackLoopDynamicStateFeatures);
     if (::testing::Test::IsSkipped()) return;
     if (attachmentFeedbackLoopDynamicStateFeatures.attachmentFeedbackLoopDynamicState == VK_FALSE) {
@@ -4043,8 +4043,8 @@ TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto maintenance4Features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>(&meshShaderFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
     InitBasicShaderObject(&maintenance4Features);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
@@ -4642,7 +4642,7 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, csSource.str().c_str());
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -4665,7 +4665,7 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -4710,7 +4710,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -4755,7 +4755,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -4800,7 +4800,7 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
     specializationInfo.dataSize = sizeof(uint32_t) * 2;
     specializationInfo.pData = &data;
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -4848,7 +4848,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -4872,7 +4872,7 @@ TEST_F(NegativeShaderObject, MissingEntrypoint) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -4940,7 +4940,7 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = fs_spv.size() * sizeof(fs_spv[0]);
@@ -5024,7 +5024,7 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = cs_spv.size() * sizeof(cs_spv[0]);
@@ -5103,7 +5103,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = vs_spv.size() * sizeof(vs_spv[0]);
@@ -5142,7 +5142,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = vs_spv.size() * sizeof(vs_spv[0]);
@@ -5181,7 +5181,7 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
     std::vector<uint32_t> cs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, cs_spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = cs_spv.size() * sizeof(cs_spv[0]);
@@ -5206,8 +5206,8 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>(&shaderObjectFeatures);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper(&shaderObjectFeatures);
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     features12.vulkanMemoryModelDeviceScope = VK_FALSE;
     if (features12.vulkanMemoryModel == VK_FALSE) {
@@ -5229,7 +5229,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5248,7 +5248,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    auto transform_feedback_features = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     InitBasicShaderObject(&transform_feedback_features);
     if (::testing::Test::IsSkipped()) return;
     auto features2 = GetPhysicalDeviceFeatures2(transform_feedback_features);
@@ -5259,7 +5259,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
         GTEST_SKIP() << "transformFeedback or geometryStreams feature is not supported";
     }
 
-    auto transform_feedback_props = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
 
     // seen sometimes when using profiles and will crash
@@ -5314,7 +5314,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
     std::vector<uint32_t> gs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, gsSource.str().c_str(), gs_spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = gs_spv.size() * sizeof(gs_spv[0]);
@@ -5333,7 +5333,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-XfbStride-06313");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    auto transform_feedback_features = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     InitBasicShaderObject(&transform_feedback_features);
     if (::testing::Test::IsSkipped()) return;
     auto features2 = GetPhysicalDeviceFeatures2(transform_feedback_features);
@@ -5344,7 +5344,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
         GTEST_SKIP() << "transformFeedback or geometryStreams feature is not supported";
     }
 
-    auto transform_feedback_props = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
 
     // seen sometimes when using profiles and will crash
@@ -5389,7 +5389,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vsSource.str().c_str(), vs_spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = vs_spv.size() * sizeof(vs_spv[0]);
@@ -5408,14 +5408,14 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-MeshEXT-07115");
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    auto meshShaderFeatures = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
 
-    auto mesh_shader_properties = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     std::string mesh_src = R"(
@@ -5445,7 +5445,7 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, mesh_src.c_str(), spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     createInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -5488,7 +5488,7 @@ TEST_F(NegativeShaderObject, Atomics) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src.c_str());
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5515,10 +5515,10 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    auto maintenance4 = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
-    auto float16_features = vku::InitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>(&maintenance4);
-    auto extended_types_features = vku::InitStruct<VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR>(&float16_features);
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&extended_types_features);
+    VkPhysicalDeviceMaintenance4Features maintenance4 = vku::InitStructHelper();
+    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper(&maintenance4);
+    VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR extended_types_features = vku::InitStructHelper(&float16_features);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&extended_types_features);
     GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     extended_types_features.shaderSubgroupExtendedTypes = VK_FALSE;
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -5552,7 +5552,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5585,7 +5585,7 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5638,7 +5638,7 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5681,7 +5681,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5728,7 +5728,7 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5793,7 +5793,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5822,8 +5822,8 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shaderObjectFeatures = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     if (!shaderObjectFeatures.shaderObject) {
         GTEST_SKIP() << "shaderObject not supported.";
@@ -5855,7 +5855,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5879,7 +5879,7 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
     InitBasicShaderObject(nullptr, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
 
-    auto conservative_rasterization_props = vku::InitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
     if (conservative_rasterization_props.conservativeRasterizationPostDepthCoverage) {
         GTEST_SKIP() << "conservativeRasterizationPostDepthCoverage not supported";
@@ -5911,7 +5911,7 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -5969,7 +5969,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src.c_str(), spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -6029,7 +6029,7 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-08642");
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
     InitBasicShaderObject(&fsr_features);
     if (::testing::Test::IsSkipped()) return;
     if (!fsr_features.pipelineFragmentShadingRate) {
@@ -6037,7 +6037,7 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
     }
     InitDynamicRenderTarget();
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
     if (fsr_properties.primitiveFragmentShadingRateWithMultipleViewports) {
         GTEST_SKIP() << "required primitiveFragmentShadingRateWithMultipleViewports to be unsupported.";
@@ -6213,12 +6213,12 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
         GTEST_SKIP() << "VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 not supported as color attachment.";
     }
 
-    auto imageFormatInfo = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
+    VkPhysicalDeviceImageFormatInfo2 imageFormatInfo = vku::InitStructHelper();
     imageFormatInfo.format = format;
     imageFormatInfo.type = VK_IMAGE_TYPE_2D;
     imageFormatInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageFormatInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    auto imageFormatProperties = vku::InitStruct<VkImageFormatProperties2>();
+    VkImageFormatProperties2 imageFormatProperties = vku::InitStructHelper();
     auto res = vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy(), &imageFormatInfo, &imageFormatProperties);
     if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         GTEST_SKIP() << "image format not supported as color attachment.";
@@ -6256,7 +6256,7 @@ TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
 
     const VkFormat format = VK_FORMAT_R64_SINT;
 
-    auto formatProperties = vku::InitStruct<VkFormatProperties2>();
+    VkFormatProperties2 formatProperties = vku::InitStructHelper();
     vk::GetPhysicalDeviceFormatProperties2(m_device->phy(), format, &formatProperties);
 
     if ((formatProperties.formatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
@@ -6280,13 +6280,13 @@ TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
 
-    auto vertexBindingDescription = vku::InitStruct<VkVertexInputBindingDescription2EXT>();
+    VkVertexInputBindingDescription2EXT vertexBindingDescription = vku::InitStructHelper();
     vertexBindingDescription.binding = 0u;
     vertexBindingDescription.stride = 16u;
     vertexBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     vertexBindingDescription.divisor = 1u;
 
-    auto vertexAttributeDescription = vku::InitStruct<VkVertexInputAttributeDescription2EXT>();
+    VkVertexInputAttributeDescription2EXT vertexAttributeDescription = vku::InitStructHelper();
     vertexAttributeDescription.location = 0u;
     vertexAttributeDescription.binding = 0u;
     vertexAttributeDescription.format = format;
@@ -6328,13 +6328,13 @@ TEST_F(NegativeShaderObject, Mismatched32BitAttributeType) {
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
 
-    auto vertexBindingDescription = vku::InitStruct<VkVertexInputBindingDescription2EXT>();
+    VkVertexInputBindingDescription2EXT vertexBindingDescription = vku::InitStructHelper();
     vertexBindingDescription.binding = 0u;
     vertexBindingDescription.stride = 16u;
     vertexBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     vertexBindingDescription.divisor = 1u;
 
-    auto vertexAttributeDescription = vku::InitStruct<VkVertexInputAttributeDescription2EXT>();
+    VkVertexInputAttributeDescription2EXT vertexAttributeDescription = vku::InitStructHelper();
     vertexAttributeDescription.location = 0u;
     vertexAttributeDescription.binding = 0u;
     vertexAttributeDescription.format = VK_FORMAT_R32_SINT;
@@ -6360,7 +6360,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
 
     const VkFormat format = VK_FORMAT_R64G64B64_SINT;
 
-    auto formatProperties = vku::InitStruct<VkFormatProperties2>();
+    VkFormatProperties2 formatProperties = vku::InitStructHelper();
     vk::GetPhysicalDeviceFormatProperties2(m_device->phy(), format, &formatProperties);
 
     if ((formatProperties.formatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
@@ -6385,13 +6385,13 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
 
-    auto vertexBindingDescription = vku::InitStruct<VkVertexInputBindingDescription2EXT>();
+    VkVertexInputBindingDescription2EXT vertexBindingDescription = vku::InitStructHelper();
     vertexBindingDescription.binding = 0u;
     vertexBindingDescription.stride = 16u;
     vertexBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     vertexBindingDescription.divisor = 1u;
 
-    auto vertexAttributeDescription = vku::InitStruct<VkVertexInputAttributeDescription2EXT>();
+    VkVertexInputAttributeDescription2EXT vertexAttributeDescription = vku::InitStructHelper();
     vertexAttributeDescription.location = 0u;
     vertexAttributeDescription.binding = 0u;
     vertexAttributeDescription.format = format;
@@ -6453,7 +6453,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_.handle(), frag_descriptor_set.layout_.handle()};
 
-    auto vert_create_info = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
     vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
@@ -6462,7 +6462,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
     vert_create_info.setLayoutCount = 2u;
     vert_create_info.pSetLayouts = descriptor_set_layouts;
 
-    auto frag_create_info = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
     frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
@@ -6502,7 +6502,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
 
-    auto subgroup_size_control_properties = vku::InitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
+    VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(subgroup_size_control_properties);
 
     std::string comp_src = R"glsl(
@@ -6515,7 +6515,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT | VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -6538,7 +6538,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
     InitBasicShaderObject(nullptr, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
 
-    auto properties11 = vku::InitStruct<VkPhysicalDeviceVulkan11Properties>();
+    VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(properties11);
 
     std::string comp_src = R"glsl(
@@ -6551,7 +6551,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -6636,7 +6636,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -6720,7 +6720,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -6803,7 +6803,7 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
 
-    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>();
+    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
     InitBasicShaderObject(&features11, VK_API_VERSION_1_2);
     if (::testing::Test::IsSkipped()) return;
 
@@ -6813,7 +6813,7 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
 
     InitDynamicRenderTarget();
 
-    auto multiview_properties = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
+    VkPhysicalDeviceMultiviewProperties multiview_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_properties);
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -6825,13 +6825,13 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
     img.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
     VkImageView view = img.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    auto color_attachment = vku::InitStruct<VkRenderingAttachmentInfo>();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    auto renderingInfo = vku::InitStruct<VkRenderingInfoKHR>();
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
     renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 1u;
@@ -6906,7 +6906,7 @@ TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
     attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    auto renderingInfo = vku::InitStruct<VkRenderingInfoKHR>();
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
     renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 2u;
@@ -6960,7 +6960,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    auto pgq_features = vku::InitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
+    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT pgq_features = vku::InitStructHelper();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < m_attempted_api_version) {
@@ -6970,8 +6970,8 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&pgq_features);
-    auto shader_object_features = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&pgq_features);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
 
     pgq_features.primitivesGeneratedQueryWithRasterizerDiscard = VK_FALSE;
@@ -6992,7 +6992,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
     const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
-    auto query_pool_ci = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryCount = 1;
     query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
 
@@ -7023,9 +7023,9 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
 
-    auto float16_features = vku::InitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
-    auto cooperative_matrix_features = vku::InitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(&float16_features);
-    auto memory_model_features = vku::InitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
+    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperative_matrix_features = vku::InitStructHelper(&float16_features);
+    VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
 
     InitBasicShaderObject(&memory_model_features);
     if (::testing::Test::IsSkipped()) return;
@@ -7050,7 +7050,7 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
 
-    auto createInfo = vku::InitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);

@@ -133,8 +133,8 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-    auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+    VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+    VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
     vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UINT, &fmt_props);
     if ((fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
@@ -194,8 +194,8 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     }
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>();
-    auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
+    VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
     // set so format can be used as a storage texel buffer, but no WITHOUT_FORMAT support
     fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(gpu(), format, &fmt_props);

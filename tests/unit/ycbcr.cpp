@@ -673,10 +673,10 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
     image_obj.init(&image_ci);
     ASSERT_TRUE(image_obj.initialized());
 
-    auto ycbcr_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion.handle();
 
-    auto image_view_create_info = vku::InitStruct<VkImageViewCreateInfo>(&ycbcr_info);
+    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper(&ycbcr_info);
     image_view_create_info.image = image_obj.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = mp_format;
@@ -894,7 +894,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     bool amd_coherent_mem = IsExtensionsEnabled(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
 
     if (amd_coherent_mem) {
-        auto coherent_mem_features = vku::InitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+        VkPhysicalDeviceCoherentMemoryFeaturesAMD coherent_mem_features = vku::InitStructHelper();
         GetPhysicalDeviceFeatures2(coherent_mem_features);
         ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_mem_features));
     } else {
@@ -1185,7 +1185,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    auto sampler_conversion_ci = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo sampler_conversion_ci = vku::InitStructHelper();
     sampler_conversion_ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     sampler_conversion_ci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sampler_conversion_ci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -1198,7 +1198,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
 
     vkt::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci, false);
 
-    auto sampler_ycbcr_conversion_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo sampler_ycbcr_conversion_info = vku::InitStructHelper();
     sampler_ycbcr_conversion_info.conversion = sampler_conversion.handle();
 
     VkImageViewCreateInfo view_info = vku::InitStructHelper(&sampler_ycbcr_conversion_info);
@@ -1440,7 +1440,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     image_obj.init(&image_ci);
     ASSERT_TRUE(image_obj.initialized());
 
-    auto ycbcr_create_info = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
     ycbcr_create_info.format = mp_format;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -1453,7 +1453,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
 
     vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
 
-    auto ycbcr_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion.handle();
 
     auto image_view_ci = image_obj.BasicViewCreatInfo();

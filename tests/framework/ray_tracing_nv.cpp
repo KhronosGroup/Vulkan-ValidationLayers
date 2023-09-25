@@ -18,7 +18,7 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
                                                     VkGeometryNV *geometry, VkDeviceSize offset, bool buffer_device_address) {
     VkBufferUsageFlags usage =
         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     void *alloc_pnext = nullptr;
     if (buffer_device_address) {
         usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;

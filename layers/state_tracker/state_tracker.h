@@ -1650,10 +1650,10 @@ class ValidationStateTracker : public ValidationObject {
                 *ext_prop = vku::InitStructHelper();
             }
             if (api_version < VK_API_VERSION_1_1) {
-                auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+                VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
                 DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
             } else {
-                auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+                VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
                 DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
             }
         }
@@ -1664,10 +1664,10 @@ class ValidationStateTracker : public ValidationObject {
         assert(ext_prop);
         *ext_prop = vku::InitStructHelper();
         if (api_version < VK_API_VERSION_1_1) {
-            auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
             DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
         } else {
-            auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
             DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
         }
     }
@@ -1683,7 +1683,7 @@ class ValidationStateTracker : public ValidationObject {
     inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(
         const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
         if (shader_stage_id.pIdentifier) {
-            auto shader_id = vku::InitStruct<VkShaderModuleIdentifierEXT>();
+            VkShaderModuleIdentifierEXT shader_id = vku::InitStructHelper();
             shader_id.identifierSize = shader_stage_id.identifierSize;
             const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
             std::copy(shader_stage_id.pIdentifier, shader_stage_id.pIdentifier + copy_size, shader_id.identifier);

@@ -182,13 +182,13 @@ class VkLayerTest : public VkLayerTestBase {
 
     template <typename Features>
     VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {
-        auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&feature_query);
+        VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&feature_query);
         return GetPhysicalDeviceFeatures2(features2);
     }
 
     template <typename Properties>
     VkPhysicalDeviceProperties2 GetPhysicalDeviceProperties2(Properties &props_query) {
-        auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&props_query);
+        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&props_query);
         return GetPhysicalDeviceProperties2(props2);
     }
 

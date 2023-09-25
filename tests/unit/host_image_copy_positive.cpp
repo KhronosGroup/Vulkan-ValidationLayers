@@ -32,8 +32,8 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci)
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto separate_depth_stencil_layouts_features = vku::InitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
-    auto host_copy_features = vku::InitStruct<VkPhysicalDeviceHostImageCopyFeaturesEXT>(&separate_depth_stencil_layouts_features);
+    VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features = vku::InitStructHelper();
+    VkPhysicalDeviceHostImageCopyFeaturesEXT host_copy_features = vku::InitStructHelper(&separate_depth_stencil_layouts_features);
     GetPhysicalDeviceFeatures2(host_copy_features);
     if (!host_copy_features.hostImageCopy) {
         GTEST_SKIP() << "Test requires (unsupported) hostImageCopy";
@@ -57,7 +57,7 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci)
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    auto host_image_copy_props = vku::InitStruct<VkPhysicalDeviceHostImageCopyPropertiesEXT>();
+    VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(host_image_copy_props);
     copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
     copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
@@ -103,7 +103,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
         channel = static_cast<uint8_t>((r & 0xffu) | ((r >> 8) & 0xff) | ((r >> 16) & 0xff) | (r >> 24));
     }
 
-    auto region_to_image = vku::InitStruct<VkMemoryToImageCopyEXT>();
+    VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region_to_image.imageSubresource.layerCount = 1;
@@ -111,7 +111,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     region_to_image.imageExtent.height = height;
     region_to_image.imageExtent.depth = 1;
 
-    auto copy_to_image = vku::InitStruct<VkCopyMemoryToImageInfoEXT>();
+    VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.flags = 0;
     copy_to_image.dstImage = image;
     copy_to_image.dstImageLayout = layout;
@@ -124,7 +124,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     // Copy back to host memory
     std::vector<uint8_t> welcome_back(width * height * 4);
 
-    auto region_from_image = vku::InitStruct<VkImageToMemoryCopyEXT>();
+    VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = welcome_back.data();
     region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region_from_image.imageSubresource.layerCount = 1;
@@ -132,7 +132,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     region_from_image.imageExtent.height = height;
     region_from_image.imageExtent.depth = 1;
 
-    auto copy_from_image = vku::InitStruct<VkCopyImageToMemoryInfoEXT>();
+    VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.flags = 0;
     copy_from_image.srcImage = image;
     copy_from_image.srcImageLayout = layout;
@@ -148,11 +148,11 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     image2.Init(image_ci);
     image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    auto image_copy_2 = vku::InitStruct<VkImageCopy2>();
+    VkImageCopy2 image_copy_2 = vku::InitStructHelper();
     image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     image_copy_2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     image_copy_2.extent = {width, height, 1};
-    auto copy_image_to_image = vku::InitStruct<VkCopyImageToImageInfoEXT>();
+    VkCopyImageToImageInfoEXT copy_image_to_image = vku::InitStructHelper();
     copy_image_to_image.regionCount = 1;
     copy_image_to_image.pRegions = &image_copy_2;
     copy_image_to_image.srcImageLayout = layout;
@@ -173,7 +173,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     ASSERT_EQ(pixels, after_image_copy);
 
     // Do a layout transition, then use the image in new layout
-    auto transition_info = vku::InitStruct<VkHostImageLayoutTransitionInfoEXT>();
+    VkHostImageLayoutTransitionInfoEXT transition_info = vku::InitStructHelper();
     transition_info.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     transition_info.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -194,16 +194,16 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     m_commandBuffer->QueueCommandBuffer(true);
 
     // Get memory size of tiled image
-    auto subresource = vku::InitStruct<VkImageSubresource2KHR>();
+    VkImageSubresource2KHR subresource = vku::InitStructHelper();
     subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    auto host_copy_size = vku::InitStruct<VkSubresourceHostMemcpySizeEXT>();
-    auto subresource_layout = vku::InitStruct<VkSubresourceLayout2KHR>(&host_copy_size);
+    VkSubresourceHostMemcpySizeEXT host_copy_size = vku::InitStructHelper();
+    VkSubresourceLayout2KHR subresource_layout = vku::InitStructHelper(&host_copy_size);
     vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &subresource_layout);
     ASSERT_NE(host_copy_size.size, 0);
 
-    auto perf_data = vku::InitStruct<VkHostImageCopyDevicePerformanceQueryEXT>();
-    auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>(&perf_data);
-    auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
+    VkHostImageCopyDevicePerformanceQueryEXT perf_data = vku::InitStructHelper();
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&perf_data);
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
     image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_format_info.type = VK_IMAGE_TYPE_2D;
     image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -239,7 +239,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     imageSubresource.baseArrayLayer = 0u;
     imageSubresource.layerCount = 1u;
 
-    auto region = vku::InitStruct<VkImageToMemoryCopyEXT>();
+    VkImageToMemoryCopyEXT region = vku::InitStructHelper();
     region.pHostPointer = data.data();
     region.memoryRowLength = 0u;
     region.memoryImageHeight = 0u;
@@ -247,7 +247,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     region.imageOffset = {0u, 0u, 0u};
     region.imageExtent = {4u, 4u, 1u};
 
-    auto copyImageToMemory = vku::InitStruct<VkCopyImageToMemoryInfoEXT>();
+    VkCopyImageToMemoryInfoEXT copyImageToMemory = vku::InitStructHelper();
     copyImageToMemory.flags = VK_HOST_IMAGE_COPY_MEMCPY_EXT;
     copyImageToMemory.srcImage = image.handle();
     copyImageToMemory.srcImageLayout = layout;

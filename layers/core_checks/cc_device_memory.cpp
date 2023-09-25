@@ -495,11 +495,11 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         // Validate VkExportMemoryAllocateInfo's VUs that can't be checked during vkAllocateMemory
         // because they require buffer information.
         if (mem_info->IsExport()) {
-            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
+            VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
             external_info.flags = buffer_state->createInfo.flags;
             // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
             external_info.usage = VkBufferUsageFlags(buffer_state->usage);
-            auto external_properties = vku::InitStruct<VkExternalBufferProperties>();
+            VkExternalBufferProperties external_properties = vku::InitStructHelper();
             bool export_supported = true;
 
             auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
@@ -1219,26 +1219,26 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 // Validate export memory handles
                 if (mem_info->IsExport()) {
-                    auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+                    VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
                     drm_format_modifier.sharingMode = image_state->createInfo.sharingMode;
                     drm_format_modifier.queueFamilyIndexCount = image_state->createInfo.queueFamilyIndexCount;
                     drm_format_modifier.pQueueFamilyIndices = image_state->createInfo.pQueueFamilyIndices;
-                    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
-                    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+                    VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
+                    VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&external_info);
                     image_info.format = image_state->createInfo.format;
                     image_info.type = image_state->createInfo.imageType;
                     image_info.tiling = image_state->createInfo.tiling;
                     image_info.usage = image_state->createInfo.usage;
                     image_info.flags = image_state->createInfo.flags;
-                    auto external_properties = vku::InitStruct<VkExternalImageFormatProperties>();
-                    auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_properties);
+                    VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
+                    VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_properties);
                     bool export_supported = true;
 
                     auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
                         external_info.handleType = flag;
                         external_info.pNext = NULL;
                         if (image_state->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-                            auto drm_modifier_properties = vku::InitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+                            VkImageDrmFormatModifierPropertiesEXT drm_modifier_properties = vku::InitStructHelper();
                             auto result =
                                 DispatchGetImageDrmFormatModifierPropertiesEXT(device, bind_info.image, &drm_modifier_properties);
                             if (result == VK_SUCCESS) {
@@ -1525,7 +1525,7 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
         }
     }
 
-    auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>();
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
     bind_info.image = image;
     bind_info.memory = memory;
     bind_info.memoryOffset = memoryOffset;

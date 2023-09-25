@@ -21,7 +21,7 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
@@ -33,7 +33,7 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    auto mesh_shader_properties = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
@@ -71,8 +71,8 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto explicit_layout_features = vku::InitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>(&explicit_layout_features);
+    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR explicit_layout_features = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&explicit_layout_features);
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
@@ -86,7 +86,7 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    auto mesh_shader_properties = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
@@ -134,7 +134,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantDefault) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
@@ -146,7 +146,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantDefault) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    auto mesh_shader_properties = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
@@ -185,7 +185,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
@@ -197,7 +197,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    auto mesh_shader_properties = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
@@ -249,7 +249,7 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
         GTEST_SKIP() << "Mesh and Task shader not supported";
@@ -261,7 +261,7 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    auto mesh_shader_properties = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxTaskSharedMemorySize;

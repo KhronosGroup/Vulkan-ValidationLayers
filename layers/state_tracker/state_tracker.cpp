@@ -122,9 +122,9 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
     // Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
     // if format is AHB external format then the features are already set
     if (has_format_feature2) {
-        auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesList2EXT>();
+        VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
         auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>(has_drm_modifiers ? &fmt_drm_props : nullptr);
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
 
@@ -396,8 +396,8 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
 
     VkFormatFeatureFlags2KHR buffer_features;
     if (has_format_feature2) {
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, pCreateInfo->format, &fmt_props_2);
         buffer_features = fmt_props_3.bufferFeatures | fmt_props_2.formatProperties.bufferFeatures;
     } else {
@@ -432,11 +432,11 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
-    auto filter_cubic_props = vku::InitStruct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
+    VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props = vku::InitStructHelper();
     if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
-        auto imageview_format_info = vku::InitStruct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
+        VkPhysicalDeviceImageViewImageFormatInfoEXT imageview_format_info = vku::InitStructHelper();
         imageview_format_info.imageViewType = pCreateInfo->viewType;
-        auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&imageview_format_info);
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&imageview_format_info);
         image_format_info.type = image_state->createInfo.imageType;
         image_format_info.format = image_state->createInfo.format;
         image_format_info.tiling = image_state->createInfo.tiling;
@@ -444,7 +444,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         image_format_info.usage = usage_create_info ? usage_create_info->usage : image_state->createInfo.usage;
         image_format_info.flags = image_state->createInfo.flags;
 
-        auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>(&filter_cubic_props);
+        VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&filter_cubic_props);
 
         DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
     }
@@ -604,10 +604,10 @@ VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFo
 
     if (format != VK_FORMAT_UNDEFINED) {
         if (has_format_feature2) {
-            auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesList2EXT>();
+            VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>(
                 IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier) ? &fmt_drm_props : nullptr);
-            auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
 
@@ -634,8 +634,8 @@ VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFo
             format_features |= format_properties.optimalTilingFeatures;
 
             if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
-                auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
-                auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
+                VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+                VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
 
                 DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
 
@@ -1486,14 +1486,14 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         // Can ingnore VkPhysicalDeviceIDProperties as it has no validation purpose
 
         if (dev_ext.vk_khr_multiview) {
-            auto multiview_props = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
+            VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_multiview, &multiview_props);
             phys_dev_props_core11.maxMultiviewViewCount = multiview_props.maxMultiviewViewCount;
             phys_dev_props_core11.maxMultiviewInstanceIndex = multiview_props.maxMultiviewInstanceIndex;
         }
 
         if (dev_ext.vk_khr_maintenance3) {
-            auto maintenance3_props = vku::InitStruct<VkPhysicalDeviceMaintenance3Properties>();
+            VkPhysicalDeviceMaintenance3Properties maintenance3_props = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance3, &maintenance3_props);
             phys_dev_props_core11.maxPerSetDescriptors = maintenance3_props.maxPerSetDescriptors;
             phys_dev_props_core11.maxMemoryAllocationSize = maintenance3_props.maxMemoryAllocationSize;
@@ -1501,9 +1501,9 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
 
         // Some 1.1 properties were added to core without previous extensions
         if (api_version >= VK_API_VERSION_1_1) {
-            auto subgroup_prop = vku::InitStruct<VkPhysicalDeviceSubgroupProperties>();
-            auto protected_memory_prop = vku::InitStruct<VkPhysicalDeviceProtectedMemoryProperties>(&subgroup_prop);
-            auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&protected_memory_prop);
+            VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
+            VkPhysicalDeviceProtectedMemoryProperties protected_memory_prop = vku::InitStructHelper(&subgroup_prop);
+            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&protected_memory_prop);
             instance_dispatch_table.GetPhysicalDeviceProperties2(physical_device, &prop2);
 
             phys_dev_props_core11.subgroupSize = subgroup_prop.subgroupSize;
@@ -1519,7 +1519,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         // Can ingnore VkPhysicalDeviceDriverProperties as it has no validation purpose
 
         if (dev_ext.vk_ext_descriptor_indexing) {
-            auto descriptor_indexing_prop = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
+            VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_prop = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_indexing, &descriptor_indexing_prop);
             phys_dev_props_core12.maxUpdateAfterBindDescriptorsInAllPools =
                 descriptor_indexing_prop.maxUpdateAfterBindDescriptorsInAllPools;
@@ -1568,7 +1568,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         }
 
         if (dev_ext.vk_khr_depth_stencil_resolve) {
-            auto depth_stencil_resolve_props = vku::InitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
+            VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_depth_stencil_resolve, &depth_stencil_resolve_props);
             phys_dev_props_core12.supportedDepthResolveModes = depth_stencil_resolve_props.supportedDepthResolveModes;
             phys_dev_props_core12.supportedStencilResolveModes = depth_stencil_resolve_props.supportedStencilResolveModes;
@@ -1577,14 +1577,14 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         }
 
         if (dev_ext.vk_khr_timeline_semaphore) {
-            auto timeline_semaphore_props = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
+            VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_timeline_semaphore, &timeline_semaphore_props);
             phys_dev_props_core12.maxTimelineSemaphoreValueDifference =
                 timeline_semaphore_props.maxTimelineSemaphoreValueDifference;
         }
 
         if (dev_ext.vk_ext_sampler_filter_minmax) {
-            auto sampler_filter_minmax_props = vku::InitStruct<VkPhysicalDeviceSamplerFilterMinmaxProperties>();
+            VkPhysicalDeviceSamplerFilterMinmaxProperties sampler_filter_minmax_props = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_sampler_filter_minmax, &sampler_filter_minmax_props);
             phys_dev_props_core12.filterMinmaxSingleComponentFormats =
                 sampler_filter_minmax_props.filterMinmaxSingleComponentFormats;
@@ -1592,7 +1592,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         }
 
         if (dev_ext.vk_khr_shader_float_controls) {
-            auto float_controls_props = vku::InitStruct<VkPhysicalDeviceFloatControlsProperties>();
+            VkPhysicalDeviceFloatControlsProperties float_controls_props = vku::InitStructHelper();
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_shader_float_controls, &float_controls_props);
             phys_dev_props_core12.denormBehaviorIndependence = float_controls_props.denormBehaviorIndependence;
             phys_dev_props_core12.roundingModeIndependence = float_controls_props.roundingModeIndependence;
@@ -1681,8 +1681,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
 
     if (IsExtEnabled(dev_ext.vk_nv_cooperative_matrix)) {
         // Get the needed cooperative_matrix properties
-        auto cooperative_matrix_props = vku::InitStruct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props);
+        VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_matrix_props);
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
@@ -1697,8 +1697,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
 
     if (IsExtEnabled(dev_ext.vk_khr_cooperative_matrix)) {
         // Get the needed KHR cooperative_matrix properties
-        auto cooperative_matrix_props_khr = vku::InitStruct<VkPhysicalDeviceCooperativeMatrixPropertiesKHR>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props_khr);
+        VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperative_matrix_props_khr = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_matrix_props_khr);
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props_khr = cooperative_matrix_props_khr;
 
@@ -1731,7 +1731,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                 VkQueue queue = VK_NULL_HANDLE;
                 // vkGetDeviceQueue2() was added in vulkan 1.1, and there was never a KHR version of it.
                 if (api_version >= VK_API_VERSION_1_1 && queue_info.flags != 0) {
-                    auto get_info = vku::InitStruct<VkDeviceQueueInfo2>();
+                    VkDeviceQueueInfo2 get_info = vku::InitStructHelper();
                     get_info.flags = queue_info.flags;
                     get_info.queueFamilyIndex = queue_info.queue_family_index;
                     get_info.queueIndex = i;
@@ -3033,7 +3033,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
                                                                           const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
-    auto as_address_info = vku::InitStruct<VkAccelerationStructureDeviceAddressInfoKHR>();
+    VkAccelerationStructureDeviceAddressInfoKHR as_address_info = vku::InitStructHelper();
     as_address_info.accelerationStructure = *pAccelerationStructure;
     const VkDeviceAddress as_address = DispatchGetAccelerationStructureDeviceAddressKHR(device, &as_address_info);
     Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo, std::move(buffer_state), as_address));
@@ -3966,7 +3966,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
 
 VkBindImageMemoryInfo ValidationStateTracker::ConvertImageMemoryInfo(VkDevice device, VkImage image, VkDeviceMemory mem,
                                                                      VkDeviceSize memoryOffset) {
-    auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>();
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
     bind_info.image = image;
     bind_info.memory = mem;
     bind_info.memoryOffset = memoryOffset;
@@ -4073,7 +4073,7 @@ void ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(VkDevice devi
     if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetWin32HandleInfo->memory)) {
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
-        auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.allocationSize = memory_state->alloc_info.allocationSize;
         alloc_info.memoryTypeIndex = memory_state->alloc_info.memoryTypeIndex;
 
@@ -4092,7 +4092,7 @@ void ValidationStateTracker::PostCallRecordGetMemoryFdKHR(VkDevice device, const
     if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
-        auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.allocationSize = memory_state->alloc_info.allocationSize;
         alloc_info.memoryTypeIndex = memory_state->alloc_info.memoryTypeIndex;
 
@@ -4479,7 +4479,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesK
                                                                                    const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     auto surface_state = Get<SURFACE_STATE>(surface);
-    auto caps2 = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfaceCapabilities2KHR caps2 = vku::InitStructHelper();
     caps2.surfaceCapabilities = *pSurfaceCapabilities;
     surface_state->SetCapabilities(physicalDevice, safe_VkSurfaceCapabilities2KHR(&caps2));
 }
@@ -4531,7 +4531,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
         pSurfaceCapabilities->supportedTransforms,     pSurfaceCapabilities->currentTransform,
         pSurfaceCapabilities->supportedCompositeAlpha, pSurfaceCapabilities->supportedUsageFlags,
     };
-    auto caps2 = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfaceCapabilities2KHR caps2 = vku::InitStructHelper();
     caps2.surfaceCapabilities = caps;
     surface_state->SetCapabilities(physicalDevice, safe_VkSurfaceCapabilities2KHR(&caps2));
 }

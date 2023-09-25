@@ -19,7 +19,7 @@
 
 // A reasonable well supported default VkImageCreateInfo for image creation
 VkImageCreateInfo ImageTest::DefaultImageInfo() {
-    auto ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;                          // assumably any is supported
     ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
@@ -119,7 +119,7 @@ TEST_F(PositiveImage, UncompressedToCompressedImageCopy) {
                      comp_10x10b_40x40t_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     // The next copy swaps source and dest s.t. we need an execution barrier on for the prior source and an access barrier for
     // prior dest
-    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -558,7 +558,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     vkt::RenderPass renderPass(*m_device, renderPassCreateInfo);
 
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
-    auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
     VkImageCreateInfo imageCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                          &image_swapchain_create_info,
@@ -579,18 +579,18 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, imageCreateInfo);
 
-    auto bind_devicegroup_info = vku::InitStruct<VkBindImageMemoryDeviceGroupInfo>();
+    VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = vku::InitStructHelper();
     bind_devicegroup_info.deviceIndexCount = 1;
     std::array<uint32_t, 2> deviceIndices = {{0}};
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
 
-    auto bind_swapchain_info = vku::InitStruct<VkBindImageMemorySwapchainInfoKHR>(&bind_devicegroup_info);
+    VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper(&bind_devicegroup_info);
     bind_swapchain_info.swapchain = m_swapchain;
     bind_swapchain_info.imageIndex = 0;
 
-    auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
     bind_info.image = image.image();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
@@ -665,7 +665,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags =
         VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -698,7 +698,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     ASSERT_TRUE(image.handle() != VK_NULL_HANDLE);
 
     // Since the format is compatible with all image's usage, there's no need to restrict usage
-    auto iv_ci = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
     iv_ci.image = image.handle();
     iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     iv_ci.format = VK_FORMAT_R32G32B32A32_UINT;
@@ -735,7 +735,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_compression_control = vku::InitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    VkPhysicalDeviceImageCompressionControlFeaturesEXT image_compression_control = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(image_compression_control);
     if (!image_compression_control.imageCompressionControl) {
         GTEST_SKIP() << "Test requires (unsupported) imageCompressionControl, skipping";
@@ -744,14 +744,14 @@ TEST_F(PositiveImage, ImageCompressionControl) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &image_compression_control));
 
     // Query possible image format with vkGetPhysicalDeviceImageFormatProperties2KHR
-    auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
     image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_format_info.tiling = VK_IMAGE_TILING_LINEAR;
     image_format_info.type = VK_IMAGE_TYPE_2D;
     image_format_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    auto compression_properties = vku::InitStruct<VkImageCompressionPropertiesEXT>();
-    auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>(&compression_properties);
+    VkImageCompressionPropertiesEXT compression_properties = vku::InitStructHelper();
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&compression_properties);
 
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
 
@@ -763,7 +763,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     // Create with disabled image compression
     {
-        auto compressionControl = vku::InitStruct<VkImageCompressionControlEXT>();
+        VkImageCompressionControlEXT compressionControl = vku::InitStructHelper();
         compressionControl.flags = VK_IMAGE_COMPRESSION_DISABLED_EXT;
         image_ci.pNext = &compressionControl;
 
@@ -772,7 +772,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     // Create with default image compression, without fixed rate
     {
-        auto compressionControl = vku::InitStruct<VkImageCompressionControlEXT>();
+        VkImageCompressionControlEXT compressionControl = vku::InitStructHelper();
         compressionControl.flags = VK_IMAGE_COMPRESSION_DEFAULT_EXT;
         image_ci.pNext = &compressionControl;
 
@@ -781,7 +781,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     // Create with fixed rate compression image
     {
-        auto compressionControl = vku::InitStruct<VkImageCompressionControlEXT>();
+        VkImageCompressionControlEXT compressionControl = vku::InitStructHelper();
         compressionControl.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
         image_ci.pNext = &compressionControl;
 
@@ -802,7 +802,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
         ASSERT_TRUE(supported_compression_fixed_rate != VK_IMAGE_COMPRESSION_FIXED_RATE_NONE_EXT);
 
         VkImageCompressionFixedRateFlagsEXT fixedRageFlags = supported_compression_fixed_rate;
-        auto compressionControl = vku::InitStruct<VkImageCompressionControlEXT>();
+        VkImageCompressionControlEXT compressionControl = vku::InitStructHelper();
         compressionControl.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT;
         compressionControl.pFixedRateFlags = &fixedRageFlags;
         compressionControl.compressionControlPlaneCount = 1;
@@ -818,7 +818,7 @@ TEST_F(PositiveImage, Create3DImageView) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkImageObj image(m_device);
-    auto ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ci.extent = {32, 32, 8};
@@ -832,7 +832,7 @@ TEST_F(PositiveImage, Create3DImageView) {
     image.init(&ci);
     ASSERT_TRUE(image.initialized());
 
-    auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -859,7 +859,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     }
 
     {
-        auto slice_feature = vku::InitStruct<VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT>();
+        VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT slice_feature = vku::InitStructHelper();
         GetPhysicalDeviceFeatures2(slice_feature);
         if (slice_feature.imageSlicedViewOf3D == VK_FALSE) {
             GTEST_SKIP() << "Test requires (unsupported) imageSlicedViewOf3D";
@@ -868,7 +868,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     }
 
     VkImageObj image(m_device);
-    auto ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ci.extent = {32, 32, 8};
@@ -882,9 +882,9 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     image.init(&ci);
     ASSERT_TRUE(image.initialized());
 
-    auto sliced_info = vku::InitStruct<VkImageViewSlicedCreateInfoEXT>();
+    VkImageViewSlicedCreateInfoEXT sliced_info = vku::InitStructHelper();
 
-    auto ivci = vku::InitStruct<VkImageViewCreateInfo>(&sliced_info);
+    VkImageViewCreateInfo ivci = vku::InitStructHelper(&sliced_info);
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
     ivci.format = ci.format;
@@ -1012,7 +1012,7 @@ TEST_F(PositiveImage, CopyImageSubresource) {
     vk::CmdClearColorImage(cb, image.handle(), dst_layout, &clear_color, 1, &src_range);
     m_commandBuffer->end();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -1078,7 +1078,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     VkImageSubresourceRange view_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
     VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
-    auto image_view_create_info = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
     image_view_create_info.image = image.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
@@ -1129,7 +1129,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
 
         for (TestType test_type : test_list) {
             auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+            VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
 
             cmd_buf.begin();
             image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
@@ -1210,7 +1210,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     static const uint32_t kWidth = 128;
     static const uint32_t kHeight = 128;
 
-    auto image_ci_3d = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci_3d = vku::InitStructHelper();
     image_ci_3d.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci_3d.imageType = VK_IMAGE_TYPE_3D;
     image_ci_3d.format = format;
@@ -1239,7 +1239,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     //    to the entire subresource referenced which is the entire mip level in this case.
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view_2d, other_view;
-    auto image_view_create_info = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
     image_view_create_info.image = image_3d.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
@@ -1336,7 +1336,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
         for (TestType test_type : test_list) {
-            auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+            VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
 
             VkFramebufferCreateInfo fbci = {
                 VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view->handle(), kWidth, kHeight, 1};

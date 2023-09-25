@@ -173,7 +173,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     const bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
     if (use_linear_output_pool) {
-        auto output_buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
         output_buffer_create_info.size = output_buffer_size;
         output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_create_info = {};
@@ -307,7 +307,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     VkBuffer vbo = VK_NULL_HANDLE;
     VmaAllocation vbo_allocation = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        auto vbo_ci = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo vbo_ci = vku::InitStructHelper();
         vbo_ci.size = sizeof(float) * 9;
         vbo_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
 
@@ -336,7 +336,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     VkBuffer ibo = VK_NULL_HANDLE;
     VmaAllocation ibo_allocation = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        auto ibo_ci = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo ibo_ci = vku::InitStructHelper();
         ibo_ci.size = sizeof(uint32_t) * 3;
         ibo_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
 
@@ -362,7 +362,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
         }
     }
 
-    auto geometry = vku::InitStruct<VkGeometryNV>();
+    VkGeometryNV geometry = vku::InitStructHelper();
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
     geometry.geometry.triangles = vku::InitStructHelper();
     geometry.geometry.triangles.vertexData = vbo;
@@ -378,7 +378,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     geometry.geometry.triangles.transformOffset = 0;
     geometry.geometry.aabbs = vku::InitStructHelper();
 
-    auto as_ci = vku::InitStruct<VkAccelerationStructureCreateInfoNV>();
+    VkAccelerationStructureCreateInfoNV as_ci = vku::InitStructHelper();
     as_ci.info = vku::InitStructHelper();
     as_ci.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     as_ci.info.instanceCount = 0;
@@ -393,7 +393,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
 
     VkMemoryRequirements2 as_mem_requirements = {};
     if (result == VK_SUCCESS) {
-        auto as_mem_requirements_info = vku::InitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
+        VkAccelerationStructureMemoryRequirementsInfoNV as_mem_requirements_info = vku::InitStructHelper();
         as_mem_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
         as_mem_requirements_info.accelerationStructure = as_validation_state.replacement_as;
 
@@ -414,7 +414,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     }
 
     if (result == VK_SUCCESS) {
-        auto as_bind_info = vku::InitStruct<VkBindAccelerationStructureMemoryInfoNV>();
+        VkBindAccelerationStructureMemoryInfoNV as_bind_info = vku::InitStructHelper();
         as_bind_info.accelerationStructure = as_validation_state.replacement_as;
         as_bind_info.memory = as_memory_ai.deviceMemory;
         as_bind_info.memoryOffset = as_memory_ai.offset;
@@ -435,7 +435,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
 
     VkMemoryRequirements2 scratch_mem_requirements = {};
     if (result == VK_SUCCESS) {
-        auto scratch_mem_requirements_info = vku::InitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
+        VkAccelerationStructureMemoryRequirementsInfoNV scratch_mem_requirements_info = vku::InitStructHelper();
         scratch_mem_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
         scratch_mem_requirements_info.accelerationStructure = as_validation_state.replacement_as;
 
@@ -445,7 +445,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     VkBuffer scratch = VK_NULL_HANDLE;
     VmaAllocation scratch_allocation = {};
     if (result == VK_SUCCESS) {
-        auto scratch_ci = vku::InitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo scratch_ci = vku::InitStructHelper();
         scratch_ci.size = scratch_mem_requirements.memoryRequirements.size;
         scratch_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
         VmaAllocationCreateInfo scratch_aci = {};
@@ -459,7 +459,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
 
     VkCommandPool command_pool = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        auto command_pool_ci = vku::InitStruct<VkCommandPoolCreateInfo>();
+        VkCommandPoolCreateInfo command_pool_ci = vku::InitStructHelper();
         command_pool_ci.queueFamilyIndex = 0;
 
         result = DispatchCreateCommandPool(device, &command_pool_ci, nullptr, &command_pool);
@@ -471,7 +471,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 
     if (result == VK_SUCCESS) {
-        auto command_buffer_ai = vku::InitStruct<VkCommandBufferAllocateInfo>();
+        VkCommandBufferAllocateInfo command_buffer_ai = vku::InitStructHelper();
         command_buffer_ai.commandPool = command_pool;
         command_buffer_ai.commandBufferCount = 1;
         command_buffer_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -486,7 +486,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     }
 
     if (result == VK_SUCCESS) {
-        auto command_buffer_bi = vku::InitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo command_buffer_bi = vku::InitStructHelper();
 
         result = DispatchBeginCommandBuffer(command_buffer, &command_buffer_bi);
         if (result != VK_SUCCESS) {
@@ -507,7 +507,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
         // Hook up queue dispatch
         vkSetDeviceLoaderData(device, queue);
 
-        auto submit_info = vku::InitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer;
         result = DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -542,7 +542,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     }
 
     if (result == VK_SUCCESS) {
-        auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
+        VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &debug_desc_layout;
         result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, 0, &as_validation_state.pipeline_layout);
@@ -553,7 +553,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
 
     VkShaderModule shader_module = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        auto shader_module_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+        VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
         shader_module_ci.codeSize = sizeof(gpu_as_inspection_comp);
         shader_module_ci.pCode = gpu_as_inspection_comp;
 
@@ -564,12 +564,12 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     }
 
     if (result == VK_SUCCESS) {
-        auto pipeline_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>();
+        VkPipelineShaderStageCreateInfo pipeline_stage_ci = vku::InitStructHelper();
         pipeline_stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         pipeline_stage_ci.module = shader_module;
         pipeline_stage_ci.pName = "main";
 
-        auto pipeline_ci = vku::InitStruct<VkComputePipelineCreateInfo>();
+        VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
         pipeline_ci.stage = pipeline_stage_ci;
         pipeline_ci.layout = as_validation_state.pipeline_layout;
 
@@ -730,7 +730,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
         // Two uint for each current valid handle
         (8 * current_valid_handles.size());
 
-    auto validation_buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo validation_buffer_create_info = vku::InitStructHelper();
     validation_buffer_create_info.size = validation_buffer_size;
     validation_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
@@ -814,7 +814,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     DispatchUpdateDescriptorSets(device, 2, descriptor_set_writes, 0, nullptr);
 
     // Issue a memory barrier to make sure anything writing to the instance buffer has finished.
-    auto memory_barrier = vku::InitStruct<VkMemoryBarrier>();
+    VkMemoryBarrier memory_barrier = vku::InitStructHelper();
     memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     DispatchCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
@@ -832,7 +832,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
 
     // Issue a buffer memory barrier to make sure that any invalid bottom level acceleration structure handles
     // have been replaced by the validation compute shader before any builds take place.
-    auto instance_buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier>();
+    VkBufferMemoryBarrier instance_buffer_barrier = vku::InitStructHelper();
     instance_buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     instance_buffer_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
     instance_buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1781,18 +1781,18 @@ VkPipeline GpuAssisted::GetValidationPipeline(VkRenderPass render_pass) {
     if (pipeline != VK_NULL_HANDLE) {
         return pipeline;
     }
-    auto pipeline_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>();
+    VkPipelineShaderStageCreateInfo pipeline_stage_ci = vku::InitStructHelper();
     pipeline_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     pipeline_stage_ci.module = pre_draw_validation_state.shader_module;
     pipeline_stage_ci.pName = "main";
 
-    auto pipeline_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    auto vertex_input_state = vku::InitStruct<VkPipelineVertexInputStateCreateInfo>();
-    auto input_assembly_state = vku::InitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    VkGraphicsPipelineCreateInfo pipeline_ci = vku::InitStructHelper();
+    VkPipelineVertexInputStateCreateInfo vertex_input_state = vku::InitStructHelper();
+    VkPipelineInputAssemblyStateCreateInfo input_assembly_state = vku::InitStructHelper();
     input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    auto rasterization_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
+    VkPipelineRasterizationStateCreateInfo rasterization_state = vku::InitStructHelper();
     rasterization_state.rasterizerDiscardEnable = VK_TRUE;
-    auto color_blend_state = vku::InitStruct<VkPipelineColorBlendStateCreateInfo>();
+    VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
 
     pipeline_ci.pVertexInputState = &vertex_input_state;
     pipeline_ci.pInputAssemblyState = &input_assembly_state;
@@ -1852,7 +1852,7 @@ void GpuAssisted::AllocatePreDrawValidationResources(const GpuAssistedDeviceMemo
         }
 
         if (use_shader_objects) {
-            auto shader_ci = vku::InitStruct<VkShaderCreateInfoEXT>();
+            VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
             shader_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
             shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
             shader_ci.codeSize = sizeof(gpu_pre_draw_vert);
@@ -1869,7 +1869,7 @@ void GpuAssisted::AllocatePreDrawValidationResources(const GpuAssistedDeviceMemo
                 return;
             }
         } else {
-            auto shader_module_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+            VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
             shader_module_ci.codeSize = sizeof(gpu_pre_draw_vert);
             shader_module_ci.pCode = gpu_pre_draw_vert;
             result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_draw_validation_state.shader_module);
@@ -1965,7 +1965,7 @@ void GpuAssisted::AllocatePreDispatchValidationResources(const GpuAssistedDevice
         }
 
         if (use_shader_objects) {
-            auto shader_ci = vku::InitStruct<VkShaderCreateInfoEXT>();
+            VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
             shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
             shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
             shader_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
@@ -1982,7 +1982,7 @@ void GpuAssisted::AllocatePreDispatchValidationResources(const GpuAssistedDevice
                 return;
             }
         } else {
-            auto shader_module_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+            VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
             shader_module_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
             shader_module_ci.pCode = gpu_pre_dispatch_comp;
             result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_dispatch_validation_state.shader_module);
@@ -1993,12 +1993,12 @@ void GpuAssisted::AllocatePreDispatchValidationResources(const GpuAssistedDevice
             }
 
             // Create pipeline
-            auto pipeline_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>();
+            VkPipelineShaderStageCreateInfo pipeline_stage_ci = vku::InitStructHelper();
             pipeline_stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
             pipeline_stage_ci.module = pre_dispatch_validation_state.shader_module;
             pipeline_stage_ci.pName = "main";
 
-            auto pipeline_ci = vku::InitStruct<VkComputePipelineCreateInfo>();
+            VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
             pipeline_ci.stage = pipeline_stage_ci;
             pipeline_ci.layout = pre_dispatch_validation_state.pipeline_layout;
 

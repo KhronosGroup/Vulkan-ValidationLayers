@@ -62,8 +62,8 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    auto phys_dev_props_2 = vku::InitStruct<VkPhysicalDeviceProperties2>();
-    auto bad_version_1_1_struct = vku::InitStruct<VkPhysicalDeviceVulkan12Properties>();
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
     phys_dev_props_2.pNext = &bad_version_1_1_struct;
 
     // VkPhysDevVulkan12Props was introduced in 1.2, so try adding it to a 1.1 pNext chain
@@ -75,7 +75,7 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
 
     // 1.1 context, VK_KHR_depth_stencil_resolve is NOT enabled, but using its struct is valid
     if (DeviceExtensionSupported(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
-        auto unenabled_device_ext_struct = vku::InitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
+        VkPhysicalDeviceDepthStencilResolveProperties unenabled_device_ext_struct = vku::InitStructHelper();
         phys_dev_props_2.pNext = &unenabled_device_ext_struct;
         if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
             vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
@@ -103,7 +103,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto private_data_features = vku::InitStruct<VkPhysicalDevicePrivateDataFeaturesEXT>();
+    VkPhysicalDevicePrivateDataFeaturesEXT private_data_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(private_data_features);
     if (private_data_features.privateData == VK_FALSE) {
         GTEST_SKIP() << "privateData feature is not supported";
@@ -341,7 +341,7 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     // Create an invalid pNext structure to trigger the stateless validation warning
     VkBaseOutStructure bogus_struct{};
     bogus_struct.sType = static_cast<VkStructureType>(0x33333333);
-    auto properties2 = vku::InitStruct<VkPhysicalDeviceProperties2KHR>(&bogus_struct);
+    VkPhysicalDeviceProperties2KHR properties2 = vku::InitStructHelper(&bogus_struct);
 
     // Should get the first three errors just fine
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
@@ -515,7 +515,7 @@ TEST_F(VkLayerTest, LayerInfoMessages) {
 
     VkInstance local_instance;
 
-    auto callback_create_info = vku::InitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    VkDebugUtilsMessengerCreateInfoEXT callback_create_info = vku::InitStructHelper();
     callback_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
     callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     callback_create_info.pfnUserCallback = DebugUtilsCallback;
@@ -748,7 +748,7 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     // Create a device passing in a bad PdevFeatures2 value
-    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
     // Set one of the features values to an invalid boolean value
     indexing_features.descriptorBindingUniformBufferUpdateAfterBind = 800;
@@ -909,7 +909,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
-    auto callback_create_info = vku::InitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    VkDebugUtilsMessengerCreateInfoEXT callback_create_info = vku::InitStructHelper();
     callback_create_info.messageSeverity =
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
@@ -1004,7 +1004,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     const VkRect2D scissor = {{-1, 0}, {16, 16}};
     const VkRect2D scissors[] = {scissor, scissor};
 
-    auto command_label = vku::InitStruct<VkDebugUtilsLabelEXT>();
+    VkDebugUtilsLabelEXT command_label = vku::InitStructHelper();
     command_label.pLabelName = "Command Label 0123";
     command_label.color[0] = 0.;
     command_label.color[1] = 1.;
@@ -1054,7 +1054,7 @@ TEST_F(VkLayerTest, DebugUtilsParameterFlags) {
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
-    auto callback_create_info = vku::InitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    VkDebugUtilsMessengerCreateInfoEXT callback_create_info = vku::InitStructHelper();
     callback_create_info.messageSeverity = 0;
     callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     callback_create_info.pfnUserCallback = DebugUtilsCallback;
@@ -1104,8 +1104,8 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     // Need to pick a function that has no allowed pNext structure types.
     // Expected to trigger an error with StatelessValidation::ValidateStructPnext
     VkCommandPool pool = VK_NULL_HANDLE;
-    auto pool_ci = vku::InitStruct<VkCommandPoolCreateInfo>();
-    auto app_info = vku::InitStruct<VkApplicationInfo>();
+    VkCommandPoolCreateInfo pool_ci = vku::InitStructHelper();
+    VkApplicationInfo app_info = vku::InitStructHelper();
     pool_ci.pNext = &app_info;
     vk::CreateCommandPool(device(), &pool_ci, NULL, &pool);
     m_errorMonitor->VerifyFound();
@@ -1278,7 +1278,7 @@ TEST_F(VkLayerTest, LeakABuffer) {
     VkDevice leaky_device;
     ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
 
-    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.size = 1;
@@ -1617,7 +1617,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     device_extensions.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
 
     // Create a device that enables variablePointers but not variablePointersStorageBuffer
-    auto variable_features = vku::InitStruct<VkPhysicalDeviceVariablePointersFeatures>();
+    VkPhysicalDeviceVariablePointersFeatures variable_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(variable_features);
     if (variable_features.variablePointers == VK_FALSE) {
         GTEST_SKIP() << "variablePointer feature not supported";
@@ -1901,7 +1901,7 @@ TEST_F(VkLayerTest, FreeDescriptorSetsNull) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
-    auto ds_pool_ci = vku::InitStruct<VkDescriptorPoolCreateInfo>();
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -2495,7 +2495,7 @@ TEST_F(VkLayerTest, ZeroBitmask) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreCreateInfo-flags-zerobitmask");
-    auto semaphore_ci = vku::InitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
     semaphore_ci.flags = 1;
     VkSemaphore semaphore = VK_NULL_HANDLE;
     vk::CreateSemaphore(m_device->device(), &semaphore_ci, nullptr, &semaphore);
@@ -2538,18 +2538,18 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     const bool ycbcr_conversion_extension = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    auto portability_features = vku::InitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(portability_features);
 
     if (ycbcr_conversion_extension) {
-        auto ycbcr_features = vku::InitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+        VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper();
         ycbcr_features.samplerYcbcrConversion = VK_TRUE;
         portability_features.pNext = &ycbcr_features;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto metal_object_create_info = vku::InitStruct<VkExportMetalObjectCreateInfoEXT>();
+    VkExportMetalObjectCreateInfoEXT metal_object_create_info = vku::InitStructHelper();
     auto instance_ci = GetInstanceCreateInfo();
     metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT;
     metal_object_create_info.pNext = instance_ci.pNext;
@@ -2561,7 +2561,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
     metal_object_create_info.pNext = nullptr;
 
-    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.pNext = &metal_object_create_info;
     alloc_info.allocationSize = 1024;
     VkDeviceMemory memory;
@@ -2583,7 +2583,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     ici.pNext = &metal_object_create_info;
     CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06783");
 
-    auto import_metal_texture_info = vku::InitStruct<VkImportMetalTextureInfoEXT>();
+    VkImportMetalTextureInfoEXT import_metal_texture_info = vku::InitStructHelper();
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
     ici.pNext = &import_metal_texture_info;
     ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
@@ -2625,7 +2625,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     ivci.pNext = &metal_object_create_info;
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-pNext-06787");
 
-    auto sem_info = vku::InitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphoreCreateInfo sem_info = vku::InitStructHelper();
     sem_info.pNext = &metal_object_create_info;
     VkSemaphore semaphore;
     metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT;
@@ -2633,7 +2633,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     vk::CreateSemaphore(device(), &sem_info, NULL, &semaphore);
     m_errorMonitor->VerifyFound();
 
-    auto event_info = vku::InitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo event_info = vku::InitStructHelper();
     if (portability_features.events) {
         event_info.pNext = &metal_object_create_info;
         VkEvent event;
@@ -2642,9 +2642,9 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
         m_errorMonitor->VerifyFound();
     }
 
-    auto export_metal_objects_info = vku::InitStruct<VkExportMetalObjectsInfoEXT>();
-    auto metal_device_info = vku::InitStruct<VkExportMetalDeviceInfoEXT>();
-    auto metal_command_queue_info = vku::InitStruct<VkExportMetalCommandQueueInfoEXT>();
+    VkExportMetalObjectsInfoEXT export_metal_objects_info = vku::InitStructHelper();
+    VkExportMetalDeviceInfoEXT metal_device_info = vku::InitStructHelper();
+    VkExportMetalCommandQueueInfoEXT metal_command_queue_info = vku::InitStructHelper();
     metal_command_queue_info.queue = m_device->m_queue;
     export_metal_objects_info.pNext = &metal_device_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06791");
@@ -2659,7 +2659,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     alloc_info.pNext = nullptr;
     VkResult err = vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
     ASSERT_VK_SUCCESS(err);
-    auto metal_buffer_info = vku::InitStruct<VkExportMetalBufferInfoEXT>();
+    VkExportMetalBufferInfoEXT metal_buffer_info = vku::InitStructHelper();
     metal_buffer_info.memory = memory;
     export_metal_objects_info.pNext = &metal_buffer_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06793");
@@ -2667,7 +2667,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
     vk::FreeMemory(device(), memory, nullptr);
 
-    auto export_metal_object_create_info = vku::InitStruct<VkExportMetalObjectCreateInfoEXT>();
+    VkExportMetalObjectCreateInfoEXT export_metal_object_create_info = vku::InitStructHelper();
     export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
     ici.pNext = &export_metal_object_create_info;
     VkImageObj export_image_obj(m_device);
@@ -2675,7 +2675,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     vkt::BufferView export_buffer_view;
     buff_view_ci.pNext = &export_metal_object_create_info;
     export_buffer_view.init(*m_device, buff_view_ci);
-    auto metal_texture_info = vku::InitStruct<VkExportMetalTextureInfoEXT>();
+    VkExportMetalTextureInfoEXT metal_texture_info = vku::InitStructHelper();
     metal_texture_info.bufferView = export_buffer_view.handle();
     metal_texture_info.image = export_image_obj.handle();
     metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -2740,7 +2740,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
-    auto metal_iosurface_info = vku::InitStruct<VkExportMetalIOSurfaceInfoEXT>();
+    VkExportMetalIOSurfaceInfoEXT metal_iosurface_info = vku::InitStructHelper();
     metal_iosurface_info.image = image_obj.handle();
     export_metal_objects_info.pNext = &metal_iosurface_info;
     // metal_iosurface_info.image not created with struct in pNext
@@ -2748,7 +2748,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
-    auto metal_shared_event_info = vku::InitStruct<VkExportMetalSharedEventInfoEXT>();
+    VkExportMetalSharedEventInfoEXT metal_shared_event_info = vku::InitStructHelper();
     export_metal_objects_info.pNext = &metal_shared_event_info;
     // metal_shared_event_info event and semaphore both VK_NULL_HANDLE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06804");

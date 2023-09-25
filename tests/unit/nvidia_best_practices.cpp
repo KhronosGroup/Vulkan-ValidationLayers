@@ -141,7 +141,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         GTEST_SKIP() << "Test requires sparseBinding";
     }
 
-    auto general_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo general_queue_ci = vku::InitStructHelper();
     general_queue_ci.queueCount = 1;
     general_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
@@ -153,7 +153,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         general_queue_ci.queueFamilyIndex = familyIndex.value();
     }
 
-    auto transfer_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo transfer_queue_ci = vku::InitStructHelper();
     transfer_queue_ci.queueCount = 1;
     transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
@@ -265,9 +265,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto rt_pipeline_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
-    auto as_features = vku::InitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&rt_pipeline_features);
-    auto bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&as_features);
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper(&rt_pipeline_features);
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&as_features);
     GetPhysicalDeviceFeatures2(bda_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
@@ -564,7 +564,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "This test requires dynamicRendering";
@@ -712,7 +712,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
                                              "UNASSIGNED-BestPractices-Zcull-LessGreaterRatio");
     };
 
-    auto depth_stencil_state_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = vku::InitStructHelper();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

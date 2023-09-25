@@ -1486,7 +1486,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                 skip |= ValidateSampleLocationsInfo(&sample_location_info, sample_info_loc.dot(Field::sampleLocationsInfo));
                 const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
 
-                auto multisample_prop = vku::InitStruct<VkMultisamplePropertiesEXT>();
+                VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
                 DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, multisample_state->rasterizationSamples,
                                                                   &multisample_prop);
                 const VkExtent2D max_grid_size = multisample_prop.maxSampleLocationGridSize;

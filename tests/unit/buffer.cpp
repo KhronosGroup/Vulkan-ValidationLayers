@@ -398,13 +398,13 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto texel_buffer_alignment_features = vku::InitStruct<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT>();
+    VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(texel_buffer_alignment_features);
     if (texel_buffer_alignment_features.texelBufferAlignment != VK_TRUE) {
         GTEST_SKIP() << "texelBufferAlignment feature not supported";
     }
 
-    auto align_props = vku::InitStruct<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT>();
+    VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(align_props);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &texel_buffer_alignment_features));
@@ -525,7 +525,7 @@ TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t const indices[] = {0};
-    auto buf_info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.size = 1024;
     buf_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     buf_info.queueFamilyIndexCount = 1;
@@ -690,7 +690,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
@@ -730,7 +730,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -765,19 +765,19 @@ TEST_F(NegativeBuffer, BufferUsageFlags2) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci);
 
-    auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT_KHR;
 
-    auto buffer_view_ci = vku::InitStruct<VkBufferViewCreateInfo>(&buffer_usage_flags);
+    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
@@ -788,7 +788,7 @@ TEST_F(NegativeBuffer, BufferUsageFlagsUsage) {
     TEST_DESCRIPTION("Use bad buffer usage flag.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
     buffer_ci.usage = 0;
     CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09206"});
@@ -808,19 +808,19 @@ TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci);
 
-    auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
 
-    auto buffer_view_ci = vku::InitStruct<VkBufferViewCreateInfo>(&buffer_usage_flags);
+    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
@@ -1053,14 +1053,14 @@ TEST_F(NegativeBuffer, MaxBufferSize) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance4_features);
     if (!maintenance4_features.maintenance4) {
         GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance4_features));
 
-    auto maintenance4_properties = vku::InitStruct<VkPhysicalDeviceMaintenance4Properties>();
+    VkPhysicalDeviceMaintenance4Properties maintenance4_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(maintenance4_properties);
 
     const VkDeviceSize max_test_size = (1ull << 32);
@@ -1068,7 +1068,7 @@ TEST_F(NegativeBuffer, MaxBufferSize) {
         GTEST_SKIP() << "maxBufferSize too large to test";
     }
 
-    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = maintenance4_properties.maxBufferSize + 1;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-size-06409");

@@ -27,7 +27,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     }
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -47,7 +47,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     VkSubpassDescription subpassDescription = {};
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &attachmentReference;
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpassDescription;
     rpci.attachmentCount = 1;
@@ -422,8 +422,8 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto mv_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
-    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
+    VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     if (IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         imageless_features.pNext = &mv_features;
     }
@@ -536,7 +536,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -681,8 +681,8 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto mv_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
-    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(&mv_features);
+    VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper(&mv_features);
     GetPhysicalDeviceFeatures2(imageless_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -833,8 +833,8 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto mv_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
-    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(&mv_features);
+    VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper(&mv_features);
     GetPhysicalDeviceFeatures2(imageless_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -944,11 +944,11 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    auto if_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&if_features);
+    VkPhysicalDeviceImagelessFramebufferFeatures if_features = vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper(&if_features);
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
     if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
@@ -968,7 +968,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
     // Create a renderPass with a single fsr attachment
     VkSubpassDescription2 subpass = vku::InitStructHelper(&fsr_attachment);
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1022,15 +1022,15 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto fsr_properties = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    auto mv_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
-    auto if_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
+    VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
+    VkPhysicalDeviceImagelessFramebufferFeatures if_features = vku::InitStructHelper();
     if (IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         if_features.pNext = &mv_features;
     }
-    auto fsr_features = vku::InitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&if_features);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper(&if_features);
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
     if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
@@ -1050,7 +1050,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
     // Create a renderPass with a single fsr attachment
     VkSubpassDescription2 subpass = vku::InitStructHelper(&fsr_attachment);
 
-    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1137,7 +1137,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     }
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     uint32_t attachmentWidth = 512;
@@ -1252,10 +1252,10 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // random invalid struct for a framebuffer pNext change
-    auto invalid_struct = vku::InitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo invalid_struct = vku::InitStructHelper();
 
     VkFormat attachment_format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto fb_fdm = vku::InitStruct<VkFramebufferAttachmentImageInfo>(&invalid_struct);
+    VkFramebufferAttachmentImageInfo fb_fdm = vku::InitStructHelper(&invalid_struct);
     fb_fdm.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     fb_fdm.width = 64;
     fb_fdm.height = 64;
@@ -1263,11 +1263,11 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     fb_fdm.viewFormatCount = 1;
     fb_fdm.pViewFormats = &attachment_format;
 
-    auto fb_aci_fdm = vku::InitStruct<VkFramebufferAttachmentsCreateInfo>();
+    VkFramebufferAttachmentsCreateInfo fb_aci_fdm = vku::InitStructHelper();
     fb_aci_fdm.attachmentImageInfoCount = 1;
     fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
 
-    auto framebufferCreateInfo = vku::InitStruct<VkFramebufferCreateInfo>(&fb_aci_fdm);
+    VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&fb_aci_fdm);
     framebufferCreateInfo.width = 64;
     framebufferCreateInfo.height = 64;
     framebufferCreateInfo.layers = 1;

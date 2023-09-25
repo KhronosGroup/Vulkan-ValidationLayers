@@ -706,7 +706,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     m_errorMonitor->VerifyFound();
 
     constexpr int semaphore_warn_limit = 12;
-    const auto semaphore_ci = vku::InitStruct<VkSemaphoreCreateInfo>();
+    const VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
     std::vector<vkt::Semaphore> test_semaphores(semaphore_warn_limit);
     for (int i = 0; i < semaphore_warn_limit - 1; ++i) {
         test_semaphores[i].init(*m_device, semaphore_ci);

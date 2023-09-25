@@ -699,7 +699,7 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
-    auto desc_writes = vku::InitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet desc_writes = vku::InitStructHelper();
     const uint32_t desc_count = 1;
 
     // Write the descriptor

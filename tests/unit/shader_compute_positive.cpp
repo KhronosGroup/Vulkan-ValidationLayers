@@ -118,7 +118,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeId) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
@@ -157,7 +157,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeIdSpecConstant) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
@@ -218,7 +218,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSizeId) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
@@ -326,7 +326,7 @@ TEST_F(PositiveShaderCompute, ZeroInitializeWorkgroupMemoryFeature) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
     }
 
-    auto zero_initialize_work_group_memory_features = vku::InitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
+    VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(zero_initialize_work_group_memory_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &zero_initialize_work_group_memory_features));

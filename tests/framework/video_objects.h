@@ -932,7 +932,7 @@ class VideoContext {
     }
 
     void CreateStatusQueryPool(uint32_t query_count = 1) {
-        auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+        VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
         create_info.pNext = config_.Profile();
         create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
         create_info.queryCount = query_count;
@@ -1080,9 +1080,9 @@ class VkVideoLayerTest : public VkLayerTest {
             GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
         }
 
-        auto prot_mem_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
-        auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&prot_mem_features);
-        auto features = vku::InitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
+        VkPhysicalDeviceProtectedMemoryFeatures prot_mem_features = vku::InitStructHelper();
+        VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&prot_mem_features);
+        VkPhysicalDeviceFeatures2 features = vku::InitStructHelper(&sync2_features);
         vk::GetPhysicalDeviceFeatures2(gpu(), &features);
 
         if (!enable_protected_memory) {
@@ -1093,8 +1093,8 @@ class VkVideoLayerTest : public VkLayerTest {
             GTEST_SKIP() << "Test requires synchronization2.";
         }
 
-        auto prot_mem_props = vku::InitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
-        auto props = vku::InitStruct<VkPhysicalDeviceProperties2>(&prot_mem_props);
+        VkPhysicalDeviceProtectedMemoryProperties prot_mem_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 props = vku::InitStructHelper(&prot_mem_props);
         vk::GetPhysicalDeviceProperties2(gpu(), &props);
 
         protected_memory_enabled_ = (prot_mem_features.protectedMemory == VK_TRUE);
@@ -1261,11 +1261,11 @@ class VkVideoLayerTest : public VkLayerTest {
     }
 
     bool GetCodecFormats(VideoConfig& config) {
-        auto video_profiles = vku::InitStruct<VkVideoProfileListInfoKHR>();
+        VkVideoProfileListInfoKHR video_profiles = vku::InitStructHelper();
         video_profiles.profileCount = 1;
         video_profiles.pProfiles = config.Profile();
 
-        auto info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+        VkPhysicalDeviceVideoFormatInfoKHR info = vku::InitStructHelper();
         info.pNext = &video_profiles;
         uint32_t count = 0;
 

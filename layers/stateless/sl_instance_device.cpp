@@ -260,94 +260,94 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     if (IsExtEnabled(device_extensions.vk_nv_shading_rate_image)) {
         // Get the needed shading rate image limits
-        auto shading_rate_image_props = vku::InitStruct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&shading_rate_image_props);
+        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&shading_rate_image_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
         // Get the needed mesh shader limits
-        auto mesh_shader_props = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesNV>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props);
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.mesh_shader_props_nv = mesh_shader_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
         // Get the needed mesh shader EXT limits
-        auto mesh_shader_props_ext = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props_ext);
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props_ext);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.mesh_shader_props_ext = mesh_shader_props_ext;
     }
 
     if (IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
         // Get the needed ray tracing limits
-        auto ray_tracing_props = vku::InitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.ray_tracing_props_nv = ray_tracing_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)) {
         // Get the needed ray tracing limits
-        auto ray_tracing_props = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.ray_tracing_props_khr = ray_tracing_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
         // Get the needed ray tracing acc structure limits
-        auto acc_structure_props = vku::InitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&acc_structure_props);
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&acc_structure_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_transform_feedback)) {
         // Get the needed transform feedback limits
-        auto transform_feedback_props = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&transform_feedback_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
-        auto vertex_attribute_divisor_props = vku::InitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_props);
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
         // Get the needed blend operation advanced properties
-        auto blend_operation_advanced_props = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
+        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&blend_operation_advanced_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
         // Get the needed maintenance4 properties
-        auto maintance4_props = vku::InitStruct<VkPhysicalDeviceMaintenance4PropertiesKHR>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&maintance4_props);
+        VkPhysicalDeviceMaintenance4PropertiesKHR maintance4_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&maintance4_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.maintenance4_props = maintance4_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
-        auto fragment_shading_rate_props = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&fragment_shading_rate_props);
+        VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&fragment_shading_rate_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
-        auto depth_stencil_resolve_props = vku::InitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
-        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_props);
+        VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&depth_stencil_resolve_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }

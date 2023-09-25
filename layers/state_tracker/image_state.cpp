@@ -122,12 +122,12 @@ static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracke
             static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
                                                                       VK_IMAGE_ASPECT_PLANE_2_BIT};
             assert(plane_count <= aspects.size());
-            auto image_plane_req = vku::InitStruct<VkImagePlaneMemoryRequirementsInfo>();
-            auto mem_req_info2 = vku::InitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
             mem_req_info2.image = img;
 
             for (uint32_t i = 0; i < plane_count; i++) {
-                auto mem_reqs2 = vku::InitStruct<VkMemoryRequirements2>();
+                VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
 
                 image_plane_req.planeAspect = aspects[i];
                 switch (dev_data->device_extensions.vk_khr_get_memory_requirements2) {
@@ -511,7 +511,7 @@ bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) 
 }
 
 static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
-    auto image_ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     // Pull out the format list only. This stack variable will get copied onto the heap
     // by the 'safe' constructor used to build the return value below.
     VkImageFormatListCreateInfo fmt_info;
@@ -781,7 +781,7 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
             result.clear();
         } else {
             result.reserve(count);
-            auto format2 = vku::InitStruct<VkSurfaceFormat2KHR>();
+            VkSurfaceFormat2KHR format2 = vku::InitStructHelper();
             for (const auto &format : formats) {
                 format2.surfaceFormat = format;
                 result.emplace_back(safe_VkSurfaceFormat2KHR(&format2));
@@ -815,7 +815,7 @@ safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_c
         }
     };
 
-    auto surface_caps2 = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfaceCapabilities2KHR surface_caps2 = vku::InitStructHelper();
     if (get_surface_capabilities2) {
         const auto surface_info2 = GetSurfaceInfo2(surface_info2_pnext);
         if (const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info2, &surface_caps2);
@@ -870,13 +870,13 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetCompatibleModes(VkPhysicalDevice
 
     // Compatible modes not in state tracker, call to get compatible modes
     std::vector<VkPresentModeKHR> result;
-    auto surface_info = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
     surface_info.surface = surface();
-    auto surface_present_mode = vku::InitStruct<VkSurfacePresentModeEXT>();
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    auto present_mode_compatibility = vku::InitStruct<VkSurfacePresentModeCompatibilityEXT>();
-    auto surface_capabilities = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper();
     surface_capabilities.pNext = &present_mode_compatibility;
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     result.resize(present_mode_compatibility.presentModeCount);
@@ -912,12 +912,12 @@ VkSurfaceCapabilitiesKHR SURFACE_STATE::GetPresentModeSurfaceCapabilities(VkPhys
     }
 
     // Present mode surface capabilties not in state tracker, call to get surface capabilities
-    auto surface_info = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
     surface_info.surface = surface();
-    auto surface_present_mode = vku::InitStruct<VkSurfacePresentModeEXT>();
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    auto surface_capabilities = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper();
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     return surface_capabilities.surfaceCapabilities;
 }
@@ -935,13 +935,13 @@ VkSurfacePresentScalingCapabilitiesEXT SURFACE_STATE::GetPresentModeScalingCapab
     }
 
     // Present mode scaling capabilties not in state tracker, call to get scaling capabilities
-    auto surface_info = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
     surface_info.surface = surface();
-    auto surface_present_mode = vku::InitStruct<VkSurfacePresentModeEXT>();
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    auto scaling_caps = vku::InitStruct<VkSurfacePresentScalingCapabilitiesEXT>();
-    auto surface_capabilities = vku::InitStruct<VkSurfaceCapabilities2KHR>();
+    VkSurfacePresentScalingCapabilitiesEXT scaling_caps = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper();
     surface_capabilities.pNext = &scaling_caps;
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     return scaling_caps;

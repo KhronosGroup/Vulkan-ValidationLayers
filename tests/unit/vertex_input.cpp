@@ -64,7 +64,7 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
-    auto pdvad_props = vku::InitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
@@ -147,7 +147,7 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto pdvad_props = vku::InitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
@@ -411,7 +411,7 @@ TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    auto provoking_vertex_state_ci = vku::InitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
+    VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex_state_ci = vku::InitStructHelper();
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
     pipe.rs_state_ci_.pNext = &provoking_vertex_state_ci;
     pipe.InitState();
@@ -437,21 +437,21 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto provoking_vertex_properties = vku::InitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
+    VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(provoking_vertex_properties);
     if (provoking_vertex_properties.provokingVertexModePerPipeline == VK_TRUE) {
         GTEST_SKIP() << "provokingVertexModePerPipeline is VK_TRUE";
     }
 
-    auto provoking_vertex_features = vku::InitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>();
+    VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_features = vku::InitStructHelper();
     provoking_vertex_features.provokingVertexLast = VK_TRUE;
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&provoking_vertex_features);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&provoking_vertex_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe1(*this);
-    auto provoking_vertex_state_ci = vku::InitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
+    VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex_state_ci = vku::InitStructHelper();
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
     pipe1.rs_state_ci_.pNext = &provoking_vertex_state_ci;
     pipe1.InitState();
@@ -583,7 +583,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto vi_state = vku::InitStruct<VkPipelineVertexInputStateCreateInfo>();
+    VkPipelineVertexInputStateCreateInfo vi_state = vku::InitStructHelper();
     vi_state.flags = 0;
     vi_state.vertexBindingDescriptionCount = 1;
     vi_state.pVertexBindingDescriptions = &input_binding;

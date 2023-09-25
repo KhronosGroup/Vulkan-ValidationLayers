@@ -143,7 +143,7 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
 }
 
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
-    auto info = vku::InitStruct<VkInstanceCreateInfo>();
+    VkInstanceCreateInfo info = vku::InitStructHelper();
     info.pNext = m_errorMonitor->GetDebugCreateInfo();
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
@@ -306,8 +306,8 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     m_errorMonitor->CreateCallback(instance_);
 
     if (print_driver_info && !driver_printed) {
-        auto driver_properties = vku::InitStruct<VkPhysicalDeviceDriverProperties>();
-        auto physical_device_properties2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+        VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&driver_properties);
         vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
         printf("Driver Name = %s\n", driver_properties.driverName);
         printf("Driver Info = %s\n", driver_properties.driverInfo);
@@ -636,7 +636,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
             surface_context.m_surface_window = XCreateSimpleWindow(
                 surface_context.m_surface_dpy, RootWindow(surface_context.m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
                 BlackPixel(surface_context.m_surface_dpy, s), WhitePixel(surface_context.m_surface_dpy, s));
-            auto surface_create_info = vku::InitStruct<VkXlibSurfaceCreateInfoKHR>();
+            VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.dpy = surface_context.m_surface_dpy;
             surface_create_info.window = surface_context.m_surface_window;
             return VK_SUCCESS == vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
@@ -649,7 +649,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
         surface_context.m_surface_xcb_conn = xcb_connect(nullptr, nullptr);
         if (surface_context.m_surface_xcb_conn) {
             xcb_window_t window = xcb_generate_id(surface_context.m_surface_xcb_conn);
-            auto surface_create_info = vku::InitStruct<VkXcbSurfaceCreateInfoKHR>();
+            VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.connection = surface_context.m_surface_xcb_conn;
             surface_create_info.window = window;
             return VK_SUCCESS == vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
@@ -1377,8 +1377,8 @@ void VkImageObj::InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryProp
     VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
 
     if (m_device->IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(m_device->phy().handle(), create_info.format, &fmt_props_2);
         linear_tiling_features = fmt_props_3.linearTilingFeatures;
         optimal_tiling_features = fmt_props_3.optimalTilingFeatures;
@@ -1451,8 +1451,8 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     VkFormatFeatureFlags2 optimal_tiling_features;
 
     if (m_device->IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(m_device->phy().handle(), create_info->format, &fmt_props_2);
         linear_tiling_features = fmt_props_3.linearTilingFeatures;
         optimal_tiling_features = fmt_props_3.optimalTilingFeatures;

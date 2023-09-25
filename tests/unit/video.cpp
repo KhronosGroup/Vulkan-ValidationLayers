@@ -142,9 +142,9 @@ TEST_F(VkVideoLayerTest, CapabilityQueryMissingChain) {
     if (GetConfigDecodeH264()) {
         VideoConfig config = GetConfigDecodeH264();
 
-        auto caps = vku::InitStruct<VkVideoCapabilitiesKHR>();
-        auto decode_caps = vku::InitStruct<VkVideoDecodeCapabilitiesKHR>();
-        auto decode_h264_caps = vku::InitStruct<VkVideoDecodeH264CapabilitiesKHR>();
+        VkVideoCapabilitiesKHR caps = vku::InitStructHelper();
+        VkVideoDecodeCapabilitiesKHR decode_caps = vku::InitStructHelper();
+        VkVideoDecodeH264CapabilitiesKHR decode_h264_caps = vku::InitStructHelper();
 
         // Missing decode caps struct for decode profile
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183");
@@ -162,9 +162,9 @@ TEST_F(VkVideoLayerTest, CapabilityQueryMissingChain) {
     if (GetConfigDecodeH265()) {
         VideoConfig config = GetConfigDecodeH265();
 
-        auto caps = vku::InitStruct<VkVideoCapabilitiesKHR>();
-        auto decode_caps = vku::InitStruct<VkVideoDecodeCapabilitiesKHR>();
-        auto decode_h265_caps = vku::InitStruct<VkVideoDecodeH265CapabilitiesKHR>();
+        VkVideoCapabilitiesKHR caps = vku::InitStructHelper();
+        VkVideoDecodeCapabilitiesKHR decode_caps = vku::InitStructHelper();
+        VkVideoDecodeH265CapabilitiesKHR decode_h265_caps = vku::InitStructHelper();
 
         // Missing decode caps struct for decode profile
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183");
@@ -189,7 +189,7 @@ TEST_F(VkVideoLayerTest, VideoFormatQueryMissingProfile) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    auto format_info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+    VkPhysicalDeviceVideoFormatInfoKHR format_info = vku::InitStructHelper();
     format_info.imageUsage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
     uint32_t format_count = 0;
 
@@ -197,7 +197,7 @@ TEST_F(VkVideoLayerTest, VideoFormatQueryMissingProfile) {
     vk.GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &format_info, &format_count, nullptr);
     m_errorMonitor->VerifyFound();
 
-    auto profile_list = vku::InitStruct<VkVideoProfileListInfoKHR>();
+    VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     format_info.pNext = &profile_list;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812");
@@ -732,7 +732,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsMissingCodecInfo) {
 
         VkVideoSessionParametersKHR params;
         VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
-        auto other_codec_info = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
+        VkVideoDecodeH265SessionParametersCreateInfoKHR other_codec_info = vku::InitStructHelper();
         other_codec_info.maxStdVPSCount = 1;
         other_codec_info.maxStdSPSCount = 1;
         other_codec_info.maxStdPPSCount = 1;
@@ -750,7 +750,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsMissingCodecInfo) {
 
         VkVideoSessionParametersKHR params;
         VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
-        auto other_codec_info = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
+        VkVideoDecodeH264SessionParametersCreateInfoKHR other_codec_info = vku::InitStructHelper();
         other_codec_info.maxStdSPSCount = 1;
         other_codec_info.maxStdPPSCount = 1;
         create_info.pNext = &other_codec_info;
@@ -773,8 +773,8 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsH264ExceededCapacity) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
-    auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
+    VkVideoDecodeH264SessionParametersCreateInfoKHR h264_ci = vku::InitStructHelper();
+    VkVideoDecodeH264SessionParametersAddInfoKHR h264_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params, params2;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -857,8 +857,8 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsH265ExceededCapacity) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
-    auto h265_ai = vku::InitStruct<VkVideoDecodeH265SessionParametersAddInfoKHR>();
+    VkVideoDecodeH265SessionParametersCreateInfoKHR h265_ci = vku::InitStructHelper();
+    VkVideoDecodeH265SessionParametersAddInfoKHR h265_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params, params2;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -982,8 +982,8 @@ TEST_F(VkVideoLayerTest, H264ParametersAddInfoUniqueness) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
-    auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
+    VkVideoDecodeH264SessionParametersCreateInfoKHR h264_ci = vku::InitStructHelper();
+    VkVideoDecodeH264SessionParametersAddInfoKHR h264_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -994,7 +994,7 @@ TEST_F(VkVideoLayerTest, H264ParametersAddInfoUniqueness) {
     h264_ci.maxStdPPSCount = 20;
     h264_ci.pParametersAddInfo = &h264_ai;
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
@@ -1052,8 +1052,8 @@ TEST_F(VkVideoLayerTest, H265ParametersAddInfoUniqueness) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
-    auto h265_ai = vku::InitStruct<VkVideoDecodeH265SessionParametersAddInfoKHR>();
+    VkVideoDecodeH265SessionParametersCreateInfoKHR h265_ci = vku::InitStructHelper();
+    VkVideoDecodeH265SessionParametersAddInfoKHR h265_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1065,7 +1065,7 @@ TEST_F(VkVideoLayerTest, H265ParametersAddInfoUniqueness) {
     h265_ci.maxStdPPSCount = 30;
     h265_ci.pParametersAddInfo = &h265_ai;
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
     update_info.pNext = &h265_ai;
     update_info.updateSequenceCount = 1;
 
@@ -1146,7 +1146,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsIncorrectSequenceCount) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateVideoSessionParametersKHR-pUpdateInfo-07215");
     update_info.updateSequenceCount = 2;
@@ -1181,8 +1181,8 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ConflictingKeys) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
-    auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
+    VkVideoDecodeH264SessionParametersCreateInfoKHR h264_ci = vku::InitStructHelper();
+    VkVideoDecodeH264SessionParametersAddInfoKHR h264_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1193,7 +1193,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ConflictingKeys) {
     h264_ci.maxStdPPSCount = 20;
     h264_ci.pParametersAddInfo = &h264_ai;
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
@@ -1248,8 +1248,8 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ConflictingKeys) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
-    auto h265_ai = vku::InitStruct<VkVideoDecodeH265SessionParametersAddInfoKHR>();
+    VkVideoDecodeH265SessionParametersCreateInfoKHR h265_ci = vku::InitStructHelper();
+    VkVideoDecodeH265SessionParametersAddInfoKHR h265_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1261,7 +1261,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ConflictingKeys) {
     h265_ci.maxStdPPSCount = 30;
     h265_ci.pParametersAddInfo = &h265_ai;
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
     update_info.pNext = &h265_ai;
     update_info.updateSequenceCount = 1;
 
@@ -1336,8 +1336,8 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ExceededCapacity) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
-    auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
+    VkVideoDecodeH264SessionParametersCreateInfoKHR h264_ci = vku::InitStructHelper();
+    VkVideoDecodeH264SessionParametersAddInfoKHR h264_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1348,7 +1348,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ExceededCapacity) {
     h264_ci.maxStdPPSCount = 9;
     h264_ci.pParametersAddInfo = &h264_ai;
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
@@ -1401,8 +1401,8 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ExceededCapacity) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
-    auto h265_ai = vku::InitStruct<VkVideoDecodeH265SessionParametersAddInfoKHR>();
+    VkVideoDecodeH265SessionParametersCreateInfoKHR h265_ci = vku::InitStructHelper();
+    VkVideoDecodeH265SessionParametersAddInfoKHR h265_ai = vku::InitStructHelper();
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1414,7 +1414,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ExceededCapacity) {
     h265_ci.maxStdPPSCount = 9;
     h265_ci.pParametersAddInfo = &h265_ai;
 
-    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    VkVideoSessionParametersUpdateInfoKHR update_info = vku::InitStructHelper();
     update_info.pNext = &h265_ai;
     update_info.updateSequenceCount = 1;
 
@@ -1663,7 +1663,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionMemoryNotBound) {
         ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
         session_memory.push_back(memory);
 
-        auto bind_info = vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>();
+        VkBindVideoSessionMemoryInfoKHR bind_info = vku::InitStructHelper();
         bind_info.memoryBindIndex = mem_reqs[i].memoryBindIndex;
         bind_info.memory = memory;
         bind_info.memoryOffset = 0;
@@ -1708,7 +1708,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionUninitialized) {
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
-    auto control_info = vku::InitStruct<VkVideoCodingControlInfoKHR>();
+    VkVideoCodingControlInfoKHR control_info = vku::InitStructHelper();
     control_info.flags = VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR;
 
     cb.begin();
@@ -2229,10 +2229,10 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
 
     VkVideoPictureResourceInfoKHR res = context.Dpb()->Picture(0);
 
-    auto view_usage_ci = vku::InitStruct<VkImageViewUsageCreateInfo>();
+    VkImageViewUsageCreateInfo view_usage_ci = vku::InitStructHelper();
     view_usage_ci.usage = config.DpbFormatProps()->imageUsageFlags ^ VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
 
-    auto image_view_ci = vku::InitStruct<VkImageViewCreateInfo>(&view_usage_ci);
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper(&view_usage_ci);
     image_view_ci.image = context.Dpb()->Image();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = config.DpbFormatProps()->format;
@@ -2613,11 +2613,11 @@ TEST_F(VkVideoLayerTest, DecodeBufferMissingDecodeSrcUsage) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    auto profile_list = vku::InitStruct<VkVideoProfileListInfoKHR>();
+    VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     profile_list.profileCount = 1;
     profile_list.pProfiles = config.Profile();
 
-    auto create_info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo create_info = vku::InitStructHelper();
     create_info.flags = 0;
     create_info.pNext = &profile_list;
     create_info.size = std::max((VkDeviceSize)4096, config.Caps()->minBitstreamBufferSizeAlignment);
@@ -3077,10 +3077,10 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
-    auto view_usage_ci = vku::InitStruct<VkImageViewUsageCreateInfo>();
+    VkImageViewUsageCreateInfo view_usage_ci = vku::InitStructHelper();
     view_usage_ci.usage = config.PictureFormatProps()->imageUsageFlags ^ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
 
-    auto image_view_ci = vku::InitStruct<VkImageViewCreateInfo>(&view_usage_ci);
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper(&view_usage_ci);
     image_view_ci.image = context.DecodeOutput()->Image();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = config.PictureFormatProps()->format;
@@ -3659,7 +3659,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH264) {
     VideoDecodeInfo decode_info = context.DecodeFrame();
 
     StdVideoDecodeH264PictureInfo std_picture_info{};
-    auto picture_info = vku::InitStruct<VkVideoDecodeH264PictureInfoKHR>();
+    VkVideoDecodeH264PictureInfoKHR picture_info = vku::InitStructHelper();
     uint32_t slice_offset = 0;
     picture_info.pStdPictureInfo = &std_picture_info;
     picture_info.sliceCount = 1;
@@ -3722,7 +3722,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH264) {
 
     // Missing H.264 setup reference info
     {
-        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        VkVideoReferenceSlotInfoKHR slot = vku::InitStructHelper();
         slot.pNext = nullptr;
         slot.slotIndex = 0;
         slot.pPictureResource = &context.Dpb()->Picture(0);
@@ -3752,7 +3752,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH264) {
 
     // Missing H.264 reference info
     {
-        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        VkVideoReferenceSlotInfoKHR slot = vku::InitStructHelper();
         slot.pNext = nullptr;
         slot.slotIndex = 0;
         slot.pPictureResource = &context.Dpb()->Picture(0);
@@ -3866,7 +3866,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH265) {
     VideoDecodeInfo decode_info = context.DecodeFrame();
 
     StdVideoDecodeH265PictureInfo std_picture_info{};
-    auto picture_info = vku::InitStruct<VkVideoDecodeH265PictureInfoKHR>();
+    VkVideoDecodeH265PictureInfoKHR picture_info = vku::InitStructHelper();
     uint32_t slice_segment_offset = 0;
     picture_info.pStdPictureInfo = &std_picture_info;
     picture_info.sliceSegmentCount = 1;
@@ -3926,7 +3926,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH265) {
 
     // Missing H.265 setup reference info
     {
-        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        VkVideoReferenceSlotInfoKHR slot = vku::InitStructHelper();
         slot.pNext = nullptr;
         slot.slotIndex = 0;
         slot.pPictureResource = &context.Dpb()->Picture(0);
@@ -3943,7 +3943,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH265) {
 
     // Missing H.265 reference info
     {
-        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        VkVideoReferenceSlotInfoKHR slot = vku::InitStructHelper();
         slot.pNext = nullptr;
         slot.slotIndex = 0;
         slot.pPictureResource = &context.Dpb()->Picture(0);
@@ -4125,7 +4125,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
         GTEST_SKIP() << "Test requires a queue family with no support for result status queries";
     }
 
-    auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, create_info);
@@ -4221,7 +4221,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
     create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, create_info);
@@ -4250,7 +4250,7 @@ TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, create_info);
@@ -4278,14 +4278,14 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, create_info);
 
     VkQueryResultFlags flags;
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = sizeof(uint32_t);
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci);
@@ -4326,14 +4326,14 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
-    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_barrier.subresourceRange.levelCount = 1;
     image_barrier.subresourceRange.layerCount = 1;
 
-    auto image_barrier2 = vku::InitStruct<VkImageMemoryBarrier2>();
+    VkImageMemoryBarrier2 image_barrier2 = vku::InitStructHelper();
     image_barrier2.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     image_barrier2.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     image_barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -4342,7 +4342,7 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
     image_barrier2.subresourceRange.levelCount = 1;
     image_barrier2.subresourceRange.layerCount = 1;
 
-    auto dep_info = vku::InitStruct<VkDependencyInfo>();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &image_barrier2;
 
@@ -4418,7 +4418,7 @@ TEST_F(VkVideoBestPracticesLayerTest, GetVideoSessionMemoryRequirements) {
 
     VideoContext context(DeviceObj(), config);
 
-    auto mem_req = vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>();
+    VkVideoSessionMemoryRequirementsKHR mem_req = vku::InitStructHelper();
     uint32_t mem_req_count = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit,
@@ -4454,7 +4454,7 @@ TEST_F(VkVideoBestPracticesLayerTest, BindVideoSessionMemory) {
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
     // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR was called
-    auto bind_info = vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>();
+    VkBindVideoSessionMemoryInfoKHR bind_info = vku::InitStructHelper();
     bind_info.memory = memory;
     bind_info.memoryOffset = 0;
     bind_info.memorySize = alloc_info.allocationSize;
@@ -4474,7 +4474,7 @@ TEST_F(VkVideoBestPracticesLayerTest, BindVideoSessionMemory) {
         m_errorMonitor->VerifyFound();
 
         if (mem_req_count > 1) {
-            auto mem_req = vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>();
+            VkVideoSessionMemoryRequirementsKHR mem_req = vku::InitStructHelper();
             mem_req_count = 1;
 
             context.vk.GetVideoSessionMemoryRequirementsKHR(m_device->device(), context.Session(), &mem_req_count, &mem_req);
