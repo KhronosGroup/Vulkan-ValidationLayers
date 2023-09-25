@@ -17,6 +17,25 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+// Validation of dispatchable handles is not performed until VVL's chassis will be
+// able to do this validation (if ever) instead of crashing (which is also an option).
+// If vulkan's loader trampoline is active, then it's also the place where invalid
+// dispatchable handle can cause a crash.
+TEST_F(NegativeObjectLifetime, DISABLED_CreateBufferUsingInvalidDevice) {
+    TEST_DESCRIPTION("Create buffer using invalid device handle.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_ci.size = 256;
+    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateBuffer-device-parameter");
+    vk::CreateBuffer((VkDevice)0x123456ab, &buffer_ci, NULL, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
