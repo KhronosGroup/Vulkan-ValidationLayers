@@ -66,7 +66,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     buffer_memory_bind_infos[1].bindCount = 1;
     buffer_memory_bind_infos[1].pBinds = &buffer_memory_bind;
 
-    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 2;
     bind_info.pBufferBinds = buffer_memory_bind_infos;
     bind_info.signalSemaphoreCount = 1;
@@ -93,7 +93,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
 
     // Submitting copy command with non overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore2.handle();
     submit_info.pWaitDstStageMask = &mask;
@@ -158,7 +158,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     buffer_memory_bind_infos[0].bindCount = 1;
     buffer_memory_bind_infos[0].pBinds = &buffer_memory_bind_1;
 
-    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = size32(buffer_memory_bind_infos);
     bind_info.pBufferBinds = buffer_memory_bind_infos.data();
     bind_info.signalSemaphoreCount = 1;
@@ -177,7 +177,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
@@ -241,7 +241,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     buffer_memory_bind_info.bindCount = size32(buffer_memory_binds);
     buffer_memory_bind_info.pBinds = buffer_memory_binds.data();
 
-    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
     bind_info.signalSemaphoreCount = 1;
@@ -259,7 +259,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
@@ -321,7 +321,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     buffer_memory_bind_info.bindCount = size32(buffer_memory_binds);
     buffer_memory_bind_info.pBinds = buffer_memory_binds.data();
 
-    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
     bind_info.signalSemaphoreCount = 1;
@@ -344,7 +344,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;

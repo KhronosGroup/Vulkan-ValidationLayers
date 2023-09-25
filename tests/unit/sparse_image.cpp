@@ -234,7 +234,7 @@ TEST_F(NegativeSparseImage, ImageUsageBits) {
         GTEST_SKIP() << "No sparseBinding feature";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -397,13 +397,13 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
-    auto buffer_mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo buffer_mem_alloc = vku::InitStructHelper();
     buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
     buffer_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    auto image_mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo image_mem_alloc = vku::InitStructHelper();
     image_mem_alloc.allocationSize = image_mem_reqs.size;
     image_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 

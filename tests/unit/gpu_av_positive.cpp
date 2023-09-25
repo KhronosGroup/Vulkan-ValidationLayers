@@ -71,7 +71,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    auto pipeline_info = vku::InitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
     pipeline_info.flags = 0;
     pipeline_info.layout = pipeline_layout.handle();
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -82,7 +82,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
 
     vkt::Buffer buffer_0;
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     buffer_0.init(*m_device, buffer_ci);
@@ -114,7 +114,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -177,7 +177,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    auto pipeline_info = vku::InitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
     pipeline_info.flags = 0;
     pipeline_info.layout = pipeline_layout.handle();
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -188,7 +188,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
 
     vkt::Buffer buffer_0;
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     buffer_0.init(*m_device, buffer_ci);
@@ -218,7 +218,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -249,7 +249,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
         GTEST_SKIP() << "This test should not be run on the AMD proprietary driver.";
     }
-    auto bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
     if (!features2.features.shaderInt64) {
         GTEST_SKIP() << "shaderInt64 is not supported";
@@ -262,7 +262,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     uint32_t qfi = 0;
-    auto bci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo bci = vku::InitStructHelper();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 12;  // 64 bit pointer + int
     bci.queueFamilyIndexCount = 1;
@@ -271,12 +271,12 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
-    auto hinfo = vku::InitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &hinfo;
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -287,7 +287,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     buffer_test_buffer_info.offset = 0;
     buffer_test_buffer_info.range = sizeof(uint32_t);
 
-    auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -333,7 +333,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     // Make another buffer to write to
     bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
-    auto allocate_flag_info = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
 
@@ -359,22 +359,22 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2Features>();
-    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>(&sync2_features);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper(&sync2_features);
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
+    VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&semaphore_type_info);
     vkt::Semaphore semaphore(*m_device, create_info);
 
-    auto signal_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
     signal_info.semaphore = semaphore;
     signal_info.value = 1;
     signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo2>();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreInfoCount = 1;
     submit_info.pSignalSemaphoreInfos = &signal_info;
     ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
@@ -398,7 +398,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
-    auto mutable_descriptor_type_features = vku::InitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -439,7 +439,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     lists[1].descriptorTypeCount = 2;
     lists[1].pDescriptorTypes = desc_types;
 
-    auto mdtci = vku::InitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 3;
     mdtci.pMutableDescriptorTypeLists = lists;
 
@@ -453,7 +453,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    auto pipeline_info = vku::InitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
     pipeline_info.flags = 0;
     pipeline_info.layout = pipeline_layout.handle();
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -464,14 +464,14 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
 
     vkt::Buffer buffer_0;
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     buffer_0.init(*m_device, buffer_ci);
     vkt::Buffer buffer_1;
     buffer_1.init(*m_device, buffer_ci);
 
-    auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set_0.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.dstArrayElement = 0;
@@ -482,7 +482,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
 
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
-    auto descriptor_copy = vku::InitStruct<VkCopyDescriptorSet>();
+    VkCopyDescriptorSet descriptor_copy = vku::InitStructHelper();
     // copy the storage descriptor to the first mutable descriptor
     descriptor_copy.srcSet = descriptor_set_0.set_;
     descriptor_copy.srcBinding = 0;
@@ -507,7 +507,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 

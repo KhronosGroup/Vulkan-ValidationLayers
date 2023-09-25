@@ -104,7 +104,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
             continue;
         }
 
-        auto object_name_info = vku::InitStruct<VkDebugUtilsObjectNameInfoEXT>();
+        VkDebugUtilsObjectNameInfoEXT object_name_info = vku::InitStructHelper();
         object_name_info.objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
         object_name_info.objectHandle = objects.object_list[i].handle;
         object_name_info.pObjectName = nullptr;
@@ -142,7 +142,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
 
     const uint32_t message_id_number = text_vuid ? vvl_vuid_hash(text_vuid) : 0U;
 
-    auto callback_data = vku::InitStruct<VkDebugUtilsMessengerCallbackDataEXT>();
+    VkDebugUtilsMessengerCallbackDataEXT callback_data = vku::InitStructHelper();
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
     callback_data.messageIdNumber = vvl_bit_cast<int32_t>(message_id_number);

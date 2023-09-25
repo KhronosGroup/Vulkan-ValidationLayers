@@ -504,7 +504,7 @@ void RayTracingPipelineHelper::InitKHRRayTracingPipelineInfo(VkPipelineCreateFla
 
 void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper &library) {
     libraries_.emplace_back(library.pipeline_);
-    rp_library_ci_ = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    rp_library_ci_ = vku::InitStructHelper();
     rp_library_ci_.libraryCount = size32(libraries_);
     rp_library_ci_.pLibraries = libraries_.data();
     rp_ci_KHR_.pLibraryInfo = &rp_library_ci_;
@@ -532,9 +532,9 @@ void RayTracingPipelineHelper::InitLibraryInfoKHR(VkPipelineCreateFlags flags) {
     InitPipelineLayoutInfo();
     InitShaderInfoKHR();
     InitKHRRayTracingPipelineInfo(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | flags);
-    auto ray_tracing_pipeline_props = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_pipeline_props = vku::InitStructHelper();
     layer_test_.GetPhysicalDeviceProperties2(ray_tracing_pipeline_props);
-    rp_i_ci_ = vku::InitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
+    rp_i_ci_ = vku::InitStructHelper();
     rp_i_ci_->maxPipelineRayPayloadSize = sizeof(float);  // Set according to payload defined in kRayGenShaderText
     rp_i_ci_->maxPipelineRayHitAttributeSize = ray_tracing_pipeline_props.maxRayHitAttributeSize;
     rp_ci_KHR_.pLibraryInterface = &rp_i_ci_.value();

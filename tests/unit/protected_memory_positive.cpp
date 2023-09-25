@@ -36,7 +36,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto protected_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(protected_features);
     if (protected_features.protectedMemory == VK_FALSE) {
         GTEST_SKIP() << "test requires protectedMemory";

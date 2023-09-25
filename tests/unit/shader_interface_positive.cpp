@@ -227,11 +227,11 @@ TEST_F(PositiveShaderInterface, UboStd430Layout) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto uniform_buffer_standard_layout_features = vku::InitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>(NULL);
+    VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniform_buffer_standard_layout_features = vku::InitStructHelper(NULL);
     uniform_buffer_standard_layout_features.uniformBufferStandardLayout = VK_TRUE;
     GetPhysicalDeviceFeatures2(uniform_buffer_standard_layout_features);
 
-    auto set_features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&uniform_buffer_standard_layout_features);
+    VkPhysicalDeviceFeatures2 set_features2 = vku::InitStructHelper(&uniform_buffer_standard_layout_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &set_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -281,9 +281,9 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto scalar_block_features = vku::InitStruct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(NULL);
+    VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_features = vku::InitStructHelper(NULL);
     GetPhysicalDeviceFeatures2(scalar_block_features);
-    auto set_features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
+    VkPhysicalDeviceFeatures2 set_features2 = vku::InitStructHelper(&scalar_block_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &set_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -360,7 +360,7 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
     }
-    auto maintenance_4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance_4_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance_4_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance_4_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -595,7 +595,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
 
@@ -628,7 +628,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
                                                      0,
                                                      nullptr};
 
-    auto renderPassInfo = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo renderPassInfo = vku::InitStructHelper();
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &inputAttachmentDescription;
     renderPassInfo.subpassCount = 1;
@@ -750,7 +750,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
 
@@ -777,7 +777,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
                                                      0,
                                                      nullptr};
 
-    auto renderPassInfo = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo renderPassInfo = vku::InitStructHelper();
     renderPassInfo.attachmentCount = 2;
     renderPassInfo.pAttachments = inputAttachmentDescriptions;
     renderPassInfo.subpassCount = 1;
@@ -948,7 +948,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateGraphicsPipeline();
 
-    auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo ub_ci = vku::InitStructHelper();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
     vkt::Buffer uniform_buffer(*m_device, ub_ci);
@@ -1430,7 +1430,7 @@ TEST_F(PositiveShaderInterface, PhysicalStorageBufferGlslang3) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
     if (VK_TRUE != features12.bufferDeviceAddress) {
         GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
@@ -1476,7 +1476,7 @@ TEST_F(PositiveShaderInterface, PhysicalStorageBufferGlslang6) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
     if (VK_TRUE != features12.bufferDeviceAddress) {
         GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
@@ -1514,7 +1514,7 @@ TEST_F(PositiveShaderInterface, PhysicalStorageBuffer) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
     if (VK_TRUE != features12.bufferDeviceAddress) {
         GTEST_SKIP() << "bufferDeviceAddress not supported and is required";

@@ -198,7 +198,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Collect external buffer info
-        auto pdebi = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
+        VkPhysicalDeviceExternalBufferInfo pdebi = vku::InitStructHelper();
         pdebi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
         if (AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE & ahb_desc.usage) {
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE];
@@ -206,16 +206,16 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         if (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER & ahb_desc.usage) {
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER];
         }
-        auto ext_buf_props = vku::InitStruct<VkExternalBufferProperties>();
+        VkExternalBufferProperties ext_buf_props = vku::InitStructHelper();
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
         if (0 == (ext_buf_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
             // Collect external format info
-            auto pdeifi = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+            VkPhysicalDeviceExternalImageFormatInfo pdeifi = vku::InitStructHelper();
             pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-            auto pdifi2 = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&pdeifi);
+            VkPhysicalDeviceImageFormatInfo2 pdifi2 = vku::InitStructHelper(&pdeifi);
             if (0 < ahb_format_map_a2v.count(ahb_desc.format)) pdifi2.format = ahb_format_map_a2v[ahb_desc.format];
             pdifi2.type = VK_IMAGE_TYPE_2D;           // Seems likely
             pdifi2.tiling = VK_IMAGE_TILING_OPTIMAL;  // Ditto
@@ -232,8 +232,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                 pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT];
             }
 
-            auto ext_img_fmt_props = vku::InitStruct<VkExternalImageFormatProperties>();
-            auto ifp2 = vku::InitStruct<VkImageFormatProperties2>(&ext_img_fmt_props);
+            VkExternalImageFormatProperties ext_img_fmt_props = vku::InitStructHelper();
+            VkImageFormatProperties2 ifp2 = vku::InitStructHelper(&ext_img_fmt_props);
 
             VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &pdifi2, &ifp2);
 
@@ -248,7 +248,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Retrieve buffer and format properties of the provided AHardwareBuffer
-        auto ahb_props = vku::InitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+        VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
         DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &ahb_props);
 
         // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
@@ -301,8 +301,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             if (VK_FORMAT_UNDEFINED != ici->format) {
                 // Mali drivers will not return a valid VkAndroidHardwareBufferPropertiesANDROID::allocationSize if the
                 // FormatPropertiesANDROID is passed in as well so need to query again for the format
-                auto ahb_format_props = vku::InitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
-                auto dummy_ahb_props = vku::InitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_format_props);
+                VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = vku::InitStructHelper();
+                VkAndroidHardwareBufferPropertiesANDROID dummy_ahb_props = vku::InitStructHelper(&ahb_format_props);
                 DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &dummy_ahb_props);
                 if (ici->format != ahb_format_props.format) {
                     skip |= LogError(

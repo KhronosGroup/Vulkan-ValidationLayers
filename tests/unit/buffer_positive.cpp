@@ -68,7 +68,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
-    auto props_1_3 = vku::InitStruct<VkPhysicalDeviceVulkan13Properties>();
+    VkPhysicalDeviceVulkan13Properties props_1_3 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props_1_3);
     if (props_1_3.uniformTexelBufferOffsetAlignmentBytes < 4 || !props_1_3.uniformTexelBufferOffsetSingleTexelAlignment) {
         GTEST_SKIP() << "need uniformTexelBufferOffsetAlignmentBytes to be more than 4 with "
@@ -102,12 +102,12 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_addr_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_addr_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
-    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 100 * 4096 * 4096;
@@ -118,7 +118,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     // for every range currently in the map.
     constexpr size_t N = 1400;
     std::vector<vkt::Buffer> buffers(N);
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -154,12 +154,12 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_addr_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_addr_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
-    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 100 * 4096 * 4096;
@@ -169,7 +169,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     // should be fast.
     constexpr size_t N = 1400;  // 100 * 4096;
     std::vector<vkt::Buffer> buffers(N);
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -194,7 +194,7 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -223,19 +223,19 @@ TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci);
 
-    auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
 
-    auto buffer_view_ci = vku::InitStruct<VkBufferViewCreateInfo>(&buffer_usage_flags);
+    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
@@ -253,19 +253,19 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci);
 
-    auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR;
 
-    auto buffer_view_ci = vku::InitStruct<VkBufferViewCreateInfo>(&buffer_usage_flags);
+    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
@@ -283,14 +283,14 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
-    auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>(&buffer_usage_flags);
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
     CreateBufferTest(*this, &buffer_ci, {});
@@ -311,14 +311,14 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
-    auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>(&buffer_usage_flags);
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = 32;
     buffer_ci.usage = 0;
     CreateBufferTest(*this, &buffer_ci, {});

@@ -429,11 +429,11 @@ bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreate
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     auto fence_export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(pCreateInfo->pNext);
     if (fence_export_info && fence_export_info->handleTypes != 0) {
-        auto external_properties = vku::InitStruct<VkExternalFenceProperties>();
+        VkExternalFenceProperties external_properties = vku::InitStructHelper();
         bool export_supported = true;
         // Check export support
         auto check_export_support = [&](VkExternalFenceHandleTypeFlagBits flag) {
-            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            VkPhysicalDeviceExternalFenceInfo external_info = vku::InitStructHelper();
             external_info.handleType = flag;
             DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &external_info, &external_properties);
             if ((external_properties.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT) == 0) {
@@ -481,11 +481,11 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
 
     auto sem_export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
     if (sem_export_info && sem_export_info->handleTypes != 0) {
-        auto external_properties = vku::InitStruct<VkExternalSemaphoreProperties>();
+        VkExternalSemaphoreProperties external_properties = vku::InitStructHelper();
         bool export_supported = true;
         // Check export support
         auto check_export_support = [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
-            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper();
             external_info.handleType = flag;
             DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &external_info, &external_properties);
             if ((external_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) == 0) {
@@ -691,7 +691,7 @@ struct RenderPassDepState {
             return *override_barrier;
         }
 
-        auto barrier = vku::InitStruct<VkMemoryBarrier2>();
+        VkMemoryBarrier2 barrier = vku::InitStructHelper();
         barrier.srcStageMask = dep.srcStageMask;
         barrier.dstStageMask = dep.dstStageMask;
         barrier.srcAccessMask = dep.srcAccessMask;

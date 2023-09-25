@@ -30,7 +30,7 @@ TEST_F(NegativeProtectedMemory, Queue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(protected_features);
 
     if (protected_features.protectedMemory == VK_FALSE) {
@@ -171,7 +171,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
@@ -322,7 +322,7 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto protected_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(protected_features);
 
     if (protected_features.protectedMemory == VK_FALSE) {
@@ -530,11 +530,11 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     const bool pipeline_libraries = IsExtensionsEnabled(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
     if (pipeline_libraries) protected_memory_features.pNext = &gpl_features;
-    auto pipeline_protected_access_features =
-        vku::InitStruct<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(&protected_memory_features);
+    VkPhysicalDevicePipelineProtectedAccessFeaturesEXT pipeline_protected_access_features =
+        vku::InitStructHelper(&protected_memory_features);
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_protected_access_features);
     pipeline_protected_access_features.pipelineProtectedAccess = VK_TRUE;
 
@@ -578,11 +578,11 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     if (pipeline_libraries) {
         CreatePipelineHelper pre_raster_lib(*this);
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        auto vs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+        VkShaderModuleCreateInfo vs_ci = vku::InitStructHelper();
         vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
         vs_ci.pCode = vs_spv.data();
 
-        auto stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+        VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&vs_ci);
         stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
         stage_ci.module = VK_NULL_HANDLE;
         stage_ci.pName = "main";
@@ -595,12 +595,12 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         VkPipeline libraries[1] = {
             pre_raster_lib.pipeline_,
         };
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = size(libraries);
         link_info.pLibraries = libraries;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404");
-        auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
         lib_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
         vkt::Pipeline lib(*m_device, lib_ci);
         m_errorMonitor->VerifyFound();
@@ -617,7 +617,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
         ASSERT_VK_SUCCESS(protected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = protected_pre_raster_lib.pipeline_;
-        auto protected_lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo protected_lib_ci = vku::InitStructHelper(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
         lib_ci.flags = 0;
         vkt::Pipeline lib3(*m_device, protected_lib_ci);
@@ -630,7 +630,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
         ASSERT_VK_SUCCESS(unprotected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = unprotected_pre_raster_lib.pipeline_;
-        auto unprotected_lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo unprotected_lib_ci = vku::InitStructHelper(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");
         vkt::Pipeline lib4(*m_device, unprotected_lib_ci);
         m_errorMonitor->VerifyFound();
@@ -694,7 +694,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
@@ -774,14 +774,14 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
         GTEST_SKIP() << "protectedMemory feature not supported";
     };
 
-    auto protected_memory_properties = vku::InitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(protected_memory_properties);
 
     // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags

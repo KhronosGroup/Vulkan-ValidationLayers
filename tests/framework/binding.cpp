@@ -487,7 +487,7 @@ void DeviceMemory::unmap() const { vk::UnmapMemory(device(), handle()); }
 
 VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
-    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>(alloc_info_pnext);
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
     EXPECT(dev.phy().set_memory_type(reqs.memoryTypeBits, &alloc_info, mem_props));
     return alloc_info;
@@ -509,14 +509,14 @@ VkResult Fence::reset() {
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VkResult Fence::export_handle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
-    auto ghi = vku::InitStruct<VkFenceGetWin32HandleInfoKHR>();
+    VkFenceGetWin32HandleInfoKHR ghi = vku::InitStructHelper();
     ghi.fence = handle();
     ghi.handleType = handle_type;
     return vk::GetFenceWin32HandleKHR(device(), &ghi, &win32_handle);
 }
 
 VkResult Fence::import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
-    auto ifi = vku::InitStruct<VkImportFenceWin32HandleInfoKHR>();
+    VkImportFenceWin32HandleInfoKHR ifi = vku::InitStructHelper();
     ifi.fence = handle();
     ifi.handleType = handle_type;
     ifi.handle = win32_handle;
@@ -526,14 +526,14 @@ VkResult Fence::import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlag
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 VkResult Fence::export_handle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
-    auto gfi = vku::InitStruct<VkFenceGetFdInfoKHR>();
+    VkFenceGetFdInfoKHR gfi = vku::InitStructHelper();
     gfi.fence = handle();
     gfi.handleType = handle_type;
     return vk::GetFenceFdKHR(device(), &gfi, &fd_handle);
 }
 
 VkResult Fence::import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
-    auto ifi = vku::InitStruct<VkImportFenceFdInfoKHR>();
+    VkImportFenceFdInfoKHR ifi = vku::InitStructHelper();
     ifi.fence = handle();
     ifi.handleType = handle_type;
     ifi.fd = fd_handle;
@@ -550,7 +550,7 @@ void Semaphore::init(const Device &dev, const VkSemaphoreCreateInfo &info) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     win32_handle = nullptr;
-    auto ghi = vku::InitStruct<VkSemaphoreGetWin32HandleInfoKHR>();
+    VkSemaphoreGetWin32HandleInfoKHR ghi = vku::InitStructHelper();
     ghi.semaphore = handle();
     ghi.handleType = handle_type;
     return vk::GetSemaphoreWin32HandleKHR(device(), &ghi, &win32_handle);
@@ -558,7 +558,7 @@ VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandl
 
 VkResult Semaphore::import_handle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                   VkSemaphoreImportFlags flags) {
-    auto ihi = vku::InitStruct<VkImportSemaphoreWin32HandleInfoKHR>();
+    VkImportSemaphoreWin32HandleInfoKHR ihi = vku::InitStructHelper();
     ihi.semaphore = handle();
     ihi.handleType = handle_type;
     ihi.handle = win32_handle;
@@ -569,7 +569,7 @@ VkResult Semaphore::import_handle(HANDLE win32_handle, VkExternalSemaphoreHandle
 
 VkResult Semaphore::export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     fd_handle = -1;
-    auto ghi = vku::InitStruct<VkSemaphoreGetFdInfoKHR>();
+    VkSemaphoreGetFdInfoKHR ghi = vku::InitStructHelper();
     ghi.semaphore = handle();
     ghi.handleType = handle_type;
     return vk::GetSemaphoreFdKHR(device(), &ghi, &fd_handle);
@@ -577,7 +577,7 @@ VkResult Semaphore::export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeF
 
 VkResult Semaphore::import_handle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
     // Import opaque handle exported above
-    auto ihi = vku::InitStruct<VkImportSemaphoreFdInfoKHR>();
+    VkImportSemaphoreFdInfoKHR ihi = vku::InitStructHelper();
     ihi.semaphore = handle();
     ihi.handleType = handle_type;
     ihi.fd = fd_handle;
@@ -661,7 +661,7 @@ void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
 }
 
 VkDeviceAddress Buffer::address(APIVersion vk_api_version /*= VK_API_VERSION_1_2*/) const {
-    auto bdai = vku::InitStruct<VkBufferDeviceAddressInfo>();
+    VkBufferDeviceAddressInfo bdai = vku::InitStructHelper();
     bdai.buffer = handle();
     if (vk_api_version < VK_API_VERSION_1_2) {
         const auto vkGetBufferDeviceAddressKHR =
@@ -863,7 +863,7 @@ vkt::Buffer AccelerationStructure::create_scratch_buffer(const Device &device, V
         if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
 
-    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     void *pNext = nullptr;
     if (buffer_device_address) {
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -1164,7 +1164,7 @@ VkSamplerYcbcrConversionInfo SamplerYcbcrConversion::ConversionInfo() {
 
 // static
 VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo(VkFormat format) {
-    auto ycbcr_create_info = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
     ycbcr_create_info.format = format;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;

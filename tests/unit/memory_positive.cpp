@@ -346,7 +346,7 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
         GTEST_SKIP() << "This test can crash drivers with threading issues";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -371,7 +371,7 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
 
             vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
 
-            auto mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
+            VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
             mem_alloc.memoryTypeIndex = 0;
             mem_alloc.allocationSize = mem_reqs.size;
             const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
@@ -412,7 +412,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
     }
 
     uint32_t queue_family_index = 0;
-    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -422,12 +422,12 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
     buffer.init_no_mem(*m_device, buffer_create_info);
     ASSERT_TRUE(buffer.initialized());
 
-    auto info = vku::InitStruct<VkDeviceBufferMemoryRequirements>();
+    VkDeviceBufferMemoryRequirements info = vku::InitStructHelper();
     info.pCreateInfo = &buffer_create_info;
-    auto memory_reqs2 = vku::InitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 memory_reqs2 = vku::InitStructHelper();
     vk::GetDeviceBufferMemoryRequirements(m_device->device(), &info, &memory_reqs2);
 
-    auto memory_info = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = memory_reqs2.memoryRequirements.size;
 
     const bool pass = m_device->phy().set_memory_type(memory_reqs2.memoryRequirements.memoryTypeBits, &memory_info, 0);
@@ -450,7 +450,7 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -467,12 +467,12 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     image.init_no_mem(*m_device, image_create_info);
     ASSERT_TRUE(image.initialized());
 
-    auto info = vku::InitStruct<VkDeviceImageMemoryRequirements>();
+    VkDeviceImageMemoryRequirements info = vku::InitStructHelper();
     info.pCreateInfo = &image_create_info;
-    auto mem_reqs = vku::InitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
     vk::GetDeviceImageMemoryRequirements(m_device->device(), &info, &mem_reqs);
 
-    auto mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = mem_reqs.memoryRequirements.size;
     const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryRequirements.memoryTypeBits, &mem_alloc, 0);

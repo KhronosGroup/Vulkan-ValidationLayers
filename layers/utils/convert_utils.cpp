@@ -225,7 +225,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
 
 safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags2 srcStageMask,
                                                            VkPipelineStageFlags2 dstStageMask) {
-    auto barrier2 = vku::InitStruct<VkImageMemoryBarrier2>();
+    VkImageMemoryBarrier2 barrier2 = vku::InitStructHelper();
 
     // As of Vulkan 1.3.153, the VkImageMemoryBarrier2 supports the same pNext structs as VkImageMemoryBarrier
     // (VkExternalMemoryAcquireUnmodifiedEXT and VkSampleLocationsInfoEXT). It means we can copy entire pNext

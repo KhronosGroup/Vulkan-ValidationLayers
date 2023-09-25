@@ -66,7 +66,7 @@ TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithFeature) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     features12.samplerMirrorClampToEdge = VK_TRUE;
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (features12.samplerMirrorClampToEdge != VK_TRUE) {

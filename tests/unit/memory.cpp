@@ -404,7 +404,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     image.init_no_mem(*m_device, image_ci);
 
     const auto mem_reqs = image.memory_requirements();
-    auto image_alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     image_alloc_info.allocationSize = mem_reqs.size;
 
     // the last argument is the "forbid" argument for set_memory_type, disallowing
@@ -500,7 +500,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     if (IsExtensionsEnabled(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME) &&
         IsExtensionsEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        auto coherent_mem_features = vku::InitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+        VkPhysicalDeviceCoherentMemoryFeaturesAMD coherent_mem_features = vku::InitStructHelper();
         GetPhysicalDeviceFeatures2(coherent_mem_features);
         ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_mem_features));
     } else {
@@ -1467,7 +1467,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_info);
     auto buffer_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
-    auto buffer_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
+    VkMemoryDedicatedAllocateInfoKHR buffer_dedicated_info = vku::InitStructHelper();
     buffer_dedicated_info.buffer = buffer.handle();
     buffer_alloc_info.pNext = &buffer_dedicated_info;
     vkt::DeviceMemory dedicated_buffer_memory;
@@ -1503,7 +1503,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     image.init_no_mem(*m_device, image_info);
     wrong_image.init_no_mem(*m_device, image_info);
 
-    auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
+    VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image.handle();
     auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
@@ -1537,7 +1537,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto aliasing_features = vku::InitStruct<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>();
+    VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV aliasing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(aliasing_features);
     if (aliasing_features.dedicatedAllocationImageAliasing != VK_TRUE) {
         GTEST_SKIP() << "dedicatedAllocationImageAliasing feature not supported";
@@ -1560,7 +1560,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     identical_image.init_no_mem(*m_device, image_info);
     post_delete_image.init_no_mem(*m_device, image_info);
 
-    auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
+    VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image->handle();
     auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image->memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
@@ -1619,7 +1619,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
+    VkPhysicalDeviceBufferAddressFeaturesEXT buffer_device_address_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
@@ -1673,7 +1673,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
+    VkPhysicalDeviceBufferAddressFeaturesEXT buffer_device_address_features = vku::InitStructHelper();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
@@ -1708,7 +1708,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
@@ -1789,7 +1789,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = vku::InitStructHelper();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
@@ -1902,7 +1902,7 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
 
-    auto coherent_memory_features_amd = vku::InitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+    VkPhysicalDeviceCoherentMemoryFeaturesAMD coherent_memory_features_amd = vku::InitStructHelper();
     coherent_memory_features_amd.deviceCoherentMemory = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_memory_features_amd));
@@ -2201,16 +2201,16 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkDeviceMemory mem;
-    auto mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = 4;
 
     // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryAllocateInfoNV
     {
-        auto export_memory_info_nv = vku::InitStruct<VkExportMemoryAllocateInfoNV>();
+        VkExportMemoryAllocateInfoNV export_memory_info_nv = vku::InitStructHelper();
         export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
-        auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
+        VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&export_memory_info_nv);
         export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
@@ -2221,11 +2221,11 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryWin32HandleInfoNV
     {
-        auto export_memory_info_win32_nv = vku::InitStruct<VkExportMemoryWin32HandleInfoNV>();
+        VkExportMemoryWin32HandleInfoNV export_memory_info_win32_nv = vku::InitStructHelper();
         export_memory_info_win32_nv.pAttributes = nullptr;
         export_memory_info_win32_nv.dwAccess = 0;
 
-        auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_win32_nv);
+        VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&export_memory_info_win32_nv);
         export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
@@ -2235,10 +2235,10 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     }
     // pNext chain includes both VkImportMemoryWin32HandleInfoKHR and VkImportMemoryWin32HandleInfoNV
     {
-        auto import_memory_info_win32_khr = vku::InitStruct<VkImportMemoryWin32HandleInfoKHR>();
+        VkImportMemoryWin32HandleInfoKHR import_memory_info_win32_khr = vku::InitStructHelper();
         import_memory_info_win32_khr.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
-        auto import_memory_info_win32_nv = vku::InitStruct<VkImportMemoryWin32HandleInfoNV>(&import_memory_info_win32_khr);
+        VkImportMemoryWin32HandleInfoNV import_memory_info_win32_nv = vku::InitStructHelper(&import_memory_info_win32_khr);
         import_memory_info_win32_nv.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00641");
@@ -2262,10 +2262,10 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>(&image_swapchain_create_info);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_swapchain_create_info);
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent = {32, 32, 1};
@@ -2275,7 +2275,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.arrayLayers = 1;
 
-    auto device_image_memory_requirements = vku::InitStruct<VkDeviceImageMemoryRequirementsKHR>();
+    VkDeviceImageMemoryRequirementsKHR device_image_memory_requirements = vku::InitStructHelper();
     device_image_memory_requirements.pCreateInfo = &image_create_info;
     device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 
@@ -2306,7 +2306,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
         GTEST_SKIP() << "Test requires disjoint support extensions";
     }
 
-    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
@@ -2317,7 +2317,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.arrayLayers = 1;
 
-    auto device_image_memory_requirements = vku::InitStruct<VkDeviceImageMemoryRequirementsKHR>();
+    VkDeviceImageMemoryRequirementsKHR device_image_memory_requirements = vku::InitStructHelper();
     device_image_memory_requirements.pCreateInfo = &image_create_info;
     device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_NONE_KHR;
 
@@ -2355,7 +2355,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
-    auto create_device_pnext = vku::InitStruct<VkDeviceGroupDeviceCreateInfo>();
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
     create_device_pnext.physicalDeviceCount = 0;
     create_device_pnext.pPhysicalDevices = nullptr;
     for (const auto &dg : physical_device_group) {

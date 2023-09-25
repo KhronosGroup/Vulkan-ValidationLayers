@@ -114,7 +114,7 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
 
         written_index += binding->count;
     }
-    auto buffer_device_address_info = vku::InitStruct<VkBufferDeviceAddressInfo>();
+    VkBufferDeviceAddressInfo buffer_device_address_info = vku::InitStructHelper();
     buffer_device_address_info.buffer = next_state->buffer;
 
     // We cannot rely on device_extensions here, since we may be enabling BDA support even

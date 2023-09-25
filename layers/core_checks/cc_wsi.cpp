@@ -34,7 +34,7 @@ static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D m
 }
 
 static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {
-    auto result = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo result = vku::InitStructHelper();
 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
@@ -337,8 +337,8 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     void *surface_caps_query_pnext = nullptr;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    auto full_screen_info_copy = vku::InitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
-    auto win32_full_screen_info_copy = vku::InitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
+    VkSurfaceFullScreenExclusiveInfoEXT full_screen_info_copy = vku::InitStructHelper();
+    VkSurfaceFullScreenExclusiveWin32InfoEXT win32_full_screen_info_copy = vku::InitStructHelper();
     const auto *full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
     if (full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
         full_screen_info_copy = *full_screen_info;
@@ -363,7 +363,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         }
     }
 #endif
-    auto present_mode_info = vku::InitStruct<VkSurfacePresentModeEXT>();
+    VkSurfacePresentModeEXT present_mode_info = vku::InitStructHelper();
     if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
         present_mode_info.presentMode = pCreateInfo->presentMode;
         present_mode_info.pNext = surface_caps_query_pnext;

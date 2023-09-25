@@ -90,13 +90,13 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state
             image_create_info.usage, image_create_info.flags, &image_state.image_format_properties);
     } else {
         command = Func::vkGetPhysicalDeviceImageFormatProperties2;
-        auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
         image_format_info.type = image_create_info.imageType;
         image_format_info.format = image_create_info.format;
         image_format_info.tiling = image_create_info.tiling;
         image_format_info.usage = image_create_info.usage;
         image_format_info.flags = image_create_info.flags;
-        auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>();
+        VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
         image_properties_result =
             DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
         image_state.image_format_properties = image_format_properties.imageFormatProperties;
@@ -632,8 +632,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
 
 // Access helper functions for external modules
 VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) const {
-    auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-    auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+    VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+    VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
     if (has_format_feature2) {
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);

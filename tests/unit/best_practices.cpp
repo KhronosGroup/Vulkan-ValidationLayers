@@ -1395,7 +1395,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     }
 
     // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
-    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
 
     if (VK_FALSE == indexing_features.descriptorBindingStorageBufferUpdateAfterBind) {
@@ -1408,7 +1408,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
-    auto flags_create_info = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = (uint32_t)flags.size();
     flags_create_info.pBindingFlags = flags.data();
 
@@ -2209,7 +2209,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     clear_range.layerCount = 1;
     clear_range.levelCount = 1;
 
-    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2262,7 +2262,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
                            nullptr, 0, nullptr, 1, &img_barrier);
 
     if (sync2) {
-        auto img_barrier2 = vku::InitStruct<VkImageMemoryBarrier2KHR>();
+        VkImageMemoryBarrier2KHR img_barrier2 = vku::InitStructHelper();
         img_barrier2.srcAccessMask = 0;
         img_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         img_barrier2.image = image.handle();
@@ -2272,7 +2272,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.subresourceRange.layerCount = 1;
         img_barrier2.subresourceRange.levelCount = 1;
 
-        auto dependency_info = vku::InitStruct<VkDependencyInfoKHR>();
+        VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
         dependency_info.imageMemoryBarrierCount = 1;
         dependency_info.pImageMemoryBarriers = &img_barrier2;
 

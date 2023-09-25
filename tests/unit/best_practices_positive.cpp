@@ -144,7 +144,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
         // Several drivers have been observed to crash on the legal null pAttachments - restrict to MockICD for now
         GTEST_SKIP() << "This test only runs on MockICD";
     }
-    auto extended_dynamic_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
         !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation ||

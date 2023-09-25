@@ -27,7 +27,7 @@ TEST_F(NegativeGraphicsLibrary, DSLs) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     dsl_binding.pImmutableSamplers = nullptr;
 
-    auto dsl_ci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &dsl_binding;
 
@@ -63,7 +63,7 @@ TEST_F(NegativeGraphicsLibrary, GPLDSLs) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     dsl_binding.pImmutableSamplers = nullptr;
 
-    auto dsl_ci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &dsl_binding;
 
@@ -109,12 +109,12 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
         pre_raster_lib.pipeline_,
         frag_shader_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615");
-    auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -140,7 +140,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = 1;
         link_info.pLibraries = &pre_raster_lib.pipeline_;
 
@@ -220,7 +220,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSState) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -248,7 +248,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -258,7 +258,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfo>();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -304,7 +304,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.pNext = &pipeline_rendering_info;
         link_info.libraryCount = 2;
         link_info.pLibraries = libraries;
@@ -328,8 +328,9 @@ TEST_F(NegativeGraphicsLibrary, DepthStencilStateIgnored) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state_features);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features =
+        vku::InitStructHelper(&extended_dynamic_state_features);
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -359,7 +360,7 @@ TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -368,12 +369,12 @@ TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfo>();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -512,7 +513,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
     VkPipeline libraries[1] = {
         vertex_input_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
@@ -582,7 +583,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = 1;
         link_info.pLibraries = &pre_raster_lib.pipeline_;
 
@@ -631,7 +632,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = 1;
         link_info.pLibraries = &pre_raster_lib.pipeline_;
 
@@ -688,11 +689,11 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
         pre_raster_lib.pipeline_,
         frag_shader_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758");
     vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
@@ -751,7 +752,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
 
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, ds2.set_};
 
-    auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo ub_ci = vku::InitStructHelper();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
     vkt::Buffer uniform_buffer(*m_device, ub_ci);
@@ -801,11 +802,11 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout_null.handle();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -831,22 +832,22 @@ TEST_F(NegativeGraphicsLibrary, PreRasterWithFS) {
 
     // Create and add a vertex shader to silence 06896
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    auto vs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+    VkShaderModuleCreateInfo vs_ci = vku::InitStructHelper();
     vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
     vs_ci.pCode = vs_spv.data();
 
-    auto vs_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+    VkPipelineShaderStageCreateInfo vs_stage_ci = vku::InitStructHelper(&vs_ci);
     vs_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vs_stage_ci.module = VK_NULL_HANDLE;
     vs_stage_ci.pName = "main";
     stages.emplace_back(vs_stage_ci);
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    auto fs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+    VkShaderModuleCreateInfo fs_ci = vku::InitStructHelper();
     fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
     fs_ci.pCode = fs_spv.data();
 
-    auto fs_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    VkPipelineShaderStageCreateInfo fs_stage_ci = vku::InitStructHelper(&fs_ci);
     // The library is not created with fragment shader state, and therefore cannot have a fragment shader
     fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fs_stage_ci.module = VK_NULL_HANDLE;
@@ -872,22 +873,22 @@ TEST_F(NegativeGraphicsLibrary, FragmentStateWithPreRaster) {
     std::vector<VkPipelineShaderStageCreateInfo> stages;
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    auto fs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+    VkShaderModuleCreateInfo fs_ci = vku::InitStructHelper();
     fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
     fs_ci.pCode = fs_spv.data();
 
-    auto fs_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    VkPipelineShaderStageCreateInfo fs_stage_ci = vku::InitStructHelper(&fs_ci);
     fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fs_stage_ci.module = VK_NULL_HANDLE;
     fs_stage_ci.pName = "main";
     stages.emplace_back(fs_stage_ci);
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    auto vs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+    VkShaderModuleCreateInfo vs_ci = vku::InitStructHelper();
     vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
     vs_ci.pCode = vs_spv.data();
 
-    auto vs_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+    VkPipelineShaderStageCreateInfo vs_stage_ci = vku::InitStructHelper(&vs_ci);
     // VK_SHADER_STAGE_VERTEX_BIT is a pre-raster shader stage, but the library will be created with only fragment shader state
     vs_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vs_stage_ci.module = VK_NULL_HANDLE;
@@ -930,7 +931,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    auto db_features = vku::InitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT db_features = vku::InitStructHelper();
     InitBasicGraphicsLibrary(&db_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -979,11 +980,11 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
     VkPipeline pipeline;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096");
@@ -1117,7 +1118,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
     const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tes_src);
     vkt::GraphicsPipelineLibraryStage tes_stage(tes_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
-    auto iasci = vku::InitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    VkPipelineInputAssemblyStateCreateInfo iasci = vku::InitStructHelper();
     iasci.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
@@ -1152,7 +1153,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         fs_lib.pipeline_,
         fo_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = static_cast<uint32_t>(libs.size());
     link_info.pLibraries = libs.data();
 
@@ -1194,7 +1195,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
 
         libs[0] = vi_patch_lib.pipeline_;
         libs[1] = pre_raster_lib.pipeline_;
-        auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08889");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
@@ -1271,7 +1272,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
 
         libs[0] = vi_lib.pipeline_;
         libs[1] = pre_raster_lib.pipeline_;
-        auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08888");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
@@ -1283,7 +1284,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
     TEST_DESCRIPTION("VK_KHR_pipeline_executable_properties with GPL");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
-    auto executable_features = vku::InitStruct<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>();
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR executable_features = vku::InitStructHelper();
     InitBasicGraphicsLibrary(&executable_features);
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1303,11 +1304,11 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
             vertex_input_lib.pipeline_,
             frag_out_lib.pipeline_,
         };
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = size(libraries);
         link_info.pLibraries = libraries;
 
-        auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06646");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
@@ -1319,7 +1320,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         vertex_input_lib.InitState();
         vertex_input_lib.CreateGraphicsPipeline(false);
 
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = 1;
         link_info.pLibraries = &vertex_input_lib.pipeline_;
 
@@ -1340,7 +1341,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
             VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
         vertex_input_lib.CreateGraphicsPipeline(false);
 
-        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
         link_info.libraryCount = 1;
         link_info.pLibraries = &vertex_input_lib.pipeline_;
 
@@ -1382,7 +1383,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     const std::array<VkDescriptorSet, 3> desc_sets_null = {ds.set_, VK_NULL_HANDLE, ds2.set_};
     const std::array<VkDescriptorSet, 3> desc_sets_empty = {ds.set_, ds_empty.set_, ds2.set_};
 
-    auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo ub_ci = vku::InitStructHelper();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
     vkt::Buffer uniform_buffer(*m_device, ub_ci);
@@ -1435,11 +1436,11 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = libraries.size();
     link_info.pLibraries = libraries.data();
 
-    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout.handle();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -1490,9 +1491,9 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);  // Pipeline cache control needed
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
-    auto pipeline_cache_control_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
-    auto shader_module_id_features =
-        vku::InitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&pipeline_cache_control_features);
+    VkPhysicalDevicePipelineCreationCacheControlFeatures pipeline_cache_control_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_id_features =
+        vku::InitStructHelper(&pipeline_cache_control_features);
     InitBasicGraphicsLibrary(&shader_module_id_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -1504,14 +1505,14 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto sm_id_create_info = vku::InitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    auto vs_ci = vku::InitStruct<VkShaderModuleCreateInfo>(&sm_id_create_info);
+    VkShaderModuleCreateInfo vs_ci = vku::InitStructHelper(&sm_id_create_info);
     vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
     vs_ci.pCode = vs_spv.data();
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&vs_ci);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     stage_ci.module = VK_NULL_HANDLE;
     stage_ci.pName = "main";
@@ -1540,7 +1541,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    auto get_identifier = vku::InitStruct<VkShaderModuleIdentifierEXT>();
+    VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
     vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
@@ -1582,11 +1583,11 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     }
     // Now use it in a gpl
     VkPipeline libraries[1] = {pipe2.pipeline_};
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&link_info);
     // no VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855");
     vkt::Pipeline exe_pipe(*m_device, pipe_ci);
@@ -1606,12 +1607,12 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto pipeline_cache_control_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    VkPhysicalDevicePipelineCreationCacheControlFeatures pipeline_cache_control_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_cache_control_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>();
+    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     stage_ci.module = VK_NULL_HANDLE;
     stage_ci.pName = "main";
@@ -1626,7 +1627,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    auto sm_id_create_info = vku::InitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = 4;
     stage_ci.pNext = &sm_id_create_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850");
@@ -1634,12 +1635,12 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     m_errorMonitor->VerifyFound();
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    auto get_identifier = vku::InitStruct<VkShaderModuleIdentifierEXT>();
+    VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884");
     vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
     m_errorMonitor->VerifyFound();
 
-    auto sm_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
+    VkShaderModuleCreateInfo sm_ci = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885");
     uint32_t code = 0;
     sm_ci.codeSize = 4;
@@ -1690,11 +1691,11 @@ TEST_F(NegativeGraphicsLibrary, Layouts) {
         frag_shader_lib.pipeline_,
         fo_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
     vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
@@ -1757,11 +1758,11 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
         frag_shader_lib.pipeline_,
         fo_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
     exe_ci.layout = pipeline_layout_exe.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
@@ -1800,11 +1801,11 @@ TEST_F(NegativeGraphicsLibrary, NullLibrary) {
         VK_NULL_HANDLE,
         frag_out_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
@@ -1841,11 +1842,11 @@ TEST_F(NegativeGraphicsLibrary, BadLibrary) {
         bad_pipeline,
         frag_out_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
@@ -1899,7 +1900,7 @@ TEST_F(NegativeGraphicsLibrary, DynamicPrimitiveTopolgyIngoreState) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
@@ -1908,7 +1909,7 @@ TEST_F(NegativeGraphicsLibrary, DynamicPrimitiveTopolgyIngoreState) {
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 1;
 
-    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);

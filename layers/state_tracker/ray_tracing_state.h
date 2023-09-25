@@ -57,10 +57,10 @@ class ACCELERATION_STRUCTURE_STATE_NV : public BINDABLE {
   private:
     static VkMemoryRequirements GetMemReqs(VkDevice device, VkAccelerationStructureNV as,
                                            VkAccelerationStructureMemoryRequirementsTypeNV mem_type) {
-        auto req_info = vku::InitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
+        VkAccelerationStructureMemoryRequirementsInfoNV req_info = vku::InitStructHelper();
         req_info.type = mem_type;
         req_info.accelerationStructure = as;
-        auto requirements = vku::InitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 requirements = vku::InitStructHelper();
         DispatchGetAccelerationStructureMemoryRequirementsNV(device, &req_info, &requirements);
         return requirements.memoryRequirements;
     }

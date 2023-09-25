@@ -274,12 +274,12 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
     if (external_memory_info && external_memory_info->handleTypes) {
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
-        auto external_buffer_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
+        VkPhysicalDeviceExternalBufferInfo external_buffer_info = vku::InitStructHelper();
         external_buffer_info.flags = pCreateInfo->flags;
         // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
         external_buffer_info.usage = VkBufferUsageFlags(pCreateInfo->usage);
         external_buffer_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
-        auto external_buffer_properties = vku::InitStruct<VkExternalBufferProperties>();
+        VkExternalBufferProperties external_buffer_properties = vku::InitStructHelper();
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_buffer_info, &external_buffer_properties);
         const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 

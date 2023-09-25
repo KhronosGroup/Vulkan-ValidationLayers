@@ -39,7 +39,7 @@ bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
         printf("At least Vulkan version 1.1 is required for GPU-AV\n");
         return false;
     }
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>();
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
     if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
         printf("fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV\n");
@@ -72,10 +72,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
-    auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
+    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
     maintenance4_features.maintenance4 = true;
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&maintenance4_features);
-    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&maintenance4_features);
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     if (descriptor_indexing) {
         maintenance4_features.pNext = &indexing_features;
         GetPhysicalDeviceFeatures2(features2);
@@ -536,7 +536,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    auto pipeline_robustness_features = vku::InitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    VkPhysicalDevicePipelineRobustnessFeaturesEXT pipeline_robustness_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
     features2.features.robustBufferAccess = VK_FALSE;
     if (!pipeline_robustness_features.pipelineRobustness) {
@@ -570,7 +570,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     )glsl";
 
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
-    auto pipeline_robustness_ci = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_ci = vku::InitStructHelper();
     VkPipelineObj robust_pipe(m_device);
     robust_pipe.AddShader(&vs);
     robust_pipe.AddDefaultColorAttachment();
@@ -624,7 +624,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     const bool multi_draw = IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>(multi_draw ? &multi_draw_features : nullptr);
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
@@ -823,11 +823,11 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     dynamic_rendering_features.dynamicRendering = VK_TRUE;
-    auto shader_object_features = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
     shader_object_features.shaderObject = VK_TRUE;
-    auto features = vku::InitStruct<VkPhysicalDeviceFeatures2>();  // Make sure robust buffer access is not enabled
+    VkPhysicalDeviceFeatures2 features = vku::InitStructHelper();  // Make sure robust buffer access is not enabled
     if (shader_objects) {
         features.pNext = &shader_object_features;
     }
@@ -1048,7 +1048,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     VkResult err;
     const bool mesh_shader_supported = IsExtensionsEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     auto bda_features =
         vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(mesh_shader_supported ? &mesh_shader_features : nullptr);
 
@@ -1065,7 +1065,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     uint32_t qfi = 0;
-    auto bci = vku::InitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo bci = vku::InitStructHelper();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 12;  // 64 bit pointer + int
     bci.queueFamilyIndexCount = 1;
@@ -1077,7 +1077,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     // Make another buffer to write to
     bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
-    auto allocate_flag_info = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
 
@@ -1087,12 +1087,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
-    auto hinfo = vku::InitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &hinfo;
 
     struct TestCase {
@@ -1111,7 +1111,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         push_constant_ranges.offset = 0;
         push_constant_ranges.size = 2 * sizeof(VkDeviceAddress);
 
-        auto plci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
+        VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
         plci = vku::InitStructHelper();
         plci.pushConstantRangeCount = 1;
         plci.pPushConstantRanges = &push_constant_ranges;
@@ -1181,7 +1181,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         buffer_test_buffer_info.offset = 0;
         buffer_test_buffer_info.range = sizeof(uint32_t);
 
-        auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
+        VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -1252,7 +1252,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         push_constant_ranges[0].offset = 0;
         push_constant_ranges[0].size = 2 * sizeof(VkDeviceAddress);
 
-        auto plci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
+        VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
         plci.pushConstantRangeCount = push_constant_range_count;
         plci.pPushConstantRanges = push_constant_ranges;
         plci.setLayoutCount = 0;
@@ -1444,9 +1444,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     props.limits.maxDrawIndirectCount = 1;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    auto features_13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
-    auto features_12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>(&features_13);
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&features_12);
+    VkPhysicalDeviceVulkan13Features features_13 = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan12Features features_12 = vku::InitStructHelper(&features_13);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&features_12);
     GetPhysicalDeviceFeatures2(features2);
     if (!features_12.drawIndirectCount) {
         GTEST_SKIP() << "drawIndirectCount not supported";
@@ -1665,7 +1665,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>();
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
     features2.features.drawIndirectFirstInstance = VK_FALSE;
 
@@ -1775,13 +1775,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
-    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
-    auto inline_uniform_block_features = vku::InitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features = vku::InitStructHelper(&indexing_features);
     auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);
     if (!indexing_features.descriptorBindingPartiallyBound || !inline_uniform_block_features.inlineUniformBlock) {
         GTEST_SKIP() << "Not all features supported";
     }
-    auto inline_uniform_props = vku::InitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
+    VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(inline_uniform_props);
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -2255,8 +2255,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
 
-    auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
-    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&robustness2_features);
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
+    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&robustness2_features);
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!robustness2_features.nullDescriptor) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
@@ -2436,8 +2436,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
-    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&robustness2_features);
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
+    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&robustness2_features);
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!robustness2_features.nullDescriptor) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
@@ -2523,7 +2523,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dyn_state = vku::InitStructHelper();
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);

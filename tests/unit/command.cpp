@@ -204,7 +204,7 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -215,10 +215,10 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     secondary.ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     secondary.end();
 
-    auto cb_info = vku::InitStruct<VkCommandBufferSubmitInfoKHR>();
+    VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = secondary.handle();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo2KHR>();
+    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -269,7 +269,7 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -285,10 +285,10 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
 
     // Bypass framework since it does the waits automatically
     VkResult err = VK_SUCCESS;
-    auto cb_info = vku::InitStruct<VkCommandBufferSubmitInfoKHR>();
+    VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = m_commandBuffer->handle();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo2KHR>();
+    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -855,7 +855,7 @@ TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!multi_draw_features.multiDraw) {
         GTEST_SKIP() << "Test requires (unsupported) multiDraw";
@@ -1062,7 +1062,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(indexing_features);
     if (!indexing_features.descriptorBindingSampledImageUpdateAfterBind) {
         GTEST_SKIP() << "Test requires (unsupported)  descriptorBindingSampledImageUpdateAfterBind";
@@ -1087,7 +1087,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorBindingFlagsEXT binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-    auto flags_create_info = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = 1;
     flags_create_info.pBindingFlags = &binding_flags;
 
@@ -1122,7 +1122,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewType-07752");
@@ -3174,7 +3174,7 @@ TEST_F(NegativeCommand, CopyImageFormatSizeMismatch) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mp_features = vku::InitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR>();
+    VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR mp_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(mp_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -4489,7 +4489,7 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
     vkt::CommandPool command_pool_b(*m_device, pool_create_info);
     ASSERT_TRUE(command_pool_b.initialized());
 
-    auto command_buffer_allocate_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.commandPool = command_pool_a.handle();
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -4500,12 +4500,12 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     vkt::CommandBuffer command_buffer_secondary(*m_device, command_buffer_allocate_info);
 
-    auto cmdbuff_ii = vku::InitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper();
     cmdbuff_ii.renderPass = m_renderPass;
     cmdbuff_ii.subpass = 0;
     cmdbuff_ii.framebuffer = m_framebuffer;
 
-    auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &cmdbuff_ii;
 
     // secondary
@@ -4697,10 +4697,10 @@ TEST_F(NegativeCommand, MultiDraw) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(multi_draw_features);
 
-    auto multi_draw_properties = vku::InitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
+    VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multi_draw_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
@@ -4793,8 +4793,8 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4842,8 +4842,8 @@ TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4885,8 +4885,8 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -5311,7 +5311,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
     }
 
     // Create a device that enables exclusive scissor but disables multiViewport
-    auto exclusive_scissor_features = vku::InitStruct<VkPhysicalDeviceExclusiveScissorFeaturesNV>();
+    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(exclusive_scissor_features);
     features2.features.multiViewport = VK_FALSE;
 
@@ -5581,17 +5581,17 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
 
-    auto imageview_format_info = vku::InitStruct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
+    VkPhysicalDeviceImageViewImageFormatInfoEXT imageview_format_info = vku::InitStructHelper();
     imageview_format_info.imageViewType = imageViewType;
-    auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&imageview_format_info);
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&imageview_format_info);
     image_format_info.type = image_ci.imageType;
     image_format_info.format = image_ci.format;
     image_format_info.tiling = image_ci.tiling;
     image_format_info.usage = image_ci.usage;
     image_format_info.flags = image_ci.flags;
 
-    auto filter_cubic_props = vku::InitStruct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
-    auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>(&filter_cubic_props);
+    VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props = vku::InitStructHelper();
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&filter_cubic_props);
 
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
 
@@ -5603,13 +5603,13 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     image.Init(image_ci);
     VkImageView imageView = image.targetView(format, imageViewType);
 
-    auto sampler_ci = vku::InitStruct<VkSamplerCreateInfo>();
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
     vkt::Sampler sampler(*m_device, sampler_ci);
     ASSERT_TRUE(sampler.initialized());
 
-    auto reduction_mode_ci = vku::InitStruct<VkSamplerReductionModeCreateInfo>();
+    VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
     reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
     sampler_ci.pNext = &reduction_mode_ci;
     vkt::Sampler sampler_reduction(*m_device, sampler_ci);
@@ -5692,7 +5692,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     VkImageView imageView = image.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
                                              VK_REMAINING_ARRAY_LAYERS, imageViewType);
 
-    auto sampler_ci = vku::InitStruct<VkSamplerCreateInfo>();
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
     vkt::Sampler sampler(*m_device, sampler_ci);
@@ -6076,7 +6076,7 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
         0,                                     // dependencyFlags
     };
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.attachmentCount = 1;
     rpci.pAttachments = attach;
     rpci.subpassCount = 2;
@@ -6199,7 +6199,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     ASSERT_TRUE(image.initialized());
     vkt::Buffer dst_buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer src_buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    auto copy_region = vku::InitStruct<VkImageCopy2>();
+    VkImageCopy2 copy_region = vku::InitStructHelper();
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.layerCount = 1;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -6208,7 +6208,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     copy_region.extent.width = 1;
     copy_region.extent.height = 1;
     copy_region.extent.depth = 1;
-    auto copy_image_info = vku::InitStruct<VkCopyImageInfo2>();
+    VkCopyImageInfo2 copy_image_info = vku::InitStructHelper();
     copy_image_info.srcImage = image.handle();
     copy_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     copy_image_info.dstImage = image.handle();
@@ -6219,10 +6219,10 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-aspect-06663");
     vk::CmdCopyImage2(m_commandBuffer->handle(), &copy_image_info);
     m_errorMonitor->VerifyFound();
-    auto copy_buffer = vku::InitStruct<VkBufferCopy2>();
+    VkBufferCopy2 copy_buffer = vku::InitStructHelper();
     copy_buffer.dstOffset = 4;
     copy_buffer.size = 4;
-    auto copy_buffer_info = vku::InitStruct<VkCopyBufferInfo2>();
+    VkCopyBufferInfo2 copy_buffer_info = vku::InitStructHelper();
     copy_buffer_info.srcBuffer = dst_buffer.handle();
     copy_buffer_info.dstBuffer = dst_buffer.handle();
     copy_buffer_info.regionCount = 1;
@@ -6230,7 +6230,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-srcBuffer-00118");
     vk::CmdCopyBuffer2(m_commandBuffer->handle(), &copy_buffer_info);
     m_errorMonitor->VerifyFound();
-    auto bic_region = vku::InitStruct<VkBufferImageCopy2>();
+    VkBufferImageCopy2 bic_region = vku::InitStructHelper();
     bic_region.bufferRowLength = 128;
     bic_region.bufferImageHeight = 128;
     bic_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -6247,7 +6247,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2-dstImage-00177");
     vk::CmdCopyBufferToImage2(m_commandBuffer->handle(), &buffer_image_info);
     m_errorMonitor->VerifyFound();
-    auto image_buffer_info = vku::InitStruct<VkCopyImageToBufferInfo2>();
+    VkCopyImageToBufferInfo2 image_buffer_info = vku::InitStructHelper();
     image_buffer_info.dstBuffer = src_buffer.handle();
     image_buffer_info.srcImage = image.handle();
     image_buffer_info.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -6256,7 +6256,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToBufferInfo2-dstBuffer-00191");
     vk::CmdCopyImageToBuffer2(m_commandBuffer->handle(), &image_buffer_info);
     m_errorMonitor->VerifyFound();
-    auto blit_region = vku::InitStruct<VkImageBlit2>();
+    VkImageBlit2 blit_region = vku::InitStructHelper();
     blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blit_region.srcSubresource.baseArrayLayer = 0;
     blit_region.srcSubresource.layerCount = 1;
@@ -6269,7 +6269,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     blit_region.srcOffsets[1] = {31, 31, 1};
     blit_region.dstOffsets[0] = {32, 32, 0};
     blit_region.dstOffsets[1] = {64, 64, 1};
-    auto blit_image_info = vku::InitStruct<VkBlitImageInfo2>();
+    VkBlitImageInfo2 blit_image_info = vku::InitStructHelper();
     blit_image_info.srcImage = image.handle();
     blit_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     blit_image_info.dstImage = image.handle();
@@ -6280,7 +6280,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBlitImageInfo2-dstImage-00224");
     vk::CmdBlitImage2(m_commandBuffer->handle(), &blit_image_info);
     m_errorMonitor->VerifyFound();
-    auto resolve_region = vku::InitStruct<VkImageResolve2>();
+    VkImageResolve2 resolve_region = vku::InitStructHelper();
     resolve_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     resolve_region.srcSubresource.mipLevel = 0;
     resolve_region.srcSubresource.baseArrayLayer = 0;
@@ -6298,7 +6298,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     resolve_region.extent.width = 1;
     resolve_region.extent.height = 1;
     resolve_region.extent.depth = 1;
-    auto resolve_image_info = vku::InitStruct<VkResolveImageInfo2>();
+    VkResolveImageInfo2 resolve_image_info = vku::InitStructHelper();
     resolve_image_info.srcImage = image.handle();
     resolve_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     resolve_image_info.dstImage = image2.handle();
@@ -6566,16 +6566,16 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
 
     vkt::RenderPass render_pass(*m_device, rp_ci);
 
-    auto depth_state_info = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo depth_state_info = vku::InitStructHelper();
     depth_state_info.depthTestEnable = VK_TRUE;
     depth_state_info.depthWriteEnable = VK_TRUE;
 
-    auto stencil_state_info = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo stencil_state_info = vku::InitStructHelper();
     stencil_state_info.front.failOp = VK_STENCIL_OP_ZERO;
     stencil_state_info.front.writeMask = 1;
     stencil_state_info.back.writeMask = 1;
 
-    auto stencil_disabled_state_info = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo stencil_disabled_state_info = vku::InitStructHelper();
     stencil_disabled_state_info.front.failOp = VK_STENCIL_OP_ZERO;
     stencil_disabled_state_info.front.writeMask = 1;
     stencil_disabled_state_info.back.writeMask = 0;
@@ -7120,7 +7120,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
         m_renderTargets[0]->width(), m_renderTargets[0]->height(), m_renderTargets[0]->create_info().mipLevels, 4,
         m_renderTargets[0]->format(), m_renderTargets[0]->usage(), VK_IMAGE_TILING_OPTIMAL);
     render_target.Init(render_target_ci, 0);
-    auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = render_target.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = render_target_ci.format;
@@ -7141,7 +7141,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
     m_renderPassBeginInfo.framebuffer = framebuffer.handle();
 
     // Create secondary command buffer
-    auto secondary_cmd_buffer_alloc_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo secondary_cmd_buffer_alloc_info = vku::InitStructHelper();
     secondary_cmd_buffer_alloc_info.commandPool = m_commandPool->handle();
     secondary_cmd_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     secondary_cmd_buffer_alloc_info.commandBufferCount = 1;

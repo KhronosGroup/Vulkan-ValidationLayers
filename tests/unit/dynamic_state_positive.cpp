@@ -22,7 +22,7 @@ void DynamicStateTest::InitBasicExtendedDynamicState() {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
@@ -83,7 +83,7 @@ TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
@@ -115,7 +115,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto vertex_input_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
         GTEST_SKIP() << "Feature vertexInputDynamicState is not supported.";
@@ -127,7 +127,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     // Fill with bad data as should be ignored with dynamic state
     VkVertexInputBindingDescription input_binding = {5, 7, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attrib = {5, 7, VK_FORMAT_UNDEFINED, 9};
-    auto vi_ci = vku::InitStruct<VkPipelineVertexInputStateCreateInfo>();
+    VkPipelineVertexInputStateCreateInfo vi_ci = vku::InitStructHelper();
     vi_ci.pVertexBindingDescriptions = &input_binding;
     vi_ci.vertexBindingDescriptionCount = 1;
     vi_ci.pVertexAttributeDescriptions = &input_attrib;
@@ -178,8 +178,9 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto extdyn_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-    auto vertex_input_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(&extdyn_features);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extdyn_features = vku::InitStructHelper();
+    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features =
+        vku::InitStructHelper(&extdyn_features);
     auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
 
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
@@ -236,8 +237,8 @@ TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) 
         GTEST_SKIP() << "At least Vulkan 1.1 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(&maintenance5_features);
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
 
@@ -262,7 +263,7 @@ TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // pass in struct, but don't set the dynamic state in the pipeline
-    auto discard_rect_ci = vku::InitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
     discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
     discard_rect_ci.discardRectangleCount = 4;
     std::vector<VkRect2D> discard_rectangles(4);
@@ -292,7 +293,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     }
 
     // Extension enabed as a dependency of VK_EXT_color_write_enable
-    auto color_write_features = vku::InitStruct<VkPhysicalDeviceColorWriteEnableFeaturesEXT>();
+    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(color_write_features);
     if (!color_write_features.colorWriteEnable) {
         GTEST_SKIP() << "colorWriteEnable feature not supported";
@@ -371,7 +372,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
-    auto ds_state = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     ds_state.depthWriteEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this);
@@ -405,7 +406,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
-    auto ds_state = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT);
@@ -437,7 +438,7 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto extended_dynamic_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
@@ -505,9 +506,9 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto feedback_loop_dynamic_features = vku::InitStruct<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT>();
-    auto feedback_loop_features =
-        vku::InitStruct<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(&feedback_loop_dynamic_features);
+    VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT feedback_loop_dynamic_features = vku::InitStructHelper();
+    VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT feedback_loop_features =
+        vku::InitStructHelper(&feedback_loop_dynamic_features);
     GetPhysicalDeviceFeatures2(feedback_loop_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &feedback_loop_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -542,9 +543,9 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto extended_dynamic_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
-    auto depth_bias_control_features =
-        vku::InitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(&extended_dynamic_state2_features);
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
+    VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features =
+        vku::InitStructHelper(&extended_dynamic_state2_features);
     auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
 
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
@@ -564,7 +565,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
-    auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
+    VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
@@ -573,7 +574,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
 
     vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_TRUE);
 
-    auto depth_bias_info = vku::InitStruct<VkDepthBiasInfoEXT>();
+    VkDepthBiasInfoEXT depth_bias_info = vku::InitStructHelper();
     depth_bias_info.depthBiasConstantFactor = 1.0f;
     depth_bias_info.depthBiasClamp = 1.0f;
     depth_bias_info.depthBiasSlopeFactor = 1.0f;
@@ -602,9 +603,9 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto extended_dynamic_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
-    auto depth_bias_control_features =
-        vku::InitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(&extended_dynamic_state2_features);
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
+    VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features =
+        vku::InitStructHelper(&extended_dynamic_state2_features);
     auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
 
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
@@ -624,7 +625,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
-    auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
+    VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
@@ -633,7 +634,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
 
     vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_TRUE);
 
-    auto depth_bias_info = vku::InitStruct<VkDepthBiasInfoEXT>();
+    VkDepthBiasInfoEXT depth_bias_info = vku::InitStructHelper();
     depth_bias_info.depthBiasConstantFactor = 1.0f;
     depth_bias_info.depthBiasClamp = 0.0f;  // depthBiasClamp feature is disabled, so depth_bias_info.depthBiasClamp must be 0
     depth_bias_info.depthBiasSlopeFactor = 1.0f;
@@ -665,9 +666,9 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto extended_dynamic_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
-    auto depth_bias_control_features =
-        vku::InitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(&extended_dynamic_state2_features);
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
+    VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features =
+        vku::InitStructHelper(&extended_dynamic_state2_features);
     auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
 
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
@@ -694,7 +695,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
-    auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
+    VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
@@ -702,7 +703,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
 
     vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_TRUE);
 
-    auto depth_bias_info = vku::InitStruct<VkDepthBiasInfoEXT>();
+    VkDepthBiasInfoEXT depth_bias_info = vku::InitStructHelper();
     depth_bias_info.depthBiasConstantFactor = 1.0f;
     depth_bias_info.depthBiasClamp = 1.0f;
     depth_bias_info.depthBiasSlopeFactor = 1.0f;
@@ -712,7 +713,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // Without correct state tracking, VUID-vkCmdDraw-None-07834 would be thrown here and in the follow-up calls
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    auto depth_bias_representation = vku::InitStruct<VkDepthBiasRepresentationInfoEXT>();
+    VkDepthBiasRepresentationInfoEXT depth_bias_representation = vku::InitStructHelper();
     depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
     depth_bias_representation.depthBiasExact = VK_TRUE;
     depth_bias_info.pNext = &depth_bias_representation;
@@ -732,7 +733,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
 TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to false so its not checked.");
 
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     InitBasicExtendedDynamicState3(extended_dynamic_state_features);
     if (::testing::Test::IsSkipped()) return;
     if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
@@ -749,7 +750,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    auto ms_state_ci = vku::InitStruct<VkPipelineMultisampleStateCreateInfo>();
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;  // should be ignored
 
@@ -772,7 +773,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
 TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
     TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to true, but have component set.");
 
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     InitBasicExtendedDynamicState3(extended_dynamic_state_features);
     if (::testing::Test::IsSkipped()) return;
     if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
@@ -802,7 +803,7 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnored) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto extended_dynamic_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
     if (!extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3RasterizationSamples";
@@ -831,7 +832,7 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnored) {
 
 TEST_F(PositiveDynamicState, MultisampleStateIgnoredAlphaToOne) {
     TEST_DESCRIPTION("Ignore null pMultisampleState with alphaToOne enabled");
-    auto extended_dynamic_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
     InitBasicExtendedDynamicState3(extended_dynamic_state3_features);
     if (::testing::Test::IsSkipped()) return;
     if (!extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples) {
@@ -865,16 +866,16 @@ TEST_F(PositiveDynamicState, InputAssemblyStateIgnored) {
     TEST_DESCRIPTION("Ignore null pInputAssemblyState");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-    auto extended_dynamic_state2_features =
-        vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>(&extended_dynamic_state_features);
-    auto extended_dynamic_state3_features =
-        vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features =
+        vku::InitStructHelper(&extended_dynamic_state_features);
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
+        vku::InitStructHelper(&extended_dynamic_state2_features);
     InitBasicExtendedDynamicState3(extended_dynamic_state3_features);
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto dynamic_state_3_props = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
     if (!dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
@@ -896,7 +897,7 @@ TEST_F(PositiveDynamicState, ViewportStateIgnored) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -913,9 +914,9 @@ TEST_F(PositiveDynamicState, ViewportStateIgnored) {
 TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
     TEST_DESCRIPTION("Ignore null pColorBlendState");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    auto extended_dynamic_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
-    auto extended_dynamic_state3_features =
-        vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
+        vku::InitStructHelper(&extended_dynamic_state2_features);
     InitBasicExtendedDynamicState3(extended_dynamic_state3_features);
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -958,7 +959,7 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
 

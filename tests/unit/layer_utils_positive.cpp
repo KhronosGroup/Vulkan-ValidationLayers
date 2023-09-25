@@ -21,7 +21,7 @@ class PositiveLayerUtils : public VkPositiveLayerTest {};
 TEST_F(PositiveLayerUtils, GetEffectiveExtent) {
     TEST_DESCRIPTION("Test unlikely GetEffectiveExtent edge cases");
 
-    auto ci = vku::InitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     VkExtent3D extent = {};
 
     // Return zero extent if mip level doesn't exist

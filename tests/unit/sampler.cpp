@@ -529,7 +529,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>();
+    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(features11);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         GTEST_SKIP() << "SamplerYcbcrConversion not supported";
@@ -742,7 +742,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto border_color_features = vku::InitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
+    VkPhysicalDeviceCustomBorderColorFeaturesEXT border_color_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(border_color_features);
     if (border_color_features.customBorderColors != VK_TRUE) {
         GTEST_SKIP() << "customBorderColors feature not supported";
@@ -778,7 +778,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    auto custom_properties = vku::InitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
+    VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_properties = vku::InitStructHelper();
     auto prop2 = GetPhysicalDeviceProperties2(custom_properties);
 
     if ((custom_properties.maxCustomBorderColorSamplers <= 0xFFFF) &&
@@ -808,7 +808,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto border_color_features = vku::InitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
+    VkPhysicalDeviceCustomBorderColorFeaturesEXT border_color_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(border_color_features);
     if (!border_color_features.customBorderColors || !border_color_features.customBorderColorWithoutFormat) {
         GTEST_SKIP() << "Custom border color feature not supported";
@@ -889,8 +889,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     // Verify that it is allowed on this implementation if
     // VK_KHR_format_feature_flags2 is available.
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
@@ -989,8 +989,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     // Verify that it is allowed on this implementation if
     // VK_KHR_format_feature_flags2 is available.
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
@@ -1341,7 +1341,7 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
         GTEST_SKIP() << "Test requires at least Vulkan 1.2";
     }
 
-    auto sampler_reduction_mode_ci = vku::InitStruct<VkSamplerReductionModeCreateInfo>();
+    VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = vku::InitStructHelper();
     sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 
     auto sampler_ci = SafeSaneSamplerCreateInfo();
@@ -1379,7 +1379,7 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto non_seamless_cube_map_features = vku::InitStruct<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT>();
+    VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT non_seamless_cube_map_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(non_seamless_cube_map_features);
     non_seamless_cube_map_features.nonSeamlessCubeMap = false;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1440,7 +1440,7 @@ TEST_F(NegativeSampler, CustomBorderColorsFeature) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_CUSTOM_EXT;
 
-    auto custom_color_cinfo = vku::InitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
+    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
     custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
     sampler_info.pNext = &custom_color_cinfo;
 

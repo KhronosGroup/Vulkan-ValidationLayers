@@ -43,7 +43,7 @@ bool CoreChecks::OutsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const
 
 std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                              const VkVideoProfileListInfoKHR *profile_list) const {
-    auto format_info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+    VkPhysicalDeviceVideoFormatInfoKHR format_info = vku::InitStructHelper();
     format_info.imageUsage = image_usage;
     format_info.pNext = profile_list;
 
@@ -57,7 +57,7 @@ std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkI
 
 std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                              const VkVideoProfileInfoKHR *profile) const {
-    auto profile_list = vku::InitStruct<VkVideoProfileListInfoKHR>();
+    VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     profile_list.profileCount = 1;
     profile_list.pProfiles = profile;
 

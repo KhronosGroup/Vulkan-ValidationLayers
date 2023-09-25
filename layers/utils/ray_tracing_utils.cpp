@@ -30,7 +30,7 @@ VkDeviceSize ComputeScratchSize(const VkDevice device, const VkAccelerationStruc
     for (uint32_t build_range_i = 0; build_range_i < build_info.geometryCount; build_range_i++) {
         primitive_counts[build_range_i] = range_infos[build_range_i].primitiveCount;
     }
-    auto size_info = vku::InitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+    VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
     DispatchGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info,
                                                   primitive_counts.data(), &size_info);
     switch (build_info.mode) {

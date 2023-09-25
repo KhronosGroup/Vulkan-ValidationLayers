@@ -397,7 +397,7 @@ class VkImageObj : public vkt::Image {
     VkImage image() const { return handle(); }
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const {
-        auto ci = vku::InitStruct<VkImageViewCreateInfo>();
+        VkImageViewCreateInfo ci = vku::InitStructHelper();
         ci.image = handle();
         ci.format = format();
         ci.viewType = VK_IMAGE_VIEW_TYPE_2D;

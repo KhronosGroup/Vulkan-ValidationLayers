@@ -384,7 +384,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     }
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
     synchronization2.synchronization2 = VK_TRUE;
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
     features2.pNext = &synchronization2;
     InitState(nullptr, &features2);
     if (synchronization2.synchronization2 != VK_TRUE) {

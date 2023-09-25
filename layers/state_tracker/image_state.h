@@ -406,7 +406,7 @@ class SURFACE_STATE : public BASE_NODE {
 
     VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
     VkPhysicalDeviceSurfaceInfo2KHR GetSurfaceInfo2(const void *surface_info2_pnext = nullptr) const {
-        auto surface_info2 = vku::InitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper();
         surface_info2.pNext = surface_info2_pnext;
         surface_info2.surface = surface();
         return surface_info2;

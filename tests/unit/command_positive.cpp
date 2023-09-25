@@ -147,10 +147,10 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    auto hinfo = vku::InitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     hinfo.renderPass = renderPass();
 
-    auto info = vku::InitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo info = vku::InitStructHelper();
     info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     info.pInheritanceInfo = &hinfo;
 
@@ -440,7 +440,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     features12.drawIndirectCount = VK_TRUE;
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (features12.drawIndirectCount != VK_TRUE) {
@@ -757,13 +757,13 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
         vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
         constexpr int command_buffers_per_pool = 4;
-        auto commands_allocate_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
+        VkCommandBufferAllocateInfo commands_allocate_info = vku::InitStructHelper();
         commands_allocate_info.commandPool = pool.handle();
         commands_allocate_info.commandBufferCount = command_buffers_per_pool;
         commands_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        const auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
+        const VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
 
-        auto label = vku::InitStruct<VkDebugUtilsLabelEXT>();
+        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
         label.pLabelName = "Test label";
 
         constexpr int iteration_count = 1000;
@@ -924,7 +924,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffer) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     m_commandBuffer->begin();
 
-    auto label = vku::InitStruct<VkDebugUtilsLabelEXT>();
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "test";
     vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
     vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
@@ -933,7 +933,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffer) {
 
     const std::array command_buffers = {m_commandBuffer->handle()};
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = size32(command_buffers);
     submit_info.pCommandBuffers = command_buffers.data();
 
@@ -956,7 +956,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
 
     // Start DebugLabel on 1 command buffer
     {
-        auto label = vku::InitStruct<VkDebugUtilsLabelEXT>();
+        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
         label.pLabelName = "test";
         command_buffer_start.begin();
         vk::CmdBeginDebugUtilsLabelEXT(command_buffer_start.handle(), &label);
@@ -972,7 +972,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
 
     const std::array command_buffers = {command_buffer_start.handle(), command_buffer_end.handle()};
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = size32(command_buffers);
     submit_info.pCommandBuffers = command_buffers.data();
 
@@ -991,7 +991,7 @@ TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {
     VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
     {
-        auto label = vku::InitStruct<VkDebugUtilsLabelEXT>();
+        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
         label.pLabelName = "test";
         vk::CmdBeginDebugUtilsLabelEXT(cb, &label);
         vk::CmdEndDebugUtilsLabelEXT(cb);
@@ -1012,7 +1012,7 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
         GTEST_SKIP() << "At least Vulkan 1.1 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
@@ -1068,7 +1068,7 @@ TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
         GTEST_SKIP() << "At least Vulkan 1.1 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
@@ -1128,8 +1128,8 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1179,8 +1179,8 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

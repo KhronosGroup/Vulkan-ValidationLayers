@@ -327,7 +327,7 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, 
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
                               const VkImageMemoryBarrier2KHR *img_barrier) {
     cb->begin();
-    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
     dep_info.pBufferMemoryBarriers = buf_barrier;
     dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
@@ -399,8 +399,8 @@ VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, 
     const VkFormat first_vk_format = VK_FORMAT_R4G4_UNORM_PACK8;
     VkFormat return_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format = first_vk_format; format < first_compressed_format; format = static_cast<VkFormat>(format + 1)) {
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
-        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(gpu, format, &fmt_props_2);
         auto features = (tiling == VK_IMAGE_TILING_LINEAR) ? fmt_props_3.linearTilingFeatures : fmt_props_3.optimalTilingFeatures;
         if ((features & undesired_features) == 0) {
@@ -416,9 +416,9 @@ bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHan
     constexpr auto export_import_flags =
         VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR;
 
-    auto info = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    VkPhysicalDeviceExternalSemaphoreInfo info = vku::InitStructHelper();
     info.handleType = handle_type;
-    auto properties = vku::InitStruct<VkExternalSemaphoreProperties>();
+    VkExternalSemaphoreProperties properties = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &info, &properties);
     return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
 }
@@ -825,8 +825,8 @@ bool VkLayerTest::IsDriver(VkDriverId driver_id) {
     if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
-        auto driver_properties = vku::InitStruct<VkPhysicalDeviceDriverProperties>();
-        auto physical_device_properties2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+        VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&driver_properties);
         GetPhysicalDeviceProperties2(physical_device_properties2);
         return (driver_properties.driverID == driver_id);
     }
@@ -1423,7 +1423,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     buffer_barrier_.srcQueueFamilyIndex = src;
     buffer_barrier_.dstQueueFamilyIndex = dst;
 
-    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buffer_barrier_;
     dep_info.imageMemoryBarrierCount = 1;

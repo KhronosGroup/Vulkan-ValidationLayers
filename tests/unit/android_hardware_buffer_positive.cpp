@@ -402,18 +402,18 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     {
-        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
         external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&external_image_info);
         image_info.format = image_create_info.format;
         image_info.type = image_create_info.imageType;
         image_info.tiling = image_create_info.tiling;
         image_info.usage = image_create_info.usage;
         image_info.flags = image_create_info.flags;
 
-        auto ahb_usage = vku::InitStruct<VkAndroidHardwareBufferUsageANDROID>();
-        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>(&ahb_usage);
-        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
+        VkAndroidHardwareBufferUsageANDROID ahb_usage = vku::InitStructHelper();
+        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper(&ahb_usage);
+        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
 
         if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             AHardwareBuffer_release(ahb);
@@ -508,18 +508,18 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     {
-        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
         external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&external_image_info);
         image_info.format = image_create_info.format;
         image_info.type = image_create_info.imageType;
         image_info.tiling = image_create_info.tiling;
         image_info.usage = image_create_info.usage;
         image_info.flags = image_create_info.flags;
 
-        auto ahb_usage = vku::InitStruct<VkAndroidHardwareBufferUsageANDROID>();
-        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>(&ahb_usage);
-        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
+        VkAndroidHardwareBufferUsageANDROID ahb_usage = vku::InitStructHelper();
+        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper(&ahb_usage);
+        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
 
         if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             AHardwareBuffer_release(ahb);

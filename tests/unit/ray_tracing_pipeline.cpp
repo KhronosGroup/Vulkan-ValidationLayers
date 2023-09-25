@@ -25,7 +25,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
@@ -184,7 +184,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
@@ -679,7 +679,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
@@ -789,7 +789,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     }
 
     if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
-        auto ray_tracing_properties = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
         GetPhysicalDeviceProperties2(ray_tracing_properties);
         std::vector<uint8_t> handle_buffer;
         handle_buffer.resize(ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
@@ -807,9 +807,9 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    auto rt_pipeline_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper();
     rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&rt_pipeline_features);
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&rt_pipeline_features);
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -818,7 +818,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
     if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
         GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
@@ -849,7 +849,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     m_errorMonitor->VerifyFound();
 
     // dataSize must be at least VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
-    auto ray_tracing_properties = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
     // Check only when the reported size is
     if (ray_tracing_properties.shaderGroupHandleCaptureReplaySize > 0) {
@@ -878,8 +878,8 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
-    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_tracing_features);
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1023,7 +1023,7 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     if (!ray_tracing_features.rayTraversalPrimitiveCulling) {
         GTEST_SKIP() << "Feature rayTraversalPrimitiveCulling is not supported.";
@@ -1051,7 +1051,7 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
 
-    auto shader_group = vku::InitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    VkRayTracingShaderGroupCreateInfoKHR shader_group = vku::InitStructHelper();
     shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
     shader_group.generalShader = 0;
     shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -1083,7 +1083,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     if (!ray_tracing_features.rayTraversalPrimitiveCulling) {
         GTEST_SKIP() << "Feature rayTraversalPrimitiveCulling is not supported.";
@@ -1098,7 +1098,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
 
-    auto shader_group = vku::InitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    VkRayTracingShaderGroupCreateInfoKHR shader_group = vku::InitStructHelper();
     shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
     shader_group.generalShader = 0;
     shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -1154,9 +1154,9 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
-    auto pipeline_library_group_handles_features =
-        vku::InitStruct<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT>(&ray_tracing_features);
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
+    VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles_features =
+        vku::InitStructHelper(&ray_tracing_features);
     GetPhysicalDeviceFeatures2(pipeline_library_group_handles_features);
     if (!ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
         GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
@@ -1182,7 +1182,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     interface_ci.maxPipelineRayHitAttributeSize = 4;
     interface_ci.maxPipelineRayPayloadSize = 4;
 
-    auto ray_tracing_properties = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
 
     const auto vkGetRayTracingShaderGroupHandlesKHR =
@@ -1222,7 +1222,7 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto pipleline_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>();
+    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipleline_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipleline_features);
     // Set this to true as it is a required feature
     pipleline_features.pipelineCreationCacheControl = VK_TRUE;
@@ -1828,7 +1828,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto rtnv_props = vku::InitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+    VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rtnv_props);
 
     if (rtnv_props.maxDescriptorSetAccelerationStructures < 1) {
@@ -1837,7 +1837,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto feedback_info = vku::InitStruct<VkPipelineCreationFeedbackCreateInfoEXT>();
+    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
     VkPipelineCreationFeedbackEXT feedbacks[4] = {};
 
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];

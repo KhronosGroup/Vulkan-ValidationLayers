@@ -37,7 +37,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
@@ -340,7 +340,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     }
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -408,8 +408,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
-    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&multi_draw_features);
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
+    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&multi_draw_features);
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -746,7 +746,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -825,7 +825,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dyn_state = vku::InitStructHelper();
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
@@ -900,7 +900,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -984,7 +984,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dyn_state = vku::InitStructHelper();
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
@@ -1057,9 +1057,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shader_object_features = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
-    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&shader_object_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&shader_object_features);
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
@@ -1396,10 +1396,10 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     }
 
     // Create a device that enables mesh_shader
-    auto maintenance_4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
-    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&maintenance_4_features);
-    auto shader_object_features = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
-    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>(&shader_object_features);
+    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&maintenance_4_features);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&shader_object_features);
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
 
     if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
