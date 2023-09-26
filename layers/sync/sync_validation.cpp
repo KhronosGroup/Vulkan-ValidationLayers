@@ -49,19 +49,6 @@ Value *GetMappedPlainFromShared(const Map &map, const Key &key) {
 
 static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
 
-static bool SimpleBinding(const IMAGE_STATE &image_state) {
-    bool simple =
-        SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.IsSwapchainImage() || image_state.bind_swapchain;
-
-    // If it's not simple we must have an encoder.
-    assert(!simple || image_state.fragment_encoder.get());
-    return simple;
-}
-
-static const syncval_state::ImageState *GetImageViewImageState(const IMAGE_VIEW_STATE *image_view) {
-    return static_cast<const syncval_state::ImageState *>(image_view->image_state.get());
-}
-
 static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
 static const char *string_SyncHazardVUID(SyncHazard hazard) {
@@ -389,12 +376,6 @@ ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
 static const ResourceUsageTag kInvalidTag(ResourceUsageRecord::kMaxIndex);
 
 static VkDeviceSize ResourceBaseAddress(const BUFFER_STATE &buffer) { return buffer.GetFakeBaseAddress(); }
-static VkDeviceSize ResourceBaseAddress(const syncval_state::ImageState &sync_image) {
-    if (sync_image.HasOpaqueMapping()) {
-        return sync_image.GetOpaqueBaseAddress();
-    }
-    return sync_image.GetFakeBaseAddress();
-}
 
 template <typename T>
 static ResourceAccessRange MakeRange(const T &has_offset_and_size) {
@@ -1388,10 +1369,8 @@ template <typename Detector>
 HazardResult AccessContext::DetectHazard(Detector &detector, const ImageState &image,
                                          const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                          const VkExtent3D &extent, bool is_depth_sliced, DetectOptions options) const {
-    if (!SimpleBinding(image)) return HazardResult();
-    const auto base_address = ResourceBaseAddress(image);
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
-                                                       base_address, is_depth_sliced);
+    // range_gen is non-temporary to avoid additional copy
+    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, offset, extent, is_depth_sliced);
     return DetectHazard(detector, range_gen, options);
 }
 
@@ -1399,10 +1378,8 @@ template <typename Detector>
 HazardResult AccessContext::DetectHazard(Detector &detector, const ImageState &image,
                                          const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
                                          DetectOptions options) const {
-    if (!SimpleBinding(image)) return HazardResult();
-    const auto base_address = ResourceBaseAddress(image);
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, base_address,
-                                                       is_depth_sliced);
+    // range_gen is non-temporary to avoid additional copy
+    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, is_depth_sliced);
     return DetectHazard(detector, range_gen, options);
 }
 
@@ -1419,6 +1396,20 @@ HazardResult AccessContext::DetectHazard(const ImageState &image, SyncStageAcces
                                          const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const {
     HazardDetector detector(current_usage);
     return DetectHazard(detector, image, subresource_range, is_depth_sliced, DetectOptions::kDetectAll);
+}
+
+HazardResult AccessContext::DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const {
+    // Get is const, but callee will copy
+    HazardDetector detector(current_usage);
+    return DetectHazard(detector, image_view.GetFullViewImageRangeGen(), DetectOptions::kDetectAll);
+}
+
+HazardResult AccessContext::DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
+                                         SyncOrdering ordering_rule, const VkOffset3D &offset, const VkExtent3D &extent) const {
+    // range_gen is non-temporary to avoid an additional copy
+    ImageRangeGen range_gen(image_view.MakeImageRangeGen(offset, extent));
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
+    return DetectHazard(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
@@ -1628,12 +1619,13 @@ struct ActionToOpsAdapter {
     const Action &action;
 };
 template <typename Action, typename RangeGen>
-void UpdateMemoryAccessState(ResourceAccessRangeMap &accesses, const Action &action, RangeGen &&range_gen) {
+void UpdateMemoryAccessState(ResourceAccessRangeMap &accesses, const Action &action, RangeGen &range_gen) {
     ActionToOpsAdapter<Action> ops{action};
     for (; range_gen->non_empty(); ++range_gen) {
         infill_update_range(accesses, *range_gen, ops);
     }
 }
+
 template <typename Action>
 void UpdateMemoryAccessRangeState(ResourceAccessRangeMap &accesses, Action &action, const ResourceAccessRange &range) {
     ActionToOpsAdapter<Action> ops{action};
@@ -1783,30 +1775,39 @@ void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAcces
 
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
-    if (!SimpleBinding(image)) return;
-    const auto base_address = ResourceBaseAddress(image);
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, base_address, false);
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessState(access_state_map_, action, range_gen);
+    // range_gen is non-temporary to avoid an additional copy
+    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, false);
+    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
 }
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                       const VkExtent3D &extent, const ResourceUsageTag tag) {
-    if (!SimpleBinding(image)) return;
-    const auto base_address = ResourceBaseAddress(image);
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
-                                                       base_address, false);
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessState(access_state_map_, action, range_gen);
+    // range_gen is non-temporary to avoid an additional copy
+    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, offset, extent, false);
+    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
+}
+
+void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
+                                      SyncOrdering ordering_rule, const VkOffset3D &offset, const VkExtent3D &extent,
+                                      const ResourceUsageTag tag) {
+    // range_gen is non-temporary to avoid an additional copy
+    ImageRangeGen range_gen(image_view.MakeImageRangeGen(offset, extent));
+    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
+}
+
+void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
+                                      SyncOrdering ordering_rule, ResourceUsageTag tag) {
+    // Get is const, and will be copied in callee
+    UpdateAccessState(image_view.GetFullViewImageRangeGen(), current_usage, ordering_rule, tag);
 }
 
 void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                       SyncStageAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
-    const std::optional<ImageRangeGen> &gen = view_gen.GetRangeGen(gen_type);
-    if (!gen) return;
-    subresource_adapter::ImageRangeGenerator range_gen(*gen);
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    ApplyUpdateAction(action, range_gen);
+    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
+    if (attachment_gen) {
+        // Value of const optional is const, and will be copied in callee
+        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, tag);
+    }
 }
 
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -1817,16 +1818,26 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
     UpdateAccessState(image, current_usage, ordering_rule, subresource_range, offset, extent, tag);
 }
 
-template <typename Action, typename RangeGen>
-void AccessContext::ApplyUpdateAction(const Action &action, RangeGen &range_gen) {
+void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                                      ResourceUsageTag tag) {
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
     UpdateMemoryAccessState(access_state_map_, action, range_gen);
+}
+
+void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage,
+                                      SyncOrdering ordering_rule, ResourceUsageTag tag) {
+    // range_gen is non-temporary to avoid infinite call recursion
+    ImageRangeGen mutable_range_gen(range_gen);
+    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag);
 }
 
 template <typename Action>
 void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action) {
-    const std::optional<ImageRangeGen> &gen = view_gen.GetRangeGen(gen_type);
-    if (!gen) return;
-    UpdateMemoryAccessState(access_state_map_, action, ImageRangeGen(*gen));
+    const std::optional<ImageRangeGen> &ref_range_gen = view_gen.GetRangeGen(gen_type);
+    if (ref_range_gen) {
+        ImageRangeGen range_gen(*ref_range_gen);
+        UpdateMemoryAccessState(access_state_map_, action, range_gen);
+    }
 }
 
 void AccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state,
@@ -1980,7 +1991,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 
                         // NOTE: ImageSamplerDescriptor inherits from ImageDescriptor, so this cast works for both types.
                         const auto *image_descriptor = static_cast<const ImageDescriptor *>(descriptor);
-                        const auto *img_view_state = image_descriptor->GetImageViewState();
+                        const auto *img_view_state =
+                            static_cast<const syncval_state::ImageViewState *>(image_descriptor->GetImageViewState());
                         VkImageLayout image_layout = image_descriptor->GetImageLayout();
 
                         if (img_view_state->IsDepthSliced()) {
@@ -1991,19 +2003,15 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         }
 
                         HazardResult hazard;
-                        const auto *img_state = GetImageViewImageState(img_view_state);
-                        const auto &subresource_range = img_view_state->normalized_subresource_range;
 
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->active_render_pass_begin_info.renderArea.extent);
                             const VkOffset3D offset = CastTo3D(cb_state_->active_render_pass_begin_info.renderArea.offset);
                             // Input attachments are subject to raster ordering rules
                             hazard =
-                                current_context_->DetectHazard(*img_state, sync_index, subresource_range, SyncOrdering::kRaster,
-                                                               offset, extent, img_view_state->IsDepthSliced());
+                                current_context_->DetectHazard(*img_view_state, sync_index, SyncOrdering::kRaster, offset, extent);
                         } else {
-                            hazard = current_context_->DetectHazard(*img_state, sync_index, subresource_range,
-                                                                    img_view_state->IsDepthSliced());
+                            hazard = current_context_->DetectHazard(*img_view_state, sync_index);
                         }
 
                         if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
@@ -2118,22 +2126,21 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (image_descriptor->Invalid()) {
                             continue;
                         }
-                        const auto *img_view_state = image_descriptor->GetImageViewState();
+                        const auto *img_view_state =
+                            static_cast<const syncval_state::ImageViewState *>(image_descriptor->GetImageViewState());
                         if (img_view_state->IsDepthSliced()) {
                             // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
                             // Descriptors, unless VK_EXT_image_2d_view_of_3d is supported, which it isn't at the moment.
                             // See: VUID 00343
                             continue;
                         }
-                        const auto *img_state = GetImageViewImageState(img_view_state);
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->active_render_pass_begin_info.renderArea.extent);
                             const VkOffset3D offset = CastTo3D(cb_state_->active_render_pass_begin_info.renderArea.offset);
-                            current_context_->UpdateAccessState(*img_state, sync_index, SyncOrdering::kRaster,
-                                                                img_view_state->normalized_subresource_range, offset, extent, tag);
+                            current_context_->UpdateAccessState(*img_view_state, sync_index, SyncOrdering::kRaster, offset, extent,
+                                                                tag);
                         } else {
-                            current_context_->UpdateAccessState(*img_state, sync_index, SyncOrdering::kNonAttachment,
-                                                                img_view_state->normalized_subresource_range, tag);
+                            current_context_->UpdateAccessState(*img_view_state, sync_index, SyncOrdering::kNonAttachment, tag);
                         }
                         break;
                     }
@@ -2281,9 +2288,9 @@ void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsage
 
 QueueId CommandBufferAccessContext::GetQueueId() const { return QueueSyncState::kQueueIdInvalid; }
 
-ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(vvl::Func command, const RENDER_PASS_STATE &rp_state,
-                                                                   const VkRect2D &render_area,
-                                                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views) {
+ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(
+    vvl::Func command, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+    const std::vector<const syncval_state::ImageViewState *> &attachment_views) {
     // Create an access context the current renderpass.
     const auto barrier_tag = NextCommandTag(command, NamedHandle("renderpass", rp_state.Handle()),
                                             ResourceUsageRecord::SubcommandType::kSubpassTransition);
@@ -2765,7 +2772,7 @@ bool RenderPassAccessContext::ValidateClearAttachment(const CommandExecutionCont
         subresource_range.aspectMask = info->aspects_to_clear;
 
         HazardResult hazard = CurrentContext().DetectHazard(
-            *GetImageViewImageState(&view_state), SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, subresource_range,
+            *view_state.GetImageState(), SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, subresource_range,
             SyncOrdering::kColorAttachment, offset, extent, view_state.IsDepthSliced());
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cmd_buffer.commandBuffer(), view_state.image_view());
@@ -2787,7 +2794,7 @@ bool RenderPassAccessContext::ValidateClearAttachment(const CommandExecutionCont
             // vkCmdClearAttachments depth/stencil writes are executed by the EARLY_FRAGMENT_TESTS_BIT and LATE_FRAGMENT_TESTS_BIT
             // stages. The implementation tracks the most recent access, which happens in the LATE_FRAGMENT_TESTS_BIT stage.
             HazardResult hazard = CurrentContext().DetectHazard(
-                *GetImageViewImageState(&view_state), SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, subresource_range,
+                *view_state.GetImageState(), SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, subresource_range,
                 SyncOrdering::kDepthStencilAttachment, offset, extent, view_state.IsDepthSliced());
 
             if (hazard.IsHazard()) {
@@ -2820,13 +2827,11 @@ void RenderPassAccessContext::RecordClearAttachment(const CMD_BUFFER_STATE &cmd_
 
     if (info->aspects_to_clear & kColorAspects) {
         assert((info->aspects_to_clear & kDepthStencilAspects) == 0);
-        CurrentContext().UpdateAccessState(*GetImageViewImageState(&view_state),
-                                           SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment,
-                                           subresource_range, offset, extent, tag);
+        CurrentContext().UpdateAccessState(*view_state.GetImageState(), SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                           SyncOrdering::kColorAttachment, subresource_range, offset, extent, tag);
     } else {
         assert((info->aspects_to_clear & kColorAspects) == 0);
-        CurrentContext().UpdateAccessState(*GetImageViewImageState(&view_state),
-                                           SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+        CurrentContext().UpdateAccessState(*view_state.GetImageState(), SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                            SyncOrdering::kDepthStencilAttachment, subresource_range, offset, extent, tag);
     }
 }
@@ -2970,7 +2975,7 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
     }
 }
 AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
-    const VkRect2D &render_area, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views) {
+    const VkRect2D &render_area, const std::vector<const syncval_state::ImageViewState *> &attachment_views) {
     AttachmentViewGenVector view_gens;
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
@@ -2982,7 +2987,7 @@ AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
 }
 RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                                  VkQueueFlags queue_flags,
-                                                 const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                                 const std::vector<const syncval_state::ImageViewState *> &attachment_views,
                                                  const AccessContext *external_context)
     : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_() {
     // Add this for all subpasses here so that they exist during next subpass validation
@@ -4339,6 +4344,11 @@ std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const 
                                                              VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                              VkFormatFeatureFlags2KHR features) {
     return std::make_shared<ImageState>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+}
+std::shared_ptr<IMAGE_VIEW_STATE> SyncValidator::CreateImageViewState(
+    const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+    const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
+    return std::make_shared<ImageViewState>(image_state, iv, ci, ff, cubic_props);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -6641,11 +6651,7 @@ struct SyncOpPipelineBarrierFunctorFactory {
         return (range + base_address);
     }
     ImageRange MakeRangeGen(const ImageState &image, const VkImageSubresourceRange &subresource_range) const {
-        if (!SimpleBinding(image)) return subresource_adapter::ImageRangeGenerator();
-
-        const auto base_address = ResourceBaseAddress(image);
-        subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, base_address, false);
-        return range_gen;
+        return image.MakeImageRangeGen(subresource_range, false);
     }
     GlobalRange MakeGlobalRangeGen() const { return kFullRange; }
 };
@@ -7050,10 +7056,7 @@ struct SyncOpWaitEventsFunctorFactory {
         return filtered_range_gen;
     }
     ImageRange MakeRangeGen(const ImageState &image, const VkImageSubresourceRange &subresource_range) const {
-        if (!SimpleBinding(image)) return ImageRange();
-        const auto base_address = ResourceBaseAddress(image);
-        subresource_adapter::ImageRangeGenerator image_range_gen(*image.fragment_encoder.get(), subresource_range, base_address,
-                                                                 false);
+        ImageRangeGen image_range_gen = image.MakeImageRangeGen(subresource_range, false);
         EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), image_range_gen);
 
         return filtered_range_gen;
@@ -7407,7 +7410,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
             // Note that this a safe to presist as long as shared_attachments is not cleared
             attachments_.reserve(shared_attachments_.size());
             for (const auto &attachment : shared_attachments_) {
-                attachments_.emplace_back(attachment.get());
+                attachments_.emplace_back(static_cast<const syncval_state::ImageViewState *>(attachment.get()));
             }
         }
         if (pSubpassBeginInfo) {
@@ -7960,33 +7963,19 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
     }
 }
 
-AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffset3D &offset, const VkExtent3D &extent)
-    : view_(view), view_mask_(), gen_store_() {
-    if (!view_ || !view_->image_state || !SimpleBinding(*view_->image_state)) return;
-    const auto &image_state = *GetImageViewImageState(view_);
-    const auto base_address = ResourceBaseAddress(image_state);
-    const auto *encoder = image_state.fragment_encoder.get();
-    if (!encoder) return;
-    // Get offset and extent for the view, accounting for possible depth slicing
-    const VkOffset3D zero_offset = view->GetOffset();
-    const VkExtent3D &image_extent = view->GetExtent();
-    // Intentional copy
-    VkImageSubresourceRange subres_range = view_->normalized_subresource_range;
-    view_mask_ = subres_range.aspectMask;
-    gen_store_[Gen::kViewSubresource].emplace(*encoder, subres_range, zero_offset, image_extent, base_address,
-                                              view->IsDepthSliced());
-    gen_store_[Gen::kRenderArea].emplace(*encoder, subres_range, offset, extent, base_address, view->IsDepthSliced());
+AttachmentViewGen::AttachmentViewGen(const syncval_state::ImageViewState *image_view, const VkOffset3D &offset,
+                                     const VkExtent3D &extent)
+    : view_(image_view), view_mask_(image_view->normalized_subresource_range.aspectMask), gen_store_() {
+    gen_store_[Gen::kViewSubresource].emplace(image_view->GetFullViewImageRangeGen());
+    gen_store_[Gen::kRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent));
 
     const auto depth = view_mask_ & VK_IMAGE_ASPECT_DEPTH_BIT;
     if (depth && (depth != view_mask_)) {
-        subres_range.aspectMask = depth;
-        gen_store_[Gen::kDepthOnlyRenderArea].emplace(*encoder, subres_range, offset, extent, base_address, view->IsDepthSliced());
+        gen_store_[Gen::kDepthOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, depth));
     }
     const auto stencil = view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT;
     if (stencil && (stencil != view_mask_)) {
-        subres_range.aspectMask = stencil;
-        gen_store_[Gen::kStencilOnlyRenderArea].emplace(*encoder, subres_range, offset, extent, base_address,
-                                                        view->IsDepthSliced());
+        gen_store_[Gen::kStencilOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, stencil));
     }
 }
 
@@ -8776,11 +8765,12 @@ void PresentedImage::SetImage(uint32_t at_index) {
     auto swap_lock = swapchain_state.lock();
     if (BASE_NODE::Invalid(swap_lock)) return;
     image = std::static_pointer_cast<const syncval_state::ImageState>(swap_lock->GetSwapChainImageShared(image_index));
-    if (Invalid()) return;
-
-    // For valid images create the type/range_gen to used to scope the semaphore operations
-    range_gen = subresource_adapter::ImageRangeGenerator(*image->fragment_encoder.get(), image->full_range,
-                                                         ResourceBaseAddress(*image), false);
+    if (Invalid()) {
+        range_gen = ImageRangeGen();
+    } else {
+        // For valid images create the type/range_gen to used to scope the semaphore operations
+        range_gen = image->MakeImageRangeGen(image->full_range, false);
+    }
 }
 
 void PresentedImage::UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const {
@@ -8860,6 +8850,15 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_,
 
 ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ == kInvalidTag) ? context_->StartTag() : tag_; }
 
+bool syncval_state::ImageState::IsSimplyBound() const {
+    bool simple = SimpleBinding(static_cast<const BINDABLE &>(*this)) || IsSwapchainImage() || bind_swapchain;
+
+    // If it's not simple we must have an encoder.
+    assert(!simple || fragment_encoder.get());
+
+    return simple;
+}
+
 void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &dev_data) {
     // This is safe to call if already called to simplify caller logic
     // NOTE: Not asserting IsTiled, as there could in future be other reasons for opaque representations
@@ -8883,6 +8882,37 @@ void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &dev
         opaque_base = dev_data.AllocFakeMemory(fragment_encoder->TotalSize());
     }
     opaque_base_address_ = opaque_base;
+}
+
+VkDeviceSize syncval_state::ImageState::GetResourceBaseAddress() const {
+    if (HasOpaqueMapping()) {
+        return GetOpaqueBaseAddress();
+    }
+    return GetFakeBaseAddress();
+}
+
+ImageRangeGen syncval_state::ImageState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
+                                                           bool is_depth_sliced) const {
+    if (!fragment_encoder || !IsSimplyBound()) {
+        return ImageRangeGen();  // default range generators have an empty position (generator "end")
+    }
+
+    const auto base_address = GetResourceBaseAddress();
+    ImageRangeGen range_gen(*fragment_encoder.get(), subresource_range, base_address, is_depth_sliced);
+    return range_gen;
+}
+
+ImageRangeGen syncval_state::ImageState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
+                                                           const VkOffset3D &offset, const VkExtent3D &extent,
+                                                           bool is_depth_sliced) const {
+    if (!fragment_encoder || !IsSimplyBound()) {
+        return ImageRangeGen();  // default range generators have an empty position (generator "end")
+    }
+
+    const auto base_address = GetResourceBaseAddress();
+    subresource_adapter::ImageRangeGenerator range_gen(*fragment_encoder.get(), subresource_range, offset, extent, base_address,
+                                                       is_depth_sliced);
+    return range_gen;
 }
 
 ReplayState::ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
@@ -9050,4 +9080,27 @@ HazardResult::HazardState::HazardState(const ResourceAccessState *access_state_,
             hazard = SyncHazard::PRESENT_AFTER_WRITE;
         }
     }
+}
+
+syncval_state::ImageViewState::ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv,
+                                              const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+                                              const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
+    : IMAGE_VIEW_STATE(image_state, iv, ci, ff, cubic_props), view_range_gen(MakeImageRangeGen()) {}
+
+ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen() const {
+    return GetImageState()->MakeImageRangeGen(normalized_subresource_range, IsDepthSliced());
+}
+
+ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent,
+                                                               const VkImageAspectFlags aspect_mask) const {
+    if (Invalid()) ImageRangeGen();
+
+    // Intentional copy
+    VkImageSubresourceRange subresource_range = normalized_subresource_range;
+    if (aspect_mask) {
+        subresource_range.aspectMask &= aspect_mask;
+        assert(subresource_range.aspectMask);
+    }
+
+    return GetImageState()->MakeImageRangeGen(subresource_range, offset, extent, IsDepthSliced());
 }
