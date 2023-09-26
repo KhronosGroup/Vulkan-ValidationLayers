@@ -977,9 +977,20 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         csm_state.unique_shader_id =
                             ValidationCache::MakeShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
-                        const auto pass =
-                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv, csm_state.unique_shader_id);
-                        if (pass) {
+                        bool cached = false;
+                        bool pass = false;
+                        if (cache_instrumented_shaders) {
+                            auto it = instrumented_shaders.find(csm_state.unique_shader_id);
+                            if (it != instrumented_shaders.end()) {
+                                csm_state.instrumented_spirv = it->second.second;
+                                cached = true;
+                            }
+                        }
+                        if (!cached) {
+                            pass = InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv,
+                                                    csm_state.unique_shader_id);
+                        }
+                        if (cached || pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
                             // Now we need to find the corresponding VkShaderModuleCreateInfo and update its shader code
@@ -992,6 +1003,11 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
                                 sm_ci->SetCode(csm_state.instrumented_spirv);
+                            }
+                            if (cache_instrumented_shaders) {
+                                instrumented_shaders.emplace(
+                                    csm_state.unique_shader_id,
+                                    std::make_pair(csm_state.instrumented_spirv.size(), csm_state.instrumented_spirv));
                             }
                         }
                     }

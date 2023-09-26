@@ -349,12 +349,11 @@ class GpuAssisted : public GpuAssistedBase {
     bool validate_dispatch_indirect;
     bool warn_on_robust_oob;
     bool validate_instrumented_shaders;
-    bool cache_instrumented_shaders;
+    std::string instrumented_shader_cache_path;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
     GpuAssistedDeviceMemoryBlock app_buffer_device_addresses{};
-    std::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     size_t app_bda_buffer_size{};
     size_t app_bda_max_addresses{};
     uint32_t gpuav_bda_buffer_version = 0;
