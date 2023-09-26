@@ -1196,3 +1196,49 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
     m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 }
+
+TEST_F(PositiveCommand, CopyImageLayerCount) {
+    TEST_DESCRIPTION("Check layerCount in vkCmdCopyImage");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    VkImageCreateInfo ci = vku::InitStructHelper();
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image(m_device);
+    image.init(&ci);
+
+    m_commandBuffer->begin();
+
+    VkImageCopy copyRegion;
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.srcSubresource.mipLevel = 0;
+    copyRegion.srcSubresource.baseArrayLayer = 0;
+    copyRegion.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    copyRegion.srcOffset = {0, 0, 0};
+    copyRegion.dstSubresource = copyRegion.srcSubresource;
+    copyRegion.dstOffset = {32, 32, 0};
+    copyRegion.extent = {16, 16, 1};
+    vk::CmdCopyImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &copyRegion);
+    m_commandBuffer->end();
+}
