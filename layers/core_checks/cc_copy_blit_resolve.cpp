@@ -307,15 +307,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const HandleT handle, const IMAGE_
     bool skip = false;
     if (base_layer >= img.createInfo.arrayLayers || layer_count > img.createInfo.arrayLayers ||
         (base_layer + layer_count) > img.createInfo.arrayLayers) {
-        if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
-            if (!enabled_features.maintenance5_features.maintenance5) {
-                const LogObjectList objlist(handle, img.Handle());
-                skip |= LogError(vuid, objlist, subresource_loc.dot(Field::layerCount),
-                                 "is VK_REMAINING_ARRAY_LAYERS, "
-                                 "but this special value is not supported here unless you enable the "
-                                 "maintenance5 feature.");
-            }
-        } else {
+        if (layer_count != VK_REMAINING_ARRAY_LAYERS) {
             const LogObjectList objlist(handle, img.Handle());
             skip |= LogError(vuid, objlist, subresource_loc.dot(Field::baseArrayLayer),
                              "is %" PRIu32 " and layerCount is %" PRIu32 ", but provided %s has %" PRIu32 " array layers.",
@@ -1097,8 +1089,12 @@ bool CoreChecks::ValidateImageSubresourceLayers(HandleT handle, const VkImageSub
                                                 const Location &subresource_loc) const {
     bool skip = false;
     const VkImageAspectFlags aspect_mask = subresource_layers->aspectMask;
-    // layerCount must not be zero
-    if (subresource_layers->layerCount == 0) {
+    if (subresource_layers->layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        if (!enabled_features.maintenance5_features.maintenance5) {
+            skip |= LogError("VUID-VkImageSubresourceLayers-layerCount-09243", handle, subresource_loc.dot(Field::layerCount),
+                             "is VK_REMAINING_ARRAY_LAYERS.");
+        }
+    } else if (subresource_layers->layerCount == 0) {
         skip |=
             LogError("VUID-VkImageSubresourceLayers-layerCount-01700", handle, subresource_loc.dot(Field::layerCount), "is zero.");
     }
