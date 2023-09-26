@@ -42,6 +42,8 @@ class SyncEventsContext;
 struct SyncEventState;
 class SyncValidator;
 
+using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
+
 namespace syncval_state {
 class CommandBuffer;
 class Swapchain;
@@ -57,19 +59,37 @@ class ImageState : public IMAGE_STATE {
         : IMAGE_STATE(dev_data, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
+    bool IsSimplyBound() const;
 
     void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
 
     VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
     bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
+    VkDeviceSize GetResourceBaseAddress() const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                                    const VkExtent3D &extent, bool is_depth_sliced) const;
 
   protected:
     VkDeviceSize opaque_base_address_ = 0U;
 };
+class ImageViewState : public IMAGE_VIEW_STATE {
+  public:
+    ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+    const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
+    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
+    const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
+
+  protected:
+    ImageRangeGen MakeImageRangeGen() const;
+    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this line.
+    const ImageRangeGen view_range_gen;
+};
+
 }  // namespace syncval_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE)
-
-using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, IMAGE_VIEW_STATE)
 
 using QueueId = uint32_t;
 
@@ -839,16 +859,16 @@ struct FenceSyncState {
 class AttachmentViewGen {
   public:
     enum Gen { kViewSubresource = 0, kRenderArea = 1, kDepthOnlyRenderArea = 2, kStencilOnlyRenderArea = 3, kGenSize = 4 };
-    AttachmentViewGen(const IMAGE_VIEW_STATE *view_, const VkOffset3D &offset, const VkExtent3D &extent);
+    AttachmentViewGen(const syncval_state::ImageViewState *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
     AttachmentViewGen(const AttachmentViewGen &other) = default;
     AttachmentViewGen(AttachmentViewGen &&other) = default;
-    const IMAGE_VIEW_STATE *GetViewState() const { return view_; }
+    const syncval_state::ImageViewState *GetViewState() const { return view_; }
     const std::optional<ImageRangeGen> &GetRangeGen(Gen type) const;
     bool IsValid() const { return gen_store_[Gen::kViewSubresource].has_value(); }
     Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
 
   private:
-    const IMAGE_VIEW_STATE *view_ = nullptr;
+    const syncval_state::ImageViewState *view_ = nullptr;
     VkImageAspectFlags view_mask_ = 0U;
     std::array<std::optional<ImageRangeGen>, Gen::kGenSize> gen_store_;
 };
@@ -1084,7 +1104,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     safe_VkRenderPassBeginInfo renderpass_begin_info_;
     safe_VkSubpassBeginInfo subpass_begin_info_;
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> shared_attachments_;
-    std::vector<const IMAGE_VIEW_STATE *> attachments_;
+    std::vector<const syncval_state::ImageViewState *> attachments_;
     std::shared_ptr<const RENDER_PASS_STATE> rp_state_;
     const RenderPassAccessContext *rp_context_;
 };
@@ -1122,6 +1142,7 @@ class SyncOpEndRenderPass : public SyncOpBase {
 class AccessContext {
   public:
     using ImageState = syncval_state::ImageState;
+    using ImageViewState = syncval_state::ImageViewState;
     enum DetectOptions : uint32_t {
         kDetectPrevious = 1U << 0,
         kDetectAsync = 1U << 1,
@@ -1154,6 +1175,9 @@ class AccessContext {
                               bool is_depth_sliced, DetectOptions options) const;
     HazardResult DetectHazard(const ImageState &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
+    HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const;
+    HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                              const VkOffset3D &offset, const VkExtent3D &extent) const;
     HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
 
@@ -1221,8 +1245,16 @@ class AccessContext {
                            ResourceUsageTag tag);
     void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
                            SyncOrdering ordering_rule, ResourceUsageTag tag);
+    void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTag tag);
+    void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           ResourceUsageTag tag);
     void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
+                           ResourceUsageTag tag);
+    void UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           ResourceUsageTag tag);
+    void UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTag tag);
     void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
                                        uint32_t subpass, ResourceUsageTag tag);
@@ -1233,8 +1265,6 @@ class AccessContext {
 
     void ImportAsyncContexts(const AccessContext &from);
     void ClearAsyncContexts() { async_.clear(); }
-    template <typename Action, typename RangeGen>
-    void ApplyUpdateAction(const Action &action, RangeGen &range_gen);
     template <typename Action>
     void ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action);
     template <typename Action>
@@ -1405,11 +1435,12 @@ class SyncEventsContext {
 
 class RenderPassAccessContext {
   public:
-    static AttachmentViewGenVector CreateAttachmentViewGen(const VkRect2D &render_area,
-                                                           const std::vector<const IMAGE_VIEW_STATE *> &attachment_views);
+    static AttachmentViewGenVector CreateAttachmentViewGen(
+        const VkRect2D &render_area, const std::vector<const syncval_state::ImageViewState *> &attachment_views);
     RenderPassAccessContext() : rp_state_(nullptr), render_area_(VkRect2D()), current_subpass_(0) {}
     RenderPassAccessContext(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, VkQueueFlags queue_flags,
-                            const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const AccessContext *external_context);
+                            const std::vector<const syncval_state::ImageViewState *> &attachment_views,
+                            const AccessContext *external_context);
 
     bool ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd_buffer,
                                        vvl::Func command) const;
@@ -1579,7 +1610,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                           const std::vector<const IMAGE_VIEW_STATE *> &attachment_views);
+                                           const std::vector<const syncval_state::ImageViewState *> &attachment_views);
 
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
@@ -2025,6 +2056,7 @@ struct SubmitInfoConverter {
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
   public:
     using ImageState = syncval_state::ImageState;
+    using ImageViewState = syncval_state::ImageViewState;
     using StateTracker = ValidationStateTracker;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
@@ -2085,6 +2117,9 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
                                                   uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final;
+    std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv,
+                                                           const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+                                                           const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) final;
 
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo, Func command);

@@ -447,22 +447,6 @@ void IMAGE_VIEW_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-VkOffset3D IMAGE_VIEW_STATE::GetOffset() const {
-    VkOffset3D result = {0, 0, 0};
-    if (IsDepthSliced()) {
-        result.z = create_info.subresourceRange.baseArrayLayer;
-    }
-    return result;
-}
-
-VkExtent3D IMAGE_VIEW_STATE::GetExtent() const {
-    VkExtent3D result = image_state->createInfo.extent;
-    if (IsDepthSliced()) {
-        result.depth = create_info.subresourceRange.layerCount;
-    }
-    return result;
-}
-
 uint32_t IMAGE_VIEW_STATE::GetAttachmentLayerCount() const {
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !IsDepthSliced()) {
         return image_state->createInfo.arrayLayers;
