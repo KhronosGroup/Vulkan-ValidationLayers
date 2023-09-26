@@ -214,6 +214,8 @@ class GpuAssistedBase : public ValidationStateTracker {
   public:
     bool aborted = false;
     bool force_buffer_device_address;
+    bool cache_instrumented_shaders;
+    std::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     const char *setup_vuid;
     VkPhysicalDeviceFeatures supported_features{};
