@@ -2927,3 +2927,67 @@ TEST_F(VkLayerTest, GetPhysicalDeviceImageFormatPropertiesFlags) {
                                                VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0xBAD00000, &dummy_props);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
+    TEST_DESCRIPTION("vkGetCalibratedTimestampsEXT with duplicated timeDomain.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    uint32_t count = 0;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
+    std::vector<VkTimeDomainEXT> time_domains(count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, time_domains.data());
+
+    VkCalibratedTimestampInfoEXT timestamp_infos[2];
+    timestamp_infos[0] = vku::InitStructHelper();
+    timestamp_infos[0].timeDomain = time_domains[0];
+    timestamp_infos[1] = vku::InitStructHelper();
+    timestamp_infos[1].timeDomain = time_domains[0];
+
+    uint64_t timestamps[2];
+    uint64_t max_deviation;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246");
+    vk::GetCalibratedTimestampsEXT(device(), 2, timestamp_infos, timestamps, &max_deviation);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
+    TEST_DESCRIPTION("vkGetCalibratedTimestampsEXT with invalid timeDomain.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    uint32_t count = 0;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
+    std::vector<VkTimeDomainEXT> time_domains(count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, time_domains.data());
+
+    for (uint32_t i = 0; i < count; i++) {
+        if (time_domains[i] == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT) {
+            GTEST_SKIP() << "Support for VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT";
+        }
+    }
+    VkCalibratedTimestampInfoEXT timestamp_info = vku::InitStructHelper();
+    timestamp_info.timeDomain = VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT;
+
+    uint64_t timestamp;
+    uint64_t max_deviation;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCalibratedTimestampInfoEXT-timeDomain-02354");
+    vk::GetCalibratedTimestampsEXT(device(), 1, &timestamp_info, &timestamp, &max_deviation);
+    m_errorMonitor->VerifyFound();
+}
