@@ -613,7 +613,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
                         const Location buffer_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);
                         const Location bind_loc = buffer_loc.dot(Field::pBinds, buffer_bind_idx);
-                        skip |= ValidateSparseMemoryBind(memory_bind, buffer_state->requirements.size, bind_loc);
+                        skip |=
+                            ValidateSparseMemoryBind(memory_bind, buffer_state->requirements, buffer_state->requirements.size,
+                                                     buffer_state->external_memory_handle_types, buffer_state->Handle(), bind_loc);
                     }
                 }
             }
@@ -631,7 +633,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         const Location bind_loc = image_loc.dot(Field::pBinds, image_opaque_bind_idx);
                         // Assuming that no multiplanar disjointed images are possible with sparse memory binding. Needs
                         // confirmation
-                        skip |= ValidateSparseMemoryBind(memory_bind, image_state->requirements[0].size, bind_loc);
+                        skip |=
+                            ValidateSparseMemoryBind(memory_bind, image_state->requirements[0], image_state->requirements[0].size,
+                                                     image_state->external_memory_handle_types, image_state->Handle(), bind_loc);
                     }
                 }
             }
