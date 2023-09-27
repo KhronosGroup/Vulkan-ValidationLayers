@@ -13,8 +13,10 @@
  */
 
 #include "utils/cast_utils.h"
+#include "utils/vk_layer_utils.h"
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
+#include "../framework/external_memory_sync.h"
 
 TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
@@ -275,8 +277,8 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
+    image_create_info.extent.width = 8;
+    image_create_info.extent.height = 8;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
@@ -296,38 +298,52 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
 
     vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    buffer_mem_alloc.allocationSize =
+        (buffer_mem_alloc.allocationSize + buffer_mem_reqs.alignment - 1) & ~(buffer_mem_reqs.alignment - 1);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
-
-    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper(nullptr);
-    mem_alloc.allocationSize = 1024;
-
-    vkt::DeviceMemory mem;
-    mem.init(*m_device, mem_alloc);
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
+    VkMemoryAllocateInfo image_mem_alloc =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    image_mem_alloc.allocationSize =
+        (image_mem_alloc.allocationSize + image_mem_reqs.alignment - 1) & ~(image_mem_reqs.alignment - 1);
+    vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
-    buffer_memory_bind.size = mem_alloc.allocationSize;
-    buffer_memory_bind.memory = mem.handle();
-    buffer_memory_bind.memoryOffset = 2048;
+    buffer_memory_bind.size = buffer_create_info.size;
+    buffer_memory_bind.memory = buffer_mem;
+    buffer_memory_bind.memoryOffset = buffer_mem_alloc.allocationSize;
 
     VkSparseImageMemoryBind image_memory_bind = {};
     image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_bind.memoryOffset = 4096;
-    image_memory_bind.memory = mem.handle();
+    image_memory_bind.memoryOffset = image_mem_alloc.allocationSize;
+    image_memory_bind.memory = image_mem;
+    image_memory_bind.extent = image_create_info.extent;
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
-    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.buffer = buffer;
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
+    VkSparseMemoryBind image_opaque_memory_bind = {};
+    image_opaque_memory_bind.size = 4 * image_create_info.extent.width * image_create_info.extent.height;
+    image_opaque_memory_bind.memory = image_mem;
+    image_opaque_memory_bind.memoryOffset = image_mem_alloc.allocationSize;
+
     VkSparseImageOpaqueMemoryBindInfo image_opaque_memory_bind_info = {};
-    image_opaque_memory_bind_info.image = image.handle();
+    image_opaque_memory_bind_info.image = image;
     image_opaque_memory_bind_info.bindCount = 1;
-    image_opaque_memory_bind_info.pBinds = &buffer_memory_bind;
+    image_opaque_memory_bind_info.pBinds = &image_opaque_memory_bind;
 
     VkSparseImageMemoryBindInfo image_memory_bind_info = {};
-    image_memory_bind_info.image = image.handle();
+    image_memory_bind_info.image = image;
     image_memory_bind_info.bindCount = 1;
     image_memory_bind_info.pBinds = &image_memory_bind;
 
@@ -342,12 +358,14 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-size-01102");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-size-01102");
     vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
-    TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
+    TEST_DESCRIPTION("Test QueueBindSparse with memory of a wrong type");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -357,25 +375,54 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
     }
 
-    VkPhysicalDeviceMemoryProperties memory_info;
-    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
-    uint32_t lazily_allocated_index = memory_info.memoryTypeCount;  // Set to an invalid value just in case
-    for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
-        if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0) {
-            lazily_allocated_index = i;
-            break;
-        }
-    }
-    if (lazily_allocated_index == memory_info.memoryTypeCount) {
-        GTEST_SKIP() << "Did not find memory with VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT";
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
     }
 
+    const uint32_t mem_types_mask = (1u << m_device->phy().memory_properties_.memoryTypeCount) - 1;
+
+    /// Create buffer whose memory has an incompatible type
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_create_info.size = 1024;
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper(nullptr);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
+    const bool buffer_supports_all_mem_types = (buffer_mem_reqs.memoryTypeBits & mem_types_mask) == mem_types_mask;
+    VkMemoryAllocateInfo buffer_mem_alloc = vku::InitStructHelper();
+    buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
+    buffer_mem_alloc.memoryTypeIndex = vvl::kU32Max;
+    // Try to pick incompatible memory type
+    for (uint32_t memory_type_i = 0; memory_type_i < m_device->phy().memory_properties_.memoryTypeCount; ++memory_type_i) {
+        if (m_device->phy().memory_properties_.memoryTypes[memory_type_i].propertyFlags &
+            VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
+            continue;
+        }
+
+        if (m_device->phy().memory_properties_.memoryTypes[memory_type_i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) {
+            continue;
+        }
+
+        if (!((1u << memory_type_i) & buffer_mem_reqs.memoryTypeBits)) {
+            buffer_mem_alloc.memoryTypeIndex = memory_type_i;
+            break;
+        }
+    }
+
+    if (buffer_mem_alloc.memoryTypeIndex == vvl::kU32Max) {
+        GTEST_SKIP() << "Could not find suitable memory type for buffer, skipping test";
+    }
+
+    const bool buffer_mem_lazy = m_device->phy().memory_properties_.memoryTypes[buffer_mem_alloc.memoryTypeIndex].propertyFlags &
+                                 VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -389,8 +436,161 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    /// Create image whose memory has an incompatible type
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
+    const bool image_supports_all_mem_types = (image_mem_reqs.memoryTypeBits & mem_types_mask) == mem_types_mask;
+    VkMemoryAllocateInfo image_mem_alloc = vku::InitStructHelper();
+    image_mem_alloc.allocationSize = image_mem_reqs.size;
+    image_mem_alloc.memoryTypeIndex = vvl::kU32Max;
+    // Try to pick incompatible memory type
+    for (uint32_t memory_type_i = 0; memory_type_i < m_device->phy().memory_properties_.memoryTypeCount; ++memory_type_i) {
+        if (m_device->phy().memory_properties_.memoryTypes[memory_type_i].propertyFlags &
+            VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
+            continue;
+        }
+
+        if (m_device->phy().memory_properties_.memoryTypes[memory_type_i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) {
+            continue;
+        }
+
+        if (!((1u << memory_type_i) & image_mem_reqs.memoryTypeBits)) {
+            image_mem_alloc.memoryTypeIndex = memory_type_i;
+            break;
+        }
+    }
+
+    if (image_mem_alloc.memoryTypeIndex == vvl::kU32Max) {
+        GTEST_SKIP() << "Could not find suitable memory type for image, skipping test";
+    }
+
+    const bool image_mem_lazy = m_device->phy().memory_properties_.memoryTypes[image_mem_alloc.memoryTypeIndex].propertyFlags &
+                                VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+
+    vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
+
+    /// Specify memory bindings
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = buffer_mem_reqs.size;
+    buffer_memory_bind.memory = buffer_mem.handle();
+
+    VkSparseMemoryBind image_memory_bind = {};
+    image_memory_bind.size = image_mem_reqs.size;
+    image_memory_bind.memory = image_mem.handle();
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkSparseImageOpaqueMemoryBindInfo image_opaque_memory_bind_info = {};
+    image_opaque_memory_bind_info.image = image.handle();
+    image_opaque_memory_bind_info.bindCount = 1;
+    image_opaque_memory_bind_info.pBinds = &image_memory_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+    bind_info.pImageOpaqueBinds = &image_opaque_memory_bind_info;
+
+    // Validate only buffer
+    if (!buffer_supports_all_mem_types) {
+        bind_info.bufferBindCount = 1;
+        bind_info.imageOpaqueBindCount = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        if (buffer_mem_lazy) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        }
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    } else {
+        printf("Could not find an invalid memory type for buffer, skipping part of test.\n");
+    }
+
+    // Validate only image
+    if (!image_supports_all_mem_types) {
+        bind_info.bufferBindCount = 0;
+        bind_info.imageOpaqueBindCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        if (image_mem_lazy) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        }
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    } else {
+        printf("Could not find an invalid memory type for image, skipping part of test.\n");
+    }
+
+    // Validate both a buffer and image error occur
+    {
+        bind_info.bufferBindCount = 1;
+        bind_info.imageOpaqueBindCount = 1;
+        if (!buffer_supports_all_mem_types) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        }
+        if (buffer_mem_lazy) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        }
+        if (!image_supports_all_mem_types) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        }
+        if (image_mem_lazy) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        }
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
+    TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().sparseResidencyBuffer) {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
+    } else if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
+    }
+
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    uint32_t lazily_allocated_index = m_device->phy().memory_properties_.memoryTypeCount;  // Set to an invalid value just in case
+    for (uint32_t i = 0; i < m_device->phy().memory_properties_.memoryTypeCount; ++i) {
+        if ((m_device->phy().memory_properties_.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0) {
+            lazily_allocated_index = i;
+            break;
+        }
+    }
+    if (lazily_allocated_index == m_device->phy().memory_properties_.memoryTypeCount) {
+        GTEST_SKIP() << "Did not find memory with VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT";
+    }
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.size = 1024;
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
@@ -407,11 +607,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_mem_alloc.allocationSize = image_mem_reqs.size;
     image_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
-    vkt::DeviceMemory buffer_mem;
-    buffer_mem.init(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
-    vkt::DeviceMemory image_mem;
-    image_mem.init(*m_device, image_mem_alloc);
+    vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
     buffer_memory_bind.size = buffer_mem_reqs.size;
@@ -440,7 +638,10 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 0;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
-        vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
+        if (!((1u << buffer_mem_alloc.memoryTypeIndex) & buffer_mem_reqs.memoryTypeBits)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        }
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
@@ -449,7 +650,10 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
-        vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
+        if (!((1u << image_mem_alloc.memoryTypeIndex) & image_mem_reqs.memoryTypeBits)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        }
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
@@ -459,7 +663,266 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         bind_info.imageOpaqueBindCount = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
-        vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
+        if (!((1u << buffer_mem_alloc.memoryTypeIndex) & buffer_mem_reqs.memoryTypeBits)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        }
+        if (!((1u << image_mem_alloc.memoryTypeIndex) & image_mem_reqs.memoryTypeBits)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        }
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
+    TEST_DESCRIPTION(
+        "Test QueueBindSparse with memory having export external handle types that do not match those of the resource");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+
+    if (!m_device->phy().features().sparseResidencyBuffer) {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
+    } else if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
+    }
+
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    /// Allocate buffer and buffer memory with an external handle type
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();  // Do not set any supported external handle type
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.size = 1024;
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
+
+    const auto buffer_exportable_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_create_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (!buffer_exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type for buffer, skipping test";
+    }
+    const auto buffer_exportable_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(buffer_exportable_types);
+    VkExportMemoryAllocateInfo buffer_export_mem_alloc_info = vku::InitStructHelper();
+    buffer_export_mem_alloc_info.handleTypes = GetCompatibleHandleTypes(gpu(), buffer_create_info, buffer_exportable_type);
+    VkMemoryRequirements buffer_mem_reqs{};
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
+    const VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+        *m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buffer_export_mem_alloc_info);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
+
+    /// Allocate image and image memory  with an external handle type
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();  // Do not set any supported external handle type
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    const auto image_exportable_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), image_create_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (!image_exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type for image, skipping test";
+    }
+    const auto image_exportable_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(image_exportable_types);
+
+    VkExportMemoryAllocateInfo image_export_mem_alloc_info = vku::InitStructHelper();
+    image_export_mem_alloc_info.handleTypes = GetCompatibleHandleTypes(gpu(), image_create_info, image_exportable_type);
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
+    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+        *m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image_export_mem_alloc_info);
+    vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
+
+    // Setup memory bindings
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = buffer_mem_reqs.size;
+    buffer_memory_bind.memory = buffer_mem.handle();
+
+    VkSparseMemoryBind image_memory_bind = {};
+    image_memory_bind.size = image_mem_reqs.size;
+    image_memory_bind.memory = image_mem.handle();
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkSparseImageOpaqueMemoryBindInfo image_opaque_memory_bind_info = {};
+    image_opaque_memory_bind_info.image = image.handle();
+    image_opaque_memory_bind_info.bindCount = 1;
+    image_opaque_memory_bind_info.pBinds = &image_memory_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+    bind_info.pImageOpaqueBinds = &image_opaque_memory_bind_info;
+
+    // Validate only buffer
+    {
+        bind_info.bufferBindCount = 1;
+        bind_info.imageOpaqueBindCount = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Validate only image
+    {
+        bind_info.bufferBindCount = 0;
+        bind_info.imageOpaqueBindCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Validate both a buffer and image error occur
+    {
+        bind_info.bufferBindCount = 1;
+        bind_info.imageOpaqueBindCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeSparseImage, QueueBindSparseMemoryType4) {
+    TEST_DESCRIPTION(
+        "Test QueueBindSparse with memory having import external handle types that do not match those of the resource");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+#ifdef _WIN32
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+    AddRequiredExtensions(ext_mem_extension_name);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "External tests are not supported by MockICD, skipping tests";
+    }
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+
+    if (!m_device->phy().features().sparseResidencyBuffer) {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
+    } else if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
+    }
+
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    /// Allocate buffer and buffer memory with an external handle type
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();  // Do not set any supported external handle type
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.size = 1024;
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
+
+    VkImportMemoryFdInfoKHR buffer_import_memory_fd_info = vku::InitStructHelper();
+    buffer_import_memory_fd_info.handleType = handle_type;
+    VkMemoryRequirements buffer_mem_reqs{};
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
+    const VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+        *m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buffer_import_memory_fd_info);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
+
+    /// Allocate image and image memory with an external handle type
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();  // Do not set any supported external handle type
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkImportMemoryFdInfoKHR image_import_memory_fd_info = vku::InitStructHelper();
+    image_import_memory_fd_info.handleType = handle_type;
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
+    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+        *m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image_import_memory_fd_info);
+    vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
+
+    // Setup memory bindings
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = buffer_mem_reqs.size;
+    buffer_memory_bind.memory = buffer_mem.handle();
+
+    VkSparseMemoryBind image_memory_bind = {};
+    image_memory_bind.size = image_mem_reqs.size;
+    image_memory_bind.memory = image_mem.handle();
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkSparseImageOpaqueMemoryBindInfo image_opaque_memory_bind_info = {};
+    image_opaque_memory_bind_info.image = image.handle();
+    image_opaque_memory_bind_info.bindCount = 1;
+    image_opaque_memory_bind_info.pBinds = &image_memory_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+    bind_info.pImageOpaqueBinds = &image_opaque_memory_bind_info;
+
+    // Validate only buffer
+    {
+        bind_info.bufferBindCount = 1;
+        bind_info.imageOpaqueBindCount = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Validate only image
+    {
+        bind_info.bufferBindCount = 0;
+        bind_info.imageOpaqueBindCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Validate both a buffer and image error occur
+    {
+        bind_info.bufferBindCount = 1;
+        bind_info.imageOpaqueBindCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 }

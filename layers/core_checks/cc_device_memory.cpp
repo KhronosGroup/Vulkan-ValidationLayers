@@ -1614,44 +1614,89 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
     }
 }
 
-bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDeviceSize resource_size, const Location &loc) const {
+bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const VkMemoryRequirements &requirements,
+                                          VkDeviceSize resource_size, VkExternalMemoryHandleTypeFlags external_handle_types,
+                                          const VulkanTypedHandle &resource_handle, const Location &loc) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
-    if (mem_info) {
-        if (phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
+    auto mem_state = Get<DEVICE_MEMORY_STATE>(bind.memory);
+    if (mem_state) {
+        if (!((uint32_t(1) << mem_state->alloc_info.memoryTypeIndex) & requirements.memoryTypeBits)) {
+            const LogObjectList objlist(bind.memory, resource_handle);
+            skip |= LogError("VUID-VkSparseMemoryBind-memory-01096", objlist, loc.dot(Field::memory),
+                             "has a type index (%" PRIu32 ") that is not among the allowed types mask (0x%" PRIX32
+                             ") for this resource.",
+                             mem_state->alloc_info.memoryTypeIndex, requirements.memoryTypeBits);
+        }
+
+        if (SafeModulo(bind.memoryOffset, requirements.alignment) != 0) {
+            const LogObjectList objlist(bind.memory, resource_handle);
+            skip |= LogError("VUID-VkSparseMemoryBind-memory-01096", objlist, loc.dot(Field::memoryOffset),
+                             "(%" PRIu64 ") is not a multiple of required memory alignment (%" PRIu64 ")", bind.memoryOffset,
+                             requirements.alignment);
+        }
+
+        if (phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags &
             VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-            skip |= LogError("VUID-VkSparseMemoryBind-memory-01097", bind.memory, loc,
-                             "memory type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.");
+            const LogObjectList objlist(bind.memory, resource_handle);
+            skip |= LogError("VUID-VkSparseMemoryBind-memory-01097", objlist, loc.dot(Field::memory),
+                             "type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.");
         }
 
-        if (bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-            skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", bind.memory, loc,
-                             "memoryOffset (%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", bind.memoryOffset,
-                             mem_info->alloc_info.allocationSize);
+        if (bind.memoryOffset >= mem_state->alloc_info.allocationSize) {
+            const LogObjectList objlist(bind.memory, resource_handle);
+            skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", objlist, loc.dot(Field::memoryOffset),
+                             "(%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", bind.memoryOffset,
+                             mem_state->alloc_info.allocationSize);
         }
 
-        if ((mem_info->alloc_info.allocationSize - bind.memoryOffset) < bind.size) {
-            skip |= LogError("VUID-VkSparseMemoryBind-size-01102", bind.memory, loc,
-                             "size (%" PRIu64 ") must be less than or equal to the size of memory (%" PRIu64
+        if ((mem_state->alloc_info.allocationSize - bind.memoryOffset) < bind.size) {
+            const LogObjectList objlist(bind.memory, resource_handle);
+            skip |= LogError("VUID-VkSparseMemoryBind-size-01102", objlist, loc.dot(Field::size),
+                             "(%" PRIu64 ") must be less than or equal to the size of memory (%" PRIu64
                              ") minus memoryOffset (%" PRIu64 ").",
-                             bind.size, mem_info->alloc_info.allocationSize, bind.memoryOffset);
+                             bind.size, mem_state->alloc_info.allocationSize, bind.memoryOffset);
+        }
+
+        if (mem_state->IsExport()) {
+            if (!(mem_state->export_handle_types & external_handle_types)) {
+                const LogObjectList objlist(bind.memory, resource_handle);
+                skip |= LogError("VUID-VkSparseMemoryBind-memory-02730", objlist,
+                                 loc.dot(Field::memory).pNext(Struct::VkExportMemoryAllocateInfo).dot(Field::handleTypes),
+                                 "is %s, but the external handle types specified in resource are %s.",
+                                 string_VkExternalMemoryHandleTypeFlags(mem_state->export_handle_types).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(external_handle_types).c_str());
+            }
+        }
+
+        if (mem_state->IsImport()) {
+            if (!(*mem_state->import_handle_type & external_handle_types)) {
+                const LogObjectList objlist(bind.memory, resource_handle);
+                skip |= LogError("VUID-VkSparseMemoryBind-memory-02731", objlist, loc.dot(Field::memory),
+                                 "was created with memory import operation, with handle type %s, but the external handle types "
+                                 "specified in resource are %s.",
+                                 string_VkExternalMemoryHandleTypeFlagBits(*mem_state->import_handle_type),
+                                 string_VkExternalMemoryHandleTypeFlags(external_handle_types).c_str());
+            }
         }
     }
 
     if (bind.size <= 0) {
-        skip |= LogError("VUID-VkSparseMemoryBind-size-01098", bind.memory, loc, "size (%" PRIu64 ") must be greater than 0.",
-                         bind.size);
+        const LogObjectList objlist(bind.memory, resource_handle);
+        skip |= LogError("VUID-VkSparseMemoryBind-size-01098", objlist, loc.dot(Field::size),
+                         "(%" PRIu64 ") must be greater than 0.", bind.size);
     }
 
     if (resource_size <= bind.resourceOffset) {
-        skip |= LogError("VUID-VkSparseMemoryBind-resourceOffset-01099", bind.memory, loc,
-                         "resourceOffset (%" PRIu64 ") must be less than the size of the resource (%" PRIu64 ").",
-                         bind.resourceOffset, resource_size);
+        const LogObjectList objlist(bind.memory, resource_handle);
+        skip |=
+            LogError("VUID-VkSparseMemoryBind-resourceOffset-01099", objlist, loc.dot(Field::resourceOffset),
+                     "(%" PRIu64 ") must be less than the size of the resource (%" PRIu64 ").", bind.resourceOffset, resource_size);
     }
 
     if ((resource_size - bind.resourceOffset) < bind.size) {
-        skip |= LogError("VUID-VkSparseMemoryBind-size-01100", bind.memory, loc,
-                         "size (%" PRIu64 ") must be less than or equal to the size of the resource (%" PRIu64
+        const LogObjectList objlist(bind.memory, resource_handle);
+        skip |= LogError("VUID-VkSparseMemoryBind-size-01100", objlist, loc.dot(Field::size),
+                         "(%" PRIu64 ") must be less than or equal to the size of the resource (%" PRIu64
                          ") minus resourceOffset (%" PRIu64 ").",
                          bind.size, resource_size, bind.resourceOffset);
     }

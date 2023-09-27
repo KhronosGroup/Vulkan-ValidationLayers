@@ -2003,7 +2003,9 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
     bool PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
-    bool ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, VkDeviceSize resource_size, const Location& loc) const;
+    bool ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, const VkMemoryRequirements& requirements,
+                                  VkDeviceSize resource_size, VkExternalMemoryHandleTypeFlags external_handle_types,
+                                  const VulkanTypedHandle& resource_handle, const Location& loc) const;
     bool ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const& image_state, VkImageSubresource const& subresource,
                                                        const Location& bind_loc, const Location& subresource_loc) const;
     bool ValidateSparseImageMemoryBind(IMAGE_STATE const* image_state, VkSparseImageMemoryBind const& bind,
