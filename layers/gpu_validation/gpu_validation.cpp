@@ -33,6 +33,7 @@
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_as_inspection_comp.h"
 #include "generated/inst_functions_comp.h"
+#include "generated/gpu_inst_shader_hash.h"
 
 // Keep in sync with the GLSL shader below.
 struct GpuAccelerationStructureBuildValidationBuffer {
@@ -205,20 +206,24 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
         std::ifstream file_stream(instrumented_shader_cache_path, std::ifstream::in | std::ifstream::binary);
         if (file_stream) {
-            uint32_t num_shaders = 0;
-            file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
-            for (uint32_t i = 0; i < num_shaders; ++i) {
-                uint32_t hash;
-                uint32_t shader_length;
-                std::vector<uint32_t> shader_code;
-                file_stream.read(reinterpret_cast<char *>(&hash), sizeof(uint32_t));
-                file_stream.read(reinterpret_cast<char *>(&shader_length), sizeof(uint32_t));
-                shader_code.resize(shader_length);
-                file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * shader_length);
-                instrumented_shaders.emplace(hash, std::make_pair(shader_length, std::move(shader_code)));
+            char inst_shader_hash[sizeof(INST_SHADER_GIT_HASH)];
+            file_stream.read(inst_shader_hash, sizeof(inst_shader_hash));
+            if (!strncmp(inst_shader_hash, INST_SHADER_GIT_HASH, sizeof(INST_SHADER_GIT_HASH))) {
+                uint32_t num_shaders = 0;
+                file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
+                for (uint32_t i = 0; i < num_shaders; ++i) {
+                    uint32_t hash;
+                    uint32_t shader_length;
+                    std::vector<uint32_t> shader_code;
+                    file_stream.read(reinterpret_cast<char *>(&hash), sizeof(uint32_t));
+                    file_stream.read(reinterpret_cast<char *>(&shader_length), sizeof(uint32_t));
+                    shader_code.resize(shader_length);
+                    file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * shader_length);
+                    instrumented_shaders.emplace(hash, std::make_pair(shader_length, std::move(shader_code)));
+                }
             }
+            file_stream.close();
         }
-        file_stream.close();
     }
 
     CreateAccelerationStructureBuildValidationState(pCreateInfo);
@@ -284,6 +289,7 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     if (cache_instrumented_shaders && !instrumented_shaders.empty()) {
         std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
+            file_stream.write(INST_SHADER_GIT_HASH, sizeof(INST_SHADER_GIT_HASH));
             uint32_t datasize = static_cast<uint32_t>(instrumented_shaders.size());
             file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
             for (auto &record : instrumented_shaders) {

@@ -66,6 +66,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
+    from generators.gpuav_inst_shader_hash_generator import GpuAvInstShaderHashOutputGenerator
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
 
@@ -246,6 +247,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         'spirv_tools_commit_id.h' : {
             'genCombined': False,
             'generator' : SpirvToolCommitIdOutputGenerator,
+        },
+        'gpu_inst_shader_hash.h' : {
+            'genCombined': False,
+            'generator' : GpuAvInstShaderHashOutputGenerator,
         },
         'command_validation.cpp' : {
             'generator' : CommandValidationOutputGenerator,
