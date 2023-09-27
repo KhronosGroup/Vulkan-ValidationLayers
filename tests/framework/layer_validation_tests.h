@@ -349,30 +349,6 @@ class NegativeDynamicState : public DynamicStateTest {
 class PositiveDynamicState : public DynamicStateTest {};
 
 class ExternalMemorySyncTest : public VkLayerTest {
-  public:
-    VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkBufferCreateInfo &buffer_create_info,
-                                                             VkExternalMemoryHandleTypeFlagBits handle_type);
-    VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkImageCreateInfo &image_create_info,
-                                                             VkExternalMemoryHandleTypeFlagBits handle_type);
-    VkExternalFenceHandleTypeFlags GetCompatibleHandleTypes(VkExternalFenceHandleTypeFlagBits handle_type);
-    VkExternalSemaphoreHandleTypeFlags GetCompatibleHandleTypes(VkExternalSemaphoreHandleTypeFlagBits handle_type);
-
-    VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkExternalFenceFeatureFlags requested_features);
-    VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(
-        VkExternalSemaphoreFeatureFlags requested_features);
-
-    VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkBufferCreateInfo &buffer_create_info,
-                                                                           VkExternalMemoryFeatureFlags requested_features);
-    VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkImageCreateInfo &image_create_info,
-                                                                           VkExternalMemoryFeatureFlags requested_features);
-    VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkImageCreateInfo &image_create_info,
-                                                                               VkExternalMemoryFeatureFlagsNV requested_features);
-
-    bool HandleTypeNeedsDedicatedAllocation(const VkBufferCreateInfo &buffer_create_info,
-                                            VkExternalMemoryHandleTypeFlagBits handle_type);
-    bool HandleTypeNeedsDedicatedAllocation(const VkImageCreateInfo &image_create_info,
-                                            VkExternalMemoryHandleTypeFlagBits handle_type);
-
   protected:
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     using ExternalHandle = HANDLE;
@@ -890,3 +866,31 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, const std::string &code = "");
 
 void print_android(const char *c);
+
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type);
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type);
+VkExternalFenceHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, VkExternalFenceHandleTypeFlagBits handle_type);
+VkExternalSemaphoreHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu,
+                                                            VkExternalSemaphoreHandleTypeFlagBits handle_type);
+
+VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkPhysicalDevice gpu,
+                                                                     VkExternalFenceFeatureFlags requested_features);
+VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu,
+                                                                             VkExternalSemaphoreFeatureFlags requested_features);
+
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
+                                                                       const VkBufferCreateInfo &buffer_create_info,
+                                                                       VkExternalMemoryFeatureFlags requested_features);
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
+                                                                       const VkImageCreateInfo &image_create_info,
+                                                                       VkExternalMemoryFeatureFlags requested_features);
+VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(VkPhysicalDevice gpu,
+                                                                           const VkImageCreateInfo &image_create_info,
+                                                                           VkExternalMemoryFeatureFlagsNV requested_features);
+
+bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
+                                        VkExternalMemoryHandleTypeFlagBits handle_type);
+bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
+                                        VkExternalMemoryHandleTypeFlagBits handle_type);

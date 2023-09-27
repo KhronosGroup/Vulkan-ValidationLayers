@@ -188,7 +188,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (GetBitSetCount(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
@@ -204,7 +204,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
     // Create export memory with a different handle type
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.image = image;
-    const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(image_info, handle_type2);
+    const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(gpu(), image_info, handle_type2);
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type2;
 
@@ -233,7 +233,8 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
 
     VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
     const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
-    const auto exportable_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -247,7 +248,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     // Check if dedicated allocation is required
     bool dedicated_allocation = false;
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(exportable_types, [&](VkExternalMemoryHandleTypeFlagBits handle_type) {
-        if (HandleTypeNeedsDedicatedAllocation(buffer_info, handle_type)) {
+        if (HandleTypeNeedsDedicatedAllocation(gpu(), buffer_info, handle_type)) {
             dedicated_allocation = true;
         }
     });
@@ -283,12 +284,13 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
 
     VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
     const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
-    const auto exportable_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(buffer_info, handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), buffer_info, handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -298,7 +300,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
     // Check if dedicated allocation is required
     bool dedicated_allocation = false;
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(exportable_types, [&](VkExternalMemoryHandleTypeFlagBits handle_type) {
-        if (HandleTypeNeedsDedicatedAllocation(buffer_info, handle_type)) {
+        if (HandleTypeNeedsDedicatedAllocation(gpu(), buffer_info, handle_type)) {
             dedicated_allocation = true;
         }
     });
@@ -334,7 +336,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     // This test does not support the AHB handle type, which does not
     // allow to query memory requirements before memory is bound
     exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -354,7 +356,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
     const auto not_supported_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(~exportable_types);
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.image = image;
-    const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(image_info, handle_type);
+    const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(gpu(), image_info, handle_type);
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type | not_supported_type;
 
@@ -385,7 +387,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     // This test does not support the AHB handle type, which does not
     // allow to query memory requirements before memory is bound
     exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -393,7 +395,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(image_info, handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), image_info, handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -403,7 +405,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
 
     bool dedicated_allocation = false;
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(exportable_types, [&](VkExternalMemoryHandleTypeFlagBits handle_type) {
-        if (HandleTypeNeedsDedicatedAllocation(image_info, handle_type)) {
+        if (HandleTypeNeedsDedicatedAllocation(gpu(), image_info, handle_type)) {
             dedicated_allocation = true;
         }
     });
@@ -434,7 +436,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_info.size = 4096;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (GetBitSetCount(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
@@ -448,7 +450,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     vkt::Buffer buffer(*m_device, buffer_info, vkt::NoMemT{});
 
     // Check if dedicated allocation is required
-    const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(buffer_info, handle_type2);
+    const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(gpu(), buffer_info, handle_type2);
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.buffer = buffer;
 
@@ -1053,7 +1055,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     buffer_export.init_no_mem(*m_device, buffer_info);
     const VkMemoryRequirements buffer_export_reqs = buffer_export.memory_requirements();
 
-    auto importable_buffer_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+    auto importable_buffer_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
     importable_buffer_types &= ~handle_type;  // we need to find a flag that is different from handle_type
     if (importable_buffer_types == 0) GTEST_SKIP() << "Cannot find two different buffer handle types, skipping test";
     auto wrong_buffer_handle_type =
@@ -1108,7 +1111,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 
     vkt::Image image_export(*m_device, image_info, vkt::no_mem);
 
-    const bool image_dedicated_allocation = HandleTypeNeedsDedicatedAllocation(image_info, handle_type);
+    const bool image_dedicated_allocation = HandleTypeNeedsDedicatedAllocation(gpu(), image_info, handle_type);
     VkMemoryDedicatedAllocateInfo image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image_export;
 
@@ -1117,7 +1120,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     export_memory_info.handleTypes = handle_type;
     image_export.allocate_and_bind_memory(*m_device, mem_flags, &export_memory_info);
 
-    auto importable_image_types = FindSupportedExternalMemoryHandleTypes(image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+    auto importable_image_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
     importable_image_types &= ~handle_type;  // we need to find a flag that is different from handle_type
     if (importable_image_types == 0) {
         GTEST_SKIP() << "Cannot find two different image handle types";
@@ -1233,7 +1237,7 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithUnsupportedHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalFenceHandleTypes(VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -1261,12 +1265,12 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithIncompatibleHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalFenceHandleTypes(VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalFenceHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -1291,7 +1295,7 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -1319,12 +1323,12 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalSemaphoreHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -1365,8 +1369,9 @@ TEST_F(NegativeExternalMemorySync, MemoryAndMemoryNV) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    const auto supported_types_nv = FindSupportedExternalMemoryHandleTypesNV(ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
-    const auto supported_types = FindSupportedExternalMemoryHandleTypes(ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    const auto supported_types_nv =
+        FindSupportedExternalMemoryHandleTypesNV(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
+    const auto supported_types = FindSupportedExternalMemoryHandleTypes(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!supported_types_nv || !supported_types) {
         GTEST_SKIP() << "Cannot find one regular handle type and one nvidia extension's handle type";
     }
@@ -1397,14 +1402,15 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    const auto supported_types = FindSupportedExternalMemoryHandleTypes(ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    const auto supported_types = FindSupportedExternalMemoryHandleTypes(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (supported_types) {
         external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
         CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-01443");
     }
     if (IsExtensionsEnabled(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME)) {
         VkExternalMemoryImageCreateInfoNV external_mem_nv = vku::InitStructHelper();
-        const auto supported_types_nv = FindSupportedExternalMemoryHandleTypesNV(ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
+        const auto supported_types_nv =
+            FindSupportedExternalMemoryHandleTypesNV(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
         if (supported_types_nv) {
             external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBitsNV>(supported_types_nv);
             ici.pNext = &external_mem_nv;
@@ -1726,7 +1732,7 @@ TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
     VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
     const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_dedicated_types = FindSupportedExternalMemoryHandleTypes(
-        buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
+        gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
     if (!exportable_dedicated_types) {
         GTEST_SKIP() << "Unable to find exportable handle type that requires dedicated allocation";
     }
@@ -1764,7 +1770,7 @@ TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     auto exportable_dedicated_types = FindSupportedExternalMemoryHandleTypes(
-        image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
+        gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
     // This test does not support the AHB handle type, which does not
     // allow to query memory requirements before memory is bound
     exportable_dedicated_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
