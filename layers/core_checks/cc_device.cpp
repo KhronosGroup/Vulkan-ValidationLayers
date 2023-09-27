@@ -796,3 +796,34 @@ bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const Locatio
     }
     return skip;
 }
+
+bool CoreChecks::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                           const VkCalibratedTimestampInfoEXT *pTimestampInfos,
+                                                           uint64_t *pTimestamps, uint64_t *pMaxDeviation,
+                                                           const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    uint32_t count = 0;
+    DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_device, &count, nullptr);
+    std::vector<VkTimeDomainEXT> valid_time_domains(count);
+    DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_device, &count, valid_time_domains.data());
+
+    vvl::unordered_map<VkTimeDomainEXT, uint32_t> time_domain_map;
+    for (uint32_t i = 0; i < timestampCount; i++) {
+        const VkTimeDomainEXT time_domain = pTimestampInfos[i].timeDomain;
+        auto it = time_domain_map.find(time_domain);
+        if (it != time_domain_map.end()) {
+            skip |= LogError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246", device,
+                             error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain),
+                             "and pTimestampInfos[%" PRIu32 "].timeDomain are both %s.", it->second,
+                             string_VkTimeDomainEXT(time_domain));
+            break;  // no reason to check after finding 1 duplicate
+        } else if (std::find(valid_time_domains.begin(), valid_time_domains.end(), time_domain) == valid_time_domains.end()) {
+            skip |= LogError("VUID-VkCalibratedTimestampInfoEXT-timeDomain-02354", device,
+                             error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain), "is %s.",
+                             string_VkTimeDomainEXT(time_domain));
+        }
+        time_domain_map[time_domain] = i;
+    }
+    return skip;
+}
