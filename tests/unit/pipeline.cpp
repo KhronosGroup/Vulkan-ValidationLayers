@@ -3325,3 +3325,83 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     create_pipe_with_depth_bias_representation(depth_bias_representation);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
+    TEST_DESCRIPTION("Draw when render pass rasterization samples do not match pipeline rasterization samples");
+
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT msrtss_features = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper(&msrtss_features);
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!msrtss_features.multisampledRenderToSingleSampled) {
+        GTEST_SKIP() << "Test requires (unsupported) multisampledRenderToSingleSampled";
+    }
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+
+    VkImageObj image(m_device);
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {128u, 128u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageFormatProperties formProps;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
+                                                              image_ci.tiling, image_ci.usage, image_ci.flags, &formProps);
+    if (res != VK_SUCCESS || (formProps.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
+        GTEST_SKIP() << "Required format not supported";
+    }
+
+    image.init(&image_ci);
+
+    VkImageView image_view = image.targetView(image_ci.format);
+
+    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkMultisampledRenderToSingleSampledInfoEXT rtss = vku::InitStructHelper();
+    rtss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    rtss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&rtss);
+    rendering_info.renderArea = {{0, 0}, {1, 1}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pNext-07935");
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
