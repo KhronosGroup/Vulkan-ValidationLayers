@@ -232,7 +232,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
         vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
-        uint32_t bad_index = 0;
 
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
@@ -240,9 +239,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 result =
                     DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
 
-                // The application gives a list of modifier and the driver selects one. If one is wrong, stop there.
-                if (result != VK_SUCCESS) {
-                    bad_index = i;
+                // The application gives a list of modifier and the driver selects one. If one is valid, stop there.
+                if (result == VK_SUCCESS) {
                     break;
                 }
             }
@@ -253,8 +251,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         if (result != VK_SUCCESS) {
             // Will not have to worry about VkExternalFormatANDROID if using DRM format modifier
-            std::string drm_source = modifier_list ? ("pDrmFormatModifiers[" + std::to_string(bad_index) + "]")
-                                                   : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
+            std::string drm_source = modifier_list ? "pDrmFormatModifiers[]" : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
             skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
                              "The following parameters -\n"
                              "format (%s)\n"
@@ -477,17 +474,23 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              string_VkImageLayout(pCreateInfo->initialLayout));
         }
         // Check external memory handle types compatibility
-        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
         VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
-        external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
         vvl::PnextChainScopedAdd scoped_add_ext_img_info(&image_format_info, &external_image_info);
 
         VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper();
         VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
         VkExternalMemoryHandleTypeFlags compatible_types = 0;
         if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
-            compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+            VkExternalMemoryHandleTypeFlags handleTypes = external_memory_create_info->handleTypes;
+            while (handleTypes) {
+                VkExternalMemoryHandleTypeFlagBits type =
+                    static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(handleTypes));
+                external_image_info.handleType = type;
+                result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
+                if (result != VK_SUCCESS) break;
+                compatible_types |= external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                handleTypes &= ~type;
+            }
         } else {
             auto modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
             auto explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
@@ -498,18 +501,40 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
 
             if (modifier_list) {
-                for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
+                bool success = false;
+                for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount && !success; i++) {
                     drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
-                    result =
-                        DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
-                    compatible_types |= external_image_properties.externalMemoryProperties.compatibleHandleTypes;
-                    if (result != VK_SUCCESS)
-                        break;
+                    compatible_types = 0;
+                    VkExternalMemoryHandleTypeFlags handleTypes = external_memory_create_info->handleTypes;
+                    while (handleTypes) {
+                        VkExternalMemoryHandleTypeFlagBits type =
+                            static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(handleTypes));
+                        external_image_info.handleType = type;
+                        result =
+                            DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
+                        if (result != VK_SUCCESS) break;
+                        compatible_types |= external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                        handleTypes &= ~type;
+                        if ((external_memory_create_info->handleTypes & compatible_types) ==
+                            external_memory_create_info->handleTypes) {
+                            success = true;
+                            break;
+                        }
+                    }
                 }
             } else if (explicit_modifier) {
                 drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
-                result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
-                compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                VkExternalMemoryHandleTypeFlags handleTypes = external_memory_create_info->handleTypes;
+                while (handleTypes) {
+                    VkExternalMemoryHandleTypeFlagBits type =
+                        static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(handleTypes));
+                    external_image_info.handleType = type;
+                    result =
+                        DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
+                    if (result != VK_SUCCESS) break;
+                    compatible_types |= external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                    handleTypes &= ~type;
+                }
             }
         }
 
