@@ -2266,8 +2266,8 @@ bool CoreChecks::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandB
                          string_VkImageAspectFlags(aspectMask).c_str());
     }
 
-    if (aspectMask != VK_IMAGE_ASPECT_NONE && aspectMask != VK_IMAGE_ASPECT_COLOR_BIT && aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT &&
-        aspectMask != VK_IMAGE_ASPECT_STENCIL_BIT) {
+    if ((aspectMask &
+         ~(VK_IMAGE_ASPECT_NONE | VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
         skip |= LogError("VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-aspectMask-08863", commandBuffer,
                          error_obj.location.dot(Field::aspectMask), "is %s.", string_VkImageAspectFlags(aspectMask).c_str());
     }
