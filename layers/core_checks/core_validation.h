@@ -601,8 +601,8 @@ class CoreChecks : public ValidationStateTracker {
                                VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidatePipelineStageForShaderTileImage(const LogObjectList& objlist, const Location& loc,
                                                  VkPipelineStageFlags2KHR stage_mask, const std::string& vuid) const;
-    bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, VkQueueFlags queue_flags,
-                            VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
+    bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
+                            VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateAccessMaskForShaderTileImage(const LogObjectList& objlist, const Location& loc, VkAccessFlags2KHR access_mask,
                                               const std::string& vuid) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const CMD_BUFFER_STATE* cb_state,
