@@ -356,7 +356,7 @@ class ImageRangeEncoder : public RangeEncoder {
         VkExtent3D extent;
         SubresInfo(const VkSubresourceLayout& layout_, const VkExtent3D& extent_, const VkExtent3D& texel_extent,
                    double texel_size);
-        SubresInfo(const SubresInfo&) = default;
+        SubresInfo(const SubresInfo&);
         SubresInfo() = default;
         VkDeviceSize y_step_pitch;
         VkDeviceSize z_step_pitch;

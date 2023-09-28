@@ -1706,7 +1706,10 @@ struct PipelineBarrierOp {
             layout_transition = false;
         }
     }
-    PipelineBarrierOp(const PipelineBarrierOp &) = default;
+
+    PipelineBarrierOp(const PipelineBarrierOp &rhs)
+        : barrier(rhs.barrier), layout_transition(rhs.layout_transition), scope(rhs.scope) {}
+
     void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope, barrier, layout_transition); }
 };
 

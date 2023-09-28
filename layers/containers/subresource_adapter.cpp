@@ -836,6 +836,13 @@ inline ImageRangeEncoder::SubresInfo::SubresInfo(const VkSubresourceLayout& layo
       z_step_pitch(layout.depthPitch * texel_extent.depth),
       layer_span(layout.rowPitch * extent_.height) {}
 
+ImageRangeEncoder::SubresInfo::SubresInfo(const SubresInfo&rhs)
+    : layout(rhs.layout),
+      extent(rhs.extent),
+      y_step_pitch(rhs.y_step_pitch),
+      z_step_pitch(rhs.z_step_pitch),
+      layer_span(rhs.layer_span) {}
+
 void ImageRangeGenerator::IncrementerState::Set(uint32_t y_count_, uint32_t layer_z_count_, IndexType base, IndexType span,
                                                 IndexType y_step, IndexType z_step) {
     y_count = y_count_;
