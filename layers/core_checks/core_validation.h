@@ -301,6 +301,7 @@ struct DrawDispatchVuid {
     const char* set_exclusive_scissor_enable_09235 = kVUIDUndefined;
     const char* set_fragment_shading_rate_09238 = kVUIDUndefined;
     const char* set_tessellation_domain_origin_09237 = kVUIDUndefined;
+    const char* rasterization_samples_07935 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
