@@ -159,8 +159,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
                    "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
-                   "No descriptor checking will be attempted");
-        validate_descriptors = false;
+                   "Use of descriptor buffers will result in no descriptor checking");
     }
 
     output_buffer_size = sizeof(uint32_t) * (kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
@@ -1562,6 +1561,19 @@ void GpuAssisted::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
         }
     }
     UpdateBDABuffer(app_buffer_device_addresses);
+}
+
+void GpuAssisted::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                           const VkDescriptorBufferBindingInfoEXT *pBindingInfos) {
+    ValidationStateTracker::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
+    validate_descriptors = false;
+}
+
+void GpuAssisted::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                          VkPipelineBindPoint pipelineBindPoint,
+                                                                          VkPipelineLayout layout, uint32_t set) {
+    ValidationStateTracker::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
+    validate_descriptors = false;
 }
 
 void GpuAssisted::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
