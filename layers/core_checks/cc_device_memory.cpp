@@ -1230,6 +1230,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     image_info.tiling = image_state->createInfo.tiling;
                     image_info.usage = image_state->createInfo.usage;
                     image_info.flags = image_state->createInfo.flags;
+                    VkExternalMemoryHandleTypeFlags compatible_types = 0;
                     VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
                     VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_properties);
                     bool export_supported = true;
@@ -1248,7 +1249,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         }
                         auto result =
                             DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
-                        if (result != VK_SUCCESS) {
+                        if (result == VK_SUCCESS) {
+                            compatible_types |= flag;
+                        } else {
                             export_supported = false;
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(
@@ -1300,7 +1303,6 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, validate_export_handle_types);
 
                     // The types of external memory handles must be compatible
-                    const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
                     if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |=
