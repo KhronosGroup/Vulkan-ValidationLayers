@@ -946,8 +946,9 @@ bool CoreChecks::ValidatePipelineStage(const LogObjectList &objlist, const Locat
     return skip;
 }
 
-bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location &access_mask_loc, VkQueueFlags queue_flags,
-                                    VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const {
+bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location &access_mask_loc, const Location &stage_mask_loc,
+                                    VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask,
+                                    VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
 
     const auto expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
@@ -957,7 +958,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
         if (stage_mask & illegal_pipeline_stages) {
             // Select right vuid based on enabled extensions
             const auto &vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(access_mask_loc, device_extensions);
-            skip |= LogError(vuid, objlist, access_mask_loc, "contains pipeline stages %s.",
+            skip |= LogError(vuid, objlist, stage_mask_loc, "contains pipeline stages %s.",
                              sync_utils::StringPipelineStageFlags(stage_mask).c_str());
         }
     }
@@ -1411,13 +1412,13 @@ bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const L
     }
     auto src_queue_flags = SubpassToQueueFlags(dependency.srcSubpass);
     skip |= ValidatePipelineStage(error_obj.objlist, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
-    skip |= ValidateAccessMask(error_obj.objlist, loc.dot(Field::srcAccessMask), src_queue_flags, converted_barrier.srcAccessMask,
-                               converted_barrier.srcStageMask);
+    skip |= ValidateAccessMask(error_obj.objlist, loc.dot(Field::srcAccessMask), loc.dot(Field::srcStageMask), src_queue_flags,
+                               converted_barrier.srcAccessMask, converted_barrier.srcStageMask);
 
     auto dst_queue_flags = SubpassToQueueFlags(dependency.dstSubpass);
     skip |= ValidatePipelineStage(error_obj.objlist, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
-    skip |= ValidateAccessMask(error_obj.objlist, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
-                               converted_barrier.dstStageMask);
+    skip |= ValidateAccessMask(error_obj.objlist, loc.dot(Field::dstAccessMask), loc.dot(Field::dstStageMask), dst_queue_flags,
+                               converted_barrier.dstAccessMask, converted_barrier.dstStageMask);
     return skip;
 }
 
@@ -2416,12 +2417,12 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
         skip |= ValidatePipelineStage(objects, barrier_loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
     }
     if (!cb_state->IsAcquireOp(barrier)) {
-        skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::srcAccessMask), queue_flags, barrier.srcAccessMask,
-                                   barrier.srcStageMask);
+        skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::srcAccessMask), barrier_loc.dot(Field::srcStageMask),
+                                   queue_flags, barrier.srcAccessMask, barrier.srcStageMask);
     }
     if (!cb_state->IsReleaseOp(barrier)) {
-        skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::dstAccessMask), queue_flags, barrier.dstAccessMask,
-                                   barrier.dstStageMask);
+        skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::dstAccessMask), barrier_loc.dot(Field::dstStageMask),
+                                   queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
     }
     return skip;
 }
