@@ -232,7 +232,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
         vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
-        uint32_t bad_index = 0;
 
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
@@ -240,9 +239,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 result =
                     DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
 
-                // The application gives a list of modifier and the driver selects one. If one is wrong, stop there.
-                if (result != VK_SUCCESS) {
-                    bad_index = i;
+                // The application gives a list of modifier and the driver selects one. If one is valid, stop there.
+                if (result == VK_SUCCESS) {
                     break;
                 }
             }
@@ -253,8 +251,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         if (result != VK_SUCCESS) {
             // Will not have to worry about VkExternalFormatANDROID if using DRM format modifier
-            std::string drm_source = modifier_list ? ("pDrmFormatModifiers[" + std::to_string(bad_index) + "]")
-                                                   : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
+            std::string drm_source = modifier_list ? "pDrmFormatModifiers[]" : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
             skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
                              "The following parameters -\n"
                              "format (%s)\n"
@@ -502,10 +499,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                     drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
                     result =
                         DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
-                    compatible_types |= external_image_properties.externalMemoryProperties.compatibleHandleTypes;
-                    if (result != VK_SUCCESS)
-                        break;
+                    if (result == VK_SUCCESS) {
+                        compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                        if ((external_memory_create_info->handleTypes & compatible_types) ==
+                            external_memory_create_info->handleTypes)
+                            break;
+                    }
                 }
+                if (compatible_types != 0) result = VK_SUCCESS;
             } else if (explicit_modifier) {
                 drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
                 result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
