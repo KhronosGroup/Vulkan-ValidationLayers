@@ -677,6 +677,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_optical_flow{kNotEnabled};
     ExtEnabled vk_ext_legacy_dithering{kNotEnabled};
     ExtEnabled vk_ext_pipeline_protected_access{kNotEnabled};
+    ExtEnabled vk_android_external_format_resolve{kNotEnabled};
     ExtEnabled vk_ext_shader_object{kNotEnabled};
     ExtEnabled vk_qcom_tile_properties{kNotEnabled};
     ExtEnabled vk_sec_amigo_profiling{kNotEnabled};
@@ -686,6 +687,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_shader_core_builtins{kNotEnabled};
     ExtEnabled vk_ext_pipeline_library_group_handles{kNotEnabled};
     ExtEnabled vk_ext_dynamic_rendering_unused_attachments{kNotEnabled};
+    ExtEnabled vk_nv_low_latency2{kNotEnabled};
     ExtEnabled vk_qcom_multiview_per_view_render_areas{kNotEnabled};
     ExtEnabled vk_qcom_image_processing2{kNotEnabled};
     ExtEnabled vk_qcom_filter_cubic_weights{kNotEnabled};
@@ -1635,6 +1637,12 @@ struct DeviceExtensions : public InstanceExtensions {
              DeviceInfo(&DeviceExtensions::vk_ext_pipeline_protected_access,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+            {VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_android_external_format_resolve,
+                        {{{&DeviceExtensions::vk_android_external_memory_android_hardware_buffer,
+                           VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME}}})},
+#endif
             {VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_shader_object,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -1668,6 +1676,7 @@ struct DeviceExtensions : public InstanceExtensions {
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
+            {VK_NV_LOW_LATENCY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_low_latency2, {})},
             {VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_render_areas, {})},
             {VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME,
@@ -2202,6 +2211,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_OPTICAL_FLOW_EXTENSION_NAME,
     VK_EXT_LEGACY_DITHERING_EXTENSION_NAME,
     VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME,
+#endif
     VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
     VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME,
     VK_SEC_AMIGO_PROFILING_EXTENSION_NAME,
@@ -2211,6 +2223,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME,
     VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME,
     VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME,
+    VK_NV_LOW_LATENCY_2_EXTENSION_NAME,
     VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME,
     VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME,
     VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME,

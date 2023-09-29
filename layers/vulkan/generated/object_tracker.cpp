@@ -7394,6 +7394,58 @@ bool ObjectLifetimes::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDev
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                           VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkSetLatencySleepModeNV-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkSetLatencySleepModeNV-swapchain-parameter",
+                           kVUIDUndefined, error_obj.location.dot(Field::swapchain));
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkLatencySleepNV-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkLatencySleepNV-swapchain-parameter",
+                           kVUIDUndefined, error_obj.location.dot(Field::swapchain));
+    if (pSleepInfo) {
+        [[maybe_unused]] const Location pSleepInfo_loc = error_obj.location.dot(Field::pSleepInfo);
+        skip |= ValidateObject(pSleepInfo->signalSemaphore, kVulkanObjectTypeSemaphore, false,
+                               "VUID-VkLatencySleepInfoNV-signalSemaphore-parameter", kVUIDUndefined,
+                               pSleepInfo_loc.dot(Field::signalSemaphore));
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                        VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkSetLatencyMarkerNV-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkSetLatencyMarkerNV-swapchain-parameter",
+                           kVUIDUndefined, error_obj.location.dot(Field::swapchain));
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                                         VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetLatencyTimingsNV-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkGetLatencyTimingsNV-swapchain-parameter",
+                           kVUIDUndefined, error_obj.location.dot(Field::swapchain));
+
+    return skip;
+}
+
+// vkQueueNotifyOutOfBandNV:
+// Checked by chassis: queue: "VUID-vkQueueNotifyOutOfBandNV-queue-parameter"
+
 // vkCmdSetAttachmentFeedbackLoopEnableEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-parameter"
 

@@ -1691,6 +1691,19 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetDynamicRenderingTilePropertiesQCOM(
                                                                                 VkTilePropertiesQCOM* pProperties) {
     return VK_SUCCESS;
 }
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                                VkLatencySleepModeInfoNV* pSleepModeInfo) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                         VkLatencySleepInfoNV* pSleepInfo) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                         VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                                          VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
                                                                             VkImageAspectFlags aspectMask) {}
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
@@ -2200,6 +2213,11 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkCmdBindShadersEXT", {"VK_EXT_shader_object"}},
     {"vkGetFramebufferTilePropertiesQCOM", {"VK_QCOM_tile_properties"}},
     {"vkGetDynamicRenderingTilePropertiesQCOM", {"VK_QCOM_tile_properties"}},
+    {"vkSetLatencySleepModeNV", {"VK_NV_low_latency2"}},
+    {"vkLatencySleepNV", {"VK_NV_low_latency2"}},
+    {"vkSetLatencyMarkerNV", {"VK_NV_low_latency2"}},
+    {"vkGetLatencyTimingsNV", {"VK_NV_low_latency2"}},
+    {"vkQueueNotifyOutOfBandNV", {"VK_NV_low_latency2"}},
     {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {"VK_EXT_attachment_feedback_loop_dynamic_state"}},
     {"vkGetScreenBufferPropertiesQNX", {"VK_QNX_external_memory_screen_buffer"}},
     {"vkCreateAccelerationStructureKHR", {"VK_KHR_acceleration_structure"}},
@@ -4226,6 +4244,26 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetDynamicRenderingTilePropertiesQCOM == nullptr) {
         table->GetDynamicRenderingTilePropertiesQCOM =
             (PFN_vkGetDynamicRenderingTilePropertiesQCOM)StubGetDynamicRenderingTilePropertiesQCOM;
+    }
+    table->SetLatencySleepModeNV = (PFN_vkSetLatencySleepModeNV)gpa(device, "vkSetLatencySleepModeNV");
+    if (table->SetLatencySleepModeNV == nullptr) {
+        table->SetLatencySleepModeNV = (PFN_vkSetLatencySleepModeNV)StubSetLatencySleepModeNV;
+    }
+    table->LatencySleepNV = (PFN_vkLatencySleepNV)gpa(device, "vkLatencySleepNV");
+    if (table->LatencySleepNV == nullptr) {
+        table->LatencySleepNV = (PFN_vkLatencySleepNV)StubLatencySleepNV;
+    }
+    table->SetLatencyMarkerNV = (PFN_vkSetLatencyMarkerNV)gpa(device, "vkSetLatencyMarkerNV");
+    if (table->SetLatencyMarkerNV == nullptr) {
+        table->SetLatencyMarkerNV = (PFN_vkSetLatencyMarkerNV)StubSetLatencyMarkerNV;
+    }
+    table->GetLatencyTimingsNV = (PFN_vkGetLatencyTimingsNV)gpa(device, "vkGetLatencyTimingsNV");
+    if (table->GetLatencyTimingsNV == nullptr) {
+        table->GetLatencyTimingsNV = (PFN_vkGetLatencyTimingsNV)StubGetLatencyTimingsNV;
+    }
+    table->QueueNotifyOutOfBandNV = (PFN_vkQueueNotifyOutOfBandNV)gpa(device, "vkQueueNotifyOutOfBandNV");
+    if (table->QueueNotifyOutOfBandNV == nullptr) {
+        table->QueueNotifyOutOfBandNV = (PFN_vkQueueNotifyOutOfBandNV)StubQueueNotifyOutOfBandNV;
     }
     table->CmdSetAttachmentFeedbackLoopEnableEXT =
         (PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT)gpa(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT");

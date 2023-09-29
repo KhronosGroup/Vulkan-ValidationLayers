@@ -15561,6 +15561,116 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice de
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                     VkLatencySleepModeInfoNV* pSleepModeInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkSetLatencySleepModeNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateSetLatencySleepModeNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetLatencySleepModeNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
+    }
+    VkResult result = DispatchSetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
+    RecordObject record_obj(vvl::Func::vkSetLatencySleepModeNV, result);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLatencySleepModeNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkLatencySleepNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateLatencySleepNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateLatencySleepNV(device, swapchain, pSleepInfo, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordLatencySleepNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordLatencySleepNV(device, swapchain, pSleepInfo);
+    }
+    VkResult result = DispatchLatencySleepNV(device, swapchain, pSleepInfo);
+    RecordObject record_obj(vvl::Func::vkLatencySleepNV, result);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordLatencySleepNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                              VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkSetLatencyMarkerNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateSetLatencyMarkerNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, error_obj);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetLatencyMarkerNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
+    }
+    DispatchSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
+    RecordObject record_obj(vvl::Func::vkSetLatencyMarkerNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLatencyMarkerNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, record_obj);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                               VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetLatencyTimingsNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetLatencyTimingsNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, error_obj);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetLatencyTimingsNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+    }
+    DispatchGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+    RecordObject record_obj(vvl::Func::vkGetLatencyTimingsNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetLatencyTimingsNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, record_obj);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkQueueNotifyOutOfBandNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateQueueNotifyOutOfBandNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, error_obj);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueNotifyOutOfBandNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
+    }
+    DispatchQueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
+    RecordObject record_obj(vvl::Func::vkQueueNotifyOutOfBandNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueNotifyOutOfBandNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, record_obj);
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
@@ -17022,6 +17132,11 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdBindShadersEXT", {kFuncTypeDev, (void*)CmdBindShadersEXT}},
     {"vkGetFramebufferTilePropertiesQCOM", {kFuncTypeDev, (void*)GetFramebufferTilePropertiesQCOM}},
     {"vkGetDynamicRenderingTilePropertiesQCOM", {kFuncTypeDev, (void*)GetDynamicRenderingTilePropertiesQCOM}},
+    {"vkSetLatencySleepModeNV", {kFuncTypeDev, (void*)SetLatencySleepModeNV}},
+    {"vkLatencySleepNV", {kFuncTypeDev, (void*)LatencySleepNV}},
+    {"vkSetLatencyMarkerNV", {kFuncTypeDev, (void*)SetLatencyMarkerNV}},
+    {"vkGetLatencyTimingsNV", {kFuncTypeDev, (void*)GetLatencyTimingsNV}},
+    {"vkQueueNotifyOutOfBandNV", {kFuncTypeDev, (void*)QueueNotifyOutOfBandNV}},
     {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {kFuncTypeDev, (void*)CmdSetAttachmentFeedbackLoopEnableEXT}},
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},

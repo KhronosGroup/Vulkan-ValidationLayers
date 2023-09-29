@@ -778,6 +778,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdBindShadersEXT CmdBindShadersEXT;
     PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
     PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
+    PFN_vkSetLatencySleepModeNV SetLatencySleepModeNV;
+    PFN_vkLatencySleepNV LatencySleepNV;
+    PFN_vkSetLatencyMarkerNV SetLatencyMarkerNV;
+    PFN_vkGetLatencyTimingsNV GetLatencyTimingsNV;
+    PFN_vkQueueNotifyOutOfBandNV QueueNotifyOutOfBandNV;
     PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;

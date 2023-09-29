@@ -1709,6 +1709,38 @@ std::vector<VkShaderCodeTypeEXT> ValidationObject::ValidParamValues() const {
 }
 
 template<>
+std::vector<VkLatencyMarkerNV> ValidationObject::ValidParamValues() const {
+    constexpr std::array CoreVkLatencyMarkerNVEnums = {VK_LATENCY_MARKER_SIMULATION_START_NV, VK_LATENCY_MARKER_SIMULATION_END_NV, VK_LATENCY_MARKER_RENDERSUBMIT_START_NV, VK_LATENCY_MARKER_RENDERSUBMIT_END_NV, VK_LATENCY_MARKER_PRESENT_START_NV, VK_LATENCY_MARKER_PRESENT_END_NV, VK_LATENCY_MARKER_INPUT_SAMPLE_NV, VK_LATENCY_MARKER_TRIGGER_FLASH_NV, VK_LATENCY_MARKER_OUT_OF_BAND_RENDERSUBMIT_START_NV, VK_LATENCY_MARKER_OUT_OF_BAND_RENDERSUBMIT_END_NV, VK_LATENCY_MARKER_OUT_OF_BAND_PRESENT_START_NV, VK_LATENCY_MARKER_OUT_OF_BAND_PRESENT_END_NV};
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkLatencyMarkerNV>> ExtendedVkLatencyMarkerNVEnums = {
+    };
+    std::vector<VkLatencyMarkerNV> values(CoreVkLatencyMarkerNVEnums.cbegin(), CoreVkLatencyMarkerNVEnums.cend());
+    std::set<VkLatencyMarkerNV> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkLatencyMarkerNVEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+template<>
+std::vector<VkOutOfBandQueueTypeNV> ValidationObject::ValidParamValues() const {
+    constexpr std::array CoreVkOutOfBandQueueTypeNVEnums = {VK_OUT_OF_BAND_QUEUE_TYPE_RENDER_NV, VK_OUT_OF_BAND_QUEUE_TYPE_PRESENT_NV};
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkOutOfBandQueueTypeNV>> ExtendedVkOutOfBandQueueTypeNVEnums = {
+    };
+    std::vector<VkOutOfBandQueueTypeNV> values(CoreVkOutOfBandQueueTypeNVEnums.cbegin(), CoreVkOutOfBandQueueTypeNVEnums.cend());
+    std::set<VkOutOfBandQueueTypeNV> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkOutOfBandQueueTypeNVEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+template<>
 std::vector<VkBlockMatchWindowCompareModeQCOM> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkBlockMatchWindowCompareModeQCOMEnums = {VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM, VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MAX_QCOM};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkBlockMatchWindowCompareModeQCOM>> ExtendedVkBlockMatchWindowCompareModeQCOMEnums = {

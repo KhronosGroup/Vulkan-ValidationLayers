@@ -1560,6 +1560,21 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetDynamicRenderingTilePropertiesQCOM,
     InterceptIdPreCallRecordGetDynamicRenderingTilePropertiesQCOM,
     InterceptIdPostCallRecordGetDynamicRenderingTilePropertiesQCOM,
+    InterceptIdPreCallValidateSetLatencySleepModeNV,
+    InterceptIdPreCallRecordSetLatencySleepModeNV,
+    InterceptIdPostCallRecordSetLatencySleepModeNV,
+    InterceptIdPreCallValidateLatencySleepNV,
+    InterceptIdPreCallRecordLatencySleepNV,
+    InterceptIdPostCallRecordLatencySleepNV,
+    InterceptIdPreCallValidateSetLatencyMarkerNV,
+    InterceptIdPreCallRecordSetLatencyMarkerNV,
+    InterceptIdPostCallRecordSetLatencyMarkerNV,
+    InterceptIdPreCallValidateGetLatencyTimingsNV,
+    InterceptIdPreCallRecordGetLatencyTimingsNV,
+    InterceptIdPostCallRecordGetLatencyTimingsNV,
+    InterceptIdPreCallValidateQueueNotifyOutOfBandNV,
+    InterceptIdPreCallRecordQueueNotifyOutOfBandNV,
+    InterceptIdPostCallRecordQueueNotifyOutOfBandNV,
     InterceptIdPreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT,
     InterceptIdPreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT,
     InterceptIdPostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT,
@@ -3294,6 +3309,21 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDynamicRenderingTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetLatencySleepModeNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetLatencySleepModeNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetLatencySleepModeNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateLatencySleepNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordLatencySleepNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordLatencySleepNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetLatencyMarkerNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetLatencyMarkerNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetLatencyMarkerNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetLatencyTimingsNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetLatencyTimingsNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetLatencyTimingsNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateQueueNotifyOutOfBandNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordQueueNotifyOutOfBandNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordQueueNotifyOutOfBandNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT);

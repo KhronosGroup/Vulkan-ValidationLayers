@@ -6981,6 +6981,29 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::pipelineProtectedAccess), structure->pipelineProtectedAccess);
             }
         } break;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+        // Validation code for VkPhysicalDeviceExternalFormatResolveFeaturesANDROID structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID: {  // Covers
+                                                                                            // VUID-VkPhysicalDeviceExternalFormatResolveFeaturesANDROID-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExternalFormatResolveFeaturesANDROID);
+                VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* structure =
+                    (VkPhysicalDeviceExternalFormatResolveFeaturesANDROID*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::externalFormatResolve), structure->externalFormatResolve);
+            }
+        } break;
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+        // No Validation code for VkPhysicalDeviceExternalFormatResolvePropertiesANDROID structure members  -- Covers
+        // VUID-VkPhysicalDeviceExternalFormatResolvePropertiesANDROID-sType-sType
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+        // No Validation code for VkAndroidHardwareBufferFormatResolvePropertiesANDROID structure members  -- Covers
+        // VUID-VkAndroidHardwareBufferFormatResolvePropertiesANDROID-sType-sType
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
         // Validation code for VkPhysicalDeviceShaderObjectFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {  // Covers
@@ -7080,6 +7103,29 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     (VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::dynamicRenderingUnusedAttachments),
                                        structure->dynamicRenderingUnusedAttachments);
+            }
+        } break;
+
+        // No Validation code for VkLatencySubmissionPresentIdNV structure members  -- Covers
+        // VUID-VkLatencySubmissionPresentIdNV-sType-sType
+
+        // Validation code for VkSwapchainLatencyCreateInfoNV structure members
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV: {  // Covers VUID-VkSwapchainLatencyCreateInfoNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainLatencyCreateInfoNV);
+                VkSwapchainLatencyCreateInfoNV* structure = (VkSwapchainLatencyCreateInfoNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::latencyModeEnable), structure->latencyModeEnable);
+            }
+        } break;
+
+        // Validation code for VkLatencySurfaceCapabilitiesNV structure members
+        case VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV: {  // Covers VUID-VkLatencySurfaceCapabilitiesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkLatencySurfaceCapabilitiesNV);
+                VkLatencySurfaceCapabilitiesNV* structure = (VkLatencySurfaceCapabilitiesNV*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::presentModeCount), pNext_loc.dot(Field::pPresentModes),
+                                      structure->presentModeCount, &structure->pPresentModes, true, false, kVUIDUndefined,
+                                      "VUID-VkLatencySurfaceCapabilitiesNV-pPresentModes-parameter");
             }
         } break;
 
@@ -7647,6 +7693,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT,
@@ -8056,6 +8103,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(VkQueue queue, uint32_t sub
                                                                  VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO,
                                                                  VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
+                                                                 VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
                                                                  VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO,
                                                                  VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
@@ -9544,6 +9592,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(VkDevice device
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkGraphicsPipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
+                VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
                 VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
@@ -11876,6 +11925,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT,
@@ -12634,7 +12684,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
             for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
                 [[maybe_unused]] const Location pAttachments_loc = pCreateInfo_loc.dot(Field::pAttachments, attachmentIndex);
                 constexpr std::array allowed_structs_VkAttachmentDescription2 = {
-                    VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT};
+                    VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID};
 
                 skip |= ValidateStructPnext(pAttachments_loc, pCreateInfo->pAttachments[attachmentIndex].pNext,
                                             allowed_structs_VkAttachmentDescription2.size(),
@@ -13748,10 +13798,10 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
     if (pSubmits != nullptr) {
         for (uint32_t submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
             [[maybe_unused]] const Location pSubmits_loc = loc.dot(Field::pSubmits, submitIndex);
-            constexpr std::array allowed_structs_VkSubmitInfo2 = {VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
-                                                                  VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR,
-                                                                  VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR,
-                                                                  VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV};
+            constexpr std::array allowed_structs_VkSubmitInfo2 = {
+                VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT, VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
+                VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR,
+                VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV};
 
             skip |= ValidateStructPnext(pSubmits_loc, pSubmits[submitIndex].pNext, allowed_structs_VkSubmitInfo2.size(),
                                         allowed_structs_VkSubmitInfo2.data(), GeneratedVulkanHeaderVersion,
@@ -14825,6 +14875,7 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(VkDevice device, con
             VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT,
             VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD,
+            VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_BARRIER_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT};
@@ -15286,6 +15337,7 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(VkDevice devi
                 VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT,
                 VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD,
+                VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_BARRIER_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT};
@@ -16537,6 +16589,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT,
@@ -17398,7 +17451,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(VkDevice device, c
             for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
                 [[maybe_unused]] const Location pAttachments_loc = pCreateInfo_loc.dot(Field::pAttachments, attachmentIndex);
                 constexpr std::array allowed_structs_VkAttachmentDescription2 = {
-                    VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT};
+                    VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID};
 
                 skip |= ValidateStructPnext(pAttachments_loc, pCreateInfo->pAttachments[attachmentIndex].pNext,
                                             allowed_structs_VkAttachmentDescription2.size(),
@@ -18044,6 +18097,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KH
         [[maybe_unused]] const Location pSurfaceCapabilities_loc = loc.dot(Field::pSurfaceCapabilities);
         constexpr std::array allowed_structs_VkSurfaceCapabilities2KHR = {
             VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD,
+            VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV,
             VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_BARRIER_NV,
@@ -19756,10 +19810,10 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t
     if (pSubmits != nullptr) {
         for (uint32_t submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
             [[maybe_unused]] const Location pSubmits_loc = loc.dot(Field::pSubmits, submitIndex);
-            constexpr std::array allowed_structs_VkSubmitInfo2 = {VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
-                                                                  VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR,
-                                                                  VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR,
-                                                                  VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV};
+            constexpr std::array allowed_structs_VkSubmitInfo2 = {
+                VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT, VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
+                VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR,
+                VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV};
 
             skip |= ValidateStructPnext(pSubmits_loc, pSubmits[submitIndex].pNext, allowed_structs_VkSubmitInfo2.size(),
                                         allowed_structs_VkSubmitInfo2.data(), GeneratedVulkanHeaderVersion,
@@ -22164,7 +22218,8 @@ bool StatelessValidation::PreCallValidateGetAndroidHardwareBufferPropertiesANDRO
         [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
         constexpr std::array allowed_structs_VkAndroidHardwareBufferPropertiesANDROID = {
             VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID,
-            VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID};
+            VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID,
+            VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_RESOLVE_PROPERTIES_ANDROID};
 
         skip |= ValidateStructPnext(pProperties_loc, pProperties->pNext,
                                     allowed_structs_VkAndroidHardwareBufferPropertiesANDROID.size(),
@@ -27479,6 +27534,75 @@ bool StatelessValidation::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(V
     skip |= ValidateStructType(
         loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM", pProperties, VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM,
         true, "VUID-vkGetDynamicRenderingTilePropertiesQCOM-pProperties-parameter", "VUID-VkTilePropertiesQCOM-sType-sType");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                               VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
+    skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |=
+        ValidateStructType(loc.dot(Field::pSleepModeInfo), "VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV", pSleepModeInfo,
+                           VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV, true,
+                           "VUID-vkSetLatencySleepModeNV-pSleepModeInfo-parameter", "VUID-VkLatencySleepModeInfoNV-sType-sType");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
+    skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |= ValidateStructType(loc.dot(Field::pSleepInfo), "VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV", pSleepInfo,
+                               VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV, true, "VUID-vkLatencySleepNV-pSleepInfo-parameter",
+                               "VUID-VkLatencySleepInfoNV-sType-sType");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                            VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
+    skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |=
+        ValidateStructType(loc.dot(Field::pLatencyMarkerInfo), "VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV", pLatencyMarkerInfo,
+                           VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV, true,
+                           "VUID-vkSetLatencyMarkerNV-pLatencyMarkerInfo-parameter", "VUID-VkSetLatencyMarkerInfoNV-sType-sType");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                                             VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
+    skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |=
+        ValidateRequiredPointer(loc.dot(Field::pTimingCount), pTimingCount, "VUID-vkGetLatencyTimingsNV-pTimingCount-parameter");
+    skip |=
+        ValidateStructType(loc.dot(Field::pLatencyMarkerInfo), "VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV", pLatencyMarkerInfo,
+                           VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV, true,
+                           "VUID-vkGetLatencyTimingsNV-pLatencyMarkerInfo-parameter", "VUID-VkGetLatencyMarkerInfoNV-sType-sType");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo,
+                                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
+    skip |= ValidateStructType(loc.dot(Field::pQueueTypeInfo), "VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV",
+                               &(pQueueTypeInfo), VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV, false, kVUIDUndefined,
+                               "VUID-VkOutOfBandQueueTypeInfoNV-sType-sType");
+    skip |= ValidateRangedEnum(loc.dot(Field::queueType), "VkOutOfBandQueueTypeNV", pQueueTypeInfo.queueType,
+                               "VUID-VkOutOfBandQueueTypeInfoNV-queueType-parameter");
     return skip;
 }
 

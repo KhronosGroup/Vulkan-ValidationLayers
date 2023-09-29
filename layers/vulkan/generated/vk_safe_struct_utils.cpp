@@ -1668,6 +1668,21 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelineProtectedAccessFeaturesEXT *>(pNext), copy_state);
             break;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID:
+            safe_pNext = new safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID(reinterpret_cast<const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID *>(pNext), copy_state);
+            break;
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID:
+            safe_pNext = new safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID(reinterpret_cast<const VkPhysicalDeviceExternalFormatResolvePropertiesANDROID *>(pNext), copy_state);
+            break;
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_RESOLVE_PROPERTIES_ANDROID:
+            safe_pNext = new safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID(reinterpret_cast<const VkAndroidHardwareBufferFormatResolvePropertiesANDROID *>(pNext), copy_state);
+            break;
+#endif // VK_USE_PLATFORM_ANDROID_KHR
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceShaderObjectFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT *>(pNext), copy_state);
             break;
@@ -1703,6 +1718,15 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV:
+            safe_pNext = new safe_VkLatencySubmissionPresentIdNV(reinterpret_cast<const VkLatencySubmissionPresentIdNV *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV:
+            safe_pNext = new safe_VkSwapchainLatencyCreateInfoNV(reinterpret_cast<const VkSwapchainLatencyCreateInfoNV *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV:
+            safe_pNext = new safe_VkLatencySurfaceCapabilitiesNV(reinterpret_cast<const VkLatencySurfaceCapabilitiesNV *>(pNext), copy_state);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
             safe_pNext = new safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *>(pNext), copy_state);
@@ -3434,6 +3458,21 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT *>(header);
             break;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID *>(header);
+            break;
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID *>(header);
+            break;
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_RESOLVE_PROPERTIES_ANDROID:
+            delete reinterpret_cast<const safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID *>(header);
+            break;
+#endif // VK_USE_PLATFORM_ANDROID_KHR
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderObjectFeaturesEXT *>(header);
             break;
@@ -3469,6 +3508,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV:
+            delete reinterpret_cast<const safe_VkLatencySubmissionPresentIdNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV:
+            delete reinterpret_cast<const safe_VkSwapchainLatencyCreateInfoNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV:
+            delete reinterpret_cast<const safe_VkLatencySurfaceCapabilitiesNV *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *>(header);

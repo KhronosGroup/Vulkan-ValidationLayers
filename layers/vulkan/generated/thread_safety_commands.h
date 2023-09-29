@@ -3567,6 +3567,34 @@ void PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const 
                                                          VkTilePropertiesQCOM* pProperties,
                                                          const RecordObject& record_obj) override;
 
+void PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                        VkLatencySleepModeInfoNV* pSleepModeInfo) override;
+
+void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                         const RecordObject& record_obj) override;
+
+void PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) override;
+
+void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+                                  const RecordObject& record_obj) override;
+
+void PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                     VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) override;
+
+void PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                      const RecordObject& record_obj) override;
+
+void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                      VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) override;
+
+void PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                       VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) override;
+
+void PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) override;
+
+void PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo,
+                                          const RecordObject& record_obj) override;
+
 void PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) override;
 
 void PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask,
