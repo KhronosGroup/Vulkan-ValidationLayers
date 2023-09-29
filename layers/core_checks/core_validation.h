@@ -2210,6 +2210,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateTaskMeshWorkGroupSizes(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                         const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                         uint32_t local_size_z, const Location& loc) const;
+    bool ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                   const PipelineStageState& stage_state, const Location& loc) const;
 
     bool PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                           const ErrorObject& error_obj) const override;
