@@ -1237,3 +1237,117 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
+    TEST_DESCRIPTION("Test mesh tasks emitted from task shader.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+
+    if (!maintenance_4_features.maintenance4) {
+        GTEST_SKIP() << "maintenance4 feature not supported";
+    }
+    if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
+        GTEST_SKIP() << "Task or mesh shader feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    std::string task_src_x = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+        void main () {
+            EmitMeshTasksEXT()glsl";
+    task_src_x += std::to_string(mesh_shader_properties.maxMeshWorkGroupCount[0] + 1);
+    task_src_x += R"glsl(u, 1u, 1u);
+        }
+    )glsl";
+
+    std::string task_src_y = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+        void main () {
+            EmitMeshTasksEXT(1u, )glsl";
+    task_src_y += std::to_string(mesh_shader_properties.maxMeshWorkGroupCount[1] + 1);
+    task_src_y += R"glsl(u, 1u);
+        }
+    )glsl";
+
+    std::string task_src_z = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+        void main () {
+            EmitMeshTasksEXT(1u, 1u, )glsl";
+    task_src_z += std::to_string(mesh_shader_properties.maxMeshWorkGroupCount[2] + 1);
+    task_src_z += R"glsl(u);
+        }
+    )glsl";
+
+    static const char mesh_src[] = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3) out;
+        layout(max_primitives = 1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3, 1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(-1.0, -1.0, 0.0f, 1.0f);
+            gl_MeshVerticesEXT[1].gl_Position = vec4( 3.0, -1.0, 0.0f, 1.0f);
+            gl_MeshVerticesEXT[2].gl_Position = vec4(-1.0,  3.0, 0.0f, 1.0f);
+            gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    static const char frag_src[] = R"glsl(
+        #version 460
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = vec4(0.2f, 0.4f, 0.6f, 0.8f);
+        }
+    )glsl";
+
+    VkShaderObj task_shader_x(this, task_src_x.c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj task_shader_y(this, task_src_y.c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj task_shader_z(this, task_src_z.c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj frag_shader(this, frag_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3);
+
+    // mesh and task shaders not supported
+    const auto mesh_tasks_x = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {task_shader_x.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(),
+                                 frag_shader.GetStageCreateInfo()};
+    };
+    const auto mesh_tasks_y = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {task_shader_y.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(),
+                                 frag_shader.GetStageCreateInfo()};
+    };
+    const auto mesh_tasks_z = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {task_shader_z.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(),
+                                 frag_shader.GetStageCreateInfo()};
+    };
+    std::vector<std::string> vuids = {"VUID-RuntimeSpirv-TaskEXT-07299"};
+    if (mesh_shader_properties.maxMeshWorkGroupCount[0] == mesh_shader_properties.maxMeshWorkGroupTotalCount) {
+        vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07302");
+    }
+    CreatePipelineHelper::OneshotTest(*this, mesh_tasks_x, kErrorBit, vuids);
+    CreatePipelineHelper::OneshotTest(*this, mesh_tasks_y, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07300");
+    CreatePipelineHelper::OneshotTest(*this, mesh_tasks_z, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07301");
+}
