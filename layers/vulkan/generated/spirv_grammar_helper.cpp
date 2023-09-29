@@ -1436,13 +1436,11 @@ static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatri
 
 std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
     std::string ret;
-    int index = 0;
     while (mask) {
         if (mask & 1) {
             if (!ret.empty()) ret.append("|");
             ret.append(string_SpvCooperativeMatrixOperandsMask(static_cast<spv::CooperativeMatrixOperandsMask>(1U << mask)));
         }
-        ++index;
         mask >>= 1;
     }
     if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
