@@ -120,6 +120,7 @@ struct ExecutionModeSet {
     // bits to know if things have been set or not by a Decoration
     uint32_t flags = 0;
 
+    VkPrimitiveTopology input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     VkPrimitiveTopology primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 
     // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share

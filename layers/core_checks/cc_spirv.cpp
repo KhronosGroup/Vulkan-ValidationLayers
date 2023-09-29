@@ -2267,6 +2267,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     skip |= ValidateVariables(module_state, loc);
     skip |= ValidatePointSizeShaderState(stage_create_info, module_state, entrypoint, stage, loc);
     skip |= ValidateBuiltinLimits(module_state, entrypoint, stage_create_info, loc);
+    skip |= ValidatePrimitiveTopology(module_state, entrypoint, stage_create_info, loc);
     if (enabled_features.cooperative_matrix_features_khr.cooperativeMatrix ||
         enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size_x, loc);

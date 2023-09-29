@@ -998,6 +998,8 @@ class CoreChecks : public ValidationStateTracker {
                                    const EntryPoint& entrypoint, const Location& loc) const;
     bool ValidateBuiltinLimits(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                const StageCreateInfo& create_info, const Location& loc) const;
+    bool ValidatePrimitiveTopology(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                   const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info,
                                  const Location& loc) const;
     bool RequireFeature(const SPIRV_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name, const char* vuid) const;

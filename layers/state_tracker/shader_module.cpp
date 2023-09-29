@@ -144,16 +144,33 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeOutputLinesNV:
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             break;
+        case spv::ExecutionModeTriangles:
+            // ExecutionModeTriangles is input if shader is geometry and output if shader is tessellation evaluation
+            // Because we don't know which shader stage is used here we set both, but only set input for geometry shader if it
+            // hasn't been set yet
+            if (input_primitive_topology == VK_PRIMITIVE_TOPOLOGY_MAX_ENUM) {
+                input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            }
+            primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            tessellation_subdivision = spv::ExecutionModeTriangles;
+            break;
         case spv::ExecutionModeQuads:
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             tessellation_subdivision = spv::ExecutionModeQuads;
             break;
-        case spv::ExecutionModeTriangles:
-            tessellation_subdivision = spv::ExecutionModeTriangles;
-            [[fallthrough]];
         case spv::ExecutionModeOutputTriangleStrip:
         case spv::ExecutionModeOutputTrianglesNV:
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            break;
+        case spv::ExecutionModeInputPoints:
+            input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            break;
+        case spv::ExecutionModeInputLines:
+        case spv::ExecutionModeInputLinesAdjacency:
+            input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            break;
+        case spv::ExecutionModeInputTrianglesAdjacency:
+            input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             break;
         case spv::ExecutionModeLocalSizeId:
             flags |= local_size_id_bit;
