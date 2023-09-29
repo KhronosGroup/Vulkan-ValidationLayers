@@ -975,16 +975,18 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         }
                         const VkShaderStageFlagBits stage = stage_state.GetStage();
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
-                        csm_state.unique_shader_id =
-                            ValidationCache::MakeShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
                         bool cached = false;
                         bool pass = false;
                         if (cache_instrumented_shaders) {
+                            csm_state.unique_shader_id = ValidationCache::MakeShaderHash(module_state->spirv->words_.data(),
+                                                                                         module_state->spirv->words_.size());
                             auto it = instrumented_shaders.find(csm_state.unique_shader_id);
                             if (it != instrumented_shaders.end()) {
                                 csm_state.instrumented_spirv = it->second.second;
                                 cached = true;
                             }
+                        } else {
+                            csm_state.unique_shader_id = unique_shader_module_id++;
                         }
                         if (!cached) {
                             pass = InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv,
@@ -1004,7 +1006,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                             if (sm_ci) {
                                 sm_ci->SetCode(csm_state.instrumented_spirv);
                             }
-                            if (cache_instrumented_shaders) {
+                            if (cache_instrumented_shaders && !cached) {
                                 instrumented_shaders.emplace(
                                     csm_state.unique_shader_id,
                                     std::make_pair(csm_state.instrumented_spirv.size(), csm_state.instrumented_spirv));
