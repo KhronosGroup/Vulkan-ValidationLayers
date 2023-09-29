@@ -874,7 +874,36 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
                                    "VUID-vkCmdResetQueryPool-firstQuery-00796", "VUID-vkCmdResetQueryPool-firstQuery-00797");
     skip |= ValidateQueriesNotActive(*cb_state, queryPool, firstQuery, queryCount, error_obj.location,
                                      "VUID-vkCmdResetQueryPool-None-02841");
+
     return skip;
+}
+
+void CoreChecks::PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                uint32_t queryCount) {
+    if (disabled[query_validation]) return;
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    const auto &query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
+    if (query_pool_state.createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+        cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                                                VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                                                QueryMap *localQueryToStateMap) {
+            if (!do_validate) return false;
+            const auto state_data = cb_state_arg.dev_data;
+            bool skip = false;
+            for (uint32_t i = 0; i < queryCount; i++) {
+                QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
+                if (state == QUERYSTATE_ENDED) {
+                    const LogObjectList objlist(cb_state_arg.commandBuffer(), queryPool);
+                    const Location loc(Func::vkCmdResetQueryPool);
+                    skip |= state_data->LogError("VUID-vkCmdResetQueryPool-firstQuery-02862", objlist, loc,
+                                                 "Query index %" PRIu32 " was begun and reset in the same command buffer.",
+                                                 firstQuery + i);
+                    break;
+                }
+            }
+            return skip;
+        });
+    }
 }
 
 static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags) {
