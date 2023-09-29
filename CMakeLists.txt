@@ -41,6 +41,9 @@ find_package(VulkanHeaders REQUIRED CONFIG QUIET)
 add_compile_definitions(VK_ENABLE_BETA_EXTENSIONS)
 if(WIN32)
     add_compile_definitions(VK_USE_PLATFORM_WIN32_KHR)
+
+    # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX WIN32_LEAN_AND_MEAN)
 elseif(ANDROID)
     add_compile_definitions(VK_USE_PLATFORM_ANDROID_KHR)
 elseif(APPLE)
@@ -131,9 +134,6 @@ elseif(MSVC)
     add_link_options("$<$<CONFIG:Release>:/OPT:REF>")
     # Merge duplicate data/functions
     add_link_options("$<$<CONFIG:Release>:/OPT:ICF>")
-
-    # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX WIN32_LEAN_AND_MEAN)
 
     add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
 endif()
