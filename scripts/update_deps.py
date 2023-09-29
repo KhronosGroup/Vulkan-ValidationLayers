@@ -141,8 +141,6 @@ to the "top" directory.
 
 The commit used to checkout the repository.  This can be a SHA-1
 object name or a refname used with the remote name "origin".
-For example, this field can be set to "origin/sdk-1.1.77" to
-select the end of the sdk-1.1.77 branch.
 
 - deps (optional)
 
