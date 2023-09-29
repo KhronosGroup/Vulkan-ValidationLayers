@@ -207,6 +207,59 @@ bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, c
     return skip;
 }
 
+bool CoreChecks::ValidatePrimitiveTopology(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+                                           const StageCreateInfo &create_info, const Location &loc) const {
+    bool skip = false;
+
+    if (!create_info.pipeline || !create_info.pipeline->pre_raster_state || entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
+        return skip;
+    }
+
+    const auto &pipeline = *create_info.pipeline;
+
+    bool has_tess = false;
+    VkPrimitiveTopology topology = pipeline.InputAssemblyState()->topology;
+    for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
+        auto &stage_state = pipeline.stage_states[i];
+        const VkShaderStageFlagBits stage = stage_state.GetStage();
+        if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+            has_tess = true;
+            if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                topology = stage_state.entrypoint->execution_mode.primitive_topology;
+            }
+        }
+    }
+
+    VkPrimitiveTopology geom_topology = entrypoint.execution_mode.input_primitive_topology;
+    bool mismatch = false;
+    mismatch |= (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST && geom_topology != VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    mismatch |=
+        IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+                             VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY}) &&
+        !IsValueIn(geom_topology,
+                   {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+                    VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY});
+    mismatch |= IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
+                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY}) &&
+                !IsValueIn(geom_topology, {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+                                           VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
+                                           VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY});
+    if (mismatch) {
+        if (has_tess) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00739", module_state.handle(), loc,
+                             "SPIR-V (Geometry stage) expects input topology %s, but tessellation evaluation shader output topology is %s.",
+                             string_VkPrimitiveTopology(geom_topology), string_VkPrimitiveTopology(topology));
+        } else {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00738", module_state.handle(), loc,
+                             "SPIR-V (Geometry stage) expects input topology %s, but pipeline was created with primitive topology %s.",
+                             string_VkPrimitiveTopology(geom_topology), string_VkPrimitiveTopology(topology));
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                       const EntryPoint &entrypoint, const Location &loc) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
