@@ -159,6 +159,14 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         }
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
 
+        if (pCreateInfos[i].renderPass == VK_NULL_HANDLE &&
+            !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[i].pNext)) {
+            skip |= LogWarning(device, kVUID_BestPractices_Pipeline_NoRendering,
+                               "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                               "] renderPass is VK_NULL_HANDLE and pNext chain does not contain VkPipelineRenderingCreateInfoKHR.",
+                               i);
+        }
+
         if (VendorCheckEnabled(kBPVendorAMD)) {
             if (pCreateInfos[i].pInputAssemblyState && pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable) {
                 skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_AvoidPrimitiveRestart,
