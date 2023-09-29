@@ -625,6 +625,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
                              "%s references invalid image (%s).", FormatHandle(image_view).c_str(), FormatHandle(image).c_str());
             continue;
         }
+        if (image_state->IsSwapchainImage() && image_state->owned_by_swapchain && !image_state->bind_swapchain) {
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view, image);
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-parameter", objlist, attachment_loc,
+                             "%s references a swapchain image (%s) from a swapchain that has been destroyed.",
+                             FormatHandle(image_view).c_str(), FormatHandle(image).c_str());
+            continue;
+        }
         auto attachment_initial_layout = render_pass_info->pAttachments[i].initialLayout;
         auto attachment_final_layout = render_pass_info->pAttachments[i].finalLayout;
 
