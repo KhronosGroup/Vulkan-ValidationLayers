@@ -994,6 +994,12 @@ void PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, s
 void PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
                                                     VkTilePropertiesQCOM* pProperties, const RecordObject& record_obj) override;
 
+void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                         const RecordObject& record_obj) override;
+
+void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+                                  const RecordObject& record_obj) override;
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                 VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) override;
@@ -1163,6 +1169,7 @@ const vvl::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_EXT_non_seamless_cube_map", "d3demulation, glemulation"},
     {"VK_GOOGLE_surfaceless_query", "glemulation"},
     {"VK_EXT_legacy_dithering", "glemulation"},
+    {"VK_ANDROID_external_format_resolve", "glemulation"},
     {"VK_EXT_mutable_descriptor_type", "d3demulation"},
 };
 

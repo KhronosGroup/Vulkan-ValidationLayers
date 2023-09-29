@@ -7346,6 +7346,62 @@ void ThreadSafety::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice 
     FinishReadObjectParentInstance(device, vvl::Func::vkGetDynamicRenderingTilePropertiesQCOM);
 }
 
+void ThreadSafety::PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                      VkLatencySleepModeInfoNV* pSleepModeInfo) {
+    StartReadObjectParentInstance(device, vvl::Func::vkSetLatencySleepModeNV);
+    StartReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencySleepModeNV);
+}
+
+void ThreadSafety::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                       VkLatencySleepModeInfoNV* pSleepModeInfo, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkSetLatencySleepModeNV);
+    FinishReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencySleepModeNV);
+}
+
+void ThreadSafety::PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) {
+    StartReadObjectParentInstance(device, vvl::Func::vkLatencySleepNV);
+    StartReadObjectParentInstance(swapchain, vvl::Func::vkLatencySleepNV);
+}
+
+void ThreadSafety::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+                                                const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkLatencySleepNV);
+    FinishReadObjectParentInstance(swapchain, vvl::Func::vkLatencySleepNV);
+}
+
+void ThreadSafety::PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                   VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+    StartReadObjectParentInstance(device, vvl::Func::vkSetLatencyMarkerNV);
+    StartReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencyMarkerNV);
+}
+
+void ThreadSafety::PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                    VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkSetLatencyMarkerNV);
+    FinishReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencyMarkerNV);
+}
+
+void ThreadSafety::PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                                    VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+    StartReadObjectParentInstance(device, vvl::Func::vkGetLatencyTimingsNV);
+    StartReadObjectParentInstance(swapchain, vvl::Func::vkGetLatencyTimingsNV);
+}
+
+void ThreadSafety::PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+                                                     VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkGetLatencyTimingsNV);
+    FinishReadObjectParentInstance(swapchain, vvl::Func::vkGetLatencyTimingsNV);
+}
+
+void ThreadSafety::PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {
+    StartReadObject(queue, vvl::Func::vkQueueNotifyOutOfBandNV);
+}
+
+void ThreadSafety::PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo,
+                                                        const RecordObject& record_obj) {
+    FinishReadObject(queue, vvl::Func::vkQueueNotifyOutOfBandNV);
+}
+
 void ThreadSafety::PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
                                                                       VkImageAspectFlags aspectMask) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT);

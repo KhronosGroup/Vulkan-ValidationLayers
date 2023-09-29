@@ -819,6 +819,11 @@ PFN_vkGetShaderBinaryDataEXT GetShaderBinaryDataEXT;
 PFN_vkCmdBindShadersEXT CmdBindShadersEXT;
 PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
 PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
+PFN_vkSetLatencySleepModeNV SetLatencySleepModeNV;
+PFN_vkLatencySleepNV LatencySleepNV;
+PFN_vkSetLatencyMarkerNV SetLatencyMarkerNV;
+PFN_vkGetLatencyTimingsNV GetLatencyTimingsNV;
+PFN_vkQueueNotifyOutOfBandNV QueueNotifyOutOfBandNV;
 PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
@@ -2171,6 +2176,15 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_NV_low_latency2", [](VkInstance , VkDevice device) {
+                SetLatencySleepModeNV = reinterpret_cast<PFN_vkSetLatencySleepModeNV>(GetDeviceProcAddr(device, "vkSetLatencySleepModeNV"));
+                LatencySleepNV = reinterpret_cast<PFN_vkLatencySleepNV>(GetDeviceProcAddr(device, "vkLatencySleepNV"));
+                SetLatencyMarkerNV = reinterpret_cast<PFN_vkSetLatencyMarkerNV>(GetDeviceProcAddr(device, "vkSetLatencyMarkerNV"));
+                GetLatencyTimingsNV = reinterpret_cast<PFN_vkGetLatencyTimingsNV>(GetDeviceProcAddr(device, "vkGetLatencyTimingsNV"));
+                QueueNotifyOutOfBandNV = reinterpret_cast<PFN_vkQueueNotifyOutOfBandNV>(GetDeviceProcAddr(device, "vkQueueNotifyOutOfBandNV"));
+            }
+        },
+        {
             "VK_EXT_attachment_feedback_loop_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetAttachmentFeedbackLoopEnableEXT = reinterpret_cast<PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT"));
             }
@@ -2755,6 +2769,11 @@ void ResetAllExtensions() {
     CmdBindShadersEXT = nullptr;
     GetFramebufferTilePropertiesQCOM = nullptr;
     GetDynamicRenderingTilePropertiesQCOM = nullptr;
+    SetLatencySleepModeNV = nullptr;
+    LatencySleepNV = nullptr;
+    SetLatencyMarkerNV = nullptr;
+    GetLatencyTimingsNV = nullptr;
+    QueueNotifyOutOfBandNV = nullptr;
     CmdSetAttachmentFeedbackLoopEnableEXT = nullptr;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetScreenBufferPropertiesQNX = nullptr;

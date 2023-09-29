@@ -11794,6 +11794,171 @@ void safe_VkOpticalFlowExecuteInfoNV::initialize(const safe_VkOpticalFlowExecute
         memcpy((void*)pRegions, (void*)copy_src->pRegions, sizeof(VkRect2D) * copy_src->regionCount);
     }
 }
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID(
+    const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), externalFormatResolve(in_struct->externalFormatResolve) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID), pNext(nullptr), externalFormatResolve() {}
+
+safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID(
+    const safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID& copy_src) {
+    sType = copy_src.sType;
+    externalFormatResolve = copy_src.externalFormatResolve;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID& safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::operator=(
+    const safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    externalFormatResolve = copy_src.externalFormatResolve;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::~safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::initialize(
+    const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    externalFormatResolve = in_struct->externalFormatResolve;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::initialize(
+    const safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    externalFormatResolve = copy_src->externalFormatResolve;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID(
+    const VkPhysicalDeviceExternalFormatResolvePropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType),
+      nullColorAttachmentWithExternalFormatResolve(in_struct->nullColorAttachmentWithExternalFormatResolve),
+      externalFormatResolveChromaOffsetX(in_struct->externalFormatResolveChromaOffsetX),
+      externalFormatResolveChromaOffsetY(in_struct->externalFormatResolveChromaOffsetY) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID),
+      pNext(nullptr),
+      nullColorAttachmentWithExternalFormatResolve(),
+      externalFormatResolveChromaOffsetX(),
+      externalFormatResolveChromaOffsetY() {}
+
+safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID(
+    const safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID& copy_src) {
+    sType = copy_src.sType;
+    nullColorAttachmentWithExternalFormatResolve = copy_src.nullColorAttachmentWithExternalFormatResolve;
+    externalFormatResolveChromaOffsetX = copy_src.externalFormatResolveChromaOffsetX;
+    externalFormatResolveChromaOffsetY = copy_src.externalFormatResolveChromaOffsetY;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID& safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::operator=(
+    const safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    nullColorAttachmentWithExternalFormatResolve = copy_src.nullColorAttachmentWithExternalFormatResolve;
+    externalFormatResolveChromaOffsetX = copy_src.externalFormatResolveChromaOffsetX;
+    externalFormatResolveChromaOffsetY = copy_src.externalFormatResolveChromaOffsetY;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::~safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::initialize(
+    const VkPhysicalDeviceExternalFormatResolvePropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    nullColorAttachmentWithExternalFormatResolve = in_struct->nullColorAttachmentWithExternalFormatResolve;
+    externalFormatResolveChromaOffsetX = in_struct->externalFormatResolveChromaOffsetX;
+    externalFormatResolveChromaOffsetY = in_struct->externalFormatResolveChromaOffsetY;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::initialize(
+    const safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    nullColorAttachmentWithExternalFormatResolve = copy_src->nullColorAttachmentWithExternalFormatResolve;
+    externalFormatResolveChromaOffsetX = copy_src->externalFormatResolveChromaOffsetX;
+    externalFormatResolveChromaOffsetY = copy_src->externalFormatResolveChromaOffsetY;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID(
+    const VkAndroidHardwareBufferFormatResolvePropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), colorAttachmentFormat(in_struct->colorAttachmentFormat) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID()
+    : sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_RESOLVE_PROPERTIES_ANDROID), pNext(nullptr), colorAttachmentFormat() {}
+
+safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID(
+    const safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID& copy_src) {
+    sType = copy_src.sType;
+    colorAttachmentFormat = copy_src.colorAttachmentFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID& safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::operator=(
+    const safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    colorAttachmentFormat = copy_src.colorAttachmentFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::~safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::initialize(
+    const VkAndroidHardwareBufferFormatResolvePropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    colorAttachmentFormat = in_struct->colorAttachmentFormat;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::initialize(
+    const safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    colorAttachmentFormat = copy_src->colorAttachmentFormat;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(
     const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
@@ -12256,6 +12421,566 @@ void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(
     shaderCoreCount = copy_src->shaderCoreCount;
     shaderWarpsPerCore = copy_src->shaderWarpsPerCore;
     pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkLatencySleepModeInfoNV::safe_VkLatencySleepModeInfoNV(const VkLatencySleepModeInfoNV* in_struct,
+                                                             [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType),
+      lowLatencyMode(in_struct->lowLatencyMode),
+      lowLatencyBoost(in_struct->lowLatencyBoost),
+      minimumIntervalUs(in_struct->minimumIntervalUs) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkLatencySleepModeInfoNV::safe_VkLatencySleepModeInfoNV()
+    : sType(VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV),
+      pNext(nullptr),
+      lowLatencyMode(),
+      lowLatencyBoost(),
+      minimumIntervalUs() {}
+
+safe_VkLatencySleepModeInfoNV::safe_VkLatencySleepModeInfoNV(const safe_VkLatencySleepModeInfoNV& copy_src) {
+    sType = copy_src.sType;
+    lowLatencyMode = copy_src.lowLatencyMode;
+    lowLatencyBoost = copy_src.lowLatencyBoost;
+    minimumIntervalUs = copy_src.minimumIntervalUs;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkLatencySleepModeInfoNV& safe_VkLatencySleepModeInfoNV::operator=(const safe_VkLatencySleepModeInfoNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    lowLatencyMode = copy_src.lowLatencyMode;
+    lowLatencyBoost = copy_src.lowLatencyBoost;
+    minimumIntervalUs = copy_src.minimumIntervalUs;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkLatencySleepModeInfoNV::~safe_VkLatencySleepModeInfoNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkLatencySleepModeInfoNV::initialize(const VkLatencySleepModeInfoNV* in_struct,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    lowLatencyMode = in_struct->lowLatencyMode;
+    lowLatencyBoost = in_struct->lowLatencyBoost;
+    minimumIntervalUs = in_struct->minimumIntervalUs;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkLatencySleepModeInfoNV::initialize(const safe_VkLatencySleepModeInfoNV* copy_src,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    lowLatencyMode = copy_src->lowLatencyMode;
+    lowLatencyBoost = copy_src->lowLatencyBoost;
+    minimumIntervalUs = copy_src->minimumIntervalUs;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkLatencySleepInfoNV::safe_VkLatencySleepInfoNV(const VkLatencySleepInfoNV* in_struct,
+                                                     [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), signalSemaphore(in_struct->signalSemaphore), value(in_struct->value) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkLatencySleepInfoNV::safe_VkLatencySleepInfoNV()
+    : sType(VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV), pNext(nullptr), signalSemaphore(), value() {}
+
+safe_VkLatencySleepInfoNV::safe_VkLatencySleepInfoNV(const safe_VkLatencySleepInfoNV& copy_src) {
+    sType = copy_src.sType;
+    signalSemaphore = copy_src.signalSemaphore;
+    value = copy_src.value;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkLatencySleepInfoNV& safe_VkLatencySleepInfoNV::operator=(const safe_VkLatencySleepInfoNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    signalSemaphore = copy_src.signalSemaphore;
+    value = copy_src.value;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkLatencySleepInfoNV::~safe_VkLatencySleepInfoNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkLatencySleepInfoNV::initialize(const VkLatencySleepInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    signalSemaphore = in_struct->signalSemaphore;
+    value = in_struct->value;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkLatencySleepInfoNV::initialize(const safe_VkLatencySleepInfoNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    signalSemaphore = copy_src->signalSemaphore;
+    value = copy_src->value;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSetLatencyMarkerInfoNV::safe_VkSetLatencyMarkerInfoNV(const VkSetLatencyMarkerInfoNV* in_struct,
+                                                             [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), presentID(in_struct->presentID), marker(in_struct->marker) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkSetLatencyMarkerInfoNV::safe_VkSetLatencyMarkerInfoNV()
+    : sType(VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV), pNext(nullptr), presentID(), marker() {}
+
+safe_VkSetLatencyMarkerInfoNV::safe_VkSetLatencyMarkerInfoNV(const safe_VkSetLatencyMarkerInfoNV& copy_src) {
+    sType = copy_src.sType;
+    presentID = copy_src.presentID;
+    marker = copy_src.marker;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSetLatencyMarkerInfoNV& safe_VkSetLatencyMarkerInfoNV::operator=(const safe_VkSetLatencyMarkerInfoNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentID = copy_src.presentID;
+    marker = copy_src.marker;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSetLatencyMarkerInfoNV::~safe_VkSetLatencyMarkerInfoNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkSetLatencyMarkerInfoNV::initialize(const VkSetLatencyMarkerInfoNV* in_struct,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentID = in_struct->presentID;
+    marker = in_struct->marker;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkSetLatencyMarkerInfoNV::initialize(const safe_VkSetLatencyMarkerInfoNV* copy_src,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    presentID = copy_src->presentID;
+    marker = copy_src->marker;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkLatencyTimingsFrameReportNV::safe_VkLatencyTimingsFrameReportNV(const VkLatencyTimingsFrameReportNV* in_struct,
+                                                                       [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType),
+      presentID(in_struct->presentID),
+      inputSampleTimeUs(in_struct->inputSampleTimeUs),
+      simStartTimeUs(in_struct->simStartTimeUs),
+      simEndTimeUs(in_struct->simEndTimeUs),
+      renderSubmitStartTimeUs(in_struct->renderSubmitStartTimeUs),
+      renderSubmitEndTimeUs(in_struct->renderSubmitEndTimeUs),
+      presentStartTimeUs(in_struct->presentStartTimeUs),
+      presentEndTimeUs(in_struct->presentEndTimeUs),
+      driverStartTimeUs(in_struct->driverStartTimeUs),
+      driverEndTimeUs(in_struct->driverEndTimeUs),
+      osRenderQueueStartTimeUs(in_struct->osRenderQueueStartTimeUs),
+      osRenderQueueEndTimeUs(in_struct->osRenderQueueEndTimeUs),
+      gpuRenderStartTimeUs(in_struct->gpuRenderStartTimeUs),
+      gpuRenderEndTimeUs(in_struct->gpuRenderEndTimeUs) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkLatencyTimingsFrameReportNV::safe_VkLatencyTimingsFrameReportNV()
+    : sType(VK_STRUCTURE_TYPE_LATENCY_TIMINGS_FRAME_REPORT_NV),
+      pNext(nullptr),
+      presentID(),
+      inputSampleTimeUs(),
+      simStartTimeUs(),
+      simEndTimeUs(),
+      renderSubmitStartTimeUs(),
+      renderSubmitEndTimeUs(),
+      presentStartTimeUs(),
+      presentEndTimeUs(),
+      driverStartTimeUs(),
+      driverEndTimeUs(),
+      osRenderQueueStartTimeUs(),
+      osRenderQueueEndTimeUs(),
+      gpuRenderStartTimeUs(),
+      gpuRenderEndTimeUs() {}
+
+safe_VkLatencyTimingsFrameReportNV::safe_VkLatencyTimingsFrameReportNV(const safe_VkLatencyTimingsFrameReportNV& copy_src) {
+    sType = copy_src.sType;
+    presentID = copy_src.presentID;
+    inputSampleTimeUs = copy_src.inputSampleTimeUs;
+    simStartTimeUs = copy_src.simStartTimeUs;
+    simEndTimeUs = copy_src.simEndTimeUs;
+    renderSubmitStartTimeUs = copy_src.renderSubmitStartTimeUs;
+    renderSubmitEndTimeUs = copy_src.renderSubmitEndTimeUs;
+    presentStartTimeUs = copy_src.presentStartTimeUs;
+    presentEndTimeUs = copy_src.presentEndTimeUs;
+    driverStartTimeUs = copy_src.driverStartTimeUs;
+    driverEndTimeUs = copy_src.driverEndTimeUs;
+    osRenderQueueStartTimeUs = copy_src.osRenderQueueStartTimeUs;
+    osRenderQueueEndTimeUs = copy_src.osRenderQueueEndTimeUs;
+    gpuRenderStartTimeUs = copy_src.gpuRenderStartTimeUs;
+    gpuRenderEndTimeUs = copy_src.gpuRenderEndTimeUs;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkLatencyTimingsFrameReportNV& safe_VkLatencyTimingsFrameReportNV::operator=(
+    const safe_VkLatencyTimingsFrameReportNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentID = copy_src.presentID;
+    inputSampleTimeUs = copy_src.inputSampleTimeUs;
+    simStartTimeUs = copy_src.simStartTimeUs;
+    simEndTimeUs = copy_src.simEndTimeUs;
+    renderSubmitStartTimeUs = copy_src.renderSubmitStartTimeUs;
+    renderSubmitEndTimeUs = copy_src.renderSubmitEndTimeUs;
+    presentStartTimeUs = copy_src.presentStartTimeUs;
+    presentEndTimeUs = copy_src.presentEndTimeUs;
+    driverStartTimeUs = copy_src.driverStartTimeUs;
+    driverEndTimeUs = copy_src.driverEndTimeUs;
+    osRenderQueueStartTimeUs = copy_src.osRenderQueueStartTimeUs;
+    osRenderQueueEndTimeUs = copy_src.osRenderQueueEndTimeUs;
+    gpuRenderStartTimeUs = copy_src.gpuRenderStartTimeUs;
+    gpuRenderEndTimeUs = copy_src.gpuRenderEndTimeUs;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkLatencyTimingsFrameReportNV::~safe_VkLatencyTimingsFrameReportNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkLatencyTimingsFrameReportNV::initialize(const VkLatencyTimingsFrameReportNV* in_struct,
+                                                    [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentID = in_struct->presentID;
+    inputSampleTimeUs = in_struct->inputSampleTimeUs;
+    simStartTimeUs = in_struct->simStartTimeUs;
+    simEndTimeUs = in_struct->simEndTimeUs;
+    renderSubmitStartTimeUs = in_struct->renderSubmitStartTimeUs;
+    renderSubmitEndTimeUs = in_struct->renderSubmitEndTimeUs;
+    presentStartTimeUs = in_struct->presentStartTimeUs;
+    presentEndTimeUs = in_struct->presentEndTimeUs;
+    driverStartTimeUs = in_struct->driverStartTimeUs;
+    driverEndTimeUs = in_struct->driverEndTimeUs;
+    osRenderQueueStartTimeUs = in_struct->osRenderQueueStartTimeUs;
+    osRenderQueueEndTimeUs = in_struct->osRenderQueueEndTimeUs;
+    gpuRenderStartTimeUs = in_struct->gpuRenderStartTimeUs;
+    gpuRenderEndTimeUs = in_struct->gpuRenderEndTimeUs;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkLatencyTimingsFrameReportNV::initialize(const safe_VkLatencyTimingsFrameReportNV* copy_src,
+                                                    [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    presentID = copy_src->presentID;
+    inputSampleTimeUs = copy_src->inputSampleTimeUs;
+    simStartTimeUs = copy_src->simStartTimeUs;
+    simEndTimeUs = copy_src->simEndTimeUs;
+    renderSubmitStartTimeUs = copy_src->renderSubmitStartTimeUs;
+    renderSubmitEndTimeUs = copy_src->renderSubmitEndTimeUs;
+    presentStartTimeUs = copy_src->presentStartTimeUs;
+    presentEndTimeUs = copy_src->presentEndTimeUs;
+    driverStartTimeUs = copy_src->driverStartTimeUs;
+    driverEndTimeUs = copy_src->driverEndTimeUs;
+    osRenderQueueStartTimeUs = copy_src->osRenderQueueStartTimeUs;
+    osRenderQueueEndTimeUs = copy_src->osRenderQueueEndTimeUs;
+    gpuRenderStartTimeUs = copy_src->gpuRenderStartTimeUs;
+    gpuRenderEndTimeUs = copy_src->gpuRenderEndTimeUs;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkGetLatencyMarkerInfoNV::safe_VkGetLatencyMarkerInfoNV(const VkGetLatencyMarkerInfoNV* in_struct,
+                                                             [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), pTimings(nullptr) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (in_struct->pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(in_struct->pTimings);
+}
+
+safe_VkGetLatencyMarkerInfoNV::safe_VkGetLatencyMarkerInfoNV()
+    : sType(VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV), pNext(nullptr), pTimings(nullptr) {}
+
+safe_VkGetLatencyMarkerInfoNV::safe_VkGetLatencyMarkerInfoNV(const safe_VkGetLatencyMarkerInfoNV& copy_src) {
+    sType = copy_src.sType;
+    pTimings = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(*copy_src.pTimings);
+}
+
+safe_VkGetLatencyMarkerInfoNV& safe_VkGetLatencyMarkerInfoNV::operator=(const safe_VkGetLatencyMarkerInfoNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pTimings) delete pTimings;
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pTimings = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(*copy_src.pTimings);
+
+    return *this;
+}
+
+safe_VkGetLatencyMarkerInfoNV::~safe_VkGetLatencyMarkerInfoNV() {
+    if (pTimings) delete pTimings;
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkGetLatencyMarkerInfoNV::initialize(const VkGetLatencyMarkerInfoNV* in_struct,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pTimings) delete pTimings;
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pTimings = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (in_struct->pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(in_struct->pTimings);
+}
+
+void safe_VkGetLatencyMarkerInfoNV::initialize(const safe_VkGetLatencyMarkerInfoNV* copy_src,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    pTimings = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(*copy_src->pTimings);
+}
+
+safe_VkLatencySubmissionPresentIdNV::safe_VkLatencySubmissionPresentIdNV(const VkLatencySubmissionPresentIdNV* in_struct,
+                                                                         [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), presentID(in_struct->presentID) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkLatencySubmissionPresentIdNV::safe_VkLatencySubmissionPresentIdNV()
+    : sType(VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV), pNext(nullptr), presentID() {}
+
+safe_VkLatencySubmissionPresentIdNV::safe_VkLatencySubmissionPresentIdNV(const safe_VkLatencySubmissionPresentIdNV& copy_src) {
+    sType = copy_src.sType;
+    presentID = copy_src.presentID;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkLatencySubmissionPresentIdNV& safe_VkLatencySubmissionPresentIdNV::operator=(
+    const safe_VkLatencySubmissionPresentIdNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentID = copy_src.presentID;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkLatencySubmissionPresentIdNV::~safe_VkLatencySubmissionPresentIdNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkLatencySubmissionPresentIdNV::initialize(const VkLatencySubmissionPresentIdNV* in_struct,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentID = in_struct->presentID;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkLatencySubmissionPresentIdNV::initialize(const safe_VkLatencySubmissionPresentIdNV* copy_src,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    presentID = copy_src->presentID;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSwapchainLatencyCreateInfoNV::safe_VkSwapchainLatencyCreateInfoNV(const VkSwapchainLatencyCreateInfoNV* in_struct,
+                                                                         [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), latencyModeEnable(in_struct->latencyModeEnable) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkSwapchainLatencyCreateInfoNV::safe_VkSwapchainLatencyCreateInfoNV()
+    : sType(VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV), pNext(nullptr), latencyModeEnable() {}
+
+safe_VkSwapchainLatencyCreateInfoNV::safe_VkSwapchainLatencyCreateInfoNV(const safe_VkSwapchainLatencyCreateInfoNV& copy_src) {
+    sType = copy_src.sType;
+    latencyModeEnable = copy_src.latencyModeEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSwapchainLatencyCreateInfoNV& safe_VkSwapchainLatencyCreateInfoNV::operator=(
+    const safe_VkSwapchainLatencyCreateInfoNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    latencyModeEnable = copy_src.latencyModeEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSwapchainLatencyCreateInfoNV::~safe_VkSwapchainLatencyCreateInfoNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkSwapchainLatencyCreateInfoNV::initialize(const VkSwapchainLatencyCreateInfoNV* in_struct,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    latencyModeEnable = in_struct->latencyModeEnable;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkSwapchainLatencyCreateInfoNV::initialize(const safe_VkSwapchainLatencyCreateInfoNV* copy_src,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    latencyModeEnable = copy_src->latencyModeEnable;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkOutOfBandQueueTypeInfoNV::safe_VkOutOfBandQueueTypeInfoNV(const VkOutOfBandQueueTypeInfoNV* in_struct,
+                                                                 [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), queueType(in_struct->queueType) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkOutOfBandQueueTypeInfoNV::safe_VkOutOfBandQueueTypeInfoNV()
+    : sType(VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV), pNext(nullptr), queueType() {}
+
+safe_VkOutOfBandQueueTypeInfoNV::safe_VkOutOfBandQueueTypeInfoNV(const safe_VkOutOfBandQueueTypeInfoNV& copy_src) {
+    sType = copy_src.sType;
+    queueType = copy_src.queueType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkOutOfBandQueueTypeInfoNV& safe_VkOutOfBandQueueTypeInfoNV::operator=(const safe_VkOutOfBandQueueTypeInfoNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    queueType = copy_src.queueType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkOutOfBandQueueTypeInfoNV::~safe_VkOutOfBandQueueTypeInfoNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkOutOfBandQueueTypeInfoNV::initialize(const VkOutOfBandQueueTypeInfoNV* in_struct,
+                                                 [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    queueType = in_struct->queueType;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkOutOfBandQueueTypeInfoNV::initialize(const safe_VkOutOfBandQueueTypeInfoNV* copy_src,
+                                                 [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    queueType = copy_src->queueType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkLatencySurfaceCapabilitiesNV::safe_VkLatencySurfaceCapabilitiesNV(const VkLatencySurfaceCapabilitiesNV* in_struct,
+                                                                         [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), presentModeCount(in_struct->presentModeCount), pPresentModes(nullptr) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
+    if (in_struct->pPresentModes) {
+        pPresentModes = new VkPresentModeKHR[in_struct->presentModeCount];
+        memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->presentModeCount);
+    }
+}
+
+safe_VkLatencySurfaceCapabilitiesNV::safe_VkLatencySurfaceCapabilitiesNV()
+    : sType(VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV), pNext(nullptr), presentModeCount(), pPresentModes(nullptr) {}
+
+safe_VkLatencySurfaceCapabilitiesNV::safe_VkLatencySurfaceCapabilitiesNV(const safe_VkLatencySurfaceCapabilitiesNV& copy_src) {
+    sType = copy_src.sType;
+    presentModeCount = copy_src.presentModeCount;
+    pPresentModes = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    if (copy_src.pPresentModes) {
+        pPresentModes = new VkPresentModeKHR[copy_src.presentModeCount];
+        memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.presentModeCount);
+    }
+}
+
+safe_VkLatencySurfaceCapabilitiesNV& safe_VkLatencySurfaceCapabilitiesNV::operator=(
+    const safe_VkLatencySurfaceCapabilitiesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pPresentModes) delete[] pPresentModes;
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentModeCount = copy_src.presentModeCount;
+    pPresentModes = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    if (copy_src.pPresentModes) {
+        pPresentModes = new VkPresentModeKHR[copy_src.presentModeCount];
+        memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.presentModeCount);
+    }
+
+    return *this;
+}
+
+safe_VkLatencySurfaceCapabilitiesNV::~safe_VkLatencySurfaceCapabilitiesNV() {
+    if (pPresentModes) delete[] pPresentModes;
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkLatencySurfaceCapabilitiesNV::initialize(const VkLatencySurfaceCapabilitiesNV* in_struct,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pPresentModes) delete[] pPresentModes;
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentModeCount = in_struct->presentModeCount;
+    pPresentModes = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
+    if (in_struct->pPresentModes) {
+        pPresentModes = new VkPresentModeKHR[in_struct->presentModeCount];
+        memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->presentModeCount);
+    }
+}
+
+void safe_VkLatencySurfaceCapabilitiesNV::initialize(const safe_VkLatencySurfaceCapabilitiesNV* copy_src,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    presentModeCount = copy_src->presentModeCount;
+    pPresentModes = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+
+    if (copy_src->pPresentModes) {
+        pPresentModes = new VkPresentModeKHR[copy_src->presentModeCount];
+        memcpy((void*)pPresentModes, (void*)copy_src->pPresentModes, sizeof(VkPresentModeKHR) * copy_src->presentModeCount);
+    }
 }
 
 safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(
