@@ -158,6 +158,22 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
+
+        if (VendorCheckEnabled(kBPVendorAMD)) {
+            if (pCreateInfos[i].pInputAssemblyState && pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable) {
+                skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_AvoidPrimitiveRestart,
+                                              "%s Performance warning: Use of primitive restart is not recommended",
+                                              VendorSpecificTag(kBPVendorAMD));
+            }
+
+            // TODO: this might be too aggressive of a check
+            if (pCreateInfos[i].pDynamicState && pCreateInfos[i].pDynamicState->dynamicStateCount > kDynamicStatesWarningLimitAMD) {
+                skip |= LogPerformanceWarning(
+                    device, kVUID_BestPractices_CreatePipelines_MinimizeNumDynamicStates,
+                    "%s Performance warning: Dynamic States usage incurs a performance cost. Ensure that they are truly needed",
+                    VendorSpecificTag(kBPVendorAMD));
+            }
+        }
     }
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto prev_pipeline = pipeline_cache_.load();
@@ -173,20 +189,6 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_TooManyPipelines,
                                           "%s Performance warning: Too many pipelines created, consider consolidation",
                                           VendorSpecificTag(kBPVendorAMD));
-        }
-
-        if (pCreateInfos->pInputAssemblyState && pCreateInfos->pInputAssemblyState->primitiveRestartEnable) {
-            skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_AvoidPrimitiveRestart,
-                                          "%s Performance warning: Use of primitive restart is not recommended",
-                                          VendorSpecificTag(kBPVendorAMD));
-        }
-
-        // TODO: this might be too aggressive of a check
-        if (pCreateInfos->pDynamicState && pCreateInfos->pDynamicState->dynamicStateCount > kDynamicStatesWarningLimitAMD) {
-            skip |= LogPerformanceWarning(
-                device, kVUID_BestPractices_CreatePipelines_MinimizeNumDynamicStates,
-                "%s Performance warning: Dynamic States usage incurs a performance cost. Ensure that they are truly needed",
-                VendorSpecificTag(kBPVendorAMD));
         }
     }
 
