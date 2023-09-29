@@ -1054,3 +1054,100 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     vk::DestroyPipelineCache(m_device->device(), pipelineCache, NULL);
 }
 */
+
+TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
+    TEST_DESCRIPTION("Create pipeline with primitive topology incompatible with shaders.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static const char *gsSource = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 3) out;
+        in gl_PerVertex
+        {
+            vec4 gl_Position;
+            float gl_PointSize;
+            float gl_ClipDistance[];
+        } gl_in[];
+        void main()
+        {
+            gl_Position = gl_in[0].gl_Position;
+            gl_PointSize = gl_in[0].gl_PointSize;
+            EmitVertex();
+        }
+    )glsl";
+
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00738");
+}
+
+TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
+    TEST_DESCRIPTION("Create pipeline with incompatible topology between tess and geom shaders.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *tcsSource = R"glsl(
+        #version 450
+        layout(location=0) out int x[];
+        layout(vertices=3) out;
+        void main(){
+           gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+           gl_TessLevelInner[0] = 1;
+           x[gl_InvocationID] = gl_InvocationID;
+        }
+    )glsl";
+    char const *tesSource = R"glsl(
+        #version 450
+        layout(triangles, equal_spacing, cw) in;
+        layout(location=0) patch in int x;
+        void main(){
+           gl_Position.xyz = gl_TessCoord;
+           gl_Position.w = x;
+        }
+    )glsl";
+    static const char *gsSource = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 3) out;
+        in gl_PerVertex
+        {
+            vec4 gl_Position;
+            float gl_PointSize;
+            float gl_ClipDistance[];
+        } gl_in[];
+        void main()
+        {
+            gl_Position = gl_in[0].gl_Position;
+            gl_PointSize = gl_in[0].gl_PointSize;
+            EmitVertex();
+        }
+    )glsl";
+
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj tcs(this, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        helper.gp_ci_.pTessellationState = &tsci;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), tcs.GetStageCreateInfo(),
+                                 tes.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00739");
+}
