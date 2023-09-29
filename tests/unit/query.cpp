@@ -2677,3 +2677,105 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0u);
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeQuery, PerformanceQueryReset) {
+    TEST_DESCRIPTION("Invalid performance query pool reset");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto performance_query_features = vku::InitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(performance_query_features);
+
+    if (!performance_query_features.performanceCounterQueryPools) {
+        GTEST_SKIP() << "Test requires (unsupported) performanceCounterQueryPools";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    uint32_t counterCount = 0u;
+    vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,
+                                                                      &counterCount, nullptr, nullptr);
+    std::vector<VkPerformanceCounterKHR> counters(counterCount, vku::InitStruct<VkPerformanceCounterKHR>());
+    std::vector<VkPerformanceCounterDescriptionKHR> counterDescriptions(counterCount,
+                                                                        vku::InitStruct<VkPerformanceCounterDescriptionKHR>());
+    vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,
+                                                                      &counterCount, counters.data(), counterDescriptions.data());
+
+    uint32_t enabledCounter = counterCount;
+    for (uint32_t i = 0; i < counterCount; ++i) {
+        if (counters[i].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) {
+            enabledCounter = i;
+            break;
+        }
+    }
+    if (enabledCounter == counterCount) {
+        GTEST_SKIP() << "No counter with scope VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR found";
+    }
+
+    auto query_pool_performance_ci = vku::InitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
+    query_pool_performance_ci.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    query_pool_performance_ci.counterIndexCount = 1u;
+    query_pool_performance_ci.pCounterIndices = &enabledCounter;
+
+    uint32_t num_passes = 0u;
+    vk::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(m_device->phy(), &query_pool_performance_ci, &num_passes);
+
+    auto query_pool_ci = vku::InitStruct<VkQueryPoolCreateInfo>(&query_pool_performance_ci);
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1u;
+
+    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+
+    auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
+    acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
+    vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
+
+    {
+        m_commandBuffer->begin();
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u);
+        m_commandBuffer->end();
+
+        auto submit_info = vku::InitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::DeviceWaitIdle(*m_device);
+    }
+
+    VkCommandBufferObj command_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    command_buffer.begin();
+    vk::CmdBeginQuery(command_buffer.handle(), query_pool, 0u, 0u);
+    vk::CmdEndQuery(command_buffer.handle(), query_pool, 0u);
+    command_buffer.end();
+
+    for (uint32_t i = 0; i < 2; ++i) {
+        m_commandBuffer->begin();
+        if (i == 0) {
+            vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0u, 0u);
+            vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0u);
+        } else {
+            vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &command_buffer.handle());
+        }
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0u, 1u);
+        m_commandBuffer->end();
+
+        auto performance_query_submit_info = vku::InitStruct<VkPerformanceQuerySubmitInfoKHR>();
+        performance_query_submit_info.counterPassIndex = 0u;
+
+        auto submit_info = vku::InitStruct<VkSubmitInfo>(&performance_query_submit_info);
+        submit_info.commandBufferCount = 1u;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-02862");
+        vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+        vk::DeviceWaitIdle(*m_device);
+    }
+
+    vk::ReleaseProfilingLockKHR(*m_device);
+}
