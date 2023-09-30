@@ -5309,3 +5309,99 @@ TEST_F(NegativeDynamicState, MissingCmdBindVertexBuffers2) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
+    TEST_DESCRIPTION("Attempt to use more than maximum attachments in subpass when advanced blend is enabled");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamic_state_3_features = vku::InitStructHelper(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(dynamic_state_3_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+    if (!dynamic_state_3_features.extendedDynamicState3ColorBlendEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3ColorBlendEnable";
+    }
+    if (!dynamic_state_3_features.extendedDynamicState3ColorBlendAdvanced) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3ColorBlendAdvanced";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_state_3_features));
+
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_advanced_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(blend_advanced_props);
+    uint32_t attachment_count = blend_advanced_props.advancedBlendMaxColorAttachments + 1;
+
+    if (attachment_count > m_device->phy().limits_.maxColorAttachments) {
+        GTEST_SKIP() << "advancedBlendMaxColorAttachments is equal to maxColorAttachments";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    std::vector<std::unique_ptr<VkImageObj>> images(attachment_count);
+    std::vector<VkImageView> image_views(attachment_count);
+    std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        images[i] = std::make_unique<VkImageObj>(m_device);
+        images[i]->init(&image_ci);
+        image_views[i] = images[i]->targetView(image_ci.format);
+        rendering_attachment_info[i] = vku::InitStructHelper();
+        rendering_attachment_info[i].imageView = image_views[i];
+        rendering_attachment_info[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        rendering_attachment_info[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        rendering_attachment_info[i].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        rendering_attachment_info[i].clearValue.color = m_clear_color;
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = attachment_count;
+    rendering_info.pColorAttachments = rendering_attachment_info.data();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(rendering_info);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        VkBool32 color_blend_enable = i == 0;
+        vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), i, 1u, &color_blend_enable);
+        VkColorBlendAdvancedEXT color_blend_advanced;
+        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
+        color_blend_advanced.srcPremultiplied = VK_FALSE;
+        color_blend_advanced.dstPremultiplied = VK_FALSE;
+        color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
+        color_blend_advanced.clampResults = VK_FALSE;
+        vk::CmdSetColorBlendAdvancedEXT(m_commandBuffer->handle(), i, 1u, &color_blend_advanced);
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-advancedBlendMaxColorAttachments-07480");
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
