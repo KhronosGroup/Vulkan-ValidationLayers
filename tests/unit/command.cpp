@@ -7339,3 +7339,25 @@ TEST_F(NegativeCommand, DebugLabelSecondaryCommandBuffer) {
 
     cb.end();
 }
+
+TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
+    TEST_DESCRIPTION("Use render pass continue bit with unsupported command pool.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_GRAPHICS_BIT);
+
+    if (!non_graphics_queue_family_index) {
+        GTEST_SKIP() << "No suitable queue found.";
+    }
+
+    vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-09123");
+    vk::BeginCommandBuffer(command_buffer.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+}
