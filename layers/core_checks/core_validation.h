@@ -555,6 +555,7 @@ class CoreChecks : public ValidationStateTracker {
                                         const std::vector<VkVertexInputBindingDescription>& binding_descriptions,
                                         const Location& loc) const;
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, const Location& loc, const char* vuid) const;
+    bool ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags flags, const Location& loc, const char* vuid) const;
     bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, const Location& loc) const;
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const Location& loc, CMD_BUFFER_STATE* cb_state,
                                                           const ImageBarrier& barrier);

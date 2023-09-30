@@ -1440,6 +1440,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             host_image_copy_features) {
             enabled_features.host_image_copy_features = *host_image_copy_features;
         }
+
+        if (const auto device_generated_commands_compute_features_nv =
+                vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV>(pCreateInfo->pNext)) {
+            enabled_features.device_generated_commands_compute_features_nv = *device_generated_commands_compute_features_nv;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
