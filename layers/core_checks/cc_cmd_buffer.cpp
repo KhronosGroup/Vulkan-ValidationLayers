@@ -322,6 +322,16 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                          begin_info_loc.pNext(Struct::VkDeviceGroupCommandBufferBeginInfo, Field::deviceMask),
                                          "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00107");
     }
+    if ((pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) != 0) {
+        if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+            const LogObjectList objlist(commandBuffer, cb_state->command_pool->Handle());
+            skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-09123", objlist, begin_info_loc.dot(Field::flags),
+                             "contain VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, but the command pool (created with "
+                             "queueFamilyIndex %" PRIu32 ") the command buffer %s was allocated from only supports %s.",
+                             cb_state->command_pool->queueFamilyIndex, FormatHandle(commandBuffer).c_str(),
+                             string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+        }
+    }
     return skip;
 }
 
