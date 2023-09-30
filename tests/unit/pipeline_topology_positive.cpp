@@ -392,7 +392,17 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
+    static char const geom_src[] = R"glsl(
+        #version 460
+        layout(points) in;
+        layout(triangle_strip, max_vertices=3) out;
+        void main() {
+           gl_Position = vec4(1);
+           EmitVertex();
+        }
+    )glsl";
+
+    VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
@@ -423,7 +433,7 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     )glsl";
     char const *tesSource = R"glsl(
         #version 450
-        layout(isolines, equal_spacing, cw) in;
+        layout(triangles, equal_spacing, cw) in;
         void main(){
            gl_Position.xyz = gl_TessCoord;
            gl_Position.w = 1.0f;
