@@ -71,6 +71,17 @@ bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, 
     return skip;
 }
 
+bool CoreChecks::ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags flags, const Location &loc, const char *vuid) const {
+    bool skip = false;
+    if (enabled_features.device_generated_commands_compute_features_nv.deviceGeneratedComputePipelines == VK_FALSE) {
+        if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
+            skip |= LogError(vuid, device, loc, "is %s but deviceGeneratedComputePipelines feature was not enabled.",
+                             string_VkPipelineCreateFlags(flags).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, const Location &loc) const {
     bool skip = false;
     if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess == VK_FALSE) {
