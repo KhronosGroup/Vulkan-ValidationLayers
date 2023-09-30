@@ -1328,6 +1328,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         pipe.InitState();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048");

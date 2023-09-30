@@ -1752,6 +1752,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
         VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         auto info_override = [&](CreatePipelineHelper &info) {
+            info.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
             info.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
         };
 
@@ -1811,6 +1812,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
             VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
             auto info_override = [&](CreatePipelineHelper &info) {
+                info.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
                 info.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
             };
 

@@ -781,6 +781,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
         VkShaderObj gs(this, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
         if (overflow) {
@@ -1058,8 +1059,10 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
 TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
     TEST_DESCRIPTION("Create pipeline with primitive topology incompatible with shaders.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
+        GTEST_SKIP() << "Device does not support the required geometry shader features";
+    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     static const char *gsSource = R"glsl(
@@ -1094,8 +1097,13 @@ TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
 TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
     TEST_DESCRIPTION("Create pipeline with incompatible topology between tess and geom shaders.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
+        GTEST_SKIP() << "Device does not support the required geometry shader features";
+    }
+    if (!m_device->phy().features().tessellationShader) {
+        GTEST_SKIP() << "Device does not support the required tessellation shader";
+    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *tcsSource = R"glsl(
