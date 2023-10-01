@@ -279,6 +279,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDraw-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDraw-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDraw-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDraw-stage-07073";
     }
 };
 
@@ -540,6 +541,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMultiEXT-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMultiEXT-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMultiEXT-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMultiEXT-stage-07073";
     }
 };
 
@@ -802,6 +804,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndexed-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawIndexed-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndexed-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawIndexed-stage-07073";
     }
 };
 
@@ -1064,6 +1067,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMultiIndexedEXT-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMultiIndexedEXT-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMultiIndexedEXT-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMultiIndexedEXT-stage-07073";
     }
 };
 
@@ -1327,6 +1331,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndirect-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawIndirect-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndirect-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawIndirect-stage-07073";
     }
 };
 
@@ -1591,6 +1596,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndexedIndirect-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawIndexedIndirect-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndexedIndirect-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawIndexedIndirect-stage-07073";
     }
 };
 
@@ -1943,6 +1949,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndirectCount-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawIndirectCount-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndirectCount-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawIndirectCount-stage-07073";
     }
 };
 
@@ -2210,6 +2217,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndexedIndirectCount-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawIndexedIndirectCount-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndexedIndirectCount-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawIndexedIndirectCount-stage-07073";
     }
 };
 
@@ -2624,6 +2632,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksNV-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMeshTasksNV-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksNV-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksNV-stage-07073";
     }
 };
 
@@ -2869,6 +2878,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectNV-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectNV-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectNV-stage-07073";
 
     }
 };
@@ -3118,6 +3128,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-07073";
     }
 };
 
@@ -3360,6 +3371,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksEXT-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMeshTasksEXT-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksEXT-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksEXT-stage-07073";
     }
 };
 
@@ -3605,6 +3617,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectEXT-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectEXT-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectEXT-stage-07073";
     }
 };
 
@@ -3853,6 +3866,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stage-07073";
     }
 };
 
@@ -4116,6 +4130,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndirectByteCountEXT-pipelineFragmentShadingRate-09238";
         set_tessellation_domain_origin_09237     = "VUID-vkCmdDrawIndirectByteCountEXT-None-09237";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndirectByteCountEXT-pNext-07935";
+        mesh_shader_queries_07073                = "VUID-vkCmdDrawIndirectByteCountEXT-stage-07073";
     }
 };
 
@@ -5897,6 +5912,21 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
     }
 
     skip |= ValidateCmdRayQueryState(cb_state, bind_point, loc);
+
+    if (pipeline) {
+        if ((pipeline->create_info_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
+            for (const auto &query : cb_state.activeQueries) {
+                const auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
+                if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), query.pool);
+                    skip |= LogError(vuid.mesh_shader_queries_07073, objlist, loc,
+                                     "Query (slot %" PRIu32 ") with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active.",
+                                     query.slot);
+                }
+            }
+        }
+    }
 
     return skip;
 }
