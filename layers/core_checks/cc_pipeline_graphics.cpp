@@ -2962,8 +2962,8 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), cb_state.activeRenderPass->renderPass());
             skip |= LogError(vuid.dynamic_rendering_color_count_06179, objlist, loc,
-                             "Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
-                             ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
+                             "Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
+                             ") must be equal to VkRenderingInfo::colorAttachmentCount (%" PRIu32 ")",
                              FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
                              rendering_color_attachment_count);
         }
