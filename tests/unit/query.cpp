@@ -2784,6 +2784,41 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
     vk::ReleaseProfilingLockKHR(*m_device);
 }
 
+TEST_F(NegativeQuery, GetQueryPoolResultsWithoutReset) {
+    TEST_DESCRIPTION("Get query pool results without ever resetting the query");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_create_info.queryCount = 1;
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    uint32_t data = 0u;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-QueryPool-NotReset");
+    vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(uint32_t), &data, sizeof(uint32_t), 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->begin();
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u, buffer.handle(), 0u, sizeof(uint32_t), 0u);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-QueryPool-NotReset");
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    vk::QueueWaitIdle(m_default_queue);
+}
+
 TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
     TEST_DESCRIPTION("Draw with vertex shader with mesh query active");
 
