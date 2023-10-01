@@ -38,6 +38,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.imageFetchOps = []
         self.storageClassList = [] # list of storage classes
         self.executionModelList = []
+        self.executionModeList = []
         self.decorationList = []
         self.builtInList = []
         self.dimList = []
@@ -47,7 +48,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         self.parseGrammar(grammar)
 
-    def addToStingList(self, operandKind, kind, list, ignoreList = []):
+    def addToStringList(self, operandKind, kind, list, ignoreList = []):
         if operandKind['kind'] == kind:
             values = [] # prevent alias from being duplicatd
             for enum in operandKind['enumerants']:
@@ -91,12 +92,13 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         if enum['value'] not in values:
                             self.imageOperandsParamCount[count].append(enum['enumerant'])
                             values.append(enum['value'])
-                self.addToStingList(operandKind, 'StorageClass', self.storageClassList)
-                self.addToStingList(operandKind, 'ExecutionModel', self.executionModelList)
-                self.addToStingList(operandKind, 'Decoration', self.decorationList)
-                self.addToStingList(operandKind, 'BuiltIn', self.builtInList)
-                self.addToStingList(operandKind, 'Dim', self.dimList)
-                self.addToStingList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
+                self.addToStringList(operandKind, 'StorageClass', self.storageClassList)
+                self.addToStringList(operandKind, 'ExecutionModel', self.executionModelList)
+                self.addToStringList(operandKind, 'ExecutionMode', self.executionModeList)
+                self.addToStringList(operandKind, 'Decoration', self.decorationList)
+                self.addToStringList(operandKind, 'BuiltIn', self.builtInList)
+                self.addToStringList(operandKind, 'Dim', self.dimList)
+                self.addToStringList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
 
             for instruction in instructions:
                 opname = instruction['opname']
@@ -243,6 +245,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             const char* string_SpvOpcode(uint32_t opcode);
             const char* string_SpvStorageClass(uint32_t storage_class);
             const char* string_SpvExecutionModel(uint32_t execution_model);
+            const char* string_SpvExecutionMode(uint32_t execution_mode);
             const char* string_SpvDecoration(uint32_t decoration);
             const char* string_SpvBuiltIn(uint32_t built_in);
             const char* string_SpvDim(uint32_t dim);
@@ -503,6 +506,16 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
             """ for x in self.executionModelList])}
                     default:
                         return "Unknown Execution Model";
+                }}
+            }}
+
+            const char* string_SpvExecutionMode(uint32_t execution_mode) {{
+                switch(execution_mode) {{
+            {"".join([f"""        case spv::ExecutionMode{x}:
+                        return "{x}";
+            """ for x in self.executionModeList])}
+                    default:
+                        return "Unknown Execution Mode";
                 }}
             }}
 

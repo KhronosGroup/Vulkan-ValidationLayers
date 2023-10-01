@@ -131,6 +131,10 @@ struct ExecutionModeSet {
     uint32_t output_primitives = 0;
     uint32_t invocations = 0;
 
+    uint32_t tessellation_subdivision = 0;
+    uint32_t tessellation_orientation = 0;
+    uint32_t tessellation_spacing = 0;
+
     void Add(const Instruction &insn);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
