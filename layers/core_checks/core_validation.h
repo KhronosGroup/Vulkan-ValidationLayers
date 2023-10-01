@@ -302,6 +302,7 @@ struct DrawDispatchVuid {
     const char* set_fragment_shading_rate_09238 = kVUIDUndefined;
     const char* set_tessellation_domain_origin_09237 = kVUIDUndefined;
     const char* rasterization_samples_07935 = kVUIDUndefined;
+    const char* mesh_shader_queries_07073 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
