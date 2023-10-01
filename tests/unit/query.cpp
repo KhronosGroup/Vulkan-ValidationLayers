@@ -2779,3 +2779,45 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
 
     vk::ReleaseProfilingLockKHR(*m_device);
 }
+
+TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
+    TEST_DESCRIPTION("Draw with vertex shader with mesh query active");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (!mesh_shader_features.meshShaderQueries) {
+        GTEST_SKIP() << "Mesh shader queries are not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT;
+    query_pool_create_info.queryCount = 1;
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0u, 0u);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stage-07073");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0u);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
