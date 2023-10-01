@@ -16,6 +16,7 @@
 
 #include "core_validation.h"
 #include "state_tracker/shader_object_state.h"
+#include "generated/spirv_grammar_helper.h"
 
 VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {
     constexpr uint32_t graphicsStagesCount = 5;
@@ -251,6 +252,16 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                          linked_spirv_index, linked_binary_index);
     }
 
+    uint32_t tesc_linked_subdivision = 0u;
+    uint32_t tese_linked_subdivision = 0u;
+    uint32_t tesc_linked_orientation = 0u;
+    uint32_t tese_linked_orientation = 0u;
+    bool tesc_linked_point_mode = false;
+    bool tese_linked_point_mode = false;
+    uint32_t tesc_linked_spacing = 0u;
+    uint32_t tese_linked_spacing = 0u;
+    uint32_t tesc_output_patch_size = 0u;
+    uint32_t tese_output_patch_size = 0u;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
@@ -260,7 +271,53 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             safe_VkShaderCreateInfoEXT safe_create_info = safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
             const PipelineStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
             skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc);
+
+            if (pCreateInfos[i].flags == VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) {
+                if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+                    tesc_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
+                    tesc_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
+                    tesc_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
+                    tesc_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
+                    tesc_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
+                } else if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                    tese_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
+                    tese_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
+                    tese_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
+                    tese_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
+                    tese_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
+                }
+            }
         }
+    }
+
+    if (tesc_linked_subdivision != 0 && tese_linked_subdivision != 0 && tesc_linked_subdivision != tese_linked_subdivision) {
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08867", device, error_obj.location,
+                         "The subdivision specified in tessellation control shader (%s) does not match the subdivision in "
+                         "tessellation evaluation shader (%s).",
+                         string_SpvExecutionMode(tesc_linked_subdivision), string_SpvExecutionMode(tese_linked_subdivision));
+    }
+    if (tesc_linked_orientation != 0 && tese_linked_orientation != 0 && tesc_linked_orientation != tese_linked_orientation) {
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08868", device, error_obj.location,
+                         "The orientation specified in tessellation control shader (%s) does not match the orientation in "
+                         "tessellation evaluation shader (%s).",
+                         string_SpvExecutionMode(tesc_linked_orientation), string_SpvExecutionMode(tese_linked_orientation));
+    }
+    if (tesc_linked_point_mode && !tese_linked_point_mode) {
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08869", device, error_obj.location,
+                         "The tessellation control shader specifies execution mode point mode, but the tessellation evaluation "
+                         "shader does not.");
+    }
+    if (tesc_linked_spacing != 0 && tese_linked_spacing != 0 && tesc_linked_spacing != tese_linked_spacing) {
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08870", device, error_obj.location,
+                         "The spacing specified in tessellation control shader (%s) does not match the spacing in "
+                         "tessellation evaluation shader (%s).",
+                         string_SpvExecutionMode(tesc_linked_spacing), string_SpvExecutionMode(tese_linked_spacing));
+    }
+    if (tesc_output_patch_size != tese_output_patch_size && tese_output_patch_size != 0) {
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08871", device, error_obj.location,
+                         "The output patch size in tessellation control shader (%" PRIu32
+                         ") does not match the output patch size in tessellation evaluation shader (%" PRIu32 ").",
+                         tesc_output_patch_size, tese_output_patch_size);
     }
 
     return skip;

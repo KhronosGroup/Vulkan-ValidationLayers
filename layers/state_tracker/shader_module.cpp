@@ -137,14 +137,20 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             break;
         case spv::ExecutionModeIsolines:  // Tessellation
             flags |= iso_lines_bit;
+            tessellation_subdivision = spv::ExecutionModeIsolines;
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             break;
         case spv::ExecutionModeOutputLineStrip:
         case spv::ExecutionModeOutputLinesNV:
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             break;
-        case spv::ExecutionModeTriangles:
         case spv::ExecutionModeQuads:
+            primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            tessellation_subdivision = spv::ExecutionModeQuads;
+            break;
+        case spv::ExecutionModeTriangles:
+            tessellation_subdivision = spv::ExecutionModeTriangles;
+            [[fallthrough]];
         case spv::ExecutionModeOutputTriangleStrip:
         case spv::ExecutionModeOutputTrianglesNV:
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -224,6 +230,21 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             break;
         case spv::ExecutionModeSubgroupUniformControlFlowKHR:  // VK_KHR_shader_subgroup_uniform_control_flow
             flags |= subgroup_uniform_control_flow_bit;
+            break;
+        case spv::ExecutionModeSpacingEqual:
+            tessellation_spacing = spv::ExecutionModeSpacingEqual;
+            break;
+        case spv::ExecutionModeSpacingFractionalEven:
+            tessellation_spacing = spv::ExecutionModeSpacingFractionalEven;
+            break;
+        case spv::ExecutionModeSpacingFractionalOdd:
+            tessellation_spacing = spv::ExecutionModeSpacingFractionalOdd;
+            break;
+        case spv::ExecutionModeVertexOrderCw:
+            tessellation_orientation = spv::ExecutionModeVertexOrderCw;
+            break;
+        case spv::ExecutionModeVertexOrderCcw:
+            tessellation_orientation = spv::ExecutionModeVertexOrderCcw;
             break;
         default:
             break;
