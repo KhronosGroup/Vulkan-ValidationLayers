@@ -25,6 +25,16 @@
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 
+static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
+                                     uint32_t perfPass) {
+    QueryObject query = QueryObject(queryPool, queryIndex, perfPass);
+
+    auto iter = localQueryToStateMap->find(query);
+    if (iter != localQueryToStateMap->end()) return iter->second;
+
+    return QUERYSTATE_UNKNOWN;
+}
+
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator,
                                                  const ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
@@ -88,6 +98,27 @@ bool CoreChecks::ValidatePerformanceQueryResults(const QUERY_POOL_STATE &query_p
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateQueryPoolWasReset(const QUERY_POOL_STATE &query_pool_state, uint32_t firstQuery, uint32_t queryCount,
+                                           const Location &loc, QueryMap *localQueryToStateMap, uint32_t perfPass) const {
+    bool skip = false;
+
+    for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
+        if (localQueryToStateMap &&
+            GetLocalQueryState(localQueryToStateMap, query_pool_state.pool(), i, perfPass) != QUERYSTATE_UNKNOWN) {
+            continue;
+        }
+        if (query_pool_state.GetQueryState(i, 0u) == QUERYSTATE_UNKNOWN) {
+            skip |= LogError(kVUID_Core_QueryPool_NotReset, query_pool_state.pool(), loc.dot(Field::queryPool),
+                             "%s and query %" PRIu32
+                             ": query not reset. After query pool creation, each query must be reset before it is used. Queries "
+                             "must also be reset between uses.",
+                             FormatHandle(query_pool_state.pool()).c_str(), i);
+            break;
+        }
+    }
     return skip;
 }
 
@@ -201,6 +232,8 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                          "incompatible with the specified query type and options.",
                          FormatHandle(queryPool).c_str(), dataSize);
     }
+
+    skip |= ValidateQueryPoolWasReset(query_pool_state, firstQuery, queryCount, error_obj.location, nullptr, 0u);
 
     return skip;
 }
@@ -596,16 +629,6 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     skip |= ValidateBeginQuery(*cb_state, query_obj, flags, 0, error_obj.location, &vuids);
     skip |= ValidateCmd(*cb_state, error_obj.location);
     return skip;
-}
-
-static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
-                                     uint32_t perfPass) {
-    QueryObject query = QueryObject(queryPool, queryIndex, perfPass);
-
-    auto iter = localQueryToStateMap->find(query);
-    if (iter != localQueryToStateMap->end()) return iter->second;
-
-    return QUERYSTATE_UNKNOWN;
 }
 
 bool CoreChecks::VerifyQueryIsReset(const CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, Func command,
@@ -1014,24 +1037,29 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
                                                       VkDeviceSize stride, VkQueryResultFlags flags) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount, flags](
+    cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount, flags, this](
                                             CMD_BUFFER_STATE &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                             uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         const auto state_data = cb_state_arg.dev_data;
         bool skip = false;
+        const Location loc(Func::vkCmdCopyQueryPoolResults);
         for (uint32_t i = 0; i < queryCount; i++) {
             QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
             QueryResultType result_type = GetQueryResultType(state, flags);
             if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
                 const LogObjectList objlist(cb_state_arg.commandBuffer(), queryPool);
-                const Location loc(Func::vkCmdCopyQueryPoolResults);
                 skip |= state_data->LogError("VUID-vkCmdCopyQueryPoolResults-None-08752", objlist, loc,
                                              "Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
                                              state_data->FormatHandle(queryPool).c_str(), firstQuery + i,
                                              string_QueryResultType(result_type));
             }
         }
+
+        // NOTE: dev_data == this, but the compiler "Visual Studio 16" complains Get is ambiguous if dev_data isn't used
+        auto query_pool_state = cb_state_arg.dev_data->Get<QUERY_POOL_STATE>(queryPool);
+        skip |= ValidateQueryPoolWasReset(*query_pool_state, firstQuery, queryCount, loc, localQueryToStateMap, perfPass);
+
         return skip;
     });
 }

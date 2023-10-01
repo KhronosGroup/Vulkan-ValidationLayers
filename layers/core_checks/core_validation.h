@@ -1579,6 +1579,8 @@ class CoreChecks : public ValidationStateTracker {
                                          const ErrorObject& error_obj) const override;
     bool ValidatePerformanceQueryResults(const QUERY_POOL_STATE& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
                                          VkQueryResultFlags flags, const Location& loc) const;
+    bool ValidateQueryPoolWasReset(const QUERY_POOL_STATE& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
+                                   const Location& loc, QueryMap* localQueryToStateMap, uint32_t perfPass) const;
     bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                             size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                             const ErrorObject& error_obj) const override;
