@@ -102,47 +102,6 @@ elseif(MSVC)
     )
 endif()
 
-# Represents all SPIRV libraries we need
-add_library(VVL-SPIRV-LIBS INTERFACE)
-
-find_package(SPIRV-Headers REQUIRED CONFIG QUIET)
-target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Headers::SPIRV-Headers)
-
-find_package(SPIRV-Tools-opt REQUIRED CONFIG QUIET)
-target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-opt)
-
-find_package(SPIRV-Tools-link REQUIRED CONFIG QUIET)
-target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-link)
-
-find_package(SPIRV-Tools REQUIRED CONFIG QUIET)
-
-# See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
-# The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
-# Try to handle all possible combinations so that we work with externally built packages.
-if (TARGET SPIRV-Tools)
-    target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools)
-elseif(TARGET SPIRV-Tools-static)
-    target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-static)
-elseif(TARGET SPIRV-Tools-shared)
-    target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-shared)
-else()
-    message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
-endif()
-
-# NOTE: Our custom code generation target isn't desirable for system package managers or add_subdirectory users.
-# So this target needs to be off by default to avoid obtuse build errors or patches.
-option(VVL_CODEGEN "Enable vulkan validation layer code generation")
-if (VVL_CODEGEN)
-    find_package(Python3 REQUIRED QUIET)
-    add_custom_target(vvl_codegen
-        COMMAND Python3::Interpreter "${VVL_SOURCE_DIR}/scripts/generate_source.py"
-            "${VULKAN_HEADERS_INSTALL_DIR}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
-            "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1"
-            --incremental --generated-version ${VulkanHeaders_VERSION} --api ${API_TYPE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}/generated
-    )
-endif()
-
 add_library(vvl MODULE)
 
 target_sources(vvl PRIVATE
@@ -354,7 +313,12 @@ endif()
 
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
-target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
+target_link_libraries(vvl PRIVATE
+    SPIRV-Headers::SPIRV-Headers
+    SPIRV-Tools-opt
+    SPIRV-Tools-link
+    VkLayer_utils
+)
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
 # OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
