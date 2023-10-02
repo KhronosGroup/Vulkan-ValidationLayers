@@ -1354,10 +1354,10 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);  // pDynamicOffsets[1]
     // buffer[0, max - alignment]
     descriptor_set_2.WriteDescriptorBufferInfo(2, buffer.handle(), 0, buffer_size - partial_size,
-                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0, 1);  // pDynamicOffsets[2]
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);  // pDynamicOffsets[2]s
     // buffer[0, max - alignment]
     descriptor_set_2.WriteDescriptorBufferInfo(2, buffer.handle(), 0, buffer_size - partial_size,
-                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, 1);  // pDynamicOffsets[3]
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);  // pDynamicOffsets[3]
     // buffer[alignment, max - alignment]
     descriptor_set_2.WriteDescriptorBufferInfo(3, buffer.handle(), partial_size, buffer_size - (partial_size * 2),
                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);  // pDynamicOffsets[4]
@@ -4895,7 +4895,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image.targetView(format), sampler.handle(),
                                                      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
