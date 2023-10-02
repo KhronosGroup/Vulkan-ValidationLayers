@@ -4671,6 +4671,44 @@ TEST_F(NegativeRenderPass, RenderPassBegin) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
+    TEST_DESCRIPTION("Incompatible framebuffer in command buffer inheritance info");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 0u;
+    framebuffer_ci.pAttachments = nullptr;
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper();
+    inheritance_info.renderPass = m_renderPass;
+    inheritance_info.subpass = 0u;
+    inheritance_info.framebuffer = framebuffer.handle();
+
+    VkCommandBufferBeginInfo cmd_buffer_begin_info = vku::InitStructHelper();
+    cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cmd_buffer_begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkCommandBufferObj secondary_cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-00055");
+    vk::BeginCommandBuffer(secondary_cmd_buffer.handle(), &cmd_buffer_begin_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRenderPass, ZeroRenderArea) {
     TEST_DESCRIPTION("renderArea set to zero");
     ASSERT_NO_FATAL_FAILURE(Init());
