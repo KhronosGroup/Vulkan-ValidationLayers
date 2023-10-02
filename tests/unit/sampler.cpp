@@ -869,9 +869,12 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     TEST_DESCRIPTION(
         "If a samper is unnormalizedCoordinates, the imageview has to be some specific types. Uses COMBINED_IMAGE_SAMPLER");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
 
     // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
     // Verify that it is allowed on this implementation if
@@ -972,10 +975,12 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
 TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     TEST_DESCRIPTION(
         "If a samper is unnormalizedCoordinates, the imageview has to be some specific types. Doesn't use COMBINED_IMAGE_SAMPLER");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
 
     // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
     // Verify that it is allowed on this implementation if

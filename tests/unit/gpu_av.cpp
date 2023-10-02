@@ -1984,6 +1984,9 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (DeviceValidationVersion() != VK_API_VERSION_1_1) {

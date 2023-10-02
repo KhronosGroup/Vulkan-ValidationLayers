@@ -267,7 +267,8 @@ TEST_F(NegativeSyncObject, Barriers) {
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
+    const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0) ||
+                                 ((m_device->phy().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
@@ -1293,7 +1294,8 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t queue_family_count = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (queue_family_count == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
+    const bool only_one_family = (queue_family_count == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0) ||
+                                 ((m_device->phy().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
 
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {

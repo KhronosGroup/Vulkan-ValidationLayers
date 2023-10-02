@@ -120,6 +120,10 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
+    if (IsExtensionsEnabled(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
+        // Extra error if VK_EXT_debug_report is used on Android still
+        m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
+    }
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging");
     VkInstance dummy;

@@ -30,7 +30,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, false);
     if (!no_gfx) {
         GTEST_SKIP() << "Required queue families not present (non-graphics capable required)";
     }
@@ -80,7 +80,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, false);
     if (!no_gfx) {
         GTEST_SKIP() << "Required queue families not present (non-graphics capable required)";
     }

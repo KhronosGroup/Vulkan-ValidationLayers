@@ -359,6 +359,9 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper(&sync2_features);
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);

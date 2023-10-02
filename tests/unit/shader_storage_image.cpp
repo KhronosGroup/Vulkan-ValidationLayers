@@ -172,12 +172,14 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
 
 TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -335,12 +337,14 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
 
 TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }

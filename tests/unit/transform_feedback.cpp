@@ -1099,11 +1099,12 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    transform_feedback_features.geometryStreams = VK_TRUE;
+    GetPhysicalDeviceFeatures2(transform_feedback_features);
+    if (!transform_feedback_features.geometryStreams) {
+        GTEST_SKIP() << "geometryStreams not supported";
+    }
 
-    // Extension enabled via dependencies
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&transform_feedback_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &transform_feedback_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props = vku::InitStructHelper();

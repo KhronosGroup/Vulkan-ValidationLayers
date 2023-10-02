@@ -40,4 +40,36 @@ inline bool SetAllocationInfoImportAHB(vkt::Device *device, VkAndroidHardwareBuf
     return info.memoryTypeIndex < mem_props.memoryTypeCount;
 }
 
+namespace vkt {
+class AHB {
+  public:
+    AHB(const AHardwareBuffer_Desc *ahb_desc) { init(ahb_desc); }
+    AHB(uint32_t format, uint64_t usage, uint32_t width, uint32_t height = 1, uint32_t layers = 1, uint32_t stride = 1) {
+        AHardwareBuffer_Desc ahb_desc = {};
+        ahb_desc.format = format;
+        ahb_desc.usage = usage;
+        ahb_desc.width = width;
+        ahb_desc.height = height;
+        ahb_desc.layers = layers;
+        ahb_desc.stride = stride;
+        init(&ahb_desc);
+    }
+
+    void init(const AHardwareBuffer_Desc *ahb_desc) { AHardwareBuffer_allocate(ahb_desc, &ahb); }
+
+    ~AHB() {
+        if (ahb) {
+            AHardwareBuffer_release(ahb);
+            ahb = nullptr;
+        }
+    }
+
+    struct AHardwareBuffer *handle() {
+        return ahb;
+    }
+
+  private:
+    AHardwareBuffer *ahb = nullptr;
+};
+}  // namespace vkt
 #endif  // VK_USE_PLATFORM_ANDROID_KHR

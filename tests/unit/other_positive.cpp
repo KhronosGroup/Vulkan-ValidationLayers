@@ -790,8 +790,12 @@ TEST_F(VkPositiveLayerTest, SafeVoidPointerCopies) {
 TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
     // https://github.com/KhronosGroup/Vulkan-Profiles/pull/392
     TEST_DESCRIPTION("Make sure VkFormatProperties3KHR is overwritten correctly in Profiles layer");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
