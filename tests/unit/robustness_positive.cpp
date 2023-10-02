@@ -82,7 +82,7 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     VkBufferView buffer_view = VK_NULL_HANDLE;
     descriptor_set.WriteDescriptorBufferView(2, buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
 
     m_commandBuffer->begin();
     VkBuffer buffer = VK_NULL_HANDLE;

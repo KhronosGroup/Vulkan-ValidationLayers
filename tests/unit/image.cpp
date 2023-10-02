@@ -4880,7 +4880,7 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-06712");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
 
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     vkt::ImageView view_2d(*m_device, view_ci);
@@ -4888,7 +4888,7 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-07796");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
 
     image_ci.flags = 0;
     VkImageObj image_3d_no_flag(m_device);
@@ -4956,7 +4956,7 @@ TEST_F(NegativeImage, Image2DViewOf3DFeature) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-descriptorType-06714");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
 
     descriptor_set.WriteDescriptorImageInfo(1, view_2d_array.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                             VK_IMAGE_LAYOUT_GENERAL);

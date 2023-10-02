@@ -652,14 +652,21 @@ struct OneOffDescriptorSet {
     vkt::DescriptorSetLayout layout_;
     VkDescriptorSet set_;
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
-    std::vector<VkDescriptorBufferInfo> buffer_infos;
-    std::vector<VkDescriptorImageInfo> image_infos;
-    std::vector<VkBufferView> buffer_views;
+
+    // Only one member of ResourceInfo object contains a value.
+    // The pointers to Image/Buffer/BufferView info structures can't be stored in 'descriptor_writes'
+    // during WriteDescriptor call, because subsequent calls can reallocate which invalidates stored pointers.
+    // When UpdateDescriptorSets is called it's safe to initialize the pointers.
+    struct ResourceInfo {
+        std::optional<VkDescriptorImageInfo> image_info;
+        std::optional<VkDescriptorBufferInfo> buffer_info;
+        std::optional<VkBufferView> buffer_view;
+    };
+    std::vector<ResourceInfo> resource_infos;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
     OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
-                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL,
-                        int buffer_info_size = 10, int image_info_size = 10, int buffer_view_size = 10);
+                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
     ~OneOffDescriptorSet();
     bool Initialized();
     void Clear();
@@ -672,6 +679,9 @@ struct OneOffDescriptorSet {
                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                   VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t arrayElement = 0);
     void UpdateDescriptorSets();
+
+private:
+    void AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type);
 };
 
 template <typename T>

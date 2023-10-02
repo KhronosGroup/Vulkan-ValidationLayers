@@ -956,13 +956,9 @@ void VkBufferTest::TestDoubleDestroy() {
 
 OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
-                                         VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext, int buffer_info_size,
-                                         int image_info_size, int buffer_view_size)
+                                         VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext)
     : device_{device}, pool_{}, layout_(*device, bindings, layout_flags, layout_pnext), set_(VK_NULL_HANDLE) {
     VkResult err;
-    buffer_infos.reserve(buffer_info_size);
-    image_infos.reserve(image_info_size);
-    buffer_views.reserve(buffer_view_size);
     std::vector<VkDescriptorPoolSize> sizes;
     for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
 
@@ -986,78 +982,68 @@ OneOffDescriptorSet::~OneOffDescriptorSet() {
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
 
 void OneOffDescriptorSet::Clear() {
-    buffer_infos.clear();
-    image_infos.clear();
-    buffer_views.clear();
+    resource_infos.clear();
     descriptor_writes.clear();
+}
+
+void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type) {
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = set_;
+    descriptor_write.dstBinding = binding;
+    descriptor_write.dstArrayElement = array_element;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = descriptor_type;
+    descriptor_writes.emplace_back(descriptor_write);
 }
 
 void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range,
                                                     VkDescriptorType descriptorType, uint32_t arrayElement) {
-    const auto index = buffer_infos.size();
-
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer;
     buffer_info.offset = offset;
     buffer_info.range = range;
-    buffer_infos.emplace_back(buffer_info);
 
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = set_;
-    descriptor_write.dstBinding = binding;
-    descriptor_write.dstArrayElement = arrayElement;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = descriptorType;
-    descriptor_write.pBufferInfo = &buffer_infos[index];
-    descriptor_write.pImageInfo = nullptr;
-    descriptor_write.pTexelBufferView = nullptr;
-
-    descriptor_writes.emplace_back(descriptor_write);
+    ResourceInfo resource_info;
+    resource_info.buffer_info = buffer_info;
+    resource_infos.emplace_back(resource_info);
+    AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
 void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView buffer_view, VkDescriptorType descriptorType,
                                                     uint32_t arrayElement) {
-    const auto index = buffer_views.size();
-    buffer_views.emplace_back(buffer_view);
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = set_;
-    descriptor_write.dstBinding = binding;
-    descriptor_write.dstArrayElement = arrayElement;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = descriptorType;
-    descriptor_write.pTexelBufferView = &buffer_views[index];
-    descriptor_write.pImageInfo = nullptr;
-    descriptor_write.pBufferInfo = nullptr;
-
-    descriptor_writes.emplace_back(descriptor_write);
+    ResourceInfo resource_info;
+    resource_info.buffer_view = buffer_view;
+    resource_infos.emplace_back(resource_info);
+    AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
 void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
                                                    VkDescriptorType descriptorType, VkImageLayout imageLayout,
                                                    uint32_t arrayElement) {
-    const auto index = image_infos.size();
-
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
     image_info.sampler = sampler;
     image_info.imageLayout = imageLayout;
-    image_infos.emplace_back(image_info);
 
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = set_;
-    descriptor_write.dstBinding = binding;
-    descriptor_write.dstArrayElement = arrayElement;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = descriptorType;
-    descriptor_write.pImageInfo = &image_infos[index];
-    descriptor_write.pBufferInfo = nullptr;
-    descriptor_write.pTexelBufferView = nullptr;
-
-    descriptor_writes.emplace_back(descriptor_write);
+    ResourceInfo resource_info;
+    resource_info.image_info = image_info;
+    resource_infos.emplace_back(resource_info);
+    AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
 void OneOffDescriptorSet::UpdateDescriptorSets() {
+    assert(resource_infos.size() == descriptor_writes.size());
+    for (size_t i = 0; i < resource_infos.size(); i++) {
+        const auto &info = resource_infos[i];
+        if (info.image_info.has_value()) {
+            descriptor_writes[i].pImageInfo = &info.image_info.value();
+        } else if (info.buffer_info.has_value()) {
+            descriptor_writes[i].pBufferInfo = &info.buffer_info.value();
+        } else {
+            assert(info.buffer_view.has_value());
+            descriptor_writes[i].pTexelBufferView = &info.buffer_view.value();
+        }
+    }
     vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 }
 

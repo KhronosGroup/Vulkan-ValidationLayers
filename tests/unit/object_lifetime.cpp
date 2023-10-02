@@ -391,7 +391,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     bvci.buffer = buffer.handle();
     VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
     ASSERT_VK_SUCCESS(err);
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
     descriptor_set.WriteDescriptorBufferView(0, view);
     descriptor_set.UpdateDescriptorSets();
 
