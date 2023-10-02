@@ -7361,3 +7361,52 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
     vk::BeginCommandBuffer(command_buffer.handle(), &begin_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeCommand, CopyDifferentFormatTexelBlockExtent) {
+    TEST_DESCRIPTION("Copy bewteen compress images with different texel block extent.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkFormat src_format = VK_FORMAT_BC7_UNORM_BLOCK;
+    VkFormat dst_format = VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK;
+
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), src_format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0) {
+        GTEST_SKIP() << "Src transfer for format is not supported";
+    }
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), dst_format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
+        GTEST_SKIP() << "Dst transfer for format is not supported";
+    }
+
+    VkImageObj src_image(m_device);
+    src_image.Init(32, 32, 1, src_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageObj dst_image(m_device);
+    dst_image.Init(32, 32, 1, dst_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageCopy region;
+    region.extent = {32, 32, 1};
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.dstSubresource = region.srcSubresource;
+    region.srcOffset = {0, 0, 0};
+    region.dstOffset = {0, 0, 0};
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-09247");
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
