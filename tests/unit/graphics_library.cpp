@@ -546,6 +546,20 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
+
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.InitState();
+
+        // Creating with VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT without
+        // VK_PIPELINE_CREATE_LIBRARY_BIT_KHR is invalid
+        pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+        pre_raster_lib.gpl_info->pNext = &link_info;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-09245");
+        pre_raster_lib.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
