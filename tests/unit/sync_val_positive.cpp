@@ -633,3 +633,233 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
                            nullptr, 0, nullptr, 1, &barrier_b);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
+    TEST_DESCRIPTION("Access different elements of the image array using dynamic indexing. There should be no hazards");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features12);
+    if (features12.runtimeDescriptorArray != VK_TRUE) {
+        GTEST_SKIP() << "runtimeDescriptorArray not supported and is required";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    InitRenderTarget();
+
+    constexpr VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    constexpr VkImageLayout image_layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkImageObj images[4] = {m_device, m_device, m_device, m_device};
+    VkImageView views[4] = {};
+    for (int i = 0; i < 4; i++) {
+        images[i].Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+        ASSERT_TRUE(images[i].initialized());
+        images[i].SetLayout(image_layout);
+        views[i] = images[i].targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    }
+
+    const OneOffDescriptorSet::Bindings bindings = {
+        {0, descriptor_type, 4, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    descriptor_set.WriteDescriptorImageInfo(0, views[0], VK_NULL_HANDLE, descriptor_type, image_layout, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, views[1], VK_NULL_HANDLE, descriptor_type, image_layout, 1);
+    descriptor_set.WriteDescriptorImageInfo(0, views[2], VK_NULL_HANDLE, descriptor_type, image_layout, 2);
+    descriptor_set.WriteDescriptorImageInfo(0, views[3], VK_NULL_HANDLE, descriptor_type, image_layout, 3);
+    descriptor_set.UpdateDescriptorSets();
+
+    // Write to image 0 or 1
+    const char fsSource[] = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0, rgba8) uniform image2D image_array[];
+        void main() {
+           imageStore(image_array[int(gl_FragCoord.x) % 2], ivec2(1, 1), vec4(1.0, 0.5, 0.2, 1.0));
+        }
+    )glsl";
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper gfx_pipe(*this);
+    gfx_pipe.shader_stages_ = {gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    gfx_pipe.CreateGraphicsPipeline();
+
+    // Read from image 2 or 3
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0, rgba8) uniform image2D image_array[];
+        void main() {
+            vec4 data = imageLoad(image_array[2 + (gl_LocalInvocationID.x % 2)], ivec2(1, 1));
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.dsl_bindings_ = bindings;
+    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    // Graphics pipeline writes
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    // Compute pipeline reads
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
+}
+
+// TODO: enable this test when syncval can track array accesses for constant indices
+TEST_F(PositiveSyncVal, DISABLED_ImageArrayConstantIndexing) {
+    TEST_DESCRIPTION("Access different elements of the image array using constant indices. There should be no hazards");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    ASSERT_TRUE(image.initialized());
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    const VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    const OneOffDescriptorSet::Bindings bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    // Write to image 0
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform image2D image_array[];
+        void main() {
+           imageStore(image_array[0], ivec2(1, 1), vec4(1.0, 0.5, 0.2, 1.0));
+        }
+    )glsl";
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper gfx_pipe(*this);
+    gfx_pipe.shader_stages_ = {gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    gfx_pipe.CreateGraphicsPipeline();
+
+    // Read from image 1
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform image2D image_array[];
+        void main() {
+            vec4 data = imageLoad(image_array[1], ivec2(1, 1));
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.dsl_bindings_ = bindings;
+    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    // Graphics pipeline writes
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    // Compute pipeline reads
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
+}
+
+// TODO: enable this test when syncval can track array accesses for constant indices
+TEST_F(PositiveSyncVal, DISABLED_TexelBufferArrayConstantIndexing) {
+    TEST_DESCRIPTION("Access different elements of the texel buffer array using constant indices. There should be no hazards");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 1024;
+    buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    const vkt::Buffer buffer0(*m_device, buffer_ci);
+    const vkt::Buffer buffer1(*m_device, buffer_ci);
+    const vkt::BufferView buffer_view0(*m_device, vkt::BufferView::createInfo(buffer0, VK_FORMAT_R8G8B8A8_UINT));
+    const vkt::BufferView buffer_view1(*m_device, vkt::BufferView::createInfo(buffer1, VK_FORMAT_R8G8B8A8_UINT));
+
+    const OneOffDescriptorSet::Bindings bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    // Write to texel buffer 0
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8ui) uniform uimageBuffer texel_buffer_array[];
+        void main() {
+           imageStore(texel_buffer_array[0], 0, uvec4(1, 2, 3, 42));
+        }
+    )glsl";
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper gfx_pipe(*this);
+    gfx_pipe.shader_stages_ = {gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    gfx_pipe.CreateGraphicsPipeline();
+
+    // Read from texel buffer 1
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8ui) uniform uimageBuffer texel_buffer_array[];
+        void main() {
+            uvec4 data = imageLoad(texel_buffer_array[1], 0);
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.dsl_bindings_ = bindings;
+    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    // Graphics pipeline writes
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    // Compute pipeline reads
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
+}
