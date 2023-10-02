@@ -36,8 +36,6 @@ include(GNUInstallDirs)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) # Remove when min is 3.26, see CMP0143
 
-find_package(VulkanHeaders REQUIRED CONFIG QUIET)
-
 add_compile_definitions(VK_ENABLE_BETA_EXTENSIONS)
 if(WIN32)
     add_compile_definitions(VK_USE_PLATFORM_WIN32_KHR)
@@ -71,7 +69,29 @@ else()
     endif()
 endif()
 
-find_package(VulkanUtilityLibraries REQUIRED CONFIG QUIET)
+find_package(VulkanHeaders CONFIG QUIET)
+
+find_package(VulkanUtilityLibraries CONFIG QUIET)
+
+find_package(SPIRV-Headers CONFIG QUIET)
+
+find_package(SPIRV-Tools-opt CONFIG QUIET)
+
+find_package(SPIRV-Tools-link CONFIG QUIET)
+
+# NOTE: Our custom code generation target isn't desirable for system package managers or add_subdirectory users.
+# So this target needs to be off by default to avoid obtuse build errors or patches.
+option(VVL_CODEGEN "Enable vulkan validation layer code generation")
+if (VVL_CODEGEN)
+    find_package(Python3 REQUIRED)
+    add_custom_target(vvl_codegen
+        COMMAND Python3::Interpreter "${VVL_SOURCE_DIR}/scripts/generate_source.py"
+            "${VULKAN_HEADERS_INSTALL_DIR}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
+            "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1"
+            --incremental --generated-version ${VulkanHeaders_VERSION} --api ${API_TYPE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}/generated
+    )
+endif()
 
 if (ANNOTATED_SPEC_LINK)
     message("ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")

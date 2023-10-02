@@ -212,13 +212,28 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     glslang::HLSL
     glslang::SPIRV
     glslang::SPVRemapper
-    VVL-SPIRV-LIBS
+    SPIRV-Headers::SPIRV-Headers
     GTest::gtest
     GTest::gtest_main
     $<TARGET_NAME_IF_EXISTS:PkgConfig::XCB>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::X11>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
 )
+
+find_package(SPIRV-Tools CONFIG QUIET)
+
+# See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
+# The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
+# Try to handle all possible combinations so that we work with externally built packages.
+if (TARGET SPIRV-Tools)
+    target_link_libraries(vk_layer_validation_tests PRIVATE SPIRV-Tools)
+elseif(TARGET SPIRV-Tools-static)
+    target_link_libraries(vk_layer_validation_tests PRIVATE SPIRV-Tools-static)
+elseif(TARGET SPIRV-Tools-shared)
+    target_link_libraries(vk_layer_validation_tests PRIVATE SPIRV-Tools-shared)
+else()
+    message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
+endif()
 
 if (ANDROID)
     add_subdirectory(android)
