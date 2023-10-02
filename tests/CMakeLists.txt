@@ -199,8 +199,8 @@ elseif(MSVC)
     endif()
 endif()
 
-find_package(GTest REQUIRED CONFIG QUIET)
-find_package(glslang REQUIRED CONFIG QUIET)
+find_package(GTest CONFIG)
+find_package(glslang CONFIG)
 
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
