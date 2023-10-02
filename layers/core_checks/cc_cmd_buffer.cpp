@@ -92,8 +92,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         } else {
             auto p_inherited_rendering_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(info->pNext);
 
-            if ((pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) &&
-                ((api_version >= VK_API_VERSION_1_3) || enabled_features.core13.dynamicRendering)) {
+            if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 auto framebuffer = Get<FRAMEBUFFER_STATE>(info->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != info->renderPass) {
@@ -272,20 +271,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             // Check for dynamic rendering feature enabled or 1.3
             if ((api_version < VK_API_VERSION_1_3) && (!enabled_features.core13.dynamicRendering)) {
                 if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-                    if (info->renderPass != VK_NULL_HANDLE) {
-                        auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
-                        if (render_pass) {
-                            if (info->subpass >= render_pass->createInfo.subpassCount) {
-                                // TODO - Combine logic with other location
-                                skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06001",
-                                                 "vkBeginCommandBuffer(): Secondary %s has a subpass index (%" PRIu32
-                                                 ") that is "
-                                                 "superior or equal to the number of subpasses (%" PRIu32 ").",
-                                                 FormatHandle(commandBuffer).c_str(), info->subpass,
-                                                 render_pass->createInfo.subpassCount);
-                            }
-                        }
-                    } else {
+                    if (info->renderPass == VK_NULL_HANDLE) {
                         skip |=
                             LogError("VUID-VkCommandBufferBeginInfo-flags-06000", commandBuffer, begin_info_loc.dot(Field::flags),
                                      "includes VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
