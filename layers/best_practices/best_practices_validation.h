@@ -530,6 +530,9 @@ class BestPractices : public ValidationStateTracker {
                                               VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
                                            VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                            size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                            const ErrorObject& error_obj) const override;
     void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                       VkPipeline pipeline) override;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,

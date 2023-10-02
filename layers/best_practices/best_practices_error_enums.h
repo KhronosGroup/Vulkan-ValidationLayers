@@ -144,6 +144,7 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_Shader_OutputNotConsumed = "UNASSIGNED-BestPractices-Shader-OutputNotConsumed";
 [[maybe_unused]] static const char *kVUID_BestPractices_Shader_FragmentOutputMismatch = "UNASSIGNED-BestPractices-Shader-FragmentOutputMismatch";
 [[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_NoRendering = "UNASSIGNED-BestPractices-Pipeline-NoRendering";
+[[maybe_unused]] static const char *kVUID_BestPractices_QueryPool_Unavailable = "UNASSIGNED-BestPractices-QueryPool-Unavailable";
 
 // Arm-specific best practice
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =

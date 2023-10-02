@@ -126,6 +126,26 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuf
     return skip;
 }
 
+bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
+                                                       uint32_t queryCount, size_t dataSize, void* pData, VkDeviceSize stride,
+                                                       VkQueryResultFlags flags, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
+
+    for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
+        if (query_pool_state.GetQueryState(i, 0u) == QUERYSTATE_RESET) {
+            const LogObjectList objlist(queryPool);
+            skip |= LogWarning(objlist, kVUID_BestPractices_QueryPool_Unavailable,
+                               "QueryPool %s and query %" PRIu32 ": vkCmdBeginQuery() was never called.",
+                               FormatHandle(query_pool_state.pool()).c_str(), i);
+            break;
+        }
+    }
+
+    return skip;
+}
+
 void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     StateTracker::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
 
