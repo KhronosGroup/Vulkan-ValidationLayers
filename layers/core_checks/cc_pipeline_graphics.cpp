@@ -2935,7 +2935,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
+    const auto &rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
     const auto &rp_state = pipeline->RenderPassState();
     if (rp_state) {
         const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
@@ -3058,6 +3058,17 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                     }
                 }
             }
+        } else if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+            if (cb_state.activeRenderPass->inheritance_rendering_info.depthAttachmentFormat !=
+                pipeline_rendering_ci.depthAttachmentFormat) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
+                                            cb_state.activeRenderPass->renderPass());
+                skip |= LogError(vuid.dynamic_rendering_depth_format_08914, objlist, loc,
+                                 "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat (%s) must match corresponding "
+                                 "format in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
+                                 string_VkFormat(cb_state.activeRenderPass->inheritance_rendering_info.depthAttachmentFormat),
+                                 string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+            }
         }
 
         if (rendering_info.pStencilAttachment) {
@@ -3100,6 +3111,17 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                                          string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
                     }
                 }
+            }
+        } else if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+            if (cb_state.activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat !=
+                pipeline_rendering_ci.stencilAttachmentFormat) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
+                                            cb_state.activeRenderPass->renderPass());
+                skip |= LogError(vuid.dynamic_rendering_stencil_format_08917, objlist, loc,
+                                 "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat (%s) must match corresponding "
+                                 "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
+                                 string_VkFormat(cb_state.activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat),
+                                 string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
             }
         }
 
