@@ -887,7 +887,8 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    const std::optional<uint32_t> transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    const std::optional<uint32_t> transfer =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
     if (!transfer) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }

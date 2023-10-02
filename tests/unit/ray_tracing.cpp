@@ -1784,8 +1784,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
-    vkt::Buffer host_buffer(*m_device, 4096, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    vkt::Buffer host_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     auto bot_level_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
     bot_level_as.GetDstAS()->SetDeviceBuffer(std::move(non_host_visible_buffer));

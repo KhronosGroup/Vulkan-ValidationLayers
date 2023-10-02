@@ -268,6 +268,11 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
+
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
     image_ci.imageType = VK_IMAGE_TYPE_2D;

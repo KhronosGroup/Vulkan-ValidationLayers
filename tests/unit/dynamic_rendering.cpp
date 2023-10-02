@@ -1738,6 +1738,11 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), depth_format, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
+
     VkImageObj image(m_device);
     VkImageObj image_fragment(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -2276,8 +2281,9 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImage) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
     }
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
@@ -2287,10 +2293,6 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImage) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_OPTIMAL);
-    // TODO - Look into failure
-    if (!image.initialized()) {
-        GTEST_SKIP() << "Failed to create image";
-    }
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT);
 
     VkImageObj invalid_image(m_device);
@@ -2399,6 +2401,11 @@ TEST_F(NegativeDynamicRendering, TestFragmentDensityMapRenderArea) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
+
     VkPhysicalDeviceFragmentDensityMapPropertiesEXT fdm_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fdm_props);
 
@@ -2490,6 +2497,11 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapRenderAreaWithoutDeviceGroupE
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
         GTEST_SKIP() << "Tests for 1.0 only";
@@ -3639,6 +3651,10 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     InitBasicDynamicRendering(&multiview_features);
     if (::testing::Test::IsSkipped()) return;
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
@@ -3656,6 +3672,7 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper(&rendering_fragment_density);
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.viewMask = 0;
 
     m_commandBuffer->begin();
 
@@ -3674,6 +3691,11 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    if (!ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "format doesn't support FRAGMENT_SHADING_RATE_ATTACHMENT_BIT";
+    }
+
     VkImageObj image2(m_device);
     image2.Init(image_create_info);
     VkImageView image_view2 = image2.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
@@ -3719,6 +3741,11 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentCreateFlags) {
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
+
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3755,6 +3782,10 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
     InitBasicDynamicRendering(&multiview_features);
     if (::testing::Test::IsSkipped()) return;
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
@@ -3804,6 +3835,10 @@ TEST_F(NegativeDynamicRendering, PNextImageView) {
 
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
+    }
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4548,8 +4583,9 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
     }
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
@@ -4561,10 +4597,6 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_OPTIMAL, 0);
-    // TODO - Look into failure
-    if (!image.initialized()) {
-        GTEST_SKIP() << "Failed to create image";
-    }
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
@@ -4986,8 +5018,9 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
     }
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
@@ -5017,10 +5050,6 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_OPTIMAL, 0);
-    // TODO - Look into failure
-    if (!image.initialized()) {
-        GTEST_SKIP() << "Failed to create image";
-    }
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
@@ -5057,8 +5086,9 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -5089,10 +5119,6 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_OPTIMAL, 0);
-    // TODO - Look into failure
-    if (!image.initialized()) {
-        GTEST_SKIP() << "Failed to create image";
-    }
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();

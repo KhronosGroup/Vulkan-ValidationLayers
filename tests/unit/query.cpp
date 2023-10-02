@@ -2606,6 +2606,9 @@ TEST_F(NegativeQuery, CmdExecuteCommandsActiveQueries) {
     if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
         GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported.";
     }
+    if (features2.features.inheritedQueries == VK_FALSE) {
+        GTEST_SKIP() << "inheritedQueries feature is not supported.";
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 

@@ -1119,8 +1119,13 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 
     auto importable_image_types = FindSupportedExternalMemoryHandleTypes(image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
     importable_image_types &= ~handle_type;  // we need to find a flag that is different from handle_type
-    if (importable_image_types == 0) GTEST_SKIP() << "Cannot find two different image handle types, skipping test";
+    if (importable_image_types == 0) {
+        GTEST_SKIP() << "Cannot find two different image handle types";
+    }
     auto wrong_image_handle_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(importable_image_types));
+    if (wrong_image_handle_type == VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
+        GTEST_SKIP() << "Don't want to use AHB as it has extra restrictions";
+    }
     external_image_info.handleTypes = wrong_image_handle_type;
 
     VkImageObj image_import(m_device);
@@ -1168,6 +1173,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     // Import memory
     alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_buffer;
+    if constexpr (handle_type == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR) {
+        alloc_info.allocationSize = buffer_export_reqs.size;
+    }
     vkt::DeviceMemory memory_buffer_import;
     memory_buffer_import.init(*m_device, alloc_info);
     ASSERT_TRUE(memory_buffer_import.initialized());
@@ -1178,6 +1186,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     }
     alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_image;
+    if constexpr (handle_type == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR) {
+        alloc_info.allocationSize = image_export.memory_requirements().size;
+    }
     vkt::DeviceMemory memory_image_import;
     memory_image_import.init(*m_device, alloc_info);
 

@@ -1694,6 +1694,9 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
     if (!features2.features.multiViewport) {
         GTEST_SKIP() << "requires multiViewport to be supported.";
     }
+    if (!features2.features.shaderTessellationAndGeometryPointSize) {
+        GTEST_SKIP() << "requires shaderTessellationAndGeometryPointSize to be supported.";
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &fsr_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

@@ -883,7 +883,6 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -891,15 +890,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     }
 
     const bool mp_supported = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    bool amd_coherent_mem = IsExtensionsEnabled(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
-
-    if (amd_coherent_mem) {
-        VkPhysicalDeviceCoherentMemoryFeaturesAMD coherent_mem_features = vku::InitStructHelper();
-        GetPhysicalDeviceFeatures2(coherent_mem_features);
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_mem_features));
-    } else {
-        ASSERT_NO_FATAL_FAILURE(InitState());
-    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -938,15 +929,14 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
 
     vkt::Image image;
     image.init_no_mem(*m_device, image_create_info);
-    ASSERT_TRUE(image.initialized());
+
     VkMemoryRequirements image_mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     // Leave some extra space for alignment wiggle room
     image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
-    ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+    m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
     vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
-    ASSERT_TRUE(image_mem.initialized());
 
     // Keep values outside scope so multiple tests cases can reuse
     vkt::Image mp_image;
@@ -955,7 +945,6 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     VkMemoryAllocateInfo mp_image_alloc_info[2];
     if (mp_disjoint_support) {
         mp_image.init_no_mem(*m_device, mp_image_create_info);
-        ASSERT_TRUE(mp_image.initialized());
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -975,18 +964,14 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         // plane 0
         mp_image_alloc_info[0].allocationSize =
             mp_image_mem_reqs2[0].memoryRequirements.size + mp_image_mem_reqs2[0].memoryRequirements.alignment;
-        ASSERT_TRUE(
-            m_device->phy().set_memory_type(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0));
+        m_device->phy().set_memory_type(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0);
         // Exact size as VU will always be for plane 1
         // plane 1
         mp_image_alloc_info[1].allocationSize = mp_image_mem_reqs2[1].memoryRequirements.size;
-        ASSERT_TRUE(
-            m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0));
+        m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
 
         mp_image_mem[0].init(*m_device, mp_image_alloc_info[0]);
-        ASSERT_TRUE(mp_image_mem[0].initialized());
         mp_image_mem[1].init(*m_device, mp_image_alloc_info[1]);
-        ASSERT_TRUE(mp_image_mem[1].initialized());
     }
 
     // All planes must be bound at once the same here
@@ -1097,6 +1082,111 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             m_errorMonitor->VerifyFound();
         }
     }
+}
+
+TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
+    TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and disjoint memory being bound");
+
+    // Enable KHR YCbCr req'd extensions for Disjoint Bit
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    const bool mp_supported = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = tex_format;
+    image_create_info.extent.width = 256;
+    image_create_info.extent.height = 256;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    // Only gets used in MP tests
+    VkImageCreateInfo mp_image_create_info = image_create_info;
+    mp_image_create_info.format = mp_format;
+    mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+
+    // Check for support of format used by all multi-planar tests
+    // Need seperate boolean as its valid to do tests that support YCbCr but not disjoint
+    bool mp_disjoint_support = false;
+    if (mp_supported) {
+        VkFormatProperties mp_format_properties;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &mp_format_properties);
+        if ((mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) &&
+            (mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+            mp_disjoint_support = true;
+        }
+    }
+
+    // Try to bind memory to an object with an invalid memoryOffset
+
+    vkt::Image image;
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkMemoryRequirements image_mem_reqs = {};
+    vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
+    VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
+    // Leave some extra space for alignment wiggle room
+    image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
+    m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
+    vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
+
+    // Keep values outside scope so multiple tests cases can reuse
+    vkt::Image mp_image;
+    vkt::DeviceMemory mp_image_mem[2];
+    VkMemoryRequirements2 mp_image_mem_reqs2[2];
+    VkMemoryAllocateInfo mp_image_alloc_info[2];
+    if (mp_disjoint_support) {
+        mp_image.init_no_mem(*m_device, mp_image_create_info);
+
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
+        mem_req_info2.image = mp_image.handle();
+        mp_image_mem_reqs2[0] = vku::InitStructHelper();
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
+
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        mp_image_mem_reqs2[1] = vku::InitStructHelper();
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[1]);
+
+        mp_image_alloc_info[0] = vku::InitStructHelper();
+        mp_image_alloc_info[1] = vku::InitStructHelper();
+        // Leave some extra space for alignment wiggle room
+        // plane 0
+        mp_image_alloc_info[0].allocationSize =
+            mp_image_mem_reqs2[0].memoryRequirements.size + mp_image_mem_reqs2[0].memoryRequirements.alignment;
+        m_device->phy().set_memory_type(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0);
+        // Exact size as VU will always be for plane 1
+        // plane 1
+        mp_image_alloc_info[1].allocationSize = mp_image_mem_reqs2[1].memoryRequirements.size;
+        m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
+
+        mp_image_mem[0].init(*m_device, mp_image_alloc_info[0]);
+        mp_image_mem[1].init(*m_device, mp_image_alloc_info[1]);
+    }
+
+    // All planes must be bound at once the same here
+    VkBindImagePlaneMemoryInfo plane_memory_info[2];
+    plane_memory_info[0] = vku::InitStructHelper();
+    plane_memory_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    plane_memory_info[1] = vku::InitStructHelper();
+    plane_memory_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
 
     // Try to bind memory to an object with an invalid memory type
 
@@ -1105,7 +1195,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     vk::GetPhysicalDeviceMemoryProperties(m_device->phy().handle(), &memory_properties);
 
     // single-plane image
-    bind_image_info = vku::InitStructHelper();
+    VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image.handle();
     bind_image_info.memoryOffset = 0;
 
@@ -1117,10 +1207,11 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
 
         uint32_t image2_unsupported_mem_type_bits =
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mem_req2.memoryRequirements.memoryTypeBits;
-        if (image2_unsupported_mem_type_bits != 0) {
-            ASSERT_TRUE(m_device->phy().set_memory_type(image2_unsupported_mem_type_bits, &image_alloc_info, 0));
+        bool found_type =
+            m_device->phy().set_memory_type(image2_unsupported_mem_type_bits, &image_alloc_info, 0,
+                                            VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+        if (image2_unsupported_mem_type_bits != 0 && found_type) {
             vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
-            ASSERT_TRUE(image_mem_tmp.initialized());
             bind_image_info.memory = image_mem_tmp.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
@@ -1129,10 +1220,11 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     } else {
         // Same as 01047 but with bindImageMemory2 call
         uint32_t image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
-        if (image_unsupported_mem_type_bits != 0) {
-            ASSERT_TRUE(m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0));
+        bool found_type =
+            m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0,
+                                            VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+        if (image_unsupported_mem_type_bits != 0 && found_type) {
             vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
-            ASSERT_TRUE(image_mem_tmp.initialized());
             bind_image_info.memory = image_mem_tmp.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
@@ -1152,11 +1244,12 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
 
         uint32_t mp_image_unsupported_mem_type_bits =
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits;
-        if (mp_image_unsupported_mem_type_bits != 0) {
+        bool found_type =
+            m_device->phy().set_memory_type(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0,
+                                            VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+        if (mp_image_unsupported_mem_type_bits != 0 && found_type) {
             mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
-            ASSERT_TRUE(m_device->phy().set_memory_type(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0));
             vkt::DeviceMemory mp_image_mem_tmp(*m_device, mp_image_alloc_info[0]);
-            ASSERT_TRUE(mp_image_mem_tmp.initialized());
 
             VkBindImageMemoryInfo bind_image_infos[2];
             bind_image_infos[0] = vku::InitStructHelper(&plane_memory_info[0]);

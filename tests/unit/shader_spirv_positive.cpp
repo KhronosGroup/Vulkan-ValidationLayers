@@ -804,10 +804,12 @@ TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
 
 TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, using COMBINED_IMAGE_SAMPLER, but texelFetch, don't throw error");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
 
     // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
     // Verify that it is allowed on this implementation if
@@ -1404,13 +1406,16 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 TEST_F(PositiveShaderSpirv, Storage8and16bit) {
     TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    // use 1.1 for SPIR-V version, but keep extension as if 1.0
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
     bool support_8_bit = IsExtensionsEnabled(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     bool support_16_bit = IsExtensionsEnabled(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
 
@@ -1438,7 +1443,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1458,7 +1463,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1478,7 +1483,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -1504,7 +1509,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1524,7 +1529,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1544,7 +1549,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -1567,7 +1572,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             // Need to match in/out
             char const *fsSource = R"glsl(
@@ -1580,7 +1585,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    uFragColor = vec4(0,1,0,1);
                 }
             )glsl";
-            VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+            VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1602,7 +1607,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1622,7 +1627,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1642,7 +1647,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(float(a) * 0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -1665,7 +1670,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    gl_Position = vec4(0.0);
                 }
             )glsl";
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 
             // Need to match in/out
             char const *fsSource = R"glsl(
@@ -1678,7 +1683,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
                    uFragColor = vec4(0,1,0,1);
                 }
             )glsl";
-            VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+            VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_1);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};

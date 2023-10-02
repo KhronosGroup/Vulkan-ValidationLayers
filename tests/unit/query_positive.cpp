@@ -170,8 +170,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     query_pool_info.pipelineStatistics = 0;
 
     VkQueryPool query_pool;
-    VkResult res = vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
-    ASSERT_VK_SUCCESS(res);
+    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -199,18 +198,22 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
-    res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, query_count, sizeof_samples_passed, samples_passed.data(),
-                                  sample_stride, query_flags);
-    ASSERT_VK_SUCCESS(res);
+    VkResult res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, query_count, sizeof_samples_passed,
+                                           samples_passed.data(), sample_stride, query_flags);
 
-    // "Applications can verify that queryPool can be destroyed by checking that vkGetQueryPoolResults() without the
-    // VK_QUERY_RESULT_PARTIAL_BIT flag returns VK_SUCCESS for all queries that are used in command buffers submitted for
-    // execution."
-    //
-    // i.e. You don't have to wait for an idle queue to destroy the query pool.
-    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
-
-    vk::QueueWaitIdle(m_default_queue);
+    if (res == VK_SUCCESS) {
+        // "Applications can verify that queryPool can be destroyed by checking that vkGetQueryPoolResults() without the
+        // VK_QUERY_RESULT_PARTIAL_BIT flag returns VK_SUCCESS for all queries that are used in command buffers submitted for
+        // execution."
+        //
+        // i.e. You don't have to wait for an idle queue to destroy the query pool.
+        vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+        vk::QueueWaitIdle(m_default_queue);
+    } else {
+        // some devices (pixel 7) will return VK_NOT_READY
+        vk::QueueWaitIdle(m_default_queue);
+        vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+    }
 }
 
 TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {

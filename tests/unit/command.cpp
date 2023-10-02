@@ -4455,8 +4455,9 @@ TEST_F(NegativeCommand, DepthStencilImageCopyNoGraphicsQueueFlags) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const std::optional<uint32_t> queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (!queueFamilyIndex) {
+    const std::optional<uint32_t> no_gfx =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
+    if (!no_gfx) {
         GTEST_SKIP() << "Non-graphics queue family not found";
     }
 
@@ -4481,7 +4482,7 @@ TEST_F(NegativeCommand, DepthStencilImageCopyNoGraphicsQueueFlags) {
     region.bufferOffset = 0;
 
     // Create command pool on a non-graphics queue
-    vkt::CommandPool command_pool(*m_device, queueFamilyIndex.value());
+    vkt::CommandPool command_pool(*m_device, no_gfx.value());
 
     // Setup command buffer on pool
     VkCommandBufferObj command_buffer(m_device, &command_pool);
@@ -4500,10 +4501,9 @@ TEST_F(NegativeCommand, ImageCopyTransferQueueFlags) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    // Should be left with a tranfser queue
-    const std::optional<uint32_t> queueFamilyIndex =
-        m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-    if (!queueFamilyIndex) {
+    const std::optional<uint32_t> transfer =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
+    if (!transfer) {
         GTEST_SKIP() << "Non-graphics/compute queue family not found";
     }
 
@@ -4525,7 +4525,7 @@ TEST_F(NegativeCommand, ImageCopyTransferQueueFlags) {
     region.bufferOffset = 5;
 
     // Create command pool on a non-graphics queue
-    vkt::CommandPool command_pool(*m_device, queueFamilyIndex.value());
+    vkt::CommandPool command_pool(*m_device, transfer.value());
 
     // Setup command buffer on pool
     VkCommandBufferObj command_buffer(m_device, &command_pool);
