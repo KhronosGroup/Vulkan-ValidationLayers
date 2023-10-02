@@ -619,7 +619,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
 
 bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const {
     bool skip = false;
-    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const CMD_BUFFER_STATE& cb_state = last_bound_state.cb_state;
     const DrawDispatchVuid& vuid = GetDrawDispatchVuid(loc.function);
     const LogObjectList objlist(cb_state.commandBuffer());
 
@@ -765,7 +765,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
             }
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, objlist, loc,
                                               vuid.set_depth_bias_enable_08640);
-            if (cb_state.dynamic_state_value.depth_bias_enable) {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE] &&
+                cb_state.dynamic_state_value.depth_bias_enable) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BIAS, objlist, loc,
                                                   vuid.set_depth_bias_08620);
             }
@@ -858,7 +859,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                               loc, vuid.set_depth_clip_enable_08663);
         }
         if (IsExtEnabled(device_extensions.vk_ext_line_rasterization) && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_POLYGON_MODE_EXT] &&
+                cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   objlist, loc, vuid.set_line_rasterization_mode_08666);
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
@@ -887,7 +889,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, objlist, loc,
                                               vuid.set_viewport_swizzle_08675);
         }
-        if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
+        if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_POLYGON_MODE_EXT] &&
+            cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
                                               vuid.set_line_width_08617);
         }
@@ -969,7 +972,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                          DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT),
                                          DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT), i);
                     } else if (cb_state.dynamic_state_value.color_blend_equation_attachments[i]) {
-                        const auto &eq = cb_state.dynamic_state_value.color_blend_equations[i];
+                        const auto& eq = cb_state.dynamic_state_value.color_blend_equations[i];
                         if (std::find(const_factors.begin(), const_factors.end(), eq.srcColorBlendFactor) != const_factors.end() ||
                             std::find(const_factors.begin(), const_factors.end(), eq.dstColorBlendFactor) != const_factors.end() ||
                             std::find(const_factors.begin(), const_factors.end(), eq.srcAlphaBlendFactor) != const_factors.end() ||
