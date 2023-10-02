@@ -1249,7 +1249,7 @@ TEST_F(NegativeQuery, Sizes) {
 
 TEST_F(NegativeQuery, PreciseBit) {
     TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // These tests require that the device support pipeline statistics query
     VkPhysicalDeviceFeatures device_features = {};
@@ -1265,9 +1265,6 @@ TEST_F(NegativeQuery, PreciseBit) {
     if (features.occlusionQueryPrecise) {
         vkt::Event event(*m_device);
 
-        m_commandBuffer->begin();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
-
         VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
         query_pool_create_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
         query_pool_create_info.queryCount = 3;
@@ -1276,7 +1273,19 @@ TEST_F(NegativeQuery, PreciseBit) {
                                                     VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT;
         vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
-        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+        m_commandBuffer->begin();
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, query_pool_create_info.queryCount);
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(m_default_queue);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
+
+        m_commandBuffer->begin();
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
         m_errorMonitor->VerifyFound();
         // vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
@@ -1309,6 +1318,10 @@ TEST_F(NegativeQuery, PreciseBit) {
     VkResult err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer);
     ASSERT_VK_SUCCESS(err);
 
+    VkCommandBuffer cmd_buffer2;
+    err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer2);
+    ASSERT_VK_SUCCESS(err);
+
     VkEvent event;
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
     vk::CreateEvent(test_device.handle(), &event_create_info, nullptr, &event);
@@ -1316,16 +1329,24 @@ TEST_F(NegativeQuery, PreciseBit) {
     VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
 
-    vk::BeginCommandBuffer(cmd_buffer, &begin_info);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
-
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 2;
     vk::CreateQueryPool(test_device.handle(), &query_pool_create_info, nullptr, &query_pool);
 
-    vk::CmdResetQueryPool(cmd_buffer, query_pool, 0, 2);
+    vk::BeginCommandBuffer(cmd_buffer2, &begin_info);
+    vk::CmdResetQueryPool(cmd_buffer2, query_pool, 0, query_pool_create_info.queryCount);
+    vk::EndCommandBuffer(cmd_buffer2);
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buffer2;
+    vk::QueueSubmit(test_device.graphics_queues().front()->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(test_device.graphics_queues().front()->handle());
+
+    vk::BeginCommandBuffer(cmd_buffer, &begin_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
     vk::CmdBeginQuery(cmd_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
     m_errorMonitor->VerifyFound();
     vk::EndCommandBuffer(cmd_buffer);
