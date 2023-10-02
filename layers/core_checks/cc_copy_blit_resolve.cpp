@@ -2078,6 +2078,21 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
     }
 
+    if (vkuFormatIsCompressed(src_format) && vkuFormatIsCompressed(dst_format)) {
+        auto src_block_extent = vkuFormatTexelBlockExtent(src_format);
+        auto dst_block_extent = vkuFormatTexelBlockExtent(dst_format);
+        if (src_block_extent.width != dst_block_extent.width || src_block_extent.height != dst_block_extent.height ||
+            src_block_extent.depth != dst_block_extent.depth) {
+            const char *compatible_vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-09247" : "VUID-vkCmdCopyImage-srcImage-09247";
+            const LogObjectList objlist(commandBuffer, srcImage, dstImage);
+            skip |= LogError(compatible_vuid, objlist, loc,
+                             "srcImage format %s has texel block extent (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32
+                             ") and dstImage format %s has texel block extent (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32 ").",
+                             string_VkFormat(src_format), src_block_extent.width, src_block_extent.height, src_block_extent.depth,
+                             string_VkFormat(dst_format), dst_block_extent.width, dst_block_extent.height, dst_block_extent.depth);
+        }
+    }
+
     // Validate that SRC & DST images have correct usage flags set
     if (!IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage)) {
         vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
