@@ -6709,3 +6709,62 @@ TEST_F(NegativeDynamicRendering, MissingMultisampleState) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDynamicRendering, MismatchingDepthAttachmentFormatInSecondaryCmdBuffer) {
+    TEST_DESCRIPTION("Use a pipeline with a depth attachment format that doesn't match that of the dynamic render pass");
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
+
+    const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,   VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                   VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
+    VkFormat depth_format1 = VK_FORMAT_UNDEFINED;
+    VkFormat depth_format2 = VK_FORMAT_UNDEFINED;
+    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), ds_formats[i], &format_props);
+
+        if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 ||
+            (format_props.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
+            if (depth_format1 == VK_FORMAT_UNDEFINED) {
+                depth_format1 = ds_formats[i];
+            } else {
+                depth_format2 = ds_formats[i];
+                break;
+            }
+        }
+    }
+
+    if (depth_format2 == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Could not find 2 ds attachment formats";
+    }
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.depthAttachmentFormat = depth_format1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.cb_ci_.attachmentCount = 0u;
+    pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferObj secondary_cmd_buf(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
+    inheritance_rendering_info.depthAttachmentFormat = depth_format2;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
+
+    VkCommandBufferBeginInfo secondary_cmd_buffer_begin_info = vku::InitStructHelper();
+    secondary_cmd_buffer_begin_info.flags =
+        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary_cmd_buffer_begin_info.pInheritanceInfo = &secondary_cmd_buffer_inheritance_info;
+
+    secondary_cmd_buf.begin(&secondary_cmd_buffer_begin_info);
+    vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08914");
+    vk::CmdDraw(secondary_cmd_buf.handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    secondary_cmd_buf.end();
+}
