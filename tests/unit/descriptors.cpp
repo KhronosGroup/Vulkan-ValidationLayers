@@ -2733,20 +2733,19 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
 TEST_F(NegativeDescriptors, DstArrayElement) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                            {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
-
     VkDescriptorImageInfo image_info = {};
-    image_info.imageView = view;
     image_info.sampler = VK_NULL_HANDLE;
+    image_info.imageView = view;
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    descriptor_set.image_infos.emplace_back(image_info);
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
@@ -2754,15 +2753,14 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    descriptor_write.pImageInfo = descriptor_set.image_infos.data();
+    descriptor_write.pImageInfo = &image_info;
     descriptor_write.pBufferInfo = nullptr;
     descriptor_write.pTexelBufferView = nullptr;
 
     // sum of 3 pointing into array of 2 bindings
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
     descriptor_write.dstArrayElement = 2;
-    descriptor_set.descriptor_writes.emplace_back(descriptor_write);
-    descriptor_set.UpdateDescriptorSets();
+    vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     OneOffDescriptorSet descriptor_set2(m_device,
@@ -2770,19 +2768,13 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
                                             {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                             {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                         });
-
-    descriptor_set2.image_infos.emplace_back(image_info);
-    descriptor_set2.image_infos.emplace_back(image_info);
-
-    descriptor_write.dstSet = descriptor_set2.set_;
+    const VkDescriptorImageInfo image_infos[2] = {image_info, image_info};
     descriptor_write.descriptorCount = 2;
-    descriptor_write.pImageInfo = descriptor_set2.image_infos.data();
+    descriptor_write.pImageInfo = image_infos;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
     descriptor_write.dstArrayElement = 3;
-    descriptor_set2.descriptor_writes.clear();
-    descriptor_set2.descriptor_writes.emplace_back(descriptor_write);
-    descriptor_set2.UpdateDescriptorSets();
+    vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2902,20 +2894,20 @@ TEST_F(NegativeDescriptors, NullDescriptorsDisabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02997");
     descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set.UpdateDescriptorSets();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
     descriptor_set.WriteDescriptorBufferInfo(1, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02995");
     VkBufferView buffer_view = VK_NULL_HANDLE;
     descriptor_set.WriteDescriptorBufferView(2, buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->begin();
@@ -2955,7 +2947,7 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     VkBufferView buffer_view = VK_NULL_HANDLE;
     descriptor_set.WriteDescriptorBufferView(2, buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    descriptor_set.descriptor_writes.clear();
+    descriptor_set.Clear();
 
     m_commandBuffer->begin();
     VkBuffer buffer = VK_NULL_HANDLE;
