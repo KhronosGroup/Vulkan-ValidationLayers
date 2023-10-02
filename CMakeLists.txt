@@ -89,7 +89,7 @@ if (VVL_CODEGEN)
             "${VULKAN_HEADERS_INSTALL_DIR}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
             "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1"
             --incremental --generated-version ${VulkanHeaders_VERSION} --api ${API_TYPE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}/generated
+        WORKING_DIRECTORY ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated
     )
 endif()
 
