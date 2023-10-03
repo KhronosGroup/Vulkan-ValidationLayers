@@ -474,7 +474,10 @@ struct SPIRV_MODULE_STATE {
         std::vector<const Instruction *> group_inst;
         std::vector<const Instruction *> read_clock_inst;
         std::vector<const Instruction *> cooperative_matrix_inst;
+
         std::vector<spv::Capability> capability_list;
+        // Code on the hot path can cache capabilities for fast access.
+        bool has_capability_runtime_descriptor_array{false};
 
         bool has_specialization_constants{false};
         bool has_invocation_repack_instruction{false};

@@ -1980,6 +1980,16 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             SyncStageAccessIndex sync_index =
                 GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
 
+            // Currently, validation of memory accesses based on declared descriptors can produce false-positives.
+            // The shader can decide not to do such accesses, it can perform accesses with more narrow scope
+            // (e.g. read access, when both reads and writes are allowed) or for an array of descriptors, not all
+            // elements are accessed in the general case.
+            //
+            // This workaround disables validation for the runtime descriptor array case.
+            if (binding->count > 1 && stage_state.spirv_state->static_data_.has_capability_runtime_descriptor_array) {
+                continue;
+            }
+
             for (uint32_t index = 0; index < binding->count; index++) {
                 const auto *descriptor = binding->GetDescriptor(index);
                 switch (descriptor->GetClass()) {
@@ -2115,6 +2125,11 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
                 GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
+
+            // Do not update state for runtime descriptor array (the same as in Validate function)
+            if (binding->count > 1 && stage_state.spirv_state->static_data_.has_capability_runtime_descriptor_array) {
+                continue;
+            }
 
             for (uint32_t i = 0; i < binding->count; i++) {
                 const auto *descriptor = binding->GetDescriptor(i);
