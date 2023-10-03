@@ -6242,3 +6242,43 @@ TEST_F(NegativeImage, OverlappingImageCopy) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeImage, BlitColorToDepth) {
+    TEST_DESCRIPTION("Blit a color image to a depth image");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageObj color_image(m_device);
+    color_image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj depth_image(m_device);
+    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), depth_format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_2_BLIT_DST_BIT) == 0) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_2_BLIT_DST_BIT not supported for depth format";
+    }
+
+    VkImageBlit region;
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.srcSubresource.mipLevel = 0;
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = 1;
+    region.dstSubresource.mipLevel = 0;
+    region.srcOffsets[0] = {0, 0, 0};
+    region.srcOffsets[1] = {32, 32, 1};
+    region.dstOffsets[0] = {0, 0, 0};
+    region.dstOffsets[1] = {32, 32, 1};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-00231");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageBlit-aspectMask-00238");
+    vk::CmdBlitImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1u, &region, VK_FILTER_LINEAR);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
