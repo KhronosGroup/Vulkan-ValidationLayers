@@ -2354,3 +2354,25 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     vk::BindImageMemory2(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeMemory, MemoryPriorityOutOfRange) {
+    TEST_DESCRIPTION("Allocate memory with invalid priority.");
+
+    AddRequiredExtensions(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
+    priority.priority = 2.0f;
+
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&priority);
+    memory_ai.allocationSize = 0x100000;
+    memory_ai.memoryTypeIndex = 0;
+
+    VkDeviceMemory memory;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602");
+    vk::AllocateMemory(*m_device, &memory_ai, nullptr, &memory);
+    m_errorMonitor->VerifyFound();
+}
