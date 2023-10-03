@@ -5011,6 +5011,85 @@ TEST_F(NegativeDescriptors, BindDescriptorWithoutPipelineLayout) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
+    TEST_DESCRIPTION("Try to copy a descriptor set where the src and dst have different update after bind flags.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+    void *pNext = nullptr;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!portability_subset_features.imageView2DOn3DImage) {
+            GTEST_SKIP() << "imageView2DOn3DImage not supported, skipping test";
+        }
+        pNext = &portability_subset_features;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, pNext));
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 2;
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.image = image.handle();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view_ci.components.r = VK_COMPONENT_SWIZZLE_R;
+    view_ci.components.g = VK_COMPONENT_SWIZZLE_G;
+    view_ci.components.b = VK_COMPONENT_SWIZZLE_B;
+    view_ci.components.a = VK_COMPONENT_SWIZZLE_A;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vkt::ImageView view(*m_device, view_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    VkDescriptorImageInfo image_info;
+    image_info.sampler = sampler.handle();
+    image_info.imageView = view;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    descriptor_write.pImageInfo = &image_info;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-07795");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDescriptors, CopyDescriptorSetMissingSrcFlag) {
     TEST_DESCRIPTION("Try to copy a descriptor set where the src and dst have different update after bind flags.");
 
