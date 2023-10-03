@@ -6282,3 +6282,50 @@ TEST_F(NegativeImage, BlitColorToDepth) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeImage, ResolveDepthImage) {
+    TEST_DESCRIPTION("Blit a color image to a depth image");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto depth_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageCreateInfo image_ci = vkt::Image::create_info();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = depth_format;
+    image_ci.extent.width = 32u;
+    image_ci.extent.height = 32u;
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageFormatProperties image_format_properties;
+    vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
+                                               image_ci.flags, &image_format_properties);
+    if ((image_format_properties.sampleCounts & image_ci.samples) == 0) {
+        GTEST_SKIP() << "Required formats samples not supported";
+    }
+
+    VkImageObj image1(m_device);
+    image1.init(&image_ci);
+
+    VkImageObj image2(m_device);
+    image2.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageResolve region;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.srcOffset = {0, 0, 0};
+    region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 0u, 1u};
+    region.dstOffset = {0, 0, 0};
+    region.extent = {32, 32, 1};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-aspectMask-00266");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-02003");
+    vk::CmdResolveImage(m_commandBuffer->handle(), image1.handle(), VK_IMAGE_LAYOUT_GENERAL, image2.handle(),
+                        VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
