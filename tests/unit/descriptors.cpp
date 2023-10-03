@@ -2254,6 +2254,17 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
 
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-00347");
+    copy_ds_update = vku::InitStructHelper();
+    copy_ds_update.srcSet = descriptor_set.set_;
+    copy_ds_update.srcBinding = 0;
+    copy_ds_update.dstSet = descriptor_set.set_;
+    copy_ds_update.dstBinding = 3;       // ERROR : Invalid binding for matching layout
+    copy_ds_update.descriptorCount = 1;  // Copy 1 descriptor
+    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+
+    m_errorMonitor->VerifyFound();
+
     // Now perform a copy update that fails due to binding out of bounds
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcArrayElement-00346");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstArrayElement-00348");
