@@ -3500,3 +3500,51 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativePipeline, PipelineMissingFeatures) {
+    TEST_DESCRIPTION("Enabled depth bounds when the features is disabled");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDeviceFeatures features = {};
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = FindSupportedDepthStencilFormat(m_device->phy().handle());
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference dr = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription sp = {};
+    sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sp.pDepthStencilAttachment = &dr;
+
+    VkRenderPassCreateInfo rpi = vku::InitStructHelper();
+    rpi.attachmentCount = 1;
+    rpi.pAttachments = &attachment;
+    rpi.subpassCount = 1;
+    rpi.pSubpasses = &sp;
+    vkt::RenderPass rp(*m_device, rpi);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthBoundsTestEnable = VK_TRUE;
+    pipe.gp_ci_.renderPass = rp.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.ds_ci_.depthBoundsTestEnable = VK_FALSE;
+    pipe.pipe_ms_state_ci_.alphaToOneEnable = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.pipe_ms_state_ci_.alphaToOneEnable = VK_FALSE;
+    pipe.rs_state_ci_.depthClampEnable = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
