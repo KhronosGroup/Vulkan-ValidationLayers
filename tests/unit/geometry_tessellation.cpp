@@ -1159,3 +1159,113 @@ TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00739");
 }
+
+TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
+    TEST_DESCRIPTION("Create pipeline with tessellation shader with missing point size");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+        VkPhysicalDeviceFeatures2 features2;
+        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!features2.features.tessellationShader || !features2.features.shaderTessellationAndGeometryPointSize) {
+            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
+        }
+        if (!portability_subset_features.tessellationPointMode) {
+            GTEST_SKIP() << "tessellationPointMode not supported";
+        }
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    } else {
+        VkPhysicalDeviceFeatures features;
+        GetPhysicalDeviceFeatures(&features);
+        if (!features.tessellationShader || !features.shaderTessellationAndGeometryPointSize) {
+            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
+        }
+        ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static const char tess_src[] = R"glsl(
+        #version 460
+        layout(triangles, equal_spacing, cw, point_mode) in;
+        void main() { gl_Position = vec4(1); }
+    )glsl";
+
+    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, tess_src, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+
+    VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
+    tess_ci.patchControlPoints = 4u;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
+                           pipe.fs_->GetStageCreateInfo()};
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    pipe.tess_ci_ = tess_ci;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
+    TEST_DESCRIPTION("Create pipeline with tessellation shader with missing point size");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+        VkPhysicalDeviceFeatures2 features2;
+        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!features2.features.tessellationShader) {
+            GTEST_SKIP() << "tessellationShader not supported";
+        }
+        if (!portability_subset_features.tessellationPointMode) {
+            GTEST_SKIP() << "tessellationPointMode not supported";
+        }
+        features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    } else {
+        VkPhysicalDeviceFeatures features;
+        GetPhysicalDeviceFeatures(&features);
+        if (!features.tessellationShader) {
+            GTEST_SKIP() << "tessellationShader not supported";
+        }
+        features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+        ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static const char tess_src[] = R"glsl(
+        #version 460
+        layout(triangles, equal_spacing, cw, point_mode) in;
+        void main() {
+            gl_Position = vec4(1);
+            gl_PointSize = 1.0f;
+        }
+    )glsl";
+
+    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, tess_src, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+
+    VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
+    tess_ci.patchControlPoints = 4u;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
+                           pipe.fs_->GetStageCreateInfo()};
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    pipe.tess_ci_ = tess_ci;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
