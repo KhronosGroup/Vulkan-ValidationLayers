@@ -839,6 +839,10 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
 
             case spv::OpCapability:
                 capability_list.push_back(static_cast<spv::Capability>(insn.Word(1)));
+                // Cache frequently checked capabilities
+                if (capability_list.back() == spv::CapabilityRuntimeDescriptorArray) {
+                    has_capability_runtime_descriptor_array = true;
+                }
                 break;
 
             case spv::OpVariable:
