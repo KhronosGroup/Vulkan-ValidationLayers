@@ -358,3 +358,33 @@ TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     vkt::CommandPool commandPool(*m_device, queue_count + 1);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, Robustness2WithoutRobustness) {
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
+    device_queue_ci.queueFamilyIndex = 0u;
+    device_queue_ci.queueCount = 1u;
+    device_queue_ci.pQueuePriorities = &priority;
+
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(robustness_2_features);
+
+    if (!robustness_2_features.robustBufferAccess2) {
+        GTEST_SKIP() << "robustBufferAccess2 not supported.";
+    }
+
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&features2);
+    device_ci.queueCreateInfoCount = 1u;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledLayerCount = 0u;
+
+    VkDevice device;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000");
+    vk::CreateDevice(m_device->phy().handle(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
