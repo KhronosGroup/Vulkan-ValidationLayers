@@ -3271,6 +3271,53 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     }
 }
 
+TEST_F(NegativePipeline, PipelineSubpassOutOfBounds) {
+    TEST_DESCRIPTION("Create pipeline with subpass index larger than number of subpasses in render pass");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.subpass = 4u;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06046");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormats) {
+    TEST_DESCRIPTION("Create pipeline with invalid pipeline rendering formats");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
+    pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pNext = &pipeline_rendering_ci;
+    pipe.cb_ci_.attachmentCount = 0u;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06587");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    pipeline_rendering_ci.stencilAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     TEST_DESCRIPTION(
         "VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo pNext chain, but with "
