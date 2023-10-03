@@ -3326,6 +3326,23 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativePipeline, InvalidPipelineDepthBias) {
+    TEST_DESCRIPTION("Create pipeline with invalid depth bias");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDeviceFeatures features = {};
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
+    pipe.rs_state_ci_.depthBiasClamp = 0.5f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00754");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     TEST_DESCRIPTION("Draw when render pass rasterization samples do not match pipeline rasterization samples");
 
