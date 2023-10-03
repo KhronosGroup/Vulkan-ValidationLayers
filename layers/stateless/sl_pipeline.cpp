@@ -1149,7 +1149,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                         if (subpasses_uses.subpasses_using_depthstencil_attachment.count(create_info.subpass)) {
                             uses_depthstencil_attachment = true;
                         }
-                        subpass_flags = subpasses_uses.subpasses_flags[create_info.subpass];
+                        if (create_info.subpass < subpasses_uses.subpasses_flags.size()) {
+                            subpass_flags = subpasses_uses.subpasses_flags[create_info.subpass];
+                        }
 
                         color_attachment_count = subpasses_uses.color_attachment_count;
                     }
