@@ -4811,3 +4811,53 @@ TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionColorLayout) {
     vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
+    TEST_DESCRIPTION("Use image at framebuffer attachment without VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkAttachmentDescription description = {0,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           VK_SAMPLE_COUNT_1_BIT,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                           VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                           VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                           VK_IMAGE_LAYOUT_GENERAL,
+                                           VK_IMAGE_LAYOUT_GENERAL};
+
+    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, &ref, 1, &ref, nullptr, nullptr, 0, nullptr,
+    };
+    VkRenderPassCreateInfo rp_ci =
+        vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &description, 1u, &subpass, 0u, nullptr);
+    vkt::RenderPass render_pass(*m_device, rp_ci);
+
+    subpass.colorAttachmentCount = 0u;
+    subpass.inputAttachmentCount = 1u;
+    vkt::RenderPass input_attachment_render_pass(*m_device, rp_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1u;
+    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.width = m_width;
+    framebuffer_ci.height = m_height;
+    framebuffer_ci.layers = 1u;
+
+    VkFramebuffer framebuffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00877");
+    vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+
+    framebuffer_ci.renderPass = input_attachment_render_pass.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
+    vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+}
