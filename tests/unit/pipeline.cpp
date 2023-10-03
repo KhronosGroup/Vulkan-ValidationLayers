@@ -2514,6 +2514,37 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXT) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativePipeline, ColorWriteCreateInfoEXTMaxAttachments) {
+    TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext with too many attachments");
+
+    AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
+
+    std::vector<VkBool32> enables(max_color_attachments, VK_TRUE);
+    VkPipelineColorWriteCreateInfoEXT color_write = vku::InitStructHelper();
+    color_write.attachmentCount = max_color_attachments;
+    color_write.pColorWriteEnables = enables.data();
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blends(max_color_attachments);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.cb_ci_.pNext = &color_write;
+    pipe.cb_ci_.attachmentCount = max_color_attachments;
+    pipe.cb_ci_.pAttachments = color_blends.data();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     TEST_DESCRIPTION("Validate using VkPhysicalDeviceSampleLocationsPropertiesEXT");
 
