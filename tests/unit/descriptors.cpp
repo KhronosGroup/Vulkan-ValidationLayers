@@ -4923,3 +4923,53 @@ TEST_F(NegativeDescriptors, BindDescriptorWithoutPipelineLayout) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDescriptors, CopyDescriptorSetMissingSrcFlag) {
+    TEST_DESCRIPTION("Try to copy a descriptor set where the src and dst have different update after bind flags.");
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    OneOffDescriptorSet src_descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_ALL, nullptr},
+                                           },
+                                           VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, nullptr,
+                                           VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    OneOffDescriptorSet dst_descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_ALL, nullptr},
+                                           },
+                                           0u, nullptr, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    OneOffDescriptorSet no_flags_set(m_device,
+                                     {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_ALL, nullptr},
+                                     },
+                                     0u, nullptr, 0u);
+
+    VkCopyDescriptorSet copy_descriptor_set = vku::InitStructHelper();
+    copy_descriptor_set.srcSet = src_descriptor_set.set_;
+    copy_descriptor_set.srcBinding = 0u;
+    copy_descriptor_set.srcArrayElement = 0u;
+    copy_descriptor_set.dstSet = dst_descriptor_set.set_;
+    copy_descriptor_set.dstBinding = 0u;
+    copy_descriptor_set.dstArrayElement = 0u;
+    copy_descriptor_set.descriptorCount = 1u;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-01918");
+    vk::UpdateDescriptorSets(*m_device, 0u, nullptr, 1u, &copy_descriptor_set);
+    m_errorMonitor->VerifyFound();
+
+    copy_descriptor_set.srcSet = dst_descriptor_set.set_;
+    copy_descriptor_set.dstSet = no_flags_set.set_;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-01920");
+    vk::UpdateDescriptorSets(*m_device, 0u, nullptr, 1u, &copy_descriptor_set);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
