@@ -159,8 +159,9 @@ class BaseGenerator(OutputGenerator):
         for platform in self.registry.tree.findall('platforms/platform'):
             self.vk.platforms[platform.get('name')] = platform.get('protect')
 
-        for tag in self.registry.tree.findall('tags'):
-            self.vk.vendorTags.append(tag.get('name'))
+        for tags in self.registry.tree.findall('tags'):
+            for tag in tags.findall('tag'):
+                self.vk.vendorTags.append(tag.get('name'))
 
         # No way known to get this from the XML
         self.vk.queueBits[Queues.TRANSFER]       = 'VK_QUEUE_TRANSFER_BIT'
