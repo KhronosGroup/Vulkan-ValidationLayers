@@ -4780,6 +4780,49 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutInlineUniformBlockFlags) {
+    TEST_DESCRIPTION("Create descriptor set layout with invalid flags.");
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDeviceInlineUniformBlockFeatures inline_uniform_block_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(inline_uniform_block_features);
+    inline_uniform_block_features.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_FALSE;
+    if (!inline_uniform_block_features.inlineUniformBlock) {
+        GTEST_SKIP() << "inlineUniformBlock not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &inline_uniform_block_features));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkDescriptorSetLayoutBinding binding;
+    binding.binding = 0u;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
+    binding.descriptorCount = 4u;
+    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci = vku::InitStructHelper();
+    binding_flags_ci.bindingCount = 1u;
+    binding_flags_ci.pBindingFlags = &binding_flags;
+
+    VkDescriptorSetLayoutCreateInfo layout_ci = vku::InitStructHelper(&binding_flags_ci);
+    layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layout_ci.bindingCount = 1u;
+    layout_ci.pBindings = &binding;
+
+    VkDescriptorSetLayout set_layout;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingInlineUniformBlockUpdateAfterBind-02211");
+    vk::CreateDescriptorSetLayout(*m_device, &layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     TEST_DESCRIPTION("Dispatch with unbound descriptor set");
     ASSERT_NO_FATAL_FAILURE(Init());
