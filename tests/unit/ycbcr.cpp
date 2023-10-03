@@ -1577,3 +1577,66 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     descriptor_set.UpdateDescriptorSets();
     // m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
+    TEST_DESCRIPTION("Create image with VK_IMAGE_CREATE_DISJOINT_BIT and VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
+
+    VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+
+    std::vector<uint64_t> mods;
+    VkDrmFormatModifierPropertiesListEXT mod_props = vku::InitStructHelper();
+    VkFormatProperties2 format_props = vku::InitStructHelper(&mod_props);
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
+    if (mod_props.drmFormatModifierCount == 0) {
+        GTEST_SKIP() << "drmFormatModifierCount is 0.";
+    }
+
+    std::vector<VkDrmFormatModifierPropertiesEXT> mod_props_length(mod_props.drmFormatModifierCount);
+    mod_props.pDrmFormatModifierProperties = mod_props_length.data();
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
+
+    for (uint32_t i = 0; i < mod_props.drmFormatModifierCount; ++i) {
+        auto &mod = mod_props.pDrmFormatModifierProperties[i];
+        if (((mod.drmFormatModifierTilingFeatures &
+              (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_DISJOINT_BIT)) ==
+             (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_DISJOINT_BIT))) {
+            mods.push_back(mod.drmFormatModifier);
+        }
+    }
+
+    if (mods.empty()) {
+        GTEST_SKIP() << "Required format features not supported.";
+    }
+
+    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
+    mod_list.pDrmFormatModifiers = mods.data();
+    mod_list.drmFormatModifierCount = mods.size();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&mod_list);
+    image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = format;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    vkt::Image image;
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
+    mem_req_info2.image = image;
+    VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01589");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02279");
+    vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
+    m_errorMonitor->VerifyFound();
+}
