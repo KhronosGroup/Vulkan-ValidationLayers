@@ -211,7 +211,8 @@ bool CoreChecks::ValidatePrimitiveTopology(const SPIRV_MODULE_STATE &module_stat
                                            const StageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
 
-    if (!create_info.pipeline || !create_info.pipeline->pre_raster_state || entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
+    if (!create_info.pipeline || !create_info.pipeline->pre_raster_state || !create_info.pipeline->InputAssemblyState() ||
+        entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
         return skip;
     }
 
