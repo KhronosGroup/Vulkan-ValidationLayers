@@ -2720,10 +2720,10 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE &module_stat
     for (const Instruction &insn : module_state.static_data_.instructions) {
         if (insn.Opcode() == spv::OpEmitMeshTasksEXT) {
             uint32_t x, y, z;
-            GetIntConstantValue(module_state.FindDef(insn.Word(1)), module_state, spec, &x);
-            GetIntConstantValue(module_state.FindDef(insn.Word(2)), module_state, spec, &y);
-            GetIntConstantValue(module_state.FindDef(insn.Word(3)), module_state, spec, &z);
-            if (x > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0]) {
+            bool found_x = GetIntConstantValue(module_state.FindDef(insn.Word(1)), module_state, spec, &x);
+            bool found_y = GetIntConstantValue(module_state.FindDef(insn.Word(2)), module_state, spec, &y);
+            bool found_z = GetIntConstantValue(module_state.FindDef(insn.Word(3)), module_state, spec, &z);
+            if (found_x && x > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0]) {
                 skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07299", module_state.handle(), loc,
                                  "SPIR-V (%s) is emitting %" PRIu32
                                  " mesh work groups in X dimension, which is greater than max mesh "
@@ -2731,7 +2731,7 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE &module_stat
                                  string_SpvExecutionModel(entrypoint.execution_model), x,
                                  phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0]);
             }
-            if (y > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1]) {
+            if (found_y && y > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1]) {
                 skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07300", module_state.handle(), loc,
                                  "SPIR-V (%s) is emitting %" PRIu32
                                  " mesh work groups in Y dimension, which is greater than max mesh "
@@ -2739,7 +2739,7 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE &module_stat
                                  string_SpvExecutionModel(entrypoint.execution_model), y,
                                  phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1]);
             }
-            if (z > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2]) {
+            if (found_z && z > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2]) {
                 skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07301", module_state.handle(), loc,
                                  "SPIR-V (%s) is emitting %" PRIu32
                                  " mesh work groups in Z dimension, which is greater than max mesh "
@@ -2747,26 +2747,29 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE &module_stat
                                  string_SpvExecutionModel(entrypoint.execution_model), z,
                                  phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2]);
             }
-            uint64_t invocations = static_cast<uint64_t>(x) * static_cast<uint64_t>(y);
-            // Prevent overflow.
-            bool fail = false;
-            if (invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
-                fail = true;
-            }
-            if (!fail) {
-                invocations *= z;
-                if (invocations > vvl::kU32Max ||
-                    invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
+            if (found_x && found_y && found_z) {
+                uint64_t invocations = static_cast<uint64_t>(x) * static_cast<uint64_t>(y);
+                // Prevent overflow.
+                bool fail = false;
+                if (invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
                     fail = true;
                 }
-            }
-            if (fail) {
-                skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07302", module_state.handle(), loc,
+                if (!fail) {
+                    invocations *= z;
+                    if (invocations > vvl::kU32Max ||
+                        invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
+                        fail = true;
+                    }
+                }
+                if (fail) {
+                    skip |=
+                        LogError("VUID-RuntimeSpirv-TaskEXT-07302", module_state.handle(), loc,
                                  "SPIR-V (%s) is emitting %" PRIu32 " x %" PRIu32 " x %" PRIu32 " mesh work groups (total %" PRIu32
                                  "), which is greater than max mesh "
                                  "workgroup total count (%" PRIu32 ").",
                                  string_SpvExecutionModel(entrypoint.execution_model), x, y, z, x * y * z,
                                  phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount);
+                }
             }
         }
     }
