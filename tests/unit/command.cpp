@@ -7412,3 +7412,28 @@ TEST_F(NegativeCommand, CopyDifferentFormatTexelBlockExtent) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeCommand, ClearDepthStencilImageWithInvalidAspect) {
+    TEST_DESCRIPTION("Use vkCmdClearDepthStencilImage with invalid image aspect.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkFormat format = FindSupportedDepthStencilFormat(m_device->phy().handle());
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+               VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkClearDepthStencilValue clear_value = {0};
+    VkImageSubresourceRange range = {};
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel = 0u;
+    range.layerCount = 1u;
+    range.baseArrayLayer = 0u;
+    range.levelCount = 1u;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-aspectMask-02824");
+    vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1u, &range);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
