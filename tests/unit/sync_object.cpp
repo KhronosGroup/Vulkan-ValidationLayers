@@ -3614,3 +3614,34 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
 
     commandBuffer.end();
 }
+
+TEST_F(NegativeSyncObject, InvalidDeviceOnlyEvent) {
+    TEST_DESCRIPTION("Attempt to use device only event with host commands.");
+
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        sync2_features.pNext = &portability_subset_features;
+    }
+    GetPhysicalDeviceFeatures2(sync2_features);
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        if (portability_subset_features.events) {
+            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
+        }
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+
+    VkEventCreateInfo event_ci = vku::InitStructHelper();
+    event_ci.flags = VK_EVENT_CREATE_DEVICE_ONLY_BIT;
+    vkt::Event ev(*m_device, event_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetEvent-event-03823");
+    vk::ResetEvent(*m_device, ev.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkSetEvent-event-03941");
+    vk::SetEvent(*m_device, ev.handle());
+    m_errorMonitor->VerifyFound();
+}
