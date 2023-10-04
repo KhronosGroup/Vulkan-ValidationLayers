@@ -746,8 +746,8 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                 if (pDescriptorWrites[i].pBufferInfo != NULL) {
                     if (SafeModulo(pDescriptorWrites[i].pBufferInfo[j].offset, uniform_alignment) != 0) {
                         skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00327",
-                                         "%s(): pDescriptorWrites[%" PRIu32 "].pBufferInfo[%" PRIu32 "].offset (0x%" PRIxLEAST64
-                                         ") must be a multiple of device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                         "%s(): pDescriptorWrites[%" PRIu32 "].pBufferInfo[%" PRIu32 "].offset (%" PRIu64
+                                         ") must be a multiple of device limit minUniformBufferOffsetAlignment %" PRIu64 ".",
                                          vkCallingFunction, i, j, pDescriptorWrites[i].pBufferInfo[j].offset, uniform_alignment);
                     }
                 }
@@ -759,8 +759,8 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                 if (pDescriptorWrites[i].pBufferInfo != NULL) {
                     if (SafeModulo(pDescriptorWrites[i].pBufferInfo[j].offset, storage_alignment) != 0) {
                         skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00328",
-                                         "%s(): pDescriptorWrites[%" PRIu32 "].pBufferInfo[%" PRIu32 "].offset (0x%" PRIxLEAST64
-                                         ") must be a multiple of device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                         "%s(): pDescriptorWrites[%" PRIu32 "].pBufferInfo[%" PRIu32 "].offset (%" PRIu64
+                                         ") must be a multiple of device limit minStorageBufferOffsetAlignment %" PRIu64 ".",
                                          vkCallingFunction, i, j, pDescriptorWrites[i].pBufferInfo[j].offset, storage_alignment);
                     }
                 }
