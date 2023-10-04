@@ -5140,3 +5140,24 @@ TEST_F(NegativeDescriptors, CopyDescriptorSetMissingSrcFlag) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDescriptors, InvalidDescriptorWriteImageInfo) {
+    TEST_DESCRIPTION("Write descriptor set with invalid image info.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493");
+    vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+}
