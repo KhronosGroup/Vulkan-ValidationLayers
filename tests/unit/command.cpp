@@ -7478,3 +7478,78 @@ TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
+    TEST_DESCRIPTION("Attempt to clear color aspect of depth/stencil image.");
+
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    for (uint32_t i = 0; i < 2; ++i) {
+        bool missing_depth = i == 0;
+        auto format = missing_depth ? FindSupportedStencilOnlyFormat(m_device->phy().handle())
+                                    : FindSupportedDepthOnlyFormat(m_device->phy().handle());
+        if (format == VK_FORMAT_UNDEFINED) {
+            continue;
+        }
+        VkImageAspectFlags image_aspect = missing_depth ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
+        VkImageAspectFlags clear_aspect = missing_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        VkImageObj image(m_device);
+        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        VkImageView image_view = image.targetView(format, image_aspect);
+
+        VkAttachmentReference ds_attachment_ref = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+        VkSubpassDescription subpass = {
+            0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, &ds_attachment_ref, 0, nullptr,
+        };
+
+        VkAttachmentDescription attachment = {
+            0,
+            format,
+            VK_SAMPLE_COUNT_1_BIT,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        };
+
+        auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr);
+        vkt::RenderPass render_pass(*m_device, rpci);
+
+        auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0, render_pass.handle(), 1, &image_view, 32, 32, 1);
+        vkt::Framebuffer framebuffer(*m_device, fbci);
+
+        VkClearValue clear_value = {};
+        clear_value.depthStencil = {0};
+
+        VkClearAttachment clear_attachment = {};
+        clear_attachment.aspectMask = clear_aspect;
+        clear_attachment.colorAttachment = 0u;
+        clear_attachment.clearValue.depthStencil.depth = 0.0f;
+        VkClearRect clear_rect;
+        clear_rect.rect = {{0, 0}, {32u, 32u}};
+        clear_rect.baseArrayLayer = 0u;
+        clear_rect.layerCount = 1u;
+
+        VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+        render_pass_begin_info.renderPass = render_pass.handle();
+        render_pass_begin_info.framebuffer = framebuffer.handle();
+        render_pass_begin_info.renderArea = {{0, 0}, {32, 32}};
+        render_pass_begin_info.clearValueCount = 1u;
+        render_pass_begin_info.pClearValues = &clear_value;
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        if (missing_depth) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07884");
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07885");
+        }
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1u, &clear_attachment, 1u, &clear_rect);
+        m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+}
