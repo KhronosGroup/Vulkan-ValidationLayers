@@ -2064,7 +2064,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format)) {
             if (src_format != dst_format) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
-                skip |= LogError(compatible_vuid, objlist, loc, "srcImage format (%s) id different from dstImage format (%s).",
+                skip |= LogError(compatible_vuid, objlist, loc, "srcImage format (%s) is different from dstImage format (%s).",
                                  string_VkFormat(src_format), string_VkFormat(dst_format));
             }
         } else {
