@@ -7437,3 +7437,44 @@ TEST_F(NegativeCommand, ClearDepthStencilImageWithInvalidAspect) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
+    TEST_DESCRIPTION("Use vkCmdClearColorImage with image format that doesnt have VK_FORMAT_FEATURE_TRANSFER_DST_BIT.");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), format, &formatProps);
+    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), format, formatProps);
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageSubresourceRange range = {};
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel = 0u;
+    range.layerCount = 1u;
+    range.baseArrayLayer = 0u;
+    range.levelCount = 1u;
+
+    VkClearColorValue clear_value = {{0, 0, 0, 0}};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-01993");
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1u, &range);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
