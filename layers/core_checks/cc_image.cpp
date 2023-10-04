@@ -1738,7 +1738,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // Unless it is a multi-planar color bit aspect
         if ((image_format != view_format) && (!multiplane_image || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", pCreateInfo->image, create_info_loc.dot(Field::format),
-                             "%s id different from %s format (%s). Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT "
+                             "%s is different from %s format (%s). Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT "
                              "BIT was set on image creation.",
                              string_VkFormat(view_format), FormatHandle(pCreateInfo->image).c_str(), string_VkFormat(image_format));
         }
