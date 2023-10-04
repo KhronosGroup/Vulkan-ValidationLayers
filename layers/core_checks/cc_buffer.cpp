@@ -457,15 +457,14 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 
     if (dstOffset >= buffer_state->createInfo.size) {
         skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00024", objlist, error_obj.location.dot(Field::dstOffset),
-                         "(0x%" PRIxLEAST64 ") is not less than destination buffer (%s) size (0x%" PRIxLEAST64 ").", dstOffset,
+                         "(%" PRIu64 ") is not less than destination buffer (%s) size (%" PRIu64 ").", dstOffset,
                          FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
     }
 
     if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->createInfo.size - dstOffset))) {
         skip |= LogError("VUID-vkCmdFillBuffer-size-00027", objlist, error_obj.location.dot(Field::size),
-                         "(0x%" PRIxLEAST64 ") is greater than dstBuffer (%s) size (0x%" PRIxLEAST64
-                         ") minus dstOffset (0x%" PRIxLEAST64 ").",
-                         size, FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
+                         "(%" PRIu64 ") is greater than dstBuffer (%s) size (%" PRIu64 ") minus dstOffset (%" PRIu64 ").", size,
+                         FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
     }
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {

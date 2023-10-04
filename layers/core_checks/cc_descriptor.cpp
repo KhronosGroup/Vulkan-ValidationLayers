@@ -257,7 +257,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                  error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32
                                                  ", but must be a multiple of "
-                                                 "device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                                 "device limit minUniformBufferOffsetAlignment %" PRIu64 ".",
                                                  offset, limits.minUniformBufferOffsetAlignment);
                             }
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
@@ -266,7 +266,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                  error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32
                                                  ", but must be a multiple of "
-                                                 "device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                                 "device limit minStorageBufferOffsetAlignment %" PRIu64 ".",
                                                  offset, limits.minStorageBufferOffsetAlignment);
                             }
 
@@ -298,14 +298,14 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                            ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
                                     const LogObjectList objlist(commandBuffer, pDescriptorSets[set_idx],
                                                                 buffer_descriptor->GetBuffer());
-                                    skip |= LogError(
-                                        "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979", objlist,
-                                        error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
-                                        "is %" PRIu32 ", which when added to the buffer descriptor's range (0x%" PRIxLEAST64
-                                        ") and offset (0x%" PRIxLEAST64 ") is greater than the size of the buffer (0x%" PRIxLEAST64
-                                        ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
-                                        offset, bound_range, bound_offset, buffer_state->createInfo.size, set_idx, binding_index,
-                                        j);
+                                    skip |=
+                                        LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979", objlist,
+                                                 error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                                 "is %" PRIu32 ", which when added to the buffer descriptor's range (%" PRIu64
+                                                 ") and offset (%" PRIu64 ") is greater than the size of the buffer (%" PRIu64
+                                                 ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
+                                                 offset, bound_range, bound_offset, buffer_state->createInfo.size, set_idx,
+                                                 binding_index, j);
                                 }
                             }
                             cur_dyn_offset++;

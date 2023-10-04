@@ -108,9 +108,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         if (pOffsets[i] & 3) {
-            skip |=
-                LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02359", commandBuffer,
-                         error_obj.location.dot(Field::pOffsets, i), "(0x%" PRIxLEAST64 ") is not a multiple of 4.", pOffsets[i]);
+            skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02359", commandBuffer,
+                             error_obj.location.dot(Field::pOffsets, i), "(%" PRIu64 ") is not a multiple of 4.", pOffsets[i]);
         }
     }
 
@@ -136,7 +135,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
                 pSizes[i] > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize) {
                 skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pSize-02361", commandBuffer,
                                  error_obj.location.dot(Field::pSizes, i),
-                                 "(0x%" PRIxLEAST64
+                                 "(%" PRIu64
                                  ") is not VK_WHOLE_SIZE and is greater than "
                                  "maxTransformFeedbackBufferSize.",
                                  pSizes[i]);
@@ -799,15 +798,15 @@ bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer 
 
     if (dstOffset & 3) {
         skip |= LogError("VUID-vkCmdUpdateBuffer-dstOffset-00036", commandBuffer, error_obj.location.dot(Field::dstOffset),
-                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", dstOffset);
+                         "(%" PRIu64 "), is not a multiple of 4.", dstOffset);
     }
 
     if ((dataSize <= 0) || (dataSize > 65536)) {
         skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00037", commandBuffer, error_obj.location.dot(Field::dataSize),
-                         "(0x%" PRIxLEAST64 "), must be greater than zero and less than or equal to 65536.", dataSize);
+                         "(%" PRIu64 "), must be greater than zero and less than or equal to 65536.", dataSize);
     } else if (dataSize & 3) {
         skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00038", commandBuffer, error_obj.location.dot(Field::dataSize),
-                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", dataSize);
+                         "(%" PRIu64 "), is not a multiple of 4.", dataSize);
     }
     return skip;
 }
@@ -819,16 +818,16 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
 
     if (dstOffset & 3) {
         skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00025", dstBuffer, error_obj.location.dot(Field::dstOffset),
-                         "(0x%" PRIxLEAST64 ") is not a multiple of 4.", dstOffset);
+                         "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
     }
 
     if (size != VK_WHOLE_SIZE) {
         if (size <= 0) {
             skip |= LogError("VUID-vkCmdFillBuffer-size-00026", dstBuffer, error_obj.location.dot(Field::size),
-                             "(0x%" PRIxLEAST64 ") must be greater than zero.", size);
+                             "(%" PRIu64 ") must be greater than zero.", size);
         } else if (size & 3) {
             skip |= LogError("VUID-vkCmdFillBuffer-size-00028", dstBuffer, error_obj.location.dot(Field::size),
-                             "(0x%" PRIxLEAST64 ") is not a multiple of 4.", size);
+                             "(%" PRIu64 ") is not a multiple of 4.", size);
         }
     }
     return skip;

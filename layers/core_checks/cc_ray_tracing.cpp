@@ -111,7 +111,7 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         if (SafeModulo(info.memoryOffset, as_state->memory_requirements.alignment) != 0) {
             skip |= LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03623", info.accelerationStructure,
                              bind_info_loc.dot(Field::memoryOffset),
-                             "(0x%" PRIxLEAST64 ") must be a multiple of the alignment (0x%" PRIxLEAST64
+                             "(%" PRIu64 ") must be a multiple of the alignment (%" PRIu64
                              ") member of the VkMemoryRequirements structure returned from "
                              "a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure %s and type of "
                              "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV",
@@ -124,10 +124,10 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
             if (as_state->memory_requirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
                 skip |= LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-size-03624", info.accelerationStructure,
                                  bind_info_loc.dot(Field::memory),
-                                 "'s size (0x%" PRIxLEAST64 ") minus %s (0x%" PRIxLEAST64 ") is 0x%" PRIxLEAST64
+                                 "'s size (%" PRIu64 ") minus %s (%" PRIu64 ") is %" PRIu64
                                  ", but the size member of the VkMemoryRequirements structure returned from a call to "
                                  "vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure %s and type of "
-                                 "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV is 0x%" PRIxLEAST64 ".",
+                                 "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV is %" PRIu64 ".",
                                  as_state->memory_requirements.size, bind_info_loc.dot(Field::memoryOffset).Fields().c_str(),
                                  info.memoryOffset, mem_info->alloc_info.allocationSize - info.memoryOffset,
                                  FormatHandle(info.accelerationStructure).c_str(), as_state->memory_requirements.size);

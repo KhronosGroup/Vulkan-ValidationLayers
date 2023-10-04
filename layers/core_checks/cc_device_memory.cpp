@@ -410,8 +410,8 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
 
         LogObjectList objlist(mem_info->deviceMemory(), typed_handle);
         skip = LogError(vuid, objlist, loc,
-                        "attempting to bind %s to %s, memoryOffset=0x%" PRIxLEAST64
-                        " must be less than the memory allocation size 0x%" PRIxLEAST64 ".",
+                        "attempting to bind %s to %s, memoryOffset (%" PRIu64
+                        ") must be less than the memory allocation size (%" PRIu64 ").",
                         FormatHandle(mem_info->deviceMemory()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
                         mem_info->alloc_info.allocationSize);
     }
@@ -485,8 +485,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01036" : "VUID-vkBindBufferMemory-memoryOffset-01036";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
-                         "is 0x%" PRIxLEAST64
-                         " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                         "is %" PRIu64 " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
                          ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
                          memoryOffset, buffer_state->requirements.alignment);
     }
@@ -563,8 +562,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01037" : "VUID-vkBindBufferMemory-size-01037";
             const LogObjectList objlist(buffer, memory);
             skip |= LogError(vuid, objlist, loc,
-                             "allocationSize (0x%" PRIxLEAST64 ") minus memoryOffset (0x%" PRIxLEAST64 ") is 0x%" PRIxLEAST64
-                             " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                             "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                             " but must be at least as large as VkMemoryRequirements::size value %" PRIu64
                              ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
                              mem_info->alloc_info.allocationSize, memoryOffset, mem_info->alloc_info.allocationSize - memoryOffset,
                              buffer_state->requirements.size);
@@ -577,7 +576,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             const LogObjectList objlist(buffer, memory, mem_info->dedicated->handle);
             skip |= LogError(vuid, objlist, loc.dot(Field::memory),
                              "(%s) is dedicated allocation, but VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
-                             "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                             "to %s and memoryOffset %" PRIu64 " must be zero.",
                              FormatHandle(memory).c_str(), FormatHandle(mem_info->dedicated->handle).c_str(),
                              FormatHandle(buffer).c_str(), memoryOffset);
         }
@@ -943,8 +942,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
 
         if (SafeModulo(offset, atom_size) != 0) {
             skip |= LogError("VUID-VkMappedMemoryRange-offset-00687", mem_ranges->memory, memory_range_loc.dot(Field::offset),
-                             "(0x%" PRIxLEAST64
-                             ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
+                             "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64 ").",
                              offset, atom_size);
         }
         auto mem_info = Get<DEVICE_MEMORY_STATE>(mem_ranges[i].memory);
@@ -958,19 +956,18 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
             const auto mapping_end = ((mapping_size == VK_WHOLE_SIZE) ? allocation_size : mapping_offset + mapping_size);
             if (SafeModulo(mapping_end, atom_size) != 0 && mapping_end != allocation_size) {
                 skip |= LogError("VUID-VkMappedMemoryRange-size-01389", mem_ranges->memory, memory_range_loc.dot(Field::size),
-                                 "is VK_WHOLE_SIZE and the mapping end (0x%" PRIxLEAST64 " = 0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64
-                                 ") not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
-                                 ") and not equal to the end of the memory object (0x%" PRIxLEAST64 ").",
+                                 "is VK_WHOLE_SIZE and the mapping end (%" PRIu64 " = %" PRIu64 " + %" PRIu64
+                                 ") not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64
+                                 ") and not equal to the end of the memory object (%" PRIu64 ").",
                                  mapping_end, mapping_offset, mapping_size, atom_size, allocation_size);
             }
         } else {
             const auto range_end = size + offset;
             if (range_end != allocation_size && SafeModulo(size, atom_size) != 0) {
                 skip |= LogError("VUID-VkMappedMemoryRange-size-01390", mem_ranges->memory, memory_range_loc.dot(Field::size),
-                                 "(0x%" PRIxLEAST64
-                                 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
-                                 ") and offset + size (0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64 " = 0x%" PRIxLEAST64
-                                 ") not equal to the memory size (0x%" PRIxLEAST64 ").",
+                                 "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64
+                                 ") and offset + size (%" PRIu64 " + %" PRIu64 " = %" PRIu64
+                                 ") not equal to the memory size (%" PRIu64 ").",
                                  size, atom_size, offset, size, range_end, allocation_size);
             }
         }
@@ -1063,12 +1060,11 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616"
                                                             : "VUID-vkBindImageMemory-memoryOffset-01048";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
-                        skip |=
-                            LogError(vuid, objlist, loc.dot(Field::memoryOffset),
-                                     "is 0x%" PRIxLEAST64
-                                     " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                                     ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                     bind_info.memoryOffset, mem_req.alignment);
+                        skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
+                                         "is %" PRIu64
+                                         " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
+                                         ", returned from a call to vkGetImageMemoryRequirements with image.",
+                                         bind_info.memoryOffset, mem_req.alignment);
                     }
 
                     if (mem_info) {
@@ -1079,9 +1075,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-vkBindImageMemory-size-01049";
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(vuid, objlist, loc,
-                                             "allocationSize (0x%" PRIxLEAST64 ") minus memoryOffset (0x%" PRIxLEAST64
-                                             ") is 0x%" PRIxLEAST64
-                                             " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                             "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                             " but must be at least as large as VkMemoryRequirements::size value %" PRIu64
                                              ", returned from a call to vkGetImageMemoryRequirements with image.",
                                              alloc_info.allocationSize, bind_info.memoryOffset,
                                              alloc_info.allocationSize - bind_info.memoryOffset, mem_req.size);
@@ -1123,8 +1118,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(
                             "VUID-VkBindImageMemoryInfo-pNext-01620", objlist, loc.dot(Field::memoryOffset),
-                            "is 0x%" PRIxLEAST64
-                            " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                            "is %" PRIu64 " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
                             ", returned from a call to vkGetImageMemoryRequirements2 with disjoint image for aspect plane %s.",
                             bind_info.memoryOffset, disjoint_mem_req.alignment, string_VkImageAspectFlagBits(aspect));
                     }
@@ -1137,8 +1131,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(
                                 "VUID-VkBindImageMemoryInfo-pNext-01621", objlist, loc,
-                                "allocationSize (0x%" PRIxLEAST64 ") minus memoryOffset (0x%" PRIxLEAST64 ") is 0x%" PRIxLEAST64
-                                " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                " but must be at least as large as VkMemoryRequirements::size value %" PRIu64
                                 ", returned from a call to vkGetImageMemoryRequirements with disjoint image for aspect plane %s.",
                                 alloc_info.allocationSize, bind_info.memoryOffset,
                                 alloc_info.allocationSize - bind_info.memoryOffset, disjoint_mem_req.size,
@@ -1192,7 +1186,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             skip |= LogError(
                                 vuid, objlist, loc.dot(Field::memory),
                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo:: %s must compatible "
-                                "with %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                                "with %s and memoryOffset %" PRIu64 " must be zero.",
                                 FormatHandle(bind_info.memory).c_str(), FormatHandle(mem_info->dedicated->handle).c_str(),
                                 FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
@@ -1204,7 +1198,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             skip |= LogError(
                                 vuid, objlist, loc.dot(Field::memory),
                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo:: %s must be equal "
-                                "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                                "to %s and memoryOffset %" PRIu64 " must be zero.",
                                 FormatHandle(bind_info.memory).c_str(), FormatHandle(mem_info->dedicated->handle).c_str(),
                                 FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
