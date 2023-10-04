@@ -5161,3 +5161,28 @@ TEST_F(NegativeDescriptors, InvalidDescriptorWriteImageInfo) {
     vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
+    TEST_DESCRIPTION("Bind dynamic storage buffer with invalid alignment.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t alignment = static_cast<uint32_t>(m_device->phy().limits_.minStorageBufferOffsetAlignment);
+    if (alignment < 2) {
+        GTEST_SKIP() << "minStorageBufferOffsetAlignment too small";
+    }
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    uint32_t dynamic_offset = alignment - 1;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972");
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+                              &descriptor_set.set_, 1u, &dynamic_offset);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
