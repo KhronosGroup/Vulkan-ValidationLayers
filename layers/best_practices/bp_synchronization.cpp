@@ -57,9 +57,9 @@ bool BestPractices::CheckDependencyInfo(const std::string& api_name, const VkDep
     skip |= CheckPipelineStageFlags(api_name, stage_masks.dst);
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(
-            api_name, dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
-            dep_info.pImageMemoryBarriers[i].srcAccessMask, dep_info.pImageMemoryBarriers[i].dstAccessMask,
-            dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
+            api_name, dep_info.pImageMemoryBarriers[i].image, dep_info.pImageMemoryBarriers[i].oldLayout,
+            dep_info.pImageMemoryBarriers[i].newLayout, dep_info.pImageMemoryBarriers[i].srcAccessMask,
+            dep_info.pImageMemoryBarriers[i].dstAccessMask, dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
     }
 
     return skip;
@@ -147,8 +147,8 @@ bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name, VkAccessFlags2 access, VkImageLayout layout,
-                                                    VkImageAspectFlags aspect) const {
+bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name, VkImage image, VkAccessFlags2 access,
+                                                    VkImageLayout layout, VkImageAspectFlags aspect) const {
     bool skip = false;
 
     const VkAccessFlags2 all = vvl::kU64Max;  // core validation is responsible for detecting undefined flags.
@@ -232,17 +232,17 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
     }
 
     if ((allowed | access) != allowed) {
-        skip |=
-            LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
-                       "%s: accessMask is %s, but for layout %s expected accessMask are %s.", api_name.c_str(),
-                       string_VkAccessFlags2(access).c_str(), string_VkImageLayout(layout), string_VkAccessFlags2(allowed).c_str());
+        skip |= LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
+                           "%s: image is %s and accessMask is %s, but for layout %s expected accessMask are %s.", api_name.c_str(),
+                           FormatHandle(image).c_str(), string_VkAccessFlags2(access).c_str(), string_VkImageLayout(layout),
+                           string_VkAccessFlags2(allowed).c_str());
     }
 
     return skip;
 }
 
-bool BestPractices::ValidateImageMemoryBarrier(const std::string& api_name, VkImageLayout oldLayout, VkImageLayout newLayout,
-                                               VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
+bool BestPractices::ValidateImageMemoryBarrier(const std::string& api_name, VkImage image, VkImageLayout oldLayout,
+                                               VkImageLayout newLayout, VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
                                                VkImageAspectFlags aspectMask) const {
     bool skip = false;
 
@@ -253,8 +253,8 @@ bool BestPractices::ValidateImageMemoryBarrier(const std::string& api_name, VkIm
                            string_VkImageLayout(newLayout));
     }
 
-    skip |= ValidateAccessLayoutCombination(api_name, srcAccessMask, oldLayout, aspectMask);
-    skip |= ValidateAccessLayoutCombination(api_name, dstAccessMask, newLayout, aspectMask);
+    skip |= ValidateAccessLayoutCombination(api_name, image, srcAccessMask, oldLayout, aspectMask);
+    skip |= ValidateAccessLayoutCombination(api_name, image, dstAccessMask, newLayout, aspectMask);
 
     return skip;
 }
@@ -271,9 +271,9 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         skip |=
-            ValidateImageMemoryBarrier("vkCmdPipelineBarrier", pImageMemoryBarriers[i].oldLayout, pImageMemoryBarriers[i].newLayout,
-                                       pImageMemoryBarriers[i].srcAccessMask, pImageMemoryBarriers[i].dstAccessMask,
-                                       pImageMemoryBarriers[i].subresourceRange.aspectMask);
+            ValidateImageMemoryBarrier("vkCmdPipelineBarrier", pImageMemoryBarriers[i].image, pImageMemoryBarriers[i].oldLayout,
+                                       pImageMemoryBarriers[i].newLayout, pImageMemoryBarriers[i].srcAccessMask,
+                                       pImageMemoryBarriers[i].dstAccessMask, pImageMemoryBarriers[i].subresourceRange.aspectMask);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
