@@ -1641,7 +1641,7 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
 
     static const char vertSource[] = R"glsl(
         #version 460
-        layout(set = 0, binding = 0) buffer foo {
+        layout(set = 0, binding = 1) buffer foo {
             int x;
         } bar;
         void main() {
@@ -1649,9 +1649,16 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
         }
     )glsl";
 
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                       });
+
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], vertSource));
-    const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentUniformGlsl));
+    const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], vertSource), &descriptor_set.layout_.handle());
+    const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentUniformGlsl),
+                                 &descriptor_set.layout_.handle());
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
