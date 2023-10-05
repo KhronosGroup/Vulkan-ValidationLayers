@@ -330,7 +330,8 @@ def repo_relative(path):
 
 def main(argv):
     # files to exclude from --verify check
-    verify_exclude = ['.clang-format']
+    # The shaders requires glslangvalidator, so they are updated manually with generate_spirv when needed
+    verify_exclude = ['.clang-format', 'gpu_as_inspection_comp.h', 'gpu_pre_dispatch_comp.h', 'gpu_pre_draw_vert.h', 'inst_functions_comp.h']
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('--api',
@@ -409,11 +410,7 @@ def main(argv):
         for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
             temp_filename = os.path.join(temp_dir, filename)
             repo_filename = os.path.join(repo_dir, filename)
-            if filename.startswith('gpu_') or filename.startswith('inst_'):
-                # The shaders requires glslangvalidator,
-                # so updated manually with generate_spirv when needed
-                continue
-            elif filename not in repo_files:
+            if filename not in repo_files:
                 print('ERROR: Missing repo file', filename)
                 return 2
             elif filename not in temp_files:
