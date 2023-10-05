@@ -187,8 +187,6 @@ TEST_F(NegativeProtectedMemory, Memory) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    VkBuffer buffer_protected = VK_NULL_HANDLE;
-    VkBuffer buffer_unprotected = VK_NULL_HANDLE;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.size = 1 << 20;  // 1 MB
@@ -201,12 +199,13 @@ TEST_F(NegativeProtectedMemory, Memory) {
 
     // Create actual protected and unprotected buffers
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_protected);
-    buffer_create_info.flags = 0;
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_unprotected);
+    vkt::Buffer buffer_protected;
+    buffer_protected.init_no_mem(*m_device, buffer_create_info);
 
-    VkImage image_protected = VK_NULL_HANDLE;
-    VkImage image_unprotected = VK_NULL_HANDLE;
+    buffer_create_info.flags = 0;
+    vkt::Buffer buffer_unprotected;
+    buffer_unprotected.init_no_mem(*m_device, buffer_create_info);
+
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.extent = {8, 8, 1};
@@ -223,25 +222,25 @@ TEST_F(NegativeProtectedMemory, Memory) {
     }
 
     // Create actual protected and unprotected images
+    VkImageObj image_protected(m_device);
+    VkImageObj image_unprotected(m_device);
+
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
-    vk::CreateImage(device(), &image_create_info, nullptr, &image_protected);
+    image_protected.init_no_mem(*m_device, image_create_info);
     image_create_info.flags = 0;
-    vk::CreateImage(device(), &image_create_info, nullptr, &image_unprotected);
+    image_unprotected.init_no_mem(*m_device, image_create_info);
 
     // Create protected and unproteced memory
-    VkDeviceMemory memory_protected = VK_NULL_HANDLE;
-    VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
-
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 0;
 
     // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
     VkMemoryRequirements mem_reqs_protected;
-    vk::GetImageMemoryRequirements(device(), image_protected, &mem_reqs_protected);
-    vk::GetBufferMemoryRequirements(device(), buffer_protected, &mem_reqs_protected);
+    vk::GetImageMemoryRequirements(device(), image_protected.handle(), &mem_reqs_protected);
+    vk::GetBufferMemoryRequirements(device(), buffer_protected.handle(), &mem_reqs_protected);
     VkMemoryRequirements mem_reqs_unprotected;
-    vk::GetImageMemoryRequirements(device(), image_unprotected, &mem_reqs_unprotected);
-    vk::GetBufferMemoryRequirements(device(), buffer_unprotected, &mem_reqs_unprotected);
+    vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_unprotected);
+    vk::GetBufferMemoryRequirements(device(), buffer_unprotected.handle(), &mem_reqs_unprotected);
 
     // Get memory index for a protected and unprotected memory
     VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -261,51 +260,40 @@ TEST_F(NegativeProtectedMemory, Memory) {
         }
     }
     if ((memory_type_protected >= phys_mem_props.memoryTypeCount) || (memory_type_unprotected >= phys_mem_props.memoryTypeCount)) {
-        vk::DestroyImage(device(), image_protected, nullptr);
-        vk::DestroyImage(device(), image_unprotected, nullptr);
-        vk::DestroyBuffer(device(), buffer_protected, nullptr);
-        vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
     alloc_info.memoryTypeIndex = memory_type_protected;
     alloc_info.allocationSize = mem_reqs_protected.size;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+    vkt::DeviceMemory memory_protected(*m_device, alloc_info);
 
     alloc_info.allocationSize = mem_reqs_unprotected.size;
     alloc_info.memoryTypeIndex = memory_type_unprotected;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_unprotected);
+    vkt::DeviceMemory memory_unprotected(*m_device, alloc_info);
 
     // Bind protected buffer with unprotected memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-None-01898");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
-    vk::BindBufferMemory(device(), buffer_protected, memory_unprotected, 0);
+    vk::BindBufferMemory(device(), buffer_protected.handle(), memory_unprotected.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind unprotected buffer with protected memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-None-01899");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
-    vk::BindBufferMemory(device(), buffer_unprotected, memory_protected, 0);
+    vk::BindBufferMemory(device(), buffer_unprotected.handle(), memory_protected.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind protected image with unprotected memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-None-01901");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
-    vk::BindImageMemory(device(), image_protected, memory_unprotected, 0);
+    vk::BindImageMemory(device(), image_protected.handle(), memory_unprotected.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind unprotected image with protected memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-None-01902");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
-    vk::BindImageMemory(device(), image_unprotected, memory_protected, 0);
+    vk::BindImageMemory(device(), image_unprotected.handle(), memory_protected.handle(), 0);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyImage(device(), image_protected, nullptr);
-    vk::DestroyImage(device(), image_unprotected, nullptr);
-    vk::DestroyBuffer(device(), buffer_protected, nullptr);
-    vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
-    vk::FreeMemory(device(), memory_protected, nullptr);
-    vk::FreeMemory(device(), memory_unprotected, nullptr);
 }
 
 TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
@@ -794,8 +782,6 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     }
 
     // Create actual protected and unprotected buffers
-    VkBuffer buffer_protected = VK_NULL_HANDLE;
-    VkBuffer buffer_unprotected = VK_NULL_HANDLE;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1 << 20;  // 1 MB
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -804,9 +790,12 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_protected);
+    vkt::Buffer buffer_protected;
+    buffer_protected.init_no_mem(*m_device, buffer_create_info);
+
     buffer_create_info.flags = 0;
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_unprotected);
+    vkt::Buffer buffer_unprotected;
+    buffer_unprotected.init_no_mem(*m_device, buffer_create_info);
 
     // Create actual protected and unprotected images
     const VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -835,57 +824,43 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     image_unprotected_descriptor.init_no_mem(*m_device, image_create_info);
 
     // Create protected and unproteced memory
-    VkDeviceMemory memory_protected = VK_NULL_HANDLE;
-    VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
-
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 0;
 
-    // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
-    VkMemoryRequirements mem_reqs_protected;
-    vk::GetImageMemoryRequirements(device(), image_protected.handle(), &mem_reqs_protected);
-    vk::GetBufferMemoryRequirements(device(), buffer_protected, &mem_reqs_protected);
-    VkMemoryRequirements mem_reqs_unprotected;
-    vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_unprotected);
-    vk::GetBufferMemoryRequirements(device(), buffer_unprotected, &mem_reqs_unprotected);
+    VkMemoryRequirements mem_reqs_buffer_protected;
+    VkMemoryRequirements mem_reqs_buffer_unprotected;
+    vk::GetBufferMemoryRequirements(device(), buffer_protected.handle(), &mem_reqs_buffer_protected);
+    vk::GetBufferMemoryRequirements(device(), buffer_unprotected.handle(), &mem_reqs_buffer_unprotected);
 
-    // Get memory index for a protected and unprotected memory
-    VkPhysicalDeviceMemoryProperties phys_mem_props;
-    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
-    uint32_t memory_type_protected = phys_mem_props.memoryTypeCount + 1;
-    uint32_t memory_type_unprotected = phys_mem_props.memoryTypeCount + 1;
-    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
-        if ((mem_reqs_unprotected.memoryTypeBits & (1 << i)) &&
-            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
-             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-            memory_type_unprotected = i;
-        }
-        // Check just protected bit is in type at all
-        if ((mem_reqs_protected.memoryTypeBits & (1 << i)) &&
-            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)) {
-            memory_type_protected = i;
-        }
-    }
-    if ((memory_type_protected >= phys_mem_props.memoryTypeCount) || (memory_type_unprotected >= phys_mem_props.memoryTypeCount)) {
-        vk::DestroyBuffer(device(), buffer_protected, nullptr);
-        vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
-        GTEST_SKIP() << "No valid memory type index could be found";
-    }
+    VkMemoryRequirements mem_reqs_image_protected;
+    VkMemoryRequirements mem_reqs_image_unprotected;
+    vk::GetImageMemoryRequirements(device(), image_protected.handle(), &mem_reqs_image_protected);
+    vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_image_unprotected);
 
-    alloc_info.memoryTypeIndex = memory_type_protected;
-    alloc_info.allocationSize = mem_reqs_protected.size;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+    m_device->phy().set_memory_type(mem_reqs_buffer_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    alloc_info.allocationSize = mem_reqs_buffer_protected.size;
+    vkt::DeviceMemory memory_buffer_protected(*m_device, alloc_info);
 
-    alloc_info.allocationSize = mem_reqs_unprotected.size;
-    alloc_info.memoryTypeIndex = memory_type_unprotected;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_unprotected);
+    m_device->phy().set_memory_type(mem_reqs_buffer_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                    VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    alloc_info.allocationSize = mem_reqs_buffer_unprotected.size;
+    vkt::DeviceMemory memory_buffer_unprotected(*m_device, alloc_info);
 
-    vk::BindBufferMemory(device(), buffer_protected, memory_protected, 0);
-    vk::BindBufferMemory(device(), buffer_unprotected, memory_unprotected, 0);
-    vk::BindImageMemory(device(), image_protected.handle(), memory_protected, 0);
-    vk::BindImageMemory(device(), image_unprotected.handle(), memory_unprotected, 0);
-    vk::BindImageMemory(device(), image_protected_descriptor.handle(), memory_protected, 0);
-    vk::BindImageMemory(device(), image_unprotected_descriptor.handle(), memory_unprotected, 0);
+    alloc_info.allocationSize = mem_reqs_image_protected.size;
+    m_device->phy().set_memory_type(mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    vkt::DeviceMemory memory_image_protected(*m_device, alloc_info);
+
+    m_device->phy().set_memory_type(mem_reqs_image_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                    VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    alloc_info.allocationSize = mem_reqs_image_unprotected.size;
+    vkt::DeviceMemory memory_image_unprotected(*m_device, alloc_info);
+
+    vk::BindBufferMemory(device(), buffer_protected.handle(), memory_buffer_protected.handle(), 0);
+    vk::BindBufferMemory(device(), buffer_unprotected.handle(), memory_buffer_unprotected.handle(), 0);
+    vk::BindImageMemory(device(), image_protected.handle(), memory_image_protected.handle(), 0);
+    vk::BindImageMemory(device(), image_unprotected.handle(), memory_image_unprotected.handle(), 0);
+    vk::BindImageMemory(device(), image_protected_descriptor.handle(), memory_image_protected.handle(), 0);
+    vk::BindImageMemory(device(), image_unprotected_descriptor.handle(), memory_image_unprotected.handle(), 0);
 
     // Change layout once memory is bound
     image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -981,7 +956,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Use protected resources in unprotected command buffer
-    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected, 0, 1024);
+    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected.handle(), 0, 1024);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[0], sampler.handle(),
                                                      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1006,21 +981,21 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01822");
-        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
+        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_protected.handle(), buffer_unprotected.handle(), 1, &buffer_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01823");
-        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_unprotected, buffer_protected, 1, &buffer_copy);
+        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_unprotected.handle(), buffer_protected.handle(), 1, &buffer_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01828");
-        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_protected, image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 1, &buffer_image_copy);
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_protected.handle(), image_unprotected.handle(),
+                                 VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01829");
-        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_unprotected, image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 1, &buffer_image_copy);
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_unprotected.handle(), image_protected.handle(),
+                                 VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01825");
@@ -1034,21 +1009,21 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831");
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_unprotected,
-                                 1, &buffer_image_copy);
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                 buffer_unprotected.handle(), 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832");
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_protected,
-                                 1, &buffer_image_copy);
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                 buffer_protected.handle(), 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01811");
-        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, 0);
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer_protected.handle(), 0, 4, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
-        vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, (void *)update_data);
+        vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected.handle(), 0, 4, (void *)update_data);
         m_errorMonitor->VerifyFound();
 
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
@@ -1061,8 +1036,8 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
                                   1, &g_pipe.descriptor_set_->set_, 0, nullptr);
         VkDeviceSize offset = 0;
-        vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer_protected, &offset);
-        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer_protected, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer_protected.handle(), &offset);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer_protected.handle(), 0, VK_INDEX_TYPE_UINT16);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // color attachment
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // buffer descriptorSet
@@ -1078,7 +1053,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     m_commandBuffer->end();
 
     // Use unprotected resources in protected command buffer
-    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected, 0, 1024);
+    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected.handle(), 0, 1024);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[1], sampler.handle(),
                                                      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1096,11 +1071,11 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01824");
-        vk::CmdCopyBuffer(protectedCommandBuffer.handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
+        vk::CmdCopyBuffer(protectedCommandBuffer.handle(), buffer_protected.handle(), buffer_unprotected.handle(), 1, &buffer_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01830");
-        vk::CmdCopyBufferToImage(protectedCommandBuffer.handle(), buffer_protected, image_unprotected.handle(),
+        vk::CmdCopyBufferToImage(protectedCommandBuffer.handle(), buffer_protected.handle(), image_unprotected.handle(),
                                  VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
@@ -1111,15 +1086,15 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833");
         vk::CmdCopyImageToBuffer(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_unprotected, 1, &buffer_image_copy);
+                                 buffer_unprotected.handle(), 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01812");
-        vk::CmdFillBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, 0);
+        vk::CmdFillBuffer(protectedCommandBuffer.handle(), buffer_unprotected.handle(), 0, 4, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
-        vk::CmdUpdateBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, (void *)update_data);
+        vk::CmdUpdateBuffer(protectedCommandBuffer.handle(), buffer_unprotected.handle(), 0, 4, (void *)update_data);
         m_errorMonitor->VerifyFound();
 
         vk::CmdBeginRenderPass(protectedCommandBuffer.handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
@@ -1132,8 +1107,8 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdBindDescriptorSets(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                   g_pipe.pipeline_layout_.handle(), 0, 1, &g_pipe.descriptor_set_->set_, 0, nullptr);
         VkDeviceSize offset = 0;
-        vk::CmdBindVertexBuffers(protectedCommandBuffer.handle(), 0, 1, &buffer_unprotected, &offset);
-        vk::CmdBindIndexBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindVertexBuffers(protectedCommandBuffer.handle(), 0, 1, &buffer_unprotected.handle(), &offset);
+        vk::CmdBindIndexBuffer(protectedCommandBuffer.handle(), buffer_unprotected.handle(), 0, VK_INDEX_TYPE_UINT16);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02712");  // color attachment
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02712");  // descriptorSet
@@ -1168,9 +1143,4 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-04120");
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyBuffer(device(), buffer_protected, nullptr);
-    vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
-    vk::FreeMemory(device(), memory_protected, nullptr);
-    vk::FreeMemory(device(), memory_unprotected, nullptr);
 }
