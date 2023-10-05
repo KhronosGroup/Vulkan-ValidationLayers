@@ -2599,12 +2599,15 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         m_errorMonitor->VerifyFound();
     }
 
+    VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
+    pool_inline_info.maxInlineUniformBlockBindings = 32;
+
     // Pool size must be a multiple of 4
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     ds_type_count.descriptorCount = 33;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&pool_inline_info);
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
