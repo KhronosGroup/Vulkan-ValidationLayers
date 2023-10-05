@@ -2183,7 +2183,7 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
         )spirv";
     VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM_TRY);
     m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
-    if (!vs.InitFromASMTry()) {
+    if (vs.InitFromASMTry() != VK_SUCCESS) {
         GTEST_SKIP() << "Failed to compile shader";
     }
     const VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
