@@ -2465,3 +2465,68 @@ TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
     vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(uint32_t), &data, sizeof(uint32_t), 0u);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, NonOptimalResolveFormat) {
+    TEST_DESCRIPTION("Create a render pass with a resolve attachment that is not optimal");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkSubpassResolvePerformanceQueryEXT performance_query = vku::InitStructHelper();
+    VkFormatProperties2 format_properties2 = vku::InitStructHelper(&performance_query);
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_properties2);
+    if (performance_query.optimal == VK_TRUE) {
+        GTEST_SKIP() << "VkSubpassResolvePerformanceQueryEXT::optimal required to be VK_FALSE.";
+    }
+
+    VkAttachmentReference color_attachment;
+    color_attachment.attachment = 0u;
+    color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference resolve_attachment;
+    resolve_attachment.attachment = 1u;
+    resolve_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription attachments[2];
+    attachments[0] = {};
+    attachments[0].format = format;
+    attachments[0].samples = VK_SAMPLE_COUNT_2_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[1] = {};
+    attachments[1].format = format;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1u;
+    subpass.pColorAttachments = &color_attachment;
+    subpass.pResolveAttachments = &resolve_attachment;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 2u;
+    render_pass_ci.pAttachments = attachments;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                         "UNASSIGNED-BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat");
+    vk::CreateRenderPass(*m_device, &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
