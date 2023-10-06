@@ -3548,3 +3548,142 @@ TEST_F(NegativePipeline, PipelineMissingFeatures) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, MissingPipelineFormat) {
+    TEST_DESCRIPTION("Render with required pipeline formats VK_FORMAT_UNDEFINED");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusued_attachment_features =
+        vku::InitStructHelper(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(unusued_attachment_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "dynamicRendering not supported";
+    }
+    if (!unusued_attachment_features.dynamicRenderingUnusedAttachments) {
+        GTEST_SKIP() << "dynamicRenderingUnusedAttachments not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &unusued_attachment_features));
+
+    VkFormat undefined = VK_FORMAT_UNDEFINED;
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageObj color_image(m_device);
+    color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView color_image_view = color_image.targetView(color_format);
+
+    VkImageObj ds_image(m_device);
+    ds_image.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView ds_image_view = ds_image.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &undefined;
+    pipeline_rendering_info.depthAttachmentFormat = ds_format;
+    pipeline_rendering_info.stencilAttachmentFormat = ds_format;
+
+    VkClearValue color_clear_value;
+    color_clear_value.color.float32[0] = 0.0f;
+    color_clear_value.color.float32[1] = 0.0f;
+    color_clear_value.color.float32[2] = 0.0f;
+    color_clear_value.color.float32[3] = 0.0f;
+
+    VkClearValue ds_clear_value;
+    ds_clear_value.depthStencil = {1.0f, 0u};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue = color_clear_value;
+
+    VkRenderingAttachmentInfo ds_attachment = vku::InitStructHelper();
+    ds_attachment.imageView = ds_image_view;
+    ds_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    ds_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    ds_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    ds_attachment.clearValue = ds_clear_value;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.pDepthAttachment = &ds_attachment;
+    rendering_info.pStencilAttachment = &ds_attachment;
+
+    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
+    color_blend_attachment_state.blendEnable = VK_TRUE;
+    color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+    color_blend_attachment_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    color_blend_attachment_state.colorBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment_state.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+    VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
+    ds_state.depthTestEnable = VK_TRUE;
+    ds_state.depthWriteEnable = VK_TRUE;
+    ds_state.stencilTestEnable = VK_TRUE;
+
+    VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
+    color_blend_state.attachmentCount = 1u;
+    color_blend_state.pAttachments = &color_blend_attachment_state;
+
+    CreatePipelineHelper color_pipe(*this);
+    color_pipe.InitState();
+    color_pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    color_pipe.ds_ci_ = ds_state;
+    color_pipe.cb_ci_ = color_blend_state;
+    color_pipe.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = undefined;
+
+    CreatePipelineHelper depth_pipe(*this);
+    depth_pipe.InitState();
+    depth_pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    depth_pipe.ds_ci_ = ds_state;
+    color_pipe.cb_ci_ = color_blend_state;
+    depth_pipe.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.depthAttachmentFormat = ds_format;
+    pipeline_rendering_info.stencilAttachmentFormat = undefined;
+
+    CreatePipelineHelper stencil_pipe(*this);
+    stencil_pipe.InitState();
+    stencil_pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    stencil_pipe.ds_ci_ = ds_state;
+    color_pipe.cb_ci_ = color_blend_state;
+    stencil_pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(rendering_info);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, color_pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pColorAttachments-08963");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pDepthAttachment-08964");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pStencilAttachment-08965");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
