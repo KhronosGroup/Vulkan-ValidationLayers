@@ -3152,6 +3152,54 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                                  FormatHandle(*pipeline).c_str());
             }
         }
+
+        if ((pipeline->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) != 0) {
+            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                const bool statically_writes_to_color_attachment = pipeline->fragmentShader_writable_output_location_list.find(i) !=
+                                                                   pipeline->fragmentShader_writable_output_location_list.end();
+                const bool mask_and_write_enabled =
+                    last_bound_state.GetColorWriteMask(i) != 0 && last_bound_state.IsColorWriteEnabled(i);
+                if (statically_writes_to_color_attachment && mask_and_write_enabled &&
+                    rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                    if (i >= pipeline_rendering_ci.colorAttachmentCount ||
+                        pipeline_rendering_ci.pColorAttachmentFormats[i] == VK_FORMAT_UNDEFINED) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
+                                                    cb_state.activeRenderPass->renderPass(),
+                                                    rendering_info.pColorAttachments[i].imageView);
+                        skip |= LogError(vuid.color_attachment_08963, objlist, loc,
+                                         "VkRenderingInfo::pColorAttachments[%" PRIu32
+                                         "] is %s, but currently bound graphics pipeline %s was created with "
+                                         "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
+                                         "] equal to VK_FORMAT_UNDEFINED",
+                                         i, FormatHandle(rendering_info.pColorAttachments[i].imageView).c_str(),
+                                         FormatHandle(*pipeline).c_str(), i);
+                    }
+                }
+            }
+        }
+        if (last_bound_state.IsDepthTestEnable() && last_bound_state.IsDepthWriteEnable() && rp_state->use_dynamic_rendering &&
+            rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
+            if (pipeline_rendering_ci.depthAttachmentFormat == VK_FORMAT_UNDEFINED) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
+                                            cb_state.activeRenderPass->renderPass());
+                skip |= LogError(vuid.depth_attachment_08964, objlist, loc,
+                                 "VkRenderingInfo::pDepthAttachment is %s, but currently bound graphics pipeline %s was created "
+                                 "with VkPipelineRenderingCreateInfo::depthAttachmentFormat equal to VK_FORMAT_UNDEFINED",
+                                 FormatHandle(rendering_info.pDepthAttachment->imageView).c_str(), FormatHandle(*pipeline).c_str());
+            }
+        }
+        if (last_bound_state.IsStencilTestEnable() && rp_state->use_dynamic_rendering && rendering_info.pStencilAttachment &&
+            rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
+            if (pipeline_rendering_ci.stencilAttachmentFormat == VK_FORMAT_UNDEFINED) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
+                                            cb_state.activeRenderPass->renderPass());
+                skip |=
+                    LogError(vuid.stencil_attachment_08965, objlist, loc,
+                             "VkRenderingInfo::pStencilAttachment is %s, but currently bound graphics pipeline %s was created with "
+                             "VkPipelineRenderingCreateInfo::stencilAttachmentFormat equal to VK_FORMAT_UNDEFINED",
+                             FormatHandle(rendering_info.pStencilAttachment->imageView).c_str(), FormatHandle(*pipeline).c_str());
+            }
+        }
     }
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV

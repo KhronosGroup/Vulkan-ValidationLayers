@@ -5712,6 +5712,13 @@ void ValidationStateTracker::PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBu
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
     cb_state->dynamic_state_value.color_write_enable_attachment_count = attachmentCount;
+    for (uint32_t i = 0; i < attachmentCount; ++i) {
+        if (pColorWriteEnables[i]) {
+            cb_state->dynamic_state_value.color_write_enabled.set(i);
+        } else {
+            cb_state->dynamic_state_value.color_write_enabled.reset(i);
+        }
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,

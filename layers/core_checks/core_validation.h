@@ -305,6 +305,9 @@ struct DrawDispatchVuid {
     const char* mesh_shader_queries_07073 = kVUIDUndefined;
     const char* blend_advanced_07480 = kVUIDUndefined;
     const char* blend_feature_07470 = kVUIDUndefined;
+    const char* color_attachment_08963 = kVUIDUndefined;
+    const char* depth_attachment_08964 = kVUIDUndefined;
+    const char* stencil_attachment_08965 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
