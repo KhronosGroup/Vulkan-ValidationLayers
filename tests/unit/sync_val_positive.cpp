@@ -543,3 +543,93 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
     ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 }
+
+TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
+    TEST_DESCRIPTION("Use separate barriers for availability and visibility operations.");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr VkDeviceSize size = 1024;
+    const vkt::Buffer staging_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    const vkt::Buffer buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy region = {};
+    region.size = size;
+
+    m_commandBuffer->begin();
+    // Perform a copy
+    vk::CmdCopyBuffer(*m_commandBuffer, staging_buffer, buffer, 1, &region);
+
+    // Make writes available
+    VkBufferMemoryBarrier barrier_a = vku::InitStructHelper();
+    barrier_a.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_a.dstAccessMask = 0;
+    barrier_a.buffer = buffer;
+    barrier_a.size = VK_WHOLE_SIZE;
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+                           &barrier_a, 0, nullptr);
+
+    // Make writes visible
+    VkBufferMemoryBarrier barrier_b = vku::InitStructHelper();
+    barrier_b.srcAccessMask = 0;  // already available
+    barrier_b.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_b.buffer = buffer;
+    barrier_b.size = VK_WHOLE_SIZE;
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+                           &barrier_b, 0, nullptr);
+
+    // Perform one more copy. Should not generate WAW.
+    vk::CmdCopyBuffer(*m_commandBuffer, staging_buffer, buffer, 1, &region);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
+    TEST_DESCRIPTION(
+        "Image barrier makes image available but not visible. A subsequent layout transition barrier should not generate hazards. "
+        "Available memory is automatically made visible to a layout transition.");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr VkDeviceSize buffer_size = 64 * 64 * 4;
+    const vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+               VK_IMAGE_TILING_LINEAR);
+    ASSERT_TRUE(image.initialized());
+    image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    m_commandBuffer->begin();
+
+    // Copy data from buffer to image
+    VkBufferImageCopy region = {};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent.width = 64;
+    region.imageExtent.height = 64;
+    region.imageExtent.depth = 1;
+    vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    // Make writes available
+    VkImageMemoryBarrier barrier_a = vku::InitStructHelper();
+    barrier_a.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_a.dstAccessMask = 0;
+    barrier_a.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier_a.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier_a.image = image;
+    barrier_a.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &barrier_a);
+
+    // Transition to new layout. Available memory should automatically be made visible to the layout transition.
+    VkImageMemoryBarrier barrier_b = vku::InitStructHelper();
+    barrier_b.srcAccessMask = 0;  // already available
+    barrier_b.dstAccessMask = 0;  // for this test we don't care if the memory is visible after the transition or not
+    barrier_b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier_b.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier_b.image = image;
+    barrier_b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &barrier_b);
+    m_commandBuffer->end();
+}
