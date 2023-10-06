@@ -230,8 +230,11 @@ TEST_F(NegativeMesh, BasicUsage) {
         }
 
         // viewMask without enabling multiviewMeshShader feature
-        VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+        VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
         pipeline_rendering_info.viewMask = 0x2;
+        VkFormat color_formats[] = {VK_FORMAT_UNDEFINED};
+        pipeline_rendering_info.colorAttachmentCount = 1;
+        pipeline_rendering_info.pColorAttachmentFormats = color_formats;
 
         const auto break_vp5 = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};

@@ -876,17 +876,16 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
     TEST_DESCRIPTION("colorAttachmentCount and attachmentCount don't match");
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = vku::InitStructHelper();
     color_blend_state_create_info.attachmentCount = 0;
     color_blend_state_create_info.pAttachments = nullptr;
 
-    CreatePipelineHelper lib(*this);
-
-    const VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkFormat color_format[2] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.pColorAttachmentFormats = color_format;
 
     {
         CreatePipelineHelper pipe(*this);
@@ -899,7 +898,7 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
         m_errorMonitor->VerifyFound();
     }
 
-    pipeline_rendering_info.colorAttachmentCount = 0;
+    pipeline_rendering_info.colorAttachmentCount = 2;
     {
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.pNext = &pipeline_rendering_info;
