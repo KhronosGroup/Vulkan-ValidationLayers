@@ -238,6 +238,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
             #include "sync_validation_types.h"
             ''')
 
+        # syncStageAccessInfoByStageAccessIndex
         out.append('// clang-format off\n')
         out.append(f'const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex() {{\n')
         out.append(f'static const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}> variable = {{ {{\n')
@@ -254,6 +255,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('return variable;\n')
         out.append('}\n')
 
+        # syncStageAccessMaskByStageBit
         out.append('const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit() {\n')
         out.append('    static const std::map<VkPipelineStageFlags2, SyncStageAccessFlags> variable = {\n')
         stage_to_stageAccess = {}
@@ -269,6 +271,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('    return variable;\n')
         out.append('}\n\n')
 
+        # syncStageAccessMaskByAccessBit
         out.append('const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit() {\n')
         out.append('    static const std::map<VkAccessFlags2, SyncStageAccessFlags> variable = {\n')
         access_to_stageAccess = {}
@@ -287,6 +290,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('    return variable;\n')
         out.append('}\n\n')
 
+        # syncDirectStageToAccessMask
         out.append('const std::map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask() {\n')
         out.append('    static const std::map<VkPipelineStageFlags2, VkAccessFlags2> variable = {\n')
         stage_to_access = {}
@@ -302,6 +306,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('    return variable;\n')
         out.append('}\n\n')
 
+        # syncAllCommandStagesByQueueFlags
         out.append('const std::map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags() {\n')
         out.append('    static const std::map<VkQueueFlagBits, VkPipelineStageFlags2> variable = {\n')
         ignoreQueueFlag = [
@@ -318,6 +323,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('    return variable;\n')
         out.append('}\n\n')
 
+        # syncLogicallyEarlierStages
         out.append('const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages() {\n')
         out.append('    static const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> variable = {\n')
         earlier_stages = {}
@@ -345,6 +351,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('    return variable;\n')
         out.append('}\n\n')
 
+        # syncLogicallyLaterStages
         out.append('const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages() {\n')
         out.append('    static const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> variable = {\n')
         later_stages = {}
@@ -467,6 +474,20 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
                 if flag.name not in stageToAccessMap:
                     stageToAccessMap[flag.name] = []
                 stageToAccessMap[flag.name].append(access.flag.name)
+
+        # ACCELERATION_STRUCTURE_BUILD accesses input geometry buffers using SHADER_READ access.
+        # The core of validation logic works with expanded stages and SHADER_STORAGE_READ was
+        # choosen to represent SHADER_READ access. Then SHADER_READ itself is handled correctly:
+        # validation logic automatically includes SHADER_READ when its sub-access is used.
+        #
+        # This new stage-access pair should be added manually because vk.xml does not define
+        # ACCELERATION_STRUCTURE_BUILD for SHADER_READ's sub-accesses.
+        #
+        # TODO: with this change SHADER_STORAGE_READ also passes validation (in addition to SHADER_READ),
+        # but other sub-accesses are not allowed. Update this logic if there is a confirmation
+        # how ACCELERATION_STRUCTURE_BUILD should work with sub-components of SHADER_READ:
+        # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3640#note_434212
+        stageToAccessMap['VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR'].append('VK_ACCESS_2_SHADER_STORAGE_READ_BIT')
 
         for stage in [x for x in self.stages if x in stageToAccessMap]:
             mini_stage = stage.lstrip()
