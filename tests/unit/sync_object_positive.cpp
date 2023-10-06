@@ -2299,3 +2299,29 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &image_dependency);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncObject, BarrierASBuildWithShaderReadAccess) {
+    TEST_DESCRIPTION("Test barrier with acceleration structure build stage and shader read access to access geometry input data.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &mem_barrier;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier2KHR(*m_commandBuffer, &dependency_info);
+    m_commandBuffer->end();
+}
