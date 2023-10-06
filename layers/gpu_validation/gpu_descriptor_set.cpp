@@ -123,10 +123,10 @@ VkDeviceAddress gpuav_state::DescriptorSet::GetLayoutState() {
     for (size_t i = 0; i < bindings_.size(); i++) {
         auto &binding = bindings_[i];
         if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == binding->type) {
-            layout_data[i + 1] = {1, state_start};
+            layout_data[binding->binding + 1] = {1, state_start};
             state_start += 1;
         } else {
-            layout_data[i + 1] = {binding->count, state_start};
+            layout_data[binding->binding + 1] = {binding->count, state_start};
             state_start += binding->count;
         }
     }
@@ -178,7 +178,7 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::SamplerDescr
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::ImageSamplerDescriptor &desc) {
     auto image_state = static_cast<const gpuav_state::ImageView *>(desc.GetImageViewState());
     auto sampler_state = static_cast<const gpuav_state::Sampler *>(desc.GetSamplerState());
-    return gpuav_glsl::DescriptorState(DescriptorClass::ImageSampler, image_state->id, sampler_state->id);
+    return gpuav_glsl::DescriptorState(DescriptorClass::ImageSampler, image_state ? image_state->id : 0, sampler_state ? sampler_state->id : 0);
 }
 
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::AccelerationStructureDescriptor &ac) {
@@ -217,7 +217,7 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::MutableDescr
         case DescriptorClass::ImageSampler: {
             auto image_state = std::static_pointer_cast<const gpuav_state::ImageView>(desc.GetSharedImageViewState());
             auto sampler_state = std::static_pointer_cast<const gpuav_state::Sampler>(desc.GetSharedSamplerState());
-            return gpuav_glsl::DescriptorState(desc_class, image_state->id, sampler_state->id);
+            return gpuav_glsl::DescriptorState(desc_class, image_state ? image_state->id : 0, sampler_state ? sampler_state->id : 0);
         }
         case DescriptorClass::Image: {
             auto image_state = std::static_pointer_cast<const gpuav_state::ImageView>(desc.GetSharedImageViewState());
@@ -282,6 +282,11 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
                 descriptor_count += binding->count;
             }
         }
+    }
+    if (descriptor_count == 0) {
+        // no descriptors case, return a dummy state object
+        last_used_state_ = next_state;
+        return last_used_state_;
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
