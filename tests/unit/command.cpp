@@ -925,7 +925,7 @@ TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeCommand, ExecuteCommandsToSecondaryCB) {
+TEST_F(NegativeCommand, DISABLED_ExecuteCommandsToSecondaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands to a Secondary command buffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());

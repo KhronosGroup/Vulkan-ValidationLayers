@@ -669,6 +669,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_linear_color_attachment{kNotEnabled};
     ExtEnabled vk_ext_image_compression_control_swapchain{kNotEnabled};
     ExtEnabled vk_qcom_image_processing{kNotEnabled};
+    ExtEnabled vk_ext_nested_command_buffer{kNotEnabled};
     ExtEnabled vk_ext_external_memory_acquire_unmodified{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state3{kNotEnabled};
     ExtEnabled vk_ext_subpass_merge_feedback{kNotEnabled};
@@ -683,6 +684,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_sec_amigo_profiling{kNotEnabled};
     ExtEnabled vk_qcom_multiview_per_view_viewports{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_invocation_reorder{kNotEnabled};
+    ExtEnabled vk_nv_extended_sparse_address_space{kNotEnabled};
     ExtEnabled vk_ext_mutable_descriptor_type{kNotEnabled};
     ExtEnabled vk_arm_shader_core_builtins{kNotEnabled};
     ExtEnabled vk_ext_pipeline_library_group_handles{kNotEnabled};
@@ -1603,6 +1605,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_qcom_image_processing,
                         {{{&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
+            {VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_nested_command_buffer,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_external_memory_acquire_unmodified,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
@@ -1661,6 +1666,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing_invocation_reorder,
                         {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
+            {VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_nv_extended_sparse_address_space, {})},
             {VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_mutable_descriptor_type,
                         {{{&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
@@ -2203,6 +2210,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME,
     VK_EXT_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_EXTENSION_NAME,
     VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME,
+    VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME,
     VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME,
     VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
     VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME,
@@ -2219,6 +2227,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_SEC_AMIGO_PROFILING_EXTENSION_NAME,
     VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME,
     VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME,
+    VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME,
     VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
     VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME,
     VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME,

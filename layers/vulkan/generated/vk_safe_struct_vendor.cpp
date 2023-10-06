@@ -12312,6 +12312,119 @@ void safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::initialize(
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV(
+    const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), extendedSparseAddressSpace(in_struct->extendedSparseAddressSpace) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_FEATURES_NV),
+      pNext(nullptr),
+      extendedSparseAddressSpace() {}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV(
+    const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& copy_src) {
+    sType = copy_src.sType;
+    extendedSparseAddressSpace = copy_src.extendedSparseAddressSpace;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::operator=(
+    const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    extendedSparseAddressSpace = copy_src.extendedSparseAddressSpace;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::~safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::initialize(
+    const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    extendedSparseAddressSpace = in_struct->extendedSparseAddressSpace;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::initialize(
+    const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    extendedSparseAddressSpace = copy_src->extendedSparseAddressSpace;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV(
+    const VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType),
+      extendedSparseAddressSpaceSize(in_struct->extendedSparseAddressSpaceSize),
+      extendedSparseImageUsageFlags(in_struct->extendedSparseImageUsageFlags),
+      extendedSparseBufferUsageFlags(in_struct->extendedSparseBufferUsageFlags) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_PROPERTIES_NV),
+      pNext(nullptr),
+      extendedSparseAddressSpaceSize(),
+      extendedSparseImageUsageFlags(),
+      extendedSparseBufferUsageFlags() {}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV(
+    const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& copy_src) {
+    sType = copy_src.sType;
+    extendedSparseAddressSpaceSize = copy_src.extendedSparseAddressSpaceSize;
+    extendedSparseImageUsageFlags = copy_src.extendedSparseImageUsageFlags;
+    extendedSparseBufferUsageFlags = copy_src.extendedSparseBufferUsageFlags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::operator=(
+    const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    extendedSparseAddressSpaceSize = copy_src.extendedSparseAddressSpaceSize;
+    extendedSparseImageUsageFlags = copy_src.extendedSparseImageUsageFlags;
+    extendedSparseBufferUsageFlags = copy_src.extendedSparseBufferUsageFlags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::~safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::initialize(
+    const VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    extendedSparseAddressSpaceSize = in_struct->extendedSparseAddressSpaceSize;
+    extendedSparseImageUsageFlags = in_struct->extendedSparseImageUsageFlags;
+    extendedSparseBufferUsageFlags = in_struct->extendedSparseBufferUsageFlags;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV::initialize(
+    const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    extendedSparseAddressSpaceSize = copy_src->extendedSparseAddressSpaceSize;
+    extendedSparseImageUsageFlags = copy_src->extendedSparseImageUsageFlags;
+    extendedSparseBufferUsageFlags = copy_src->extendedSparseBufferUsageFlags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(
     const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), shaderCoreBuiltins(in_struct->shaderCoreBuiltins) {

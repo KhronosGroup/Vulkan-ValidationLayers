@@ -346,7 +346,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
 }},
 {Func::vkCmdExecuteCommands, {
     "VUID-vkCmdExecuteCommands-commandBuffer-recording",
-    "VUID-vkCmdExecuteCommands-bufferlevel",
+    nullptr,
     VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdExecuteCommands-commandBuffer-cmdpool",
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdExecuteCommands-videocoding",

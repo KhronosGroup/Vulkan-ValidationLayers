@@ -16602,6 +16602,119 @@ void safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT::initializ
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT(
+    const VkPhysicalDeviceNestedCommandBufferFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType),
+      nestedCommandBuffer(in_struct->nestedCommandBuffer),
+      nestedCommandBufferRendering(in_struct->nestedCommandBufferRendering),
+      nestedCommandBufferSimultaneousUse(in_struct->nestedCommandBufferSimultaneousUse) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_FEATURES_EXT),
+      pNext(nullptr),
+      nestedCommandBuffer(),
+      nestedCommandBufferRendering(),
+      nestedCommandBufferSimultaneousUse() {}
+
+safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT(
+    const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& copy_src) {
+    sType = copy_src.sType;
+    nestedCommandBuffer = copy_src.nestedCommandBuffer;
+    nestedCommandBufferRendering = copy_src.nestedCommandBufferRendering;
+    nestedCommandBufferSimultaneousUse = copy_src.nestedCommandBufferSimultaneousUse;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::operator=(
+    const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    nestedCommandBuffer = copy_src.nestedCommandBuffer;
+    nestedCommandBufferRendering = copy_src.nestedCommandBufferRendering;
+    nestedCommandBufferSimultaneousUse = copy_src.nestedCommandBufferSimultaneousUse;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::~safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::initialize(
+    const VkPhysicalDeviceNestedCommandBufferFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    nestedCommandBuffer = in_struct->nestedCommandBuffer;
+    nestedCommandBufferRendering = in_struct->nestedCommandBufferRendering;
+    nestedCommandBufferSimultaneousUse = in_struct->nestedCommandBufferSimultaneousUse;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT::initialize(
+    const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    nestedCommandBuffer = copy_src->nestedCommandBuffer;
+    nestedCommandBufferRendering = copy_src->nestedCommandBufferRendering;
+    nestedCommandBufferSimultaneousUse = copy_src->nestedCommandBufferSimultaneousUse;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT(
+    const VkPhysicalDeviceNestedCommandBufferPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : sType(in_struct->sType), maxCommandBufferNestingLevel(in_struct->maxCommandBufferNestingLevel) {
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_PROPERTIES_EXT),
+      pNext(nullptr),
+      maxCommandBufferNestingLevel() {}
+
+safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT(
+    const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& copy_src) {
+    sType = copy_src.sType;
+    maxCommandBufferNestingLevel = copy_src.maxCommandBufferNestingLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::operator=(
+    const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pNext) FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxCommandBufferNestingLevel = copy_src.maxCommandBufferNestingLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::~safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT() {
+    if (pNext) FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::initialize(
+    const VkPhysicalDeviceNestedCommandBufferPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pNext) FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxCommandBufferNestingLevel = in_struct->maxCommandBufferNestingLevel;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT::initialize(
+    const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    maxCommandBufferNestingLevel = copy_src->maxCommandBufferNestingLevel;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkExternalMemoryAcquireUnmodifiedEXT::safe_VkExternalMemoryAcquireUnmodifiedEXT(
     const VkExternalMemoryAcquireUnmodifiedEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), acquireUnmodifiedMemory(in_struct->acquireUnmodifiedMemory) {

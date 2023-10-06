@@ -1692,18 +1692,18 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetDynamicRenderingTilePropertiesQCOM(
     return VK_SUCCESS;
 }
 static VKAPI_ATTR VkResult VKAPI_CALL StubSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                                VkLatencySleepModeInfoNV* pSleepModeInfo) {
+                                                                const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     return VK_SUCCESS;
 }
 static VKAPI_ATTR VkResult VKAPI_CALL StubLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                         VkLatencySleepInfoNV* pSleepInfo) {
+                                                         const VkLatencySleepInfoNV* pSleepInfo) {
     return VK_SUCCESS;
 }
 static VKAPI_ATTR void VKAPI_CALL StubSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                         VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
+                                                         const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
                                                           VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
-static VKAPI_ATTR void VKAPI_CALL StubQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
                                                                             VkImageAspectFlags aspectMask) {}
 #ifdef VK_USE_PLATFORM_SCREEN_QNX

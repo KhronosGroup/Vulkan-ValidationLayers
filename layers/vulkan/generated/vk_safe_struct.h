@@ -15506,6 +15506,50 @@ struct safe_VkPhysicalDeviceImageProcessingPropertiesQCOM {
         return reinterpret_cast<VkPhysicalDeviceImageProcessingPropertiesQCOM const*>(this);
     }
 };
+struct safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 nestedCommandBuffer;
+    VkBool32 nestedCommandBufferRendering;
+    VkBool32 nestedCommandBufferSimultaneousUse;
+
+    safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT(const VkPhysicalDeviceNestedCommandBufferFeaturesEXT* in_struct,
+                                                        PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT(const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& operator=(
+        const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT();
+    ~safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT();
+    void initialize(const VkPhysicalDeviceNestedCommandBufferFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceNestedCommandBufferFeaturesEXT* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceNestedCommandBufferFeaturesEXT*>(this);
+    }
+    VkPhysicalDeviceNestedCommandBufferFeaturesEXT const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceNestedCommandBufferFeaturesEXT const*>(this);
+    }
+};
+struct safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t maxCommandBufferNestingLevel;
+
+    safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT(const VkPhysicalDeviceNestedCommandBufferPropertiesEXT* in_struct,
+                                                          PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT(const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& operator=(
+        const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT();
+    ~safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT();
+    void initialize(const VkPhysicalDeviceNestedCommandBufferPropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceNestedCommandBufferPropertiesEXT* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceNestedCommandBufferPropertiesEXT*>(this);
+    }
+    VkPhysicalDeviceNestedCommandBufferPropertiesEXT const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceNestedCommandBufferPropertiesEXT const*>(this);
+    }
+};
 struct safe_VkExternalMemoryAcquireUnmodifiedEXT {
     VkStructureType sType;
     const void* pNext{};
@@ -16239,6 +16283,52 @@ struct safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV {
     }
     VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV const* ptr() const {
         return reinterpret_cast<VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV const*>(this);
+    }
+};
+struct safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 extendedSparseAddressSpace;
+
+    safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV(const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* in_struct,
+                                                              PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV(
+        const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& operator=(
+        const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV();
+    ~safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV();
+    void initialize(const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV*>(this);
+    }
+    VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV const*>(this);
+    }
+};
+struct safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV {
+    VkStructureType sType;
+    void* pNext{};
+    VkDeviceSize extendedSparseAddressSpaceSize;
+    VkImageUsageFlags extendedSparseImageUsageFlags;
+    VkBufferUsageFlags extendedSparseBufferUsageFlags;
+
+    safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV(
+        const VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV(
+        const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& copy_src);
+    safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& operator=(
+        const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& copy_src);
+    safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV();
+    ~safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV();
+    void initialize(const VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV*>(this);
+    }
+    VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV const*>(this);
     }
 };
 struct safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM {
