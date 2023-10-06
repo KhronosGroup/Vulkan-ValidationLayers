@@ -121,6 +121,30 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
         }
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+        for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+            if (pCreateInfo->pSubpasses[i].pResolveAttachments) {
+                for (uint32_t j = 0; j < pCreateInfo->pSubpasses[i].colorAttachmentCount; ++j) {
+                    const auto attachment = pCreateInfo->pSubpasses[i].pResolveAttachments[j].attachment;
+                    if (attachment != VK_ATTACHMENT_UNUSED) {
+                        const auto format = pCreateInfo->pAttachments[attachment].format;
+                        VkSubpassResolvePerformanceQueryEXT performance_query = vku::InitStructHelper();
+                        VkFormatProperties2 format_properties2 = vku::InitStructHelper(&performance_query);
+                        DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties2);
+                        if (performance_query.optimal == VK_FALSE) {
+                            skip |=
+                                LogPerformanceWarning(device, kVUID_BestPractices_SubpassResolve_NonOptimalFormat,
+                                                      "Attachment %" PRIu32
+                                                      " in the VkRenderPass has the format %s and is used as a resolve attachment, "
+                                                      "but VkSubpassResolvePerformanceQueryEXT::optimal is VK_FALSE.",
+                                                      i, string_VkFormat(format));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     for (uint32_t dependency = 0; dependency < pCreateInfo->dependencyCount; dependency++) {
         skip |= CheckPipelineStageFlags("vkCreateRenderPass", pCreateInfo->pDependencies[dependency].srcStageMask);
         skip |= CheckPipelineStageFlags("vkCreateRenderPass", pCreateInfo->pDependencies[dependency].dstStageMask);
