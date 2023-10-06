@@ -21,6 +21,12 @@
 gpuav_state::DescriptorHeap::DescriptorHeap(GpuAssisted &gpu_dev, uint32_t max_descriptors)
     : max_descriptors_(max_descriptors), allocator_(gpu_dev.vmaAllocator) {
 
+     // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
+     // support calls into this class as no-ops if this happens.
+     if (max_descriptors_ == 0) {
+         return;
+     }
+
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
     buffer_info.size = ((max_descriptors_ + 31) & ~31) * sizeof(uint32_t);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -48,12 +54,17 @@ gpuav_state::DescriptorHeap::DescriptorHeap(GpuAssisted &gpu_dev, uint32_t max_d
 }
 
 gpuav_state::DescriptorHeap::~DescriptorHeap() {
-    vmaUnmapMemory(allocator_, allocation_);
-    gpu_heap_state_ = nullptr;
-    vmaDestroyBuffer(allocator_, buffer_, allocation_);
+    if (max_descriptors_ > 0) {
+        vmaUnmapMemory(allocator_, allocation_);
+        gpu_heap_state_ = nullptr;
+        vmaDestroyBuffer(allocator_, buffer_, allocation_);
+    }
 }
 
 gpuav_state::DescriptorId gpuav_state::DescriptorHeap::NextId(const VulkanTypedHandle &handle) {
+    if (max_descriptors_ == 0) {
+        return 0;
+    }
     gpuav_state::DescriptorId result;
 
     auto guard = Lock();
@@ -71,10 +82,12 @@ gpuav_state::DescriptorId gpuav_state::DescriptorHeap::NextId(const VulkanTypedH
 }
 
 void gpuav_state::DescriptorHeap::DeleteId(gpuav_state::DescriptorId id) {
-    auto guard = Lock();
-    // Note: We don't mess with next_id_ here because ids should be signed in LRU order.
-    gpu_heap_state_[id/32] &= ~(1u << (id & 31));
-    alloc_map_.erase(id);
+    if (max_descriptors_ > 0) {
+        auto guard = Lock();
+        // Note: We don't mess with next_id_ here because ids should be signed in LRU order.
+        gpu_heap_state_[id/32] &= ~(1u << (id & 31));
+        alloc_map_.erase(id);
+    }
 }
 
 gpuav_state::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
@@ -87,6 +100,7 @@ void gpuav_state::Buffer::Destroy() {
     desc_heap.DeleteId(id);
     BUFFER_STATE::Destroy();
 }
+
 void gpuav_state::Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     BUFFER_STATE::NotifyInvalidate(invalid_nodes, unlink);
@@ -102,6 +116,7 @@ void gpuav_state::BufferView::Destroy() {
     desc_heap.DeleteId(id);
     BUFFER_VIEW_STATE::Destroy();
 }
+
 void gpuav_state::BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     BUFFER_VIEW_STATE::NotifyInvalidate(invalid_nodes, unlink);

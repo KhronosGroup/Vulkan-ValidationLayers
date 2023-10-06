@@ -144,6 +144,8 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
                                                 VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
                                                 kShaderStageAllRayTracing,
                                             NULL};
+    // Set up a stub implementation of the descriptor heap in case we abort.
+    desc_heap.emplace(*this, 0);
     bindings_.push_back(binding);
     for (auto i = 1; i < 3; i++) {
         binding.binding = i;
@@ -1310,22 +1312,17 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
             strm << "(set = " <<  debug_record[kInstBindlessBoundsOutDescSet] << ", binding = " << debug_record[kInstBindlessBoundsOutDescBinding] << ") Index of "
-                 << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length " << debug_record[kInstBindlessBoundsOutDescBound] << ". "
-                 << " param6=" <<  debug_record[kInstBindlessBoundsOutUnused];
+                 << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length " << debug_record[kInstBindlessBoundsOutDescBound] << ".";
             vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
         } break;
         case kInstErrorBindlessUninit: {
-            const uint32_t param5 = debug_record[kInstBindlessUninitOutUnused];
-            const uint32_t param6 = debug_record[kInstBindlessUninitOutUnused2];
             strm << "(set = " << debug_record[kInstBindlessUninitOutDescSet] << ", binding = " << debug_record[kInstBindlessUninitOutBinding] << ") Descriptor index "
-                 << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized." << " param5=" << param5 << " param6=" << param6;
+                 << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized.";
             vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         case kInstErrorBindlessDestroyed: {
-            const uint32_t param5 = debug_record[kInstBindlessUninitOutUnused];
-            const uint32_t param6 = debug_record[kInstBindlessUninitOutUnused2];
             strm << "(set = " << debug_record[kInstBindlessUninitOutDescSet] << ", binding = " << debug_record[kInstBindlessUninitOutBinding] << ") Descriptor index "
-                 << debug_record[kInstBindlessUninitOutDescIndex] << " references a resource that was destroyed." << " param5=" << param5 << " param6=" << param6;
+                 << debug_record[kInstBindlessUninitOutDescIndex] << " references a resource that was destroyed.";
             vuid_msg = "UNASSIGNED-Descriptor destroyed";
         } break;
         case kInstErrorBuffAddrUnallocRef: {
