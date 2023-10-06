@@ -801,11 +801,23 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     }
 }
 
+template <typename NormalizeOp>
+void AccessContext::Trim(NormalizeOp &&normalize) {
+    ForAll(std::forward<NormalizeOp>(normalize));
+    sparse_container::consolidate(access_state_map_);
+}
+
 void AccessContext::Trim() {
     auto normalize = [](ResourceAccessRangeMap::value_type &access) { access.second.Normalize(); };
-    ForAll(normalize);
-    // Consolidate map after normalization, combines directly adjacent ranges with common values.
-    sparse_container::consolidate(access_state_map_);
+    Trim(normalize);
+}
+
+void AccessContext::TrimAndClearFirstAccess() {
+    auto normalize = [](ResourceAccessRangeMap::value_type &access) {
+        access.second.Normalize();
+        access.second.ClearFirstUse();
+    };
+    Trim(normalize);
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
@@ -3917,17 +3929,7 @@ bool operator<(const ResourceAccessState::ReadState &lhs, const ResourceAccessSt
 }
 
 void ResourceAccessState::Normalize() {
-    if (!last_reads.size()) {
-        ClearRead();
-    } else {
-        // Sort the reads in stage order for consistent comparisons
-        std::sort(last_reads.begin(), last_reads.end());
-        for (auto &read_access : last_reads) {
-            read_access.Normalize();
-        }
-    }
-
-    ClearPending();
+    std::sort(last_reads.begin(), last_reads.end());
     ClearFirstUse();
 }
 
@@ -7357,7 +7359,7 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resourc
     // Note: merged_context is a copy of the access_context, combined with the recorded context
     auto merged_context = std::make_shared<AccessContext>(*access_context);
     merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(queue_id, exec_tag), *recorded_context_);
-    merged_context->Trim();  // Ensure the copy is minimal and normalized
+    merged_context->TrimAndClearFirstAccess();  // Ensure the copy is minimal and normalized
     DoRecord(queue_id, exec_tag, merged_context, events_context);
 }
 
@@ -8067,7 +8069,7 @@ QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state)
 
 void QueueBatchContext::Trim() {
     // Clean up unneeded access context contents and log information
-    access_context_.Trim();
+    access_context_.TrimAndClearFirstAccess();
 
     ResourceUsageTagSet used_tags;
     access_context_.AddReferencedTags(used_tags);
