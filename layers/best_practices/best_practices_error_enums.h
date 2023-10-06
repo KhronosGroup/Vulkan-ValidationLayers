@@ -118,6 +118,8 @@
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count";
 [[maybe_unused]] static const char *kVUID_BestPractices_NoVkSwapchainPresentModesCreateInfoEXTProvided =
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided";
+[[maybe_unused]] static const char *kVUID_BestPractices_SubpassResolve_NonOptimalFormat =
+    "UNASSIGNED-BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat";
 
 [[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_InvalidCount = "UNASSIGNED-BestPractices-SwapchainInvalidCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_DepthBiasNoAttachment = "UNASSIGNED-BestPractices-DepthBiasNoAttachment";
