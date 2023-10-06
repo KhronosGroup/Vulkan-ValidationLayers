@@ -911,6 +911,18 @@ safe_VkPipelineShaderStageCreateInfo &GetShaderStageCI(safe_VkComputePipelineCre
     return ci.stage;
 }
 
+bool GpuAssistedBase::CheckForGpuAvEnabled(const void *pNext) {
+    auto features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pNext);
+    if (features) {
+        for (uint32_t i = 0; i < features->enabledValidationFeatureCount; i++) {
+            if (features->pEnabledValidationFeatures[i] == VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Examine the pipelines to see if they use the debug descriptor set binding index.
 // If any do, create new non-instrumented shader modules and use them to replace the instrumented
 // shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
@@ -974,6 +986,14 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                             cgpl_state.shader_states.resize(pipeline + 1);
                         }
                         const VkShaderStageFlagBits stage = stage_state.GetStage();
+                        // Now find the corresponding VkShaderModuleCreateInfo
+                        auto &stage_ci =
+                            GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(new_pipeline_ci, stage);
+                        // We're modifying the copied, safe create info, which is ok to be non-const
+                        auto sm_ci =
+                            const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
+                                vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
+                        if (select_instrumented_shaders && sm_ci && !CheckForGpuAvEnabled(sm_ci->pNext)) continue;
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         bool cached = false;
                         bool pass = false;
@@ -994,14 +1014,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         }
                         if (cached || pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
-
-                            // Now we need to find the corresponding VkShaderModuleCreateInfo and update its shader code
-                            auto &stage_ci =
-                                GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(new_pipeline_ci, stage);
-                            // We're modifying the copied, safe create info, which is ok to be non-const
-                            auto sm_ci =
-                                const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
-                                    vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
+                            // Now we need to update the shader code in VkShaderModuleCreateInfo
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
                                 sm_ci->SetCode(csm_state.instrumented_spirv);

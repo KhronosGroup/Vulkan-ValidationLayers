@@ -180,6 +180,7 @@ class GpuAssistedBase : public ValidationStateTracker {
         vvl::ToLower(option_string);
         return !option_string.empty() ? !option_string.compare("true") : default_value;
     }
+    bool CheckForGpuAvEnabled(const void *pNext);
 
   protected:
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const;
@@ -215,6 +216,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     bool aborted = false;
     bool force_buffer_device_address;
     bool cache_instrumented_shaders;
+    bool select_instrumented_shaders;
     vvl::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     const char *setup_vuid;

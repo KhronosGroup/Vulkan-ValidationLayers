@@ -98,6 +98,12 @@ khronos_validation.enables =
 # Enable instrumented shader caching
 #khronos_validation.use_instrumented_shader_cache = true
 
+# Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext
+# =====================
+# <LayerIdentifier>.
+# Enable selection of shaders to instrument
+#khronos_validation.select_instrumented_shaders = false
+
 # Use linear vma allocator for GPU-AV output buffers
 # =====================
 # <LayerIdentifier>.gpuav_vma_linear_output
