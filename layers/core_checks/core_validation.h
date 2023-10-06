@@ -688,7 +688,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE* mem_info,
                                                         VkDeviceSize mem_offset, const Location& loc) const;
 
-    bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const Location& loc,
+    bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const Location& resource_loc,
                              const char* vuid) const;
     bool ValidateCommandBufferState(const CMD_BUFFER_STATE& cb_state, const Location& loc, uint32_t current_submit_count,
                                     const char* vuid) const;

@@ -429,15 +429,13 @@ bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_M
     return ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, loc);
 }
 
-bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const uint32_t memory_type_bits, const Location &loc,
-                                     const char *vuid) const {
+bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const uint32_t memory_type_bits,
+                                     const Location &resource_loc, const char *vuid) const {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
-        skip = LogError(
-            vuid, mem_info->deviceMemory(), loc,
-            "MemoryRequirements->memoryTypeBits (0x%x) for this object type are not compatible with the memory type (%" PRIu32
-            ") of %s.",
-            memory_type_bits, mem_info->alloc_info.memoryTypeIndex, FormatHandle(mem_info->deviceMemory()).c_str());
+        skip = LogError(vuid, mem_info->deviceMemory(), resource_loc,
+                        "require memoryTypeBits (0x%x) but %s was allocated with memoryTypeIndex (%" PRIu32 ").", memory_type_bits,
+                        FormatHandle(mem_info->deviceMemory()).c_str(), mem_info->alloc_info.memoryTypeIndex);
     }
     return skip;
 }
@@ -556,7 +554,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
         const char *mem_type_vuid =
             bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
-        skip |= ValidateMemoryTypes(mem_info.get(), buffer_state->requirements.memoryTypeBits, loc, mem_type_vuid);
+        skip |=
+            ValidateMemoryTypes(mem_info.get(), buffer_state->requirements.memoryTypeBits, loc.dot(Field::buffer), mem_type_vuid);
 
         // Validate memory requirements size
         if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
@@ -1091,7 +1090,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         {
                             const char *vuid =
                                 bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-vkBindImageMemory-memory-01047";
-                            skip |= ValidateMemoryTypes(mem_info.get(), mem_req.memoryTypeBits, loc, vuid);
+                            skip |= ValidateMemoryTypes(mem_info.get(), mem_req.memoryTypeBits, loc.dot(Field::image), vuid);
                         }
                     }
                 }
@@ -1147,7 +1146,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                         // Validate memory type used
                         {
-                            skip |= ValidateMemoryTypes(mem_info.get(), disjoint_mem_req.memoryTypeBits, loc,
+                            skip |= ValidateMemoryTypes(mem_info.get(), disjoint_mem_req.memoryTypeBits, loc.dot(Field::image),
                                                         "VUID-VkBindImageMemoryInfo-pNext-01619");
                         }
                     }
