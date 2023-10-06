@@ -814,14 +814,25 @@ void LAST_BOUND_STATE::Reset() {
 }
 
 bool LAST_BOUND_STATE::IsDepthTestEnable() const {
-    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) ? cb_state.dynamic_state_value.depth_test_enable
-                                                                         : pipeline_state->DepthStencilState()->depthTestEnable;
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
+        return cb_state.dynamic_state_value.depth_test_enable;
+    } else {
+        if (pipeline_state->DepthStencilState()) {
+            return pipeline_state->DepthStencilState()->depthTestEnable;
+        }
+    }
+    return false;
 }
 
 bool LAST_BOUND_STATE::IsDepthBoundTestEnable() const {
-    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)
-               ? cb_state.dynamic_state_value.depth_bounds_test_enable
-               : pipeline_state->DepthStencilState()->depthBoundsTestEnable;
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+        return cb_state.dynamic_state_value.depth_bounds_test_enable;
+    } else {
+        if (pipeline_state->DepthStencilState()) {
+            return pipeline_state->DepthStencilState()->depthBoundsTestEnable;
+        }
+    }
+    return false;
 }
 
 bool LAST_BOUND_STATE::IsDepthWriteEnable() const {
@@ -834,8 +845,14 @@ bool LAST_BOUND_STATE::IsDepthWriteEnable() const {
 }
 
 bool LAST_BOUND_STATE::IsStencilTestEnable() const {
-    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE) ? cb_state.dynamic_state_value.stencil_test_enable
-                                                                           : pipeline_state->DepthStencilState()->stencilTestEnable;
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
+        return cb_state.dynamic_state_value.stencil_test_enable;
+    } else {
+        if (pipeline_state->DepthStencilState()) {
+            return pipeline_state->DepthStencilState()->stencilTestEnable;
+        }
+    }
+    return false;
 }
 
 VkStencilOpState LAST_BOUND_STATE::GetStencilOpStateFront() const {
@@ -882,6 +899,34 @@ bool LAST_BOUND_STATE::IsRasterizationDisabled() const {
     return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                ? cb_state.dynamic_state_value.rasterizer_discard_enable
                : pipeline_state->RasterizationDisabled();
+}
+
+VkColorComponentFlags LAST_BOUND_STATE::GetColorWriteMask(uint32_t i) const {
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+        if (i < cb_state.dynamic_state_value.color_write_masks.size()) {
+            return cb_state.dynamic_state_value.color_write_masks[i];
+        }
+    } else {
+        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
+            return pipeline_state->ColorBlendState()->pAttachments[i].colorWriteMask;
+        }
+    }
+    return (VkColorComponentFlags)0u;
+}
+
+bool LAST_BOUND_STATE::IsColorWriteEnabled(uint32_t i) const {
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+        return cb_state.dynamic_state_value.color_write_enabled[i];
+    } else {
+        if (pipeline_state->ColorBlendState()) {
+            auto color_write =
+                vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(pipeline_state->ColorBlendState()->pNext);
+            if (color_write && i < color_write->attachmentCount) {
+                return color_write->pColorWriteEnables[i];
+            }
+        }
+    }
+    return true;
 }
 
 bool LAST_BOUND_STATE::ValidShaderObjectCombination(const VkPipelineBindPoint bind_point,
