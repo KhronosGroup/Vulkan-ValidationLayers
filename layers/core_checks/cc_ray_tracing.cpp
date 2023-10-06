@@ -102,9 +102,9 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         if (mem_info) {
             skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info.get(), info.memoryOffset,
                                                                    bind_info_loc.dot(Field::memoryOffset));
-            skip |=
-                ValidateMemoryTypes(mem_info.get(), as_state->memory_requirements.memoryTypeBits, bind_info_loc.dot(Field::memory),
-                                    "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-03622");
+            skip |= ValidateMemoryTypes(mem_info.get(), as_state->memory_requirements.memoryTypeBits,
+                                        bind_info_loc.dot(Field::accelerationStructure),
+                                        "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-03622");
         }
 
         // Validate memory requirements alignment
