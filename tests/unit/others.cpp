@@ -2693,7 +2693,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     }
 
     const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    if (ImageFormatIsSupported(gpu(), mp_format)) {
+    if (FormatIsSupported(gpu(), mp_format)) {
         export_metal_object_create_info = vku::InitStructHelper();
         export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
         ici.format = mp_format;

@@ -103,5 +103,5 @@ TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
 
     // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    ImageFormatIsSupported(instance(), gpu(), ci, features);
 }
