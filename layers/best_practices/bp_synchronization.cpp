@@ -173,7 +173,7 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
             allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
             break;
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            allowed = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
+            allowed = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
             break;
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
             allowed = VK_ACCESS_TRANSFER_READ_BIT;
