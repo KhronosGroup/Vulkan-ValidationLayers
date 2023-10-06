@@ -1258,7 +1258,7 @@ void print_android(const char *c) {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 }
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) && !defined(VVL_MOCK_ANDROID)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
 static bool active = false;

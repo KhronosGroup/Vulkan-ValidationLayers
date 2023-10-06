@@ -1996,6 +1996,29 @@
                 "VK_EXT_dynamic_rendering_unused_attachments": 1
             },
             "formats": {
+                "VK_FORMAT_UNDEFINED": {
+                    "VkFormatProperties3": {
+                        "linearTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
+                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
+                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
+                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
+                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
+                        ],
+                        "optimalTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
+                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
+                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
+                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
+                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
+                        ],
+                        "bufferFeatures": []
+                    }
+                },
                 "VK_FORMAT_R4G4_UNORM_PACK8": {
                     "VkFormatProperties3": {
                         "linearTilingFeatures": [

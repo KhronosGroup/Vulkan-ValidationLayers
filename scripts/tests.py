@@ -32,10 +32,10 @@ def Build(args):
             sys.exit(1)
 
     try:
-        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON")
+        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON", mock_android = args.mockAndroid)
         common_ci.BuildLoader()
         common_ci.BuildProfileLayer()
-        common_ci.BuildMockICD()
+        common_ci.BuildMockICD(args.mockAndroid)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
@@ -46,9 +46,9 @@ def Build(args):
 
     sys.exit(0)
 
-def Test():
+def Test(args):
     try:
-        common_ci.RunVVLTests()
+        common_ci.RunVVLTests(args)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
@@ -61,9 +61,13 @@ def Test():
 
 if __name__ == '__main__':
     parser = common_ci.GetArgParser()
+    parser.add_argument(
+        '--mockAndroid', dest='mockAndroid',
+        action='store_true', help='Use Mock Android')
+
     args = parser.parse_args()
 
     if (args.build):
         Build(args)
     if (args.test):
-        Test()
+        Test(args)

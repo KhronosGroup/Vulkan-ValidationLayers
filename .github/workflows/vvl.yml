@@ -110,6 +110,38 @@ jobs:
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_adreno.json
 
+  androidOnLinux:
+    env:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.17.2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: androidOnLinux-ccache
+      - name: Install python dependencies
+        run: python3 -m pip install jsonschema pyparsing
+      - name: Install WSI dependencies
+        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - name: Build
+        run: python scripts/tests.py --build --mockAndroid --config release --cmake='-DVVL_CPP_STANDARD=20 -DUSE_ROBIN_HOOD_HASHING=ON'
+        env:
+          CC: clang
+          CXX: clang++
+      - name: Test Max Profile
+        run: python scripts/tests.py --test --mockAndroid
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+
   windows:
     runs-on: windows-2022
     strategy:

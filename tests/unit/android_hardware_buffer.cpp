@@ -246,6 +246,9 @@ TEST_F(NegativeAndroidHardwareBuffer, AllocationSize) {
     {
         memory_allocate_info.allocationSize = ahb_props.allocationSize;
         memory_allocate_info.memoryTypeIndex++;
+#if defined(VVL_MOCK_ANDROID)
+        m_errorMonitor->SetUnexpectedError("VUID-vkAllocateMemory-pAllocateInfo-01714");  // incase at last index
+#endif
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
         vkt::DeviceMemory memory(*m_device, memory_allocate_info);
         m_errorMonitor->VerifyFound();

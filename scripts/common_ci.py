@@ -73,7 +73,7 @@ def IsWindows(): return 'windows' == platform.system().lower()
 
 #
 # Prepare the Validation Layers for testing
-def BuildVVL(config, cmake_args, build_tests):
+def BuildVVL(config, cmake_args, build_tests, mock_android):
     print("Log CMake version")
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
@@ -90,6 +90,9 @@ def BuildVVL(config, cmake_args, build_tests):
 
     if cmake_args:
          cmake_cmd += f' {cmake_args}'
+
+    if mock_android:
+         cmake_cmd += ' -DVVL_MOCK_ANDROID=ON'
 
     RunShellCmd(cmake_cmd)
 
@@ -132,7 +135,7 @@ def BuildLoader():
 
 #
 # Prepare Mock ICD for use with Layer Validation Tests
-def BuildMockICD():
+def BuildMockICD(mockAndroid):
     SRC_DIR = f'{CI_EXTERNAL_DIR}/Vulkan-Tools'
     BUILD_DIR = f'{SRC_DIR}/build'
 
@@ -144,10 +147,12 @@ def BuildMockICD():
     print("Configure Mock ICD")
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR} -D CMAKE_BUILD_TYPE=Release '
     cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -D INSTALL_ICD=ON -D UPDATE_DEPS=ON'
+    if mockAndroid:
+        cmake_cmd += ' -DBUILD_MOCK_ANDROID_SUPPORT=ON'
     RunShellCmd(cmake_cmd)
 
     print("Build Mock ICD")
-    build_cmd = f'cmake --build {BUILD_DIR}'
+    build_cmd = f'cmake --build {BUILD_DIR} --target VkICD_mock_icd'
     RunShellCmd(build_cmd)
 
     print("Install Mock ICD")
@@ -183,7 +188,7 @@ def BuildProfileLayer():
 
 #
 # Run the Layer Validation Tests
-def RunVVLTests():
+def RunVVLTests(args):
     print("Run VVL Tests using Mock ICD")
 
     lvt_env = dict(os.environ)
@@ -231,6 +236,12 @@ def RunVVLTests():
     # These need extra care to prevent a regression in the future.
     failing_tsan_tests += ':PositiveSyncObject.WaitTimelineSemThreadRace'
     failing_tsan_tests += ':PositiveQuery.ResetQueryPoolFromDifferentCB'
+
+    if args.mockAndroid:
+        # TODO - only reason running this subset, is mockAndoid fails any test that does
+        # a manual vkCreateDevice call and need to investigate more why
+        RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*", env=lvt_env)
+        return
 
     RunShellCmd(lvt_cmd + f" --gtest_filter={failing_tsan_tests}", env=lvt_env)
 
