@@ -70,9 +70,10 @@ class ErrorMonitor {
 
     const auto *GetDebugCreateInfo() const { return &debug_create_info_; }
 
-  private:
     // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
+
+  private:
     bool ExpectingSuccess() const;
     bool NeedCheckSuccess() const;
     void VerifyNotFound();
