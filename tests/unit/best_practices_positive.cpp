@@ -169,3 +169,26 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, ImageInputAttachmentLayout) {
+    TEST_DESCRIPTION("Test transitioning image layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL for input attachment");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
+    image_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_memory_barrier.image = image.handle();
+    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u,
+                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    m_commandBuffer->end();
+}
