@@ -950,6 +950,26 @@
                                             }
                                         },
                                         {
+                                            "key": "select_instrumented_shaders",
+                                            "label": "Enable instrumenting shaders selectively",
+                                            "description": "Select which shaders to instrument passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
                                             "key": "max_buffer_device_addresses",
                                             "label": "Specify the maximum number of buffer device addresses in use at one time",
                                             "description": "Specify maximum number of buffer device addresses",
