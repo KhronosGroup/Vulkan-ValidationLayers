@@ -5425,3 +5425,35 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncVal, AvailabilityWithoutVisibilityForBuffer) {
+    TEST_DESCRIPTION("Buffer barrier makes writes available but not visible. The second write generates WAW harard.");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr VkDeviceSize size = 1024;
+    const vkt::Buffer staging_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    const vkt::Buffer buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy region = {};
+    region.size = size;
+
+    m_commandBuffer->begin();
+    // Perform a copy
+    vk::CmdCopyBuffer(*m_commandBuffer, staging_buffer, buffer, 1, &region);
+
+    // Make writes available
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = 0;
+    barrier.buffer = buffer;
+    barrier.size = VK_WHOLE_SIZE;
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+                           &barrier, 0, nullptr);
+
+    // Perform one more copy. Should generate WAW due to missing visibility operation.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdCopyBuffer(*m_commandBuffer, staging_buffer, buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
