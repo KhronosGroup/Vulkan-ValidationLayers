@@ -237,7 +237,14 @@ else()
     message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
 endif()
 
-if (ANDROID)
+# More details in tests/android/mock/README.md
+option(VVL_MOCK_ANDROID "Enable building for Android on desktop for testing with MockICD setup")
+if(VVL_MOCK_ANDROID)
+    # We don't want to build the android APK, so we just set the minimum Android settings
+    target_sources(VkLayer_utils PRIVATE android/mock/android/hardware_buffer.cpp)
+    target_compile_definitions(VkLayer_utils PUBLIC VK_USE_PLATFORM_ANDROID_KHR VVL_MOCK_ANDROID __ANDROID__)
+    target_include_directories(VkLayer_utils SYSTEM PUBLIC android/mock)
+elseif (ANDROID)
     add_subdirectory(android)
     return()
 endif()

@@ -45,7 +45,7 @@ def main():
     SetupDarwin(osx)
 
     try:
-        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF")
+        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF", mock_android = None)
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
         sys.exit(proc_error.returncode)
