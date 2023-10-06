@@ -489,15 +489,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                     "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
                             }
                         }
-
-                        if (create_info.pColorBlendState->attachmentCount != color_attachment_count) {
-                            skip |=
-                                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
-                                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
-                                         "(%" PRIu32 ") is different from %s (%" PRIu32 ").", color_attachment_count,
-                                         create_info_loc.dot(Field::pColorBlendState).dot(Field::attachmentCount).Fields().c_str(),
-                                         create_info.pColorBlendState->attachmentCount);
-                        }
                     }
 
                     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV

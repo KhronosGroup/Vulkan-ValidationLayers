@@ -2216,6 +2216,14 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
                              string_VkFormat(rendering_struct->depthAttachmentFormat),
                              string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
+
+        if (color_blend_state && rendering_struct->colorAttachmentCount != color_blend_state->attachmentCount) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
+                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
+                             "(%" PRIu32 ") is different from %s (%" PRIu32 ").", rendering_struct->colorAttachmentCount,
+                             create_info_loc.dot(Field::pColorBlendState).dot(Field::attachmentCount).Fields().c_str(),
+                             color_blend_state->attachmentCount);
+        }
     }
 
     if (pipeline.IsRenderPassStateRequired()) {

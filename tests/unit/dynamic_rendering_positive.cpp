@@ -1185,3 +1185,43 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsFlags) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicRendering, ColorAttachmentMismatch) {
+    TEST_DESCRIPTION("colorAttachmentCount and attachmentCount don't match but it is dynamically ignored");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
+        vku::InitStructHelper(&extended_dynamic_state2_features);
+    InitBasicDynamicRendering(&extended_dynamic_state3_features);
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
+        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEnable not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
+        GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
+    }
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 0;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+    pipe.CreateGraphicsPipeline();
+}
