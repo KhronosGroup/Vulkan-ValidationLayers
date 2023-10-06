@@ -7347,36 +7347,38 @@ void ThreadSafety::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice 
 }
 
 void ThreadSafety::PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                      VkLatencySleepModeInfoNV* pSleepModeInfo) {
+                                                      const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkSetLatencySleepModeNV);
     StartReadObject(swapchain, vvl::Func::vkSetLatencySleepModeNV);
 }
 
 void ThreadSafety::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                       VkLatencySleepModeInfoNV* pSleepModeInfo, const RecordObject& record_obj) {
+                                                       const VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                                       const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkSetLatencySleepModeNV);
     FinishReadObject(swapchain, vvl::Func::vkSetLatencySleepModeNV);
 }
 
-void ThreadSafety::PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) {
+void ThreadSafety::PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkLatencySleepNV);
     StartReadObject(swapchain, vvl::Func::vkLatencySleepNV);
 }
 
-void ThreadSafety::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+void ThreadSafety::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
                                                 const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkLatencySleepNV);
     FinishReadObject(swapchain, vvl::Func::vkLatencySleepNV);
 }
 
 void ThreadSafety::PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                   VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+                                                   const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkSetLatencyMarkerNV);
     StartReadObject(swapchain, vvl::Func::vkSetLatencyMarkerNV);
 }
 
 void ThreadSafety::PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                    VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
+                                                    const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                                    const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkSetLatencyMarkerNV);
     FinishReadObject(swapchain, vvl::Func::vkSetLatencyMarkerNV);
 }
@@ -7393,11 +7395,11 @@ void ThreadSafety::PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchai
     FinishReadObject(swapchain, vvl::Func::vkGetLatencyTimingsNV);
 }
 
-void ThreadSafety::PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {
+void ThreadSafety::PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
     StartReadObject(queue, vvl::Func::vkQueueNotifyOutOfBandNV);
 }
 
-void ThreadSafety::PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo,
+void ThreadSafety::PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                                         const RecordObject& record_obj) {
     FinishReadObject(queue, vvl::Func::vkQueueNotifyOutOfBandNV);
 }

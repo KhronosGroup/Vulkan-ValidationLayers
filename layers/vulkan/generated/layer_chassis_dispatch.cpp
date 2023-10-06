@@ -8500,7 +8500,7 @@ VkResult DispatchGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const Vk
     return result;
 }
 
-VkResult DispatchSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepModeInfoNV* pSleepModeInfo) {
+VkResult DispatchSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.SetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
     { swapchain = layer_data->Unwrap(swapchain); }
@@ -8509,7 +8509,7 @@ VkResult DispatchSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain
     return result;
 }
 
-VkResult DispatchLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) {
+VkResult DispatchLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.LatencySleepNV(device, swapchain, pSleepInfo);
     safe_VkLatencySleepInfoNV var_local_pSleepInfo;
@@ -8525,12 +8525,13 @@ VkResult DispatchLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLat
             }
         }
     }
-    VkResult result = layer_data->device_dispatch_table.LatencySleepNV(device, swapchain, (VkLatencySleepInfoNV*)local_pSleepInfo);
+    VkResult result =
+        layer_data->device_dispatch_table.LatencySleepNV(device, swapchain, (const VkLatencySleepInfoNV*)local_pSleepInfo);
 
     return result;
 }
 
-void DispatchSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+void DispatchSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.SetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
     { swapchain = layer_data->Unwrap(swapchain); }
@@ -8546,7 +8547,7 @@ void DispatchGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint
     layer_data->device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
 }
 
-void DispatchQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {
+void DispatchQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
 
     layer_data->device_dispatch_table.QueueNotifyOutOfBandNV(queue, pQueueTypeInfo);

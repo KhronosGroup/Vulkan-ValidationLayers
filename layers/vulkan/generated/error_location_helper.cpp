@@ -1186,6 +1186,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceExtendedDynamicState3FeaturesEXT", 49},
     {"VkPhysicalDeviceExtendedDynamicState3PropertiesEXT", 51},
     {"VkPhysicalDeviceExtendedDynamicStateFeaturesEXT", 48},
+    {"VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV", 53},
+    {"VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV", 55},
     {"VkPhysicalDeviceExternalBufferInfo", 35},
     {"VkPhysicalDeviceExternalFenceInfo", 34},
     {"VkPhysicalDeviceExternalFormatResolveFeaturesANDROID", 53},
@@ -1271,6 +1273,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM", 54},
     {"VkPhysicalDeviceMultiviewProperties", 36},
     {"VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT", 49},
+    {"VkPhysicalDeviceNestedCommandBufferFeaturesEXT", 47},
+    {"VkPhysicalDeviceNestedCommandBufferPropertiesEXT", 49},
     {"VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT", 46},
     {"VkPhysicalDeviceOpacityMicromapFeaturesEXT", 43},
     {"VkPhysicalDeviceOpacityMicromapPropertiesEXT", 45},
@@ -2184,6 +2188,10 @@ const char* String(Field field) {
     {"extendedDynamicState3TessellationDomainOrigin", 46},
     {"extendedDynamicState3ViewportSwizzle", 37},
     {"extendedDynamicState3ViewportWScalingEnable", 44},
+    {"extendedSparseAddressSpace", 27},
+    {"extendedSparseAddressSpaceSize", 31},
+    {"extendedSparseBufferUsageFlags", 31},
+    {"extendedSparseImageUsageFlags", 30},
     {"extensionName", 14},
     {"extent", 7},
     {"externalFenceFeatures", 22},
@@ -2543,6 +2551,7 @@ const char* String(Field field) {
     {"maxCodedExtent", 15},
     {"maxColorAttachments", 20},
     {"maxCombinedClipAndCullDistances", 32},
+    {"maxCommandBufferNestingLevel", 29},
     {"maxComputeSharedMemorySize", 27},
     {"maxComputeWorkGroupCount", 25},
     {"maxComputeWorkGroupInvocations", 31},
@@ -2898,6 +2907,9 @@ const char* String(Field field) {
     {"naluSliceSegmentEntryCount", 27},
     {"name", 5},
     {"negativeOneToOne", 17},
+    {"nestedCommandBuffer", 20},
+    {"nestedCommandBufferRendering", 29},
+    {"nestedCommandBufferSimultaneousUse", 35},
     {"newLayout", 10},
     {"nextStage", 10},
     {"noInvocationFragmentShadingRates", 33},
@@ -4578,6 +4590,7 @@ bool IsFieldPointer(Field field) {
     case Field::pQueueInfo:
     case Field::pQueueLabels:
     case Field::pQueuePriorities:
+    case Field::pQueueTypeInfo:
     case Field::pRanges:
     case Field::pRasterizationState:
     case Field::pRaygenShaderBindingTable:

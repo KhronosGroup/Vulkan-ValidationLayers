@@ -6700,6 +6700,24 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPhysicalDeviceImageProcessingPropertiesQCOM structure members  -- Covers
         // VUID-VkPhysicalDeviceImageProcessingPropertiesQCOM-sType-sType
 
+        // Validation code for VkPhysicalDeviceNestedCommandBufferFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_FEATURES_EXT: {  // Covers
+                                                                                      // VUID-VkPhysicalDeviceNestedCommandBufferFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceNestedCommandBufferFeaturesEXT);
+                VkPhysicalDeviceNestedCommandBufferFeaturesEXT* structure = (VkPhysicalDeviceNestedCommandBufferFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::nestedCommandBuffer), structure->nestedCommandBuffer);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::nestedCommandBufferRendering), structure->nestedCommandBufferRendering);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::nestedCommandBufferSimultaneousUse),
+                                       structure->nestedCommandBufferSimultaneousUse);
+            }
+        } break;
+
+        // No Validation code for VkPhysicalDeviceNestedCommandBufferPropertiesEXT structure members  -- Covers
+        // VUID-VkPhysicalDeviceNestedCommandBufferPropertiesEXT-sType-sType
+
         // Validation code for VkExternalMemoryAcquireUnmodifiedEXT structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT: {  // Covers
                                                                           // VUID-VkExternalMemoryAcquireUnmodifiedEXT-sType-sType
@@ -7067,6 +7085,20 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::rayTracingInvocationReorder), structure->rayTracingInvocationReorder);
             }
         } break;
+
+        // Validation code for VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_FEATURES_NV: {  // Covers
+                                                                                             // VUID-VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV);
+                VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* structure =
+                    (VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::extendedSparseAddressSpace), structure->extendedSparseAddressSpace);
+            }
+        } break;
+
+        // No Validation code for VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV structure members  -- Covers
+        // VUID-VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM: {  // Covers
@@ -7693,6 +7725,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX,
@@ -7738,6 +7771,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_FEATURES_NV,
@@ -11925,6 +11959,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
@@ -11951,6 +11986,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT,
@@ -16589,6 +16625,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
@@ -16615,6 +16652,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT,
@@ -27538,7 +27576,7 @@ bool StatelessValidation::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(V
 }
 
 bool StatelessValidation::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                               VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                                               const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27548,10 +27586,17 @@ bool StatelessValidation::PreCallValidateSetLatencySleepModeNV(VkDevice device, 
         ValidateStructType(loc.dot(Field::pSleepModeInfo), "VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV", pSleepModeInfo,
                            VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV, true,
                            "VUID-vkSetLatencySleepModeNV-pSleepModeInfo-parameter", "VUID-VkLatencySleepModeInfoNV-sType-sType");
+    if (pSleepModeInfo != nullptr) {
+        [[maybe_unused]] const Location pSleepModeInfo_loc = loc.dot(Field::pSleepModeInfo);
+        skip |= ValidateBool32(pSleepModeInfo_loc.dot(Field::lowLatencyMode), pSleepModeInfo->lowLatencyMode);
+
+        skip |= ValidateBool32(pSleepModeInfo_loc.dot(Field::lowLatencyBoost), pSleepModeInfo->lowLatencyBoost);
+    }
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+bool StatelessValidation::PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                        const VkLatencySleepInfoNV* pSleepInfo,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27560,11 +27605,15 @@ bool StatelessValidation::PreCallValidateLatencySleepNV(VkDevice device, VkSwapc
     skip |= ValidateStructType(loc.dot(Field::pSleepInfo), "VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV", pSleepInfo,
                                VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV, true, "VUID-vkLatencySleepNV-pSleepInfo-parameter",
                                "VUID-VkLatencySleepInfoNV-sType-sType");
+    if (pSleepInfo != nullptr) {
+        [[maybe_unused]] const Location pSleepInfo_loc = loc.dot(Field::pSleepInfo);
+        skip |= ValidateRequiredHandle(pSleepInfo_loc.dot(Field::signalSemaphore), pSleepInfo->signalSemaphore);
+    }
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                            VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                                            const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27574,6 +27623,11 @@ bool StatelessValidation::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkS
         ValidateStructType(loc.dot(Field::pLatencyMarkerInfo), "VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV", pLatencyMarkerInfo,
                            VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV, true,
                            "VUID-vkSetLatencyMarkerNV-pLatencyMarkerInfo-parameter", "VUID-VkSetLatencyMarkerInfoNV-sType-sType");
+    if (pLatencyMarkerInfo != nullptr) {
+        [[maybe_unused]] const Location pLatencyMarkerInfo_loc = loc.dot(Field::pLatencyMarkerInfo);
+        skip |= ValidateRangedEnum(pLatencyMarkerInfo_loc.dot(Field::marker), "VkLatencyMarkerNV", pLatencyMarkerInfo->marker,
+                                   "VUID-VkSetLatencyMarkerInfoNV-marker-parameter");
+    }
     return skip;
 }
 
@@ -27593,16 +27647,20 @@ bool StatelessValidation::PreCallValidateGetLatencyTimingsNV(VkDevice device, Vk
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo,
+bool StatelessValidation::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
-    skip |= ValidateStructType(loc.dot(Field::pQueueTypeInfo), "VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV",
-                               &(pQueueTypeInfo), VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV, false, kVUIDUndefined,
-                               "VUID-VkOutOfBandQueueTypeInfoNV-sType-sType");
-    skip |= ValidateRangedEnum(loc.dot(Field::queueType), "VkOutOfBandQueueTypeNV", pQueueTypeInfo.queueType,
-                               "VUID-VkOutOfBandQueueTypeInfoNV-queueType-parameter");
+    skip |=
+        ValidateStructType(loc.dot(Field::pQueueTypeInfo), "VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV", pQueueTypeInfo,
+                           VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV, true,
+                           "VUID-vkQueueNotifyOutOfBandNV-pQueueTypeInfo-parameter", "VUID-VkOutOfBandQueueTypeInfoNV-sType-sType");
+    if (pQueueTypeInfo != nullptr) {
+        [[maybe_unused]] const Location pQueueTypeInfo_loc = loc.dot(Field::pQueueTypeInfo);
+        skip |= ValidateRangedEnum(pQueueTypeInfo_loc.dot(Field::queueType), "VkOutOfBandQueueTypeNV", pQueueTypeInfo->queueType,
+                                   "VUID-VkOutOfBandQueueTypeInfoNV-queueType-parameter");
+    }
     return skip;
 }
 

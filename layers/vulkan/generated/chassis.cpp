@@ -15562,7 +15562,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice de
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                     VkLatencySleepModeInfoNV* pSleepModeInfo) {
+                                                     const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLatencySleepModeNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15584,7 +15584,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchai
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkLatencySleepNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15607,7 +15607,7 @@ VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR sw
 }
 
 VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                              VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+                                              const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLatencyMarkerNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15650,7 +15650,7 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR s
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {
+VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueNotifyOutOfBandNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));

@@ -638,6 +638,7 @@ template<>
 std::vector<VkSubpassContents> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkSubpassContentsEnums = {VK_SUBPASS_CONTENTS_INLINE, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkSubpassContents>> ExtendedVkSubpassContentsEnums = {
+        { &DeviceExtensions::vk_ext_nested_command_buffer, { VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT } },
     };
     std::vector<VkSubpassContents> values(CoreVkSubpassContentsEnums.cbegin(), CoreVkSubpassContentsEnums.cend());
     std::set<VkSubpassContents> unique_exts;

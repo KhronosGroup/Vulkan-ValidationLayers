@@ -3572,20 +3572,20 @@ void PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const 
                                                          const RecordObject& record_obj) override;
 
 void PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                        VkLatencySleepModeInfoNV* pSleepModeInfo) override;
+                                        const VkLatencySleepModeInfoNV* pSleepModeInfo) override;
 
-void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepModeInfoNV* pSleepModeInfo,
+void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                          const RecordObject& record_obj) override;
 
-void PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) override;
+void PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) override;
 
-void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
                                   const RecordObject& record_obj) override;
 
 void PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                     VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) override;
+                                     const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) override;
 
-void PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+void PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                       const RecordObject& record_obj) override;
 
 void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
@@ -3594,9 +3594,9 @@ void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
 void PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
                                        VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) override;
 
-void PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) override;
+void PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) override;
 
-void PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo,
+void PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                           const RecordObject& record_obj) override;
 
 void PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) override;

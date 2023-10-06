@@ -2866,7 +2866,8 @@ void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice devi
 }
 
 void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                        VkLatencySleepModeInfoNV* pSleepModeInfo, const RecordObject& record_obj) {
+                                                        const VkLatencySleepModeInfoNV* pSleepModeInfo,
+                                                        const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -2874,7 +2875,7 @@ void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapc
     }
 }
 
-void BestPractices::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
+void BestPractices::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
                                                  const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
 
