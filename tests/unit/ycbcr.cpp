@@ -285,7 +285,7 @@ TEST_F(NegativeYcbcr, Formats) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    if (!ImageFormatIsSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
+    if (!FormatIsSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
         GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
     }
 
@@ -389,7 +389,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
     // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Single-plane _422 image format not supported";
@@ -479,11 +479,11 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
 
     // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
     ci.format = VK_FORMAT_D24_UNORM_S8_UINT;
-    supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    supported = supported && ImageFormatIsSupported(instance(), gpu(), ci, features);
     ci.format = mp3_format;
-    supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    supported = supported && ImageFormatIsSupported(instance(), gpu(), ci, features);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image formats or optimally tiled depth-stencil buffers not supported";
@@ -612,7 +612,7 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.arrayLayers = 1;
 
-    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    bool supported = ImageFormatIsSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (supported == false) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -638,8 +638,8 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
     TEST_DESCRIPTION("Attempt to use VkSamplerYcbcrConversion ImageView to update descriptors that are not allowed.");
     RETURN_IF_SKIP(InitBasicYcbcr())
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -702,9 +702,9 @@ TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify formats
-    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
-    supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    supported = supported && ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
@@ -1299,8 +1299,8 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
         GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
     }
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -1334,7 +1334,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     const VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
     // Verify format 3 Plane format
     if (!supported) {
         printf("Multiplane image format not supported.  Skipping test.\n");
@@ -1374,7 +1374,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     }
 
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
     // Verify format 2 Plane format
     if (!supported) {
         printf("Multiplane image format not supported.  Skipping test.\n");
@@ -1490,8 +1490,8 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBasicYcbcr())
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 

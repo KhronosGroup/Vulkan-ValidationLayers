@@ -81,7 +81,7 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify format
-    if (!ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+    if (!ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -118,7 +118,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if (!ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features)) {
+    if (!ImageFormatIsSupported(instance(), gpu(), ci, features)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -157,8 +157,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     RETURN_IF_SKIP(InitBasicYcbcr())
     InitRenderTarget();
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -177,7 +177,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 
     // Verify format
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if (!ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features)) {
+    if (!ImageFormatIsSupported(instance(), gpu(), ci, features)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -225,8 +225,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     RETURN_IF_SKIP(InitBasicYcbcr())
     InitRenderTarget();
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -246,7 +246,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     // Verify format
     VkFormatFeatureFlags features =
         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_DISJOINT_BIT;
-    if (!ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features)) {
+    if (!ImageFormatIsSupported(instance(), gpu(), ci, features)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -315,8 +315,8 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     RETURN_IF_SKIP(InitBasicYcbcr())
     InitRenderTarget();
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -335,7 +335,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
 
     // Verify format
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if (!ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features)) {
+    if (!ImageFormatIsSupported(instance(), gpu(), ci, features)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }

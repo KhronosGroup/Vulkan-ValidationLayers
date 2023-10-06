@@ -64,7 +64,7 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     return VK_FORMAT_UNDEFINED;
 }
 
-bool ImageFormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
+bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
     VkFormatFeatureFlags phy_features =
@@ -72,7 +72,7 @@ bool ImageFormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling
     return (0 != (phy_features & features));
 }
 
-bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
+bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
     VkFormatFeatureFlags phy_features =
@@ -80,10 +80,10 @@ bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkIm
     return (features == (phy_features & features));
 }
 
-bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
-                                     const VkFormatFeatureFlags features) {
+bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
+                            const VkFormatFeatureFlags features) {
     // Verify physical device support of format features
-    if (!ImageFormatAndFeaturesSupported(phy, info.format, info.tiling, features)) {
+    if (!FormatFeaturesAreSupported(phy, info.format, info.tiling, features)) {
         return false;
     }
 

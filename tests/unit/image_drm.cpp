@@ -234,7 +234,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    if (!ImageFormatAndFeaturesSupported(gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 

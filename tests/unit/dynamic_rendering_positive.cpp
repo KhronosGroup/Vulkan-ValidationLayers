@@ -204,7 +204,7 @@ TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthSt
     RETURN_IF_SKIP(InitBasicDynamicRendering())
     InitRenderTarget();
 
-    if (!ImageFormatIsSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "VK_FORMAT_S8_UINT format not supported";
     }
 
@@ -254,7 +254,7 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     TEST_DESCRIPTION("Test creating an image with subsampled bit.");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDynamicRendering())
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
     }

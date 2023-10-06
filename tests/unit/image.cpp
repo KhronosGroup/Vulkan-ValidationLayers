@@ -98,8 +98,8 @@ TEST_F(NegativeImage, CopyBufferToCompressedImage) {
     RETURN_IF_SKIP(Init())
 
     // Verify format support
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -319,23 +319,23 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     VkFormat f_depth2 = VK_FORMAT_D32_SFLOAT;
     VkFormat f_ycbcr = VK_FORMAT_B16G16R16G16_422_UNORM;
 
-    if (!ImageFormatIsSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL) ||
-        !ImageFormatIsSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL) ||
-        !ImageFormatIsSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL) ||
-        !ImageFormatIsSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL) ||
-        !ImageFormatIsSupported(gpu(), f_depth2, VK_IMAGE_TILING_OPTIMAL)) {
+    if (!FormatIsSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL) ||
+        !FormatIsSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL) ||
+        !FormatIsSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL) ||
+        !FormatIsSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL) ||
+        !FormatIsSupported(gpu(), f_depth2, VK_IMAGE_TILING_OPTIMAL)) {
         GTEST_SKIP() << "Requested formats not supported";
     }
 
     // Note any missing feature bits
-    bool usrc = !ImageFormatAndFeaturesSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
-    bool udst = !ImageFormatAndFeaturesSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
-    bool ssrc = !ImageFormatAndFeaturesSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
-    bool sdst = !ImageFormatAndFeaturesSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
-    bool fsrc = !ImageFormatAndFeaturesSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
-    bool fdst = !ImageFormatAndFeaturesSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
-    bool d1dst = !ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
-    bool d2src = !ImageFormatAndFeaturesSupported(gpu(), f_depth2, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+    bool usrc = !FormatFeaturesAreSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+    bool udst = !FormatFeaturesAreSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
+    bool ssrc = !FormatFeaturesAreSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+    bool sdst = !FormatFeaturesAreSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
+    bool fsrc = !FormatFeaturesAreSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+    bool fdst = !FormatFeaturesAreSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
+    bool d1dst = !FormatFeaturesAreSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
+    bool d2src = !FormatFeaturesAreSupported(gpu(), f_depth2, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
 
     VkImageObj unsigned_image(m_device);
     unsigned_image.Init(64, 64, 1, f_unsigned, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -497,9 +497,9 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     m_errorMonitor->VerifyFound();
 
     if (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) &&
-        ImageFormatIsSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL)) {
-        bool ycbcrsrc = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
-        bool ycbcrdst = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
+        FormatIsSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL)) {
+        bool ycbcrsrc = !FormatFeaturesAreSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+        bool ycbcrdst = !FormatFeaturesAreSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
         VkImageObj ycbcr_image(m_device);
         ycbcr_image.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -542,7 +542,7 @@ TEST_F(NegativeImage, BlitFilters) {
     const bool cubic_support = IsExtensionsEnabled(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
 
     VkFormat fmt = VK_FORMAT_R8_UINT;
-    if (!ImageFormatIsSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL)) {
+    if (!FormatIsSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL)) {
         GTEST_SKIP() << "No R8_UINT format support";
     }
 
@@ -589,15 +589,15 @@ TEST_F(NegativeImage, BlitFilters) {
     m_commandBuffer->begin();
 
     // UINT format should not support linear filtering, but check to be sure
-    if (!ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-filter-02001");
         vk::CmdBlitImage(m_commandBuffer->handle(), src2D.image(), src2D.Layout(), dst2D.image(), dst2D.Layout(), 1, &blitRegion,
                          VK_FILTER_LINEAR);
         m_errorMonitor->VerifyFound();
     }
 
-    if (cubic_support && !ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
-                                                          VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG)) {
+    if (cubic_support &&
+        !FormatFeaturesAreSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG)) {
         // Invalid filter CUBIC_IMG
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-filter-02002");
         vk::CmdBlitImage(m_commandBuffer->handle(), src2D.image(), src2D.Layout(), dst2D.image(), dst2D.Layout(), 1, &blitRegion,
@@ -769,8 +769,8 @@ TEST_F(NegativeImage, BlitOffsets) {
     RETURN_IF_SKIP(Init())
 
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
-    if (!ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         GTEST_SKIP() << "No blit feature format support";
     }
 
@@ -912,8 +912,8 @@ TEST_F(NegativeImage, BlitOverlap) {
     RETURN_IF_SKIP(Init())
 
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
-    if (!ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         GTEST_SKIP() << "No blit feature format support";
     }
 
@@ -965,8 +965,8 @@ TEST_F(NegativeImage, MiscBlitTests) {
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         GTEST_SKIP() << "No blit feature format support";
     }
 
@@ -1122,9 +1122,9 @@ TEST_F(NegativeImage, BlitToDepth) {
     RETURN_IF_SKIP(Init())
 
     const VkFormat f_depth = VK_FORMAT_D32_SFLOAT;
-    if (!ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
         GTEST_SKIP() << "Required depth VK_FORMAT_FEATURE_BLIT_SRC_BIT features not supported";
-    } else if (ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+    } else if (FormatFeaturesAreSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         GTEST_SKIP() << "Required no depth VK_FORMAT_FEATURE_BLIT_DST_BIT features not supported";
     }
 
@@ -2035,7 +2035,7 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     // Test for VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.  Needs special formats
 
     // Only run this test if format supported
-    if (!ImageFormatIsSupported(gpu(), VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
+    if (!FormatIsSupported(gpu(), VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
         GTEST_SKIP() << "VK_FORMAT_D24_UNORM_S8_UINT format not supported";
     }
     // Modify formats to have mismatched features
@@ -2446,7 +2446,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
             vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_LINEAR,
                                                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0, &format_limits);
         if ((result == VK_SUCCESS) &&
-            ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+            FormatFeaturesAreSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
             VkImageObj img(m_device);
             img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
@@ -2469,7 +2469,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
             vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_LINEAR,
                                                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0, &format_limits);
         if ((result == VK_SUCCESS) &&
-            ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+            FormatFeaturesAreSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
             VkImageObj img(m_device);
             img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
@@ -4058,8 +4058,8 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
 
     RETURN_IF_SKIP(InitState())
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -4578,7 +4578,7 @@ TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
 
-    if (!ImageFormatAndFeaturesSupported(gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -5109,7 +5109,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, imageTiling);
         image_create_info.pNext = &compression_control;
 
-        bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+        bool supported = ImageFormatIsSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
 
         if (supported) {
             image.init(&image_create_info);
@@ -6023,8 +6023,7 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only supported by MockICD";
     }
-    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_IMAGE_USAGE_STORAGE_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
