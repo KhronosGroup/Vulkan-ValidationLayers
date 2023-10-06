@@ -1270,6 +1270,7 @@ class AccessContext {
     AccessContext() { Reset(); }
     AccessContext(const AccessContext &copy_from) = default;
     void Trim();
+    void TrimAndClearFirstAccess();
     void AddReferencedTags(ResourceUsageTagSet &referenced) const;
 
     ResourceAccessRangeMap &GetAccessStateMap() { return access_state_map_; }
@@ -1328,6 +1329,10 @@ class AccessContext {
     HazardResult DetectHazard(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const;
     template <typename Detector>
     HazardResult DetectAsyncHazard(const Detector &detector, const ResourceAccessRange &range, ResourceUsageTag async_tag) const;
+
+    template <typename NormalizeOp>
+    void Trim(NormalizeOp &&normalize);
+
     template <typename Detector>
     HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;
 
