@@ -5204,3 +5204,76 @@ TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
+    TEST_DESCRIPTION("Use partially bound descriptor flag without feature.");
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    VkDescriptorBindingFlagsEXT flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1u;
+    flags_create_info.pBindingFlags = &flag;
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
+    ds_layout_ci.bindingCount = 1u;
+    ds_layout_ci.pBindings = &binding;
+
+    VkDescriptorSetLayout set_layout;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingPartiallyBound-03013");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    flag = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingSampledImageUpdateAfterBind-03006");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageImageUpdateAfterBind-03007");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageBufferUpdateAfterBind-03008");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageTexelBufferUpdateAfterBind-03010");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUniformTexelBufferUpdateAfterBind-03009");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    flag = VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUpdateUnusedWhilePending-03012");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    flag = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingVariableDescriptorCount-03014");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+}
