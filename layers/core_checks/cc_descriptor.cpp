@@ -2333,7 +2333,6 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
 // Loop through the write updates to validate for a push descriptor set, ignoring dstSet
 bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet &push_set, uint32_t descriptorWriteCount,
                                                const VkWriteDescriptorSet *pDescriptorWrites, const Location &loc) const {
-    assert(push_set.IsPushDescriptor());
     bool skip = false;
     for (uint32_t i = 0; i < descriptorWriteCount; i++) {
         skip |= ValidateWriteUpdate(push_set, pDescriptorWrites[i], loc.dot(Field::pDescriptorWrites, i), true);
