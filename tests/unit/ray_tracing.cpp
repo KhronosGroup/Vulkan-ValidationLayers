@@ -4319,7 +4319,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -4336,6 +4336,33 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vkt::AccelerationStructure src_as(*m_device, as_create_info);
     vkt::AccelerationStructure dst_as(*m_device, as_create_info);
     vkt::AccelerationStructure dst_as_without_mem(*m_device, as_create_info, false);
+
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = vku::InitStructHelper();
+    bot_level_as_create_info.info = vku::InitStructHelper();
+    bot_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+    bot_level_as_create_info.info.instanceCount = 0;
+    bot_level_as_create_info.info.geometryCount = 1;
+    bot_level_as_create_info.info.pGeometries = &geometry;
+
+    const vkt::Buffer bot_level_as_scratch = src_as.create_scratch_buffer(*m_device);
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-src-04963");
+    vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as.handle(), src_as.handle(),
+                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
+                                        src_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1u;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue);
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording");
@@ -4377,5 +4404,31 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as.handle(), src_as.handle(),
                                        VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyFound();
+
+    vkt::DeviceMemory host_memory;
+    host_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(
+                                    *m_device, dst_as_without_mem.memory_requirements().memoryRequirements,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+
+    VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
+    bind_info.accelerationStructure = dst_as_without_mem.handle();
+    bind_info.memory = host_memory.handle();
+    vk::BindAccelerationStructureMemoryNV(*m_device, 1, &bind_info);
+
+    uint64_t handle;
+    vk::GetAccelerationStructureHandleNV(*m_device, dst_as_without_mem.handle(), sizeof(uint64_t), &handle);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-buffer-03719");
+    vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as_without_mem.handle(), src_as.handle(),
+                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-buffer-03718");
+    const vkt::Buffer bot_level_as_scratch2 = dst_as_without_mem.create_scratch_buffer(*m_device);
+    vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
+                                        dst_as_without_mem.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), src_as.handle(), dst_as_without_mem.handle(),
+                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_errorMonitor->VerifyFound();
 }
