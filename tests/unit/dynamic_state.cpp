@@ -5405,3 +5405,70 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, MissingColorAttachmentBlendBit) {
+    TEST_DESCRIPTION(
+        "Dynamically enable blend for color attachment that does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamic_state_3_features = vku::InitStructHelper(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(dynamic_state_3_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "dynamicRendering not supported";
+    }
+    if (!dynamic_state_3_features.extendedDynamicState3ColorBlendEnable) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEnable not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_state_3_features));
+
+    VkFormat format = VK_FORMAT_R32G32B32A32_SINT;
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
+
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0 ||
+        (format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0) {
+        GTEST_SKIP() << "Required foramt features not available";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32u, 32u, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView image_view = image.targetView(format);
+
+    VkClearValue clear_value;
+    clear_value.color = {{0, 0, 0, 0}};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue = clear_value;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(rendering_info);
+    VkBool32 enable = VK_TRUE;
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 1u, &enable);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pColorBlendEnables-07470");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
