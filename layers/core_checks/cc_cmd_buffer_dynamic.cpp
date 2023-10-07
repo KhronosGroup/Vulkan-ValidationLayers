@@ -389,28 +389,36 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
                              color_index);
         }
     }
-    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
-        const uint32_t attachment_count =
-            cb_state.activeRenderPass->UsesDynamicRendering()
-                ? cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount()
-                : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+        const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments->size());
 
         bool advanced_blend = false;
         for (uint32_t i = 0; i < attachment_count; ++i) {
-            if (cb_state.dynamic_state_value.color_blend_enabled[i] &&
-                cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
-                advanced_blend = true;
-                break;
+            if (cb_state.dynamic_state_value.color_blend_enabled[i]) {
+                if (cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
+                    advanced_blend = true;
+                }
+
+                if (((*cb_state.active_attachments)[i]->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                    skip |= LogError(vuid.blend_feature_07470, objlist, loc,
+                                     "Attachment %" PRIu32
+                                     " format features (%s) do not include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
+                                     i, string_VkFormatFeatureFlags2((*cb_state.active_attachments)[i]->format_features).c_str());
+                }
             }
         }
-        if (advanced_blend &&
-            attachment_count > phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
-            skip |= LogError(vuid.blend_advanced_07480, objlist, loc,
+
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
+            if (advanced_blend &&
+                attachment_count > phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |=
+                    LogError(vuid.blend_advanced_07480, objlist, loc,
                              "Advanced blend is enabled, but color attachment count (%" PRIu32
                              ") is greater than advancedBlendMaxColorAttachments (%" PRIu32 ").",
                              attachment_count, phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
+            }
         }
     }
 
