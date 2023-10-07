@@ -450,3 +450,70 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
                                 &descriptor_write);
     m_commandBuffer->end();
 }
+
+TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
+    TEST_DESCRIPTION("Basic use of vkCmdPushDescriptorSetWithTemplateKHR");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Test crashes on AMD.";
+    }
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci);
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+    };
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    vkt::DescriptorSetLayout push_dsl1(*m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    vkt::DescriptorSetLayout push_dsl2(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl1, &push_dsl2});
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 1;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    update_template_ci.pipelineLayout = pipeline_layout.handle();
+    update_template_ci.set = 1;
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+
+    SimpleTemplateData update_template_data;
+    update_template_data.buff_info = {buffer.handle(), 0, 32};
+
+    m_commandBuffer->begin();
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), update_template, pipeline_layout.handle(), 1,
+                                            &update_template_data);
+    m_commandBuffer->end();
+
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+}

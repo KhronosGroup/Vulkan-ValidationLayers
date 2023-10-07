@@ -791,3 +791,258 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(NegativePushDescriptor, DescriptorWriteMissingImageInfo) {
+    TEST_DESCRIPTION("Attempt to write descriptor with missing image info");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = 0u;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_write.pImageInfo = nullptr;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494");
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
+    TEST_DESCRIPTION("Push descriptor set with cmd buffer that doesn't support pipeline bind point");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Test crashes on AMD.";
+    }
+
+    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!no_gfx_qfi.has_value()) {
+        GTEST_SKIP() << "Required queue family capabilities not found.";
+    }
+
+    vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci);
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    update_template_ci.pipelineLayout = pipeline_layout.handle();
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+
+    SimpleTemplateData update_template_data;
+    update_template_data.buff_info = {buffer.handle(), 0, 32};
+
+    command_buffer.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366");
+    vk::CmdPushDescriptorSetWithTemplateKHR(command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
+                                            &update_template_data);
+    m_errorMonitor->VerifyFound();
+    command_buffer.end();
+
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+}
+
+TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
+    TEST_DESCRIPTION("Use descriptor template with invalid descriptorType");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Test crashes on AMD.";
+    }
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci);
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    update_template_ci.pipelineLayout = pipeline_layout.handle();
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+
+    SimpleTemplateData update_template_data;
+    update_template_data.buff_info = {buffer.handle(), 0, 32};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), update_template, pipeline_layout.handle(), 0,
+                                            &update_template_data);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+}
+
+TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
+    TEST_DESCRIPTION("Update descriptor set with template with incompatible pipeline layout");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Test crashes on AMD.";
+    }
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci);
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::DescriptorSetLayout push_dsl2(*m_device, {{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}},
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::DescriptorSetLayout push_dsl3(*m_device, ds_bindings);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+    vkt::PipelineLayout pipeline_layout2(*m_device, {&push_dsl2});
+    vkt::PipelineLayout pipeline_layout3(*m_device, {&push_dsl, &push_dsl3});
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    update_template_ci.pipelineLayout = pipeline_layout.handle();
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+    update_template_ci.descriptorSetLayout = push_dsl3.handle();
+    update_template_ci.pipelineLayout = pipeline_layout3.handle();
+    VkDescriptorUpdateTemplate update_template2 = VK_NULL_HANDLE;
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template2);
+
+    SimpleTemplateData update_template_data;
+    update_template_data.buff_info = {buffer.handle(), 0, 32};
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), update_template, pipeline_layout2.handle(), 0,
+                                            &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), update_template, pipeline_layout.handle(), 1,
+                                            &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), update_template2, pipeline_layout3.handle(), 1,
+                                            &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template2, nullptr);
+}
