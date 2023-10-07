@@ -1107,3 +1107,122 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 }
+
+TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
+    TEST_DESCRIPTION("Read from image with layout attachment feedback loop");
+
+    AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT afll_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(afll_features);
+    if (!afll_features.attachmentFeedbackLoopLayout) {
+        GTEST_SKIP() << "attachmentFeedbackLoopLayout not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &afll_features));
+
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT,
+               VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageView image_view = image.targetView(format);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vkt::Sampler sampler(*m_device, sampler_ci);
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+
+    VkAttachmentReference attachment_reference;
+    attachment_reference.attachment = 0u;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_description.colorAttachmentCount = 1u;
+    subpass_description.pColorAttachments = &attachment_reference;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0u;
+    dependency.dstSubpass = 0u;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT | VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 1u;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass_description;
+    render_pass_ci.dependencyCount = 1u;
+    render_pass_ci.pDependencies = &dependency;
+
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    VkClearValue clear_value;
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.pAttachments = &image_view;
+
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkRenderPassBeginInfo render_pass_begin = vku::InitStructHelper();
+    render_pass_begin.renderPass = render_pass.handle();
+    render_pass_begin.framebuffer = framebuffer.handle();
+    render_pass_begin.renderArea = {{0, 0}, {32u, 32u}};
+    render_pass_begin.clearValueCount = 1;
+    render_pass_begin.pClearValues = &clear_value;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    descriptor_set.WriteDescriptorImageInfo(0u, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const *frag_src = R"glsl(
+        #version 450
+        layout(set=0) layout(binding=0) uniform sampler2D tex;
+        layout(location=0) out vec4 color;
+        void main(){
+           color = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+    VkShaderObj fs(this, frag_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0u, 1u,
+                              &descriptor_set.set_, 0u, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
