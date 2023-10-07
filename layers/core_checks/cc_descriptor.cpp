@@ -1091,7 +1091,19 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             bool write_attachment =
                 (subpass.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) > 0 &&
                 !layout_read_only;
-            if (write_attachment && descriptor_read_from) {
+            bool feedback_loop = false;
+            for (uint32_t i = 0; i < context.cb_state.activeRenderPass->createInfo.dependencyCount; ++i) {
+                const auto &dep = context.cb_state.activeRenderPass->createInfo.pDependencies[i];
+                if ((dep.dependencyFlags & VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT) != 0 &&
+                    dep.srcSubpass == context.cb_state.GetActiveSubpass() &&
+                    dep.dstSubpass == context.cb_state.GetActiveSubpass()) {
+                    feedback_loop = true;
+                    break;
+                }
+            }
+            feedback_loop &= subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT &&
+                             (pipeline->create_flags & VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) != 0;
+            if (write_attachment && descriptor_read_from && !feedback_loop) {
                 if (same_view) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view, context.framebuffer);
