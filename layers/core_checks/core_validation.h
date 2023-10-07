@@ -1255,6 +1255,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
                                   const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
+    bool VerifyBoundMemoryIsDeviceVisible(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
+                                          const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
 
     bool ValidateLayoutVsAttachmentDescription(const VkImageLayout first_layout, const uint32_t attachment,
                                                const VkAttachmentDescription2& attachment_description,
