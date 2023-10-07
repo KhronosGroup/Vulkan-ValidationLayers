@@ -41,6 +41,20 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, 
     return result;
 }
 
+bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const DEVICE_MEMORY_STATE *mem_state, const LogObjectList &objlist,
+                                                  const VulkanTypedHandle &typed_handle, const Location &loc,
+                                                  const char *vuid) const {
+    bool result = false;
+    if (mem_state) {
+        if ((phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags &
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == 0) {
+            result |= LogError(vuid, objlist, loc, "(%s) used with memory that is not device visible.",
+                               FormatHandle(typed_handle).c_str());
+        }
+    }
+    return result;
+}
+
 // Check to see if memory was ever bound to this image
 bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, const IMAGE_STATE &image_state, const Location &loc,
                                               const char *vuid) const {

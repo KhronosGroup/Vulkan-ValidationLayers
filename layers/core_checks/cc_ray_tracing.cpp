@@ -948,8 +948,22 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
 
     if (dst_as_state != nullptr) {
-        skip |= VerifyBoundMemoryIsValid(dst_as_state->MemState(), LogObjectList(commandBuffer, dst), dst_as_state->Handle(),
+        const LogObjectList objlist(commandBuffer, dst);
+        skip |= VerifyBoundMemoryIsValid(dst_as_state->MemState(), objlist, dst_as_state->Handle(),
                                          error_obj.location.dot(Field::dst), "VUID-vkCmdCopyAccelerationStructureNV-dst-07792");
+        skip |= VerifyBoundMemoryIsDeviceVisible(dst_as_state->MemState(), objlist, dst_as_state->Handle(),
+                                                 error_obj.location.dot(Field::dst),
+                                                 "VUID-vkCmdCopyAccelerationStructureNV-buffer-03719");
+    }
+    if (src_as_state != nullptr) {
+        const LogObjectList objlist(commandBuffer, src);
+        skip |= VerifyBoundMemoryIsDeviceVisible(src_as_state->MemState(), objlist, src_as_state->Handle(),
+                                                 error_obj.location.dot(Field::src),
+                                                 "VUID-vkCmdCopyAccelerationStructureNV-buffer-03718");
+        if (!src_as_state->built) {
+            skip |= LogError("VUID-vkCmdCopyAccelerationStructureNV-src-04963", commandBuffer, error_obj.location,
+                             "The source acceleration structure src has not yet been built.");
+        }
     }
 
     if (mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV) {
