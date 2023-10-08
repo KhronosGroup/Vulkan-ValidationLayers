@@ -331,12 +331,12 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
             // Test path where image layout in command buffer is known at draw time
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageLayout-00344");
-            m_commandBuffer->Draw(1, 1, 0, 0);
+            vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
             m_errorMonitor->VerifyFound();
             break;
         }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
@@ -697,7 +697,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
         vkt::CommandPool command_pool(*m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
-        VkCommandBufferObj command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(m_device, &command_pool);
         ASSERT_TRUE(command_buffer.initialized());
         command_buffer.begin();
 
@@ -717,7 +717,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
             // Need to test the neither compute/gfx supported case separately.
             vkt::CommandPool tran_command_pool(*m_device, transfer_only_qfi.value());
             ASSERT_TRUE(tran_command_pool.initialized());
-            VkCommandBufferObj tran_command_buffer(m_device, &tran_command_pool);
+            vkt::CommandBuffer tran_command_buffer(m_device, &tran_command_pool);
             ASSERT_TRUE(tran_command_buffer.initialized());
             tran_command_buffer.begin();
 
@@ -843,7 +843,7 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     }
 
     vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
-    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;

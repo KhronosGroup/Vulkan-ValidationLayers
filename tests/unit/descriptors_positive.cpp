@@ -368,7 +368,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, BINDING_COUNT, dyn_off);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -712,7 +712,7 @@ TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
                               &descriptor_set2.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -936,8 +936,8 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandBufferObj cb0(m_device, m_commandPool);
-    VkCommandBufferObj cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
 
     for (int mode = 0; mode < 2; mode++) {
         const bool use_single_command_buffer = (mode == 0);

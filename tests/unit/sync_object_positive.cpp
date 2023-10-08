@@ -37,7 +37,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     vkt::Queue *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
     // Create an "exclusive" image owned by the graphics queue.
     VkImageObj image(m_device);
@@ -87,7 +87,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     vkt::Queue *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     auto buffer_barrier =
@@ -143,16 +143,16 @@ TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {
     range.baseArrayLayer = 0;
     range.layerCount = 1;
     barrier.subresourceRange = range;
-    VkCommandBufferObj cmdbuf(m_device, m_commandPool);
+    vkt::CommandBuffer cmdbuf(m_device, m_commandPool);
     cmdbuf.begin();
-    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &barrier);
+    vk::CmdPipelineBarrier(cmdbuf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
     barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &barrier);
+    vk::CmdPipelineBarrier(cmdbuf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
 }
 
 TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
@@ -1684,13 +1684,13 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
 
     VkBufferCopy region = {0, 0, 256};
     vkt::CommandPool pool0(*m_device, q0->get_family_index());
-    VkCommandBufferObj cb0(m_device, &pool0);
+    vkt::CommandBuffer cb0(m_device, &pool0);
     cb0.begin();
     vk::CmdCopyBuffer(cb0.handle(), buffer_a.handle(), buffer_b.handle(), 1, &region);
     cb0.end();
 
     vkt::CommandPool pool1(*m_device, q1->get_family_index());
-    VkCommandBufferObj cb1(m_device, &pool1);
+    vkt::CommandBuffer cb1(m_device, &pool1);
     cb1.begin();
     vk::CmdCopyBuffer(cb1.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
     cb1.end();
@@ -2059,7 +2059,7 @@ struct SemBufferRaceData {
         error_mon.SetBailout(&bailout);
         std::thread thread(&SemBufferRaceData::ThreadFunc, this);
         for (uint32_t i = 0; i < iterations; i++) {
-            VkCommandBufferObj cb(&dev, &command_pool);
+            vkt::CommandBuffer cb(&dev, &command_pool);
 
             VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
             auto buffer = std::make_unique<vkt::Buffer>();
@@ -2079,7 +2079,7 @@ struct SemBufferRaceData {
             uint64_t host_wait_value = (i * 3) + 3;
 
             cb.begin();
-            cb.FillBuffer(buffer->handle(), 0, 12, 0x11111111);
+            vk::CmdFillBuffer(cb.handle(), buffer->handle(), 0, 12, 0x11111111);
             cb.end();
             thread_buffer = std::move(buffer);
 
@@ -2238,8 +2238,8 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
     // The issue was that implementation expands *subpass* compound stages but did not expand *barrier* compound stages.
     // Specify expandable stage (VERTEX_INPUT_BIT is INDEX_INPUT_BIT + VERTEX_ATTRIBUTE_INPUT_BIT) to ensure it's correctly
     // matched against subpass stages.
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &barrier, 0,
-                                     nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1,
+                           &barrier, 0, nullptr, 0, nullptr);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

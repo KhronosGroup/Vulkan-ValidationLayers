@@ -231,7 +231,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buf_barrier;
 
-    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
 
     vk::FreeMemory(m_device->handle(), mem, NULL);
 
@@ -297,7 +297,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
 
-    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
 
     vk::FreeMemory(m_device->handle(), image_mem, NULL);
 
@@ -378,12 +378,12 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     }
     // buffer is released.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");  // buffer
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyBufferView(m_device->device(), view, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");  // bufferView
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, buffer_create_info);
@@ -397,7 +397,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
@@ -614,7 +614,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
 
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put pool in-flight
@@ -972,7 +972,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer then destroy sampler
@@ -1046,7 +1046,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
@@ -1107,7 +1107,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer then destroy sampler

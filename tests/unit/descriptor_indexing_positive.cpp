@@ -129,7 +129,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
 }

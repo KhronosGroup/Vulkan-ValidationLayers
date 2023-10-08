@@ -118,7 +118,7 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
     cmd_buf.begin();
     // Set Negative height, should give error if Maintenance 1 is not enabled
     VkViewport viewport = {0, 0, 16, -16, 0, 1};

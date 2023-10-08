@@ -490,7 +490,7 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
 
     // A pool we can reset in.
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
@@ -626,7 +626,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     vkt::Device test_device(gpu(), device_extension_names);
     vkt::CommandPool commandPool(test_device, 0);
-    VkCommandBufferObj commandBuffer(&test_device, &commandPool);
+    vkt::CommandBuffer commandBuffer(&test_device, &commandPool);
     vkt::Buffer counter_buffer2;
     counter_buffer2.init(test_device, buffer_create_info);
 
@@ -1200,7 +1200,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-None-02349");
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     m_errorMonitor->VerifyFound();
 }
 

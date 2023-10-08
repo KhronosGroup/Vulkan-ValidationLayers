@@ -265,8 +265,8 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 
     m_commandBuffer->begin();
 
-    VkCommandBufferObj secondary_full_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBufferObj secondary_small_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_full_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_small_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
@@ -381,8 +381,8 @@ TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
     resolveRegion.extent.depth = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-MismatchedImageType");
-    m_commandBuffer->ResolveImage(srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                                  &resolveRegion);
+    vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
+                        VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
@@ -466,7 +466,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     // VBO idx 1, but no VBO in PSO
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     m_errorMonitor->VerifyFound();
 
@@ -935,7 +935,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_masked.pipeline_);
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
         m_errorMonitor->VerifyFound();
     }
@@ -945,7 +945,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_writes.pipeline_);
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     }
     m_commandBuffer->EndRenderPass();
@@ -958,9 +958,9 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     inherit_info.subpass = 0;
     inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
 
-    VkCommandBufferObj secondary_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBufferObj secondary_draw_masked(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBufferObj secondary_draw_write(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_draw_masked(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_draw_write(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary_clear.begin(&begin_info);
     secondary_draw_masked.begin(&begin_info);
@@ -969,10 +969,10 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     vk::CmdClearAttachments(secondary_clear.handle(), 1, &color_attachment, 1, &clear_rect);
 
     vk::CmdBindPipeline(secondary_draw_masked.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_masked.pipeline_);
-    secondary_draw_masked.Draw(1, 0, 0, 0);
+    vk::CmdDraw(secondary_draw_masked.handle(), 1, 0, 0, 0);
 
     vk::CmdBindPipeline(secondary_draw_write.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_writes.pipeline_);
-    secondary_draw_write.Draw(1, 0, 0, 0);
+    vk::CmdDraw(secondary_draw_write.handle(), 1, 0, 0, 0);
 
     secondary_clear.end();
     secondary_draw_masked.end();
@@ -1490,7 +1490,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 
     m_commandBuffer->begin();
 
-    m_commandBuffer->ClearColorImage(image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-TransitionUndefinedToReadOnly");
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
@@ -2069,7 +2069,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::CommandPool graphics_pool(*m_device, graphics_queue->get_family_index());
 
-    VkCommandBufferObj graphics_buffer(m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, graphics_queue);
+    vkt::CommandBuffer graphics_buffer(m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, graphics_queue);
 
     VkClearValue cv;
     cv.color = VkClearColorValue{};
@@ -2108,7 +2108,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::CommandPool compute_pool(*m_device, compute_queue->get_family_index());
 
-    VkCommandBufferObj compute_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, compute_queue);
+    vkt::CommandBuffer compute_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, compute_queue);
 
     // Record command buffers without queue transition
 
@@ -2230,7 +2230,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
 
     m_commandBuffer->begin();
 
-    m_commandBuffer->ClearColorImage(image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
 
     // GENERAL - Any
     // note: the table in PR 2918 originally said that 0 was not allowed, but this was incorrect. See Issue #4735
@@ -2365,7 +2365,7 @@ TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary.begin();
     secondary.end();

@@ -40,7 +40,6 @@ static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
 static constexpr VkDeviceSize kZeroDeviceSize{0};
 
 class VkImageObj;
-class VkCommandBufferObj;
 
 typedef enum {
     kGalaxyS10,
@@ -181,7 +180,7 @@ class VkRenderFramework : public VkTestFramework {
     uint32_t m_gpu_index;
     vkt::Device *m_device;
     vkt::CommandPool *m_commandPool;
-    VkCommandBufferObj *m_commandBuffer;
+    vkt::CommandBuffer *m_commandBuffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkRenderPassCreateInfo m_renderPass_info = {};
     std::vector<VkAttachmentDescription> m_renderPass_attachments;
@@ -258,64 +257,6 @@ class VkRenderFramework : public VkTestFramework {
 
 class VkDescriptorSetObj;
 
-class VkCommandBufferObj : public vkt::CommandBuffer {
-  public:
-    VkCommandBufferObj() : vkt::CommandBuffer() {}
-    VkCommandBufferObj(vkt::Device *device, const vkt::CommandPool *pool,
-                       VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, vkt::Queue *queue = nullptr);
-    void Init(vkt::Device *device, const vkt::CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-              vkt::Queue *queue = nullptr);
-    void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
-                         uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                         const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                         const VkImageMemoryBarrier *pImageMemoryBarriers);
-    void PipelineBarrier2KHR(const VkDependencyInfoKHR *pDependencyInfo);
-    void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
-    void BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
-    void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
-    void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
-    void EndRenderPass();
-    void BeginRendering(const VkRenderingInfoKHR &renderingInfo);
-    void BeginRenderingColor(const VkImageView imageView);
-    void EndRendering();
-    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
-    void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);
-    void DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo);
-    void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
-    void FillBuffer(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize fill_size, uint32_t data);
-    void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-    void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
-                     uint32_t firstInstance);
-    void QueueCommandBuffer(bool check_success = true);
-    void QueueCommandBuffer(const vkt::Fence &fence, bool check_success = true, bool submit_2 = false);
-    void SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports);
-    void SetStencilReference(VkStencilFaceFlags faceMask, uint32_t reference);
-    void UpdateBuffer(VkBuffer buffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData);
-    void CopyImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
-                   uint32_t regionCount, const VkImageCopy *pRegions);
-    void ResolveImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
-                      uint32_t regionCount, const VkImageResolve *pRegions);
-    void ClearColorImage(VkImage image, VkImageLayout imageLayout, const VkClearColorValue *pColor, uint32_t rangeCount,
-                         const VkImageSubresourceRange *pRanges);
-    void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue *pColor,
-                                uint32_t rangeCount, const VkImageSubresourceRange *pRanges);
-    void BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer);
-    void BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer, VkBuffer instanceData);
-    void SetEvent(vkt::Event &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
-    void ResetEvent(vkt::Event &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
-    void WaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
-                    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-        vk::CmdWaitEvents(handle(), eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
-                          bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    }
-
-  protected:
-    vkt::Device *m_device;
-    vkt::Queue *m_queue;
-};
-
 class VkImageObj : public vkt::Image {
   public:
     VkImageObj(vkt::Device *dev);
@@ -350,7 +291,7 @@ class VkImageObj : public vkt::Image {
 
     void UnmapMemory() { Image::memory().unmap(); }
 
-    void ImageMemoryBarrier(VkCommandBufferObj *cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
+    void ImageMemoryBarrier(vkt::CommandBuffer *cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
                             VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -405,7 +346,7 @@ class VkImageObj : public vkt::Image {
         return m_targetView.handle();
     }
 
-    void SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
+    void SetLayout(vkt::CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
     void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
     void SetLayout(VkImageLayout image_layout) { SetLayout(aspect_mask(), image_layout); };
 
@@ -430,7 +371,7 @@ class VkDescriptorSetObj : public vkt::DescriptorPool {
 
     int AppendDummy();
     int AppendSamplerTexture(VkDescriptorImageInfo &image_info);
-    void CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer);
+    void CreateVKDescriptorSet(vkt::CommandBuffer *commandBuffer);
 
     VkDescriptorSet GetDescriptorSetHandle() const { return m_set ? m_set->handle() : VK_NULL_HANDLE; }
     VkPipelineLayout GetPipelineLayout() const { return m_pipeline_layout.handle(); }

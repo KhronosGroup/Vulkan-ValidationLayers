@@ -557,7 +557,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Specify 0 for a required array count
     // Expected to trigger an error with StatelessValidation::ValidateArray
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_commandBuffer->SetViewport(0, 0, &viewport);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 0, &viewport);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateImage-pCreateInfo-parameter");
@@ -569,7 +569,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-pViewports-parameter");
     // Specify NULL for a required array
     // Expected to trigger an error with StatelessValidation::ValidateArray
-    m_commandBuffer->SetViewport(0, 1, NULL);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "memory is VK_NULL_HANDLE");
@@ -598,7 +598,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilReference-faceMask-requiredbitmask");
     // Specify 0 for a required VkFlags parameter
     // Expected to trigger an error with StatelessValidation::ValidateFlags
-    m_commandBuffer->SetStencilReference(0, 0);
+    vk::CmdSetStencilReference(m_commandBuffer->handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-sType-sType");
@@ -1413,7 +1413,7 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
     vk::GetDeviceQueue(m_device->device(), other_queue_family, 0, &other_queue);
 
     vkt::CommandPool cmd_pool(*m_device, queue_family);
-    VkCommandBufferObj cmd_buff(m_device, &cmd_pool);
+    vkt::CommandBuffer cmd_buff(m_device, &cmd_pool);
 
     cmd_buff.begin();
     cmd_buff.end();
@@ -1756,7 +1756,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
-    // VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    // vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     // m_commandBuffer->begin();
     // vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &cb.handle());
     // m_commandBuffer->end();
@@ -1995,9 +1995,9 @@ TEST_F(VkLayerTest, ValidateStride) {
     if (m_device->phy().features().multiDrawIndirect) {
         auto buffer_memory_barrier = buffer.buffer_memory_barrier(
             VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT, 0, VK_WHOLE_SIZE);
-        m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
-                                         &buffer_memory_barrier, 0, nullptr);
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
+                               &buffer_memory_barrier, 0, nullptr);
 
         CreatePipelineHelper helper(*this);
         helper.InitState();
@@ -2037,7 +2037,7 @@ TEST_F(VkLayerTest, ValidateStride) {
 
         vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 2, 24);
 
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
     } else {
@@ -2133,7 +2133,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     vk::WaitForFences(device(), 0, &fence.handle(), true, 1);
     m_errorMonitor->VerifyFound();
 
-    VkCommandBufferObj command_buffer(m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(m_device, m_commandPool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");

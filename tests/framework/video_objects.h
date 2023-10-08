@@ -944,7 +944,7 @@ class VideoContext {
     VkVideoSessionParametersKHR SessionParams() { return session_params_; }
     VkQueryPool StatusQueryPool() { return status_query_pool_; }
     vkt::Queue& Queue() { return queue_; }
-    VkCommandBufferObj& CmdBuffer() { return cmd_buffer_; }
+    vkt::CommandBuffer& CmdBuffer() { return cmd_buffer_; }
 
     BitstreamBuffer& Bitstream() { return *bitstream_; }
     VideoDPB* Dpb() { return dpb_.get(); }
@@ -1036,7 +1036,7 @@ class VideoContext {
     vkt::Device* device_{};
     vkt::Queue queue_;
     vkt::CommandPool cmd_pool_{};
-    VkCommandBufferObj cmd_buffer_{};
+    vkt::CommandBuffer cmd_buffer_{};
 
     VkVideoSessionKHR session_{};
     std::vector<VkDeviceMemory> session_memory_{};

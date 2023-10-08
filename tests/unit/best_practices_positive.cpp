@@ -129,7 +129,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
 
     // The draw command will most likely produce a crash in case of a regression.
-    m_commandBuffer->Draw(1, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

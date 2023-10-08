@@ -441,7 +441,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, iter.pipeline_layout->handle(), 0, 1,
                                   &iter.descriptor_set->set_, 0, nullptr);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
         uint32_t *data = (uint32_t *)buffer0.memory().map();
         data[0] = iter.index;
@@ -707,7 +707,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, iter.pipeline_layout->handle(), 0, 1,
                                   &iter.descriptor_set->set_, 0, nullptr);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
         uint32_t *data = (uint32_t *)buffer0.memory().map();
         data[0] = iter.index;
@@ -912,7 +912,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, iter.pipeline_layout->handle(), 0, 1,
                                   &iter.descriptor_set->set_, 0, nullptr);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
         uint32_t *data = (uint32_t *)buffer0.memory().map();
         data[0] = iter.index;
@@ -999,7 +999,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     uint32_t *data = (uint32_t *)uniform_buffer.memory().map();
@@ -1119,7 +1119,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     struct TestCase {
         bool positive;
@@ -1169,9 +1169,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
-        m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
         vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         uint32_t *data = (uint32_t *)offset_buffer.memory().map();
@@ -1187,7 +1187,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         data = (uint32_t *)offset_buffer.memory().map();
@@ -1540,7 +1540,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
             vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                                  sizeof(test.push_constants), test.push_constants);
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-            vk::CmdEndRenderPass(m_commandBuffer->handle());
+            m_commandBuffer->EndRenderPass();
             m_commandBuffer->end();
 
             if (!test.error.empty()) {
@@ -1603,7 +1603,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         for (const auto &test : testcases) {
@@ -1679,7 +1679,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout.handle(), VK_SHADER_STAGE_MESH_BIT_NV, 0,
                              sizeof(push_constants), push_constants);
         vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
@@ -2322,7 +2322,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Unable to find pipeline layout to bind debug descriptor set");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -2706,7 +2706,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     struct TestCase {
         bool positive;
@@ -2906,7 +2906,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     struct TestCase {
         bool positive;

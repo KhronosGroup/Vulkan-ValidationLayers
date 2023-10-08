@@ -28,7 +28,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     }
 
     // Calls AllocateCommandBuffers
-    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(m_device, m_commandPool);
 
     commandBuffer.begin();
 

@@ -358,7 +358,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -391,7 +391,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
 
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -425,7 +425,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     vk::CmdSetDepthWriteEnableEXT(m_commandBuffer->handle(), VK_TRUE);
 
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -459,7 +459,7 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     pipe_no_dynamic.InitState();
     pipe_no_dynamic.CreateGraphicsPipeline();
 
-    VkCommandBufferObj command_buffer(m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(m_device, m_commandPool);
     command_buffer.begin();
     vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
     command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -492,10 +492,10 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     vk::CmdSetBlendConstants(m_commandBuffer->handle(), blends);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line.pipeline_);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_blend.pipeline_);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -1013,8 +1013,8 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferObj cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBufferObj set_state(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer set_state(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkViewport viewports[2] = {{0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}};
     const VkRect2D scissors[2] = {{{0, 0}, {100u, 100u}}, {{0, 0}, {100u, 100u}}};

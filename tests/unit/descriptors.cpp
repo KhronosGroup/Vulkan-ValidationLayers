@@ -473,7 +473,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
                                   &descriptor_set.set_, 0, nullptr);
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
     }
     // buffer2 just went out of scope and was destroyed
@@ -529,7 +529,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, NULL);
 
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
     }
@@ -593,7 +593,7 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
 
     // Invalid VkBuffer - The check is made at Draw time.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is invalid or has been destroyed");
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -751,7 +751,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptorSet, 0, NULL);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -771,7 +771,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptorSet, 0, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " that is invalid or has been destroyed.");
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -785,7 +785,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptorSet, 0, NULL);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Destroy sampler invalidates the cmd buffer, causing error on submit
@@ -810,7 +810,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptorSet, 0, NULL);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Destroy image invalidates the cmd buffer, causing error on submit
@@ -836,7 +836,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptorSet, 0, NULL);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -954,7 +954,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -1012,7 +1012,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
@@ -1040,8 +1040,8 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             const VkFlags read_write = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
             auto image_barrier = image->image_memory_barrier(read_write, read_write, VK_IMAGE_LAYOUT_UNDEFINED, image_layout,
                                                              image->subresource_range(aspect_mask));
-            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                                    nullptr, 1, &image_barrier);
+            vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &image_barrier);
             image->Layout(image_layout);
 
             if (test_type == kExternal) {
@@ -1064,7 +1064,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
                     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
                 }
             }
-            cmd_buf.Draw(1, 0, 0, 0);
+            vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
             if (positive_test || (test_type == kExternal)) {
             } else {
                 m_errorMonitor->VerifyFound();
@@ -1153,7 +1153,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put pool in-flight
@@ -1516,7 +1516,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, BINDING_COUNT, dyn_off);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -1731,7 +1731,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
                               &descriptorSet[1], 0, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
 
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // 2. Error due to bound set not being compatible with PSO's
@@ -1739,7 +1739,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2,
                               &descriptorSet[0], 0, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Remaining clean-up
@@ -3023,7 +3023,7 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &sampler_descriptor_set.set_, 0, nullptr);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
@@ -3945,7 +3945,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     m_errorMonitor->VerifyFound();
@@ -4087,7 +4087,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     m_errorMonitor->VerifyFound();
@@ -4252,7 +4252,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06539");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 

@@ -45,7 +45,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     vkt::Queue *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
     // Create an "exclusive" image owned by the graphics queue.
     VkImageObj image(m_device);
@@ -1109,7 +1109,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
@@ -1139,20 +1139,20 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
             image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             image_barrier.newLayout = init_layout;
 
-            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                                    nullptr, 1, &image_barrier);
+            vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &image_barrier);
 
             image_barrier.subresourceRange = first_range;
             image_barrier.oldLayout = init_layout;
             image_barrier.newLayout = descriptor_layout;
-            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                                    nullptr, 1, &image_barrier);
+            vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &image_barrier);
 
             image_barrier.subresourceRange = view_range;
             image_barrier.oldLayout = init_layout;
             image_barrier.newLayout = descriptor_layout;
-            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                                    nullptr, 1, &image_barrier);
+            vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &image_barrier);
 
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -1167,7 +1167,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                       &descriptorSet, 0, NULL);
 
-            cmd_buf.Draw(1, 0, 0, 0);
+            vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
             cmd_buf.EndRenderPass();
             cmd_buf.end();
@@ -1315,7 +1315,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
@@ -1349,11 +1349,11 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             image_barrier.newLayout = descriptor_layout;
 
-            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                                    nullptr, 1, &image_barrier);
+            vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &image_barrier);
             image_barrier.image = o_image->handle();
-            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                                    nullptr, 1, &image_barrier);
+            vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &image_barrier);
 
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -1372,7 +1372,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                       &descriptorSet, 0, NULL);
 
-            cmd_buf.Draw(1, 0, 0, 0);
+            vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
             cmd_buf.EndRenderPass();
             cmd_buf.end();

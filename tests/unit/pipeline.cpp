@@ -292,14 +292,14 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);  // Draw*() calls must be submitted within a renderpass
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08606");
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    m_commandBuffer->BindIndexBuffer(&index_buffer, 2, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 2, VK_INDEX_TYPE_UINT16);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-08606");
-    m_commandBuffer->DrawIndexed(1, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     VkBufferCreateInfo ci = vku::InitStructHelper();
@@ -341,7 +341,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     }
 
     // Also try the Dispatch variants
-    vk::CmdEndRenderPass(m_commandBuffer->handle());  // Compute submissions must be outside a renderpass
+    m_commandBuffer->EndRenderPass();  // Compute submissions must be outside a renderpass
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08606");
     vk::CmdDispatch(m_commandBuffer->handle(), 0, 0, 0);
@@ -921,7 +921,7 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Render triangle (the error should trigger on the attempt to draw).
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     // Finalize recording of the command buffer
     m_commandBuffer->EndRenderPass();
@@ -2212,20 +2212,20 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
                               &combined_descriptor_set.set_, 0, nullptr);
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     // Test magFilter
     {
         // Same descriptor set as combined test
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Draw with invalid combined image sampler
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Same error, but not with seperate descriptors
@@ -2233,7 +2233,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0,
                                   1, &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2248,13 +2248,13 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         // Same descriptor set as combined test
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Draw with invalid combined image sampler
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.Handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Same error, but not with seperate descriptors
@@ -2262,7 +2262,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0,
                                   1, &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2684,21 +2684,21 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     sample_location[0].x = 0.5f;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-variableSampleLocations-01525");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     begin_info.pNext = nullptr;  // Invalid, missing VkRenderPassSampleLocationsBeginInfoEXT
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &begin_info, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-variableSampleLocations-01525");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->VerifyFound();
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->NextSubpass();
+    m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
 }

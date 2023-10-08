@@ -347,8 +347,8 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    VkCommandBufferObj cb1(m_device, m_commandPool);
-    VkCommandBufferObj cb2(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
@@ -680,7 +680,7 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsWithNullImageView) {
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper(&inheritance_rendering_info);
 
@@ -742,12 +742,12 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     m_commandBuffer->EndRendering();
 
     // Secondary resumes render
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT_KHR;
     secondary.begin();
     secondary.BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    secondary.Draw(3, 1, 0, 0);
+    vk::CmdDraw(secondary.handle(), 3, 1, 0, 0);
     secondary.EndRendering();
     secondary.end();
 
@@ -813,12 +813,12 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     begin_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT_KHR;
     secondary.begin();
     secondary.BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    secondary.Draw(3, 1, 0, 0);
+    vk::CmdDraw(secondary.handle(), 3, 1, 0, 0);
     secondary.EndRendering();
     secondary.end();
 
@@ -828,7 +828,7 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     m_commandBuffer->end();
 
     // Second Primary resumes render
-    VkCommandBufferObj cb(m_device, m_commandPool);
+    vkt::CommandBuffer cb(m_device, m_commandPool);
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT_KHR;
     cb.begin();
     cb.BeginRendering(begin_rendering_info);
@@ -975,7 +975,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
     }
 
@@ -987,7 +987,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
     }
 
@@ -999,7 +999,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
     }
 
@@ -1088,14 +1088,14 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
 
         // Matching color formats
         color_attachment.imageView = colorImage.targetView(VK_FORMAT_R8G8B8A8_UNORM);
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
         color_attachment.imageView = VK_NULL_HANDLE;
     }
@@ -1108,14 +1108,14 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
 
         // Matching depth format
         depth_stencil_attachment.imageView = depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
         depth_stencil_attachment.imageView = VK_NULL_HANDLE;
     }
@@ -1128,14 +1128,14 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
 
         // Matching stencil format
         depth_stencil_attachment.imageView = depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_STENCIL_BIT);
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.Handle());
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRendering();
         depth_stencil_attachment.imageView = VK_NULL_HANDLE;
     }
@@ -1166,7 +1166,7 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsFlags) {
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cb_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
     cb_inheritance_info.renderPass = VK_NULL_HANDLE;

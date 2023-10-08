@@ -52,7 +52,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
                                            nullptr,
@@ -78,7 +78,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
     secondary.end();
 
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -96,7 +96,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledInSecondaryCB) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
@@ -126,7 +126,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledInSecondaryCB) {
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -148,7 +148,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     hinfo.renderPass = renderPass();
@@ -179,7 +179,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -264,7 +264,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -678,8 +678,8 @@ TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer commandBuffer(m_device, m_commandPool);
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     vkt::Event event(*m_device);
 
@@ -711,7 +711,7 @@ TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
 
     vkt::Event ev(*m_device);
     VkEvent ev_handle = ev.handle();
-    VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb = secondary_cb.handle();
     secondary_cb.begin();
     vk::CmdSetEvent(scb, ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
@@ -895,11 +895,11 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
     vkt::Queue *queue = m_device->queue_family_queues(transfer.value())[0].get();
 
     vkt::CommandPool pool(*m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    vkt::CommandBuffer cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     cb.begin();
-    cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
+    vk::CmdFillBuffer(cb.handle(), buffer.handle(), 0, 12, 0x11111111);
     cb.end();
 }
 
@@ -941,8 +941,8 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkCommandBufferObj command_buffer_start(m_device, m_commandPool);
-    VkCommandBufferObj command_buffer_end(m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer_start(m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer_end(m_device, m_commandPool);
 
     // Start DebugLabel on 1 command buffer
     {
@@ -978,7 +978,7 @@ TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
     {
         VkDebugUtilsLabelEXT label = vku::InitStructHelper();
@@ -1041,8 +1041,8 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
     copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
     copy_region.dstSubresource = copy_region.srcSubresource;
 
-    m_commandBuffer->CopyImage(image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_commandBuffer->end();
 }
 
@@ -1100,8 +1100,8 @@ TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
     copy_region.dstOffset = {0, 0, 0};
 
     m_commandBuffer->begin();
-    m_commandBuffer->CopyImage(image_1D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_1D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_commandBuffer->end();
 }
 
@@ -1194,7 +1194,7 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
     // too small
     vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, 1000, VK_INDEX_TYPE_UINT16);
     // should be overwritten
-    m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 }
 

@@ -51,7 +51,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
-    m_commandBuffer->Draw(1, multiview_props.maxMultiviewInstanceIndex + 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, multiview_props.maxMultiviewInstanceIndex + 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -299,16 +299,16 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08606");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This bind should not be valid for next subpass
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08606");
-            m_commandBuffer->Draw(1, 0, 0, 0);
+            vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -348,11 +348,11 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This line width set should not be valid for next subpass
             vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07833");
-            m_commandBuffer->Draw(1, 0, 0, 0);
+            vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -408,18 +408,18 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maintenance4-08602");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This push constants should not be counted when we change subpass
             vk::CmdPushConstants(m_commandBuffer->handle(), layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, push_constant_range.offset,
                                  push_constant_range.size, dummy_values);
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maintenance4-08602");
-            m_commandBuffer->Draw(1, 0, 0, 0);
+            vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -481,18 +481,18 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This descriptor bind should not be counted when next subpass begins
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0,
                                       1, &descriptor_set.set_, 0, nullptr);
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
-            m_commandBuffer->Draw(1, 0, 0, 0);
+            vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -556,18 +556,18 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04007");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This vertex buffer bind should not be counted when next subpass begins
             vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04007");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
-            m_commandBuffer->Draw(1, 0, 0, 0);
+            vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -634,18 +634,18 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-07312");
-        m_commandBuffer->DrawIndexed(0, 1, 0, 0, 0);
+        vk::CmdDrawIndexed(m_commandBuffer->handle(), 0, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This index buffer bind should not be counted when next subpass begins
             vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
             vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-07312");
-            m_commandBuffer->DrawIndexed(0, 1, 0, 0, 0);
+            vk::CmdDrawIndexed(m_commandBuffer->handle(), 0, 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -1088,7 +1088,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (error on Multiview usage should trigger on draw)
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Bind rp[2]'s pipeline to command buffer
@@ -1096,7 +1096,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (error on non-matching viewMasks for Multiview usage should trigger on draw)
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // End rp[0]
@@ -1116,7 +1116,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
         // Render triangle (error on Multiview usage should trigger on draw)
-        m_commandBuffer->Draw(3, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Bind rp2[2]'s pipeline to command buffer
@@ -1124,7 +1124,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
         // Render triangle (error on non-matching viewMasks for Multiview usage should trigger on draw)
-        m_commandBuffer->Draw(3, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // End rp2[0]

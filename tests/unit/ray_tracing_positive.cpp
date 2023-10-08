@@ -339,7 +339,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     m_commandBuffer->end();
 }
@@ -412,7 +412,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     image_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     m_commandBuffer->end();
 }
@@ -429,7 +429,8 @@ TEST_F(PositiveRayTracing, BarrierSync1NoCrash) {
 
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
     m_commandBuffer->begin();
-    m_commandBuffer->PipelineBarrier(invalid_src_stage, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), invalid_src_stage, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 1, &barrier, 0,
+                           nullptr, 0, nullptr);
     m_commandBuffer->end();
 }
 
@@ -571,9 +572,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     alloc_info.allocationSize = 8192;
     vkt::DeviceMemory common_scratch_memory(*m_device, alloc_info);
 
-    VkCommandBufferObj cmd_buffer_frame_0(m_device, m_commandPool);
-    VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);
-    VkCommandBufferObj cmd_buffer_frame_2(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_0(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_1(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_2(m_device, m_commandPool);
 
     std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_0;
     std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_1;
@@ -615,9 +616,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         barrier.size = scratch_buffer_ci.size;
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        cmd_buffer_frame_0.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
-                                           nullptr);
+        vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
 
         // Submit command buffer
@@ -656,9 +656,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         barrier.size = scratch_buffer_ci.size;
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        cmd_buffer_frame_1.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
-                                           nullptr);
+        vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
 
         // Submit command buffer
@@ -712,9 +711,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         barrier.size = scratch_buffer_ci.size;
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        cmd_buffer_frame_2.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
-                                           nullptr);
+        vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
 
         // Submit command buffer
@@ -759,9 +757,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkCommandBufferObj cmd_buffer_frame_0(m_device, m_commandPool);
-    VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);
-    VkCommandBufferObj cmd_buffer_frame_2(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_0(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_1(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_2(m_device, m_commandPool);
 
     std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_0;
     std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_1;
@@ -788,9 +786,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         barrier.size = build_infos_frame_0[0].GetScratchBuffer()->create_info().size;
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        cmd_buffer_frame_0.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
-                                           nullptr);
+        vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
 
         // Submit command buffer
@@ -817,9 +814,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         barrier.size = build_infos_frame_1[0].GetScratchBuffer()->create_info().size;
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        cmd_buffer_frame_1.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
-                                           nullptr);
+        vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
 
         // Submit command buffer
@@ -848,9 +844,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         barrier.size = build_infos_frame_2[0].GetScratchBuffer()->create_info().size;
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        cmd_buffer_frame_2.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
-                                           nullptr);
+        vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
 
         // Submit command buffer

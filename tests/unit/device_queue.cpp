@@ -327,7 +327,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
         GTEST_SKIP() << "Only VK_QUEUE_TRANSFER_BIT Queue is not supported";
     }
     vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex);
-    VkCommandBufferObj commandBuffer(m_device, &commandPool);
+    vkt::CommandBuffer commandBuffer(m_device, &commandPool);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitState();
