@@ -614,7 +614,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 1
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 2
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Test with invalid buffer stride
@@ -624,7 +624,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
     // Attribute[1] is aligned properly even with a wrong stride
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 2
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();

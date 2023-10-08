@@ -221,7 +221,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 
     m_commandBuffer->begin();
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
-    m_commandBuffer->CopyImage(image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &copyRegion);
     m_commandBuffer->end();
 
     auto submit_info = vku::InitStruct<VkSubmitInfo>();
@@ -428,7 +429,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     auto submit_info = vku::InitStruct<VkSubmitInfo>();

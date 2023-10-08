@@ -730,7 +730,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    VkCommandBufferObj secondary_cmd_buf(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cmd_buf(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo iinfo = vku::InitStructHelper();
     iinfo.renderPass = m_renderPassBeginInfo.renderPass;
@@ -744,10 +744,10 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(secondary_cmd_buf.handle(), 0, 1, &vertex_buffer.handle(), &offset);
-    secondary_cmd_buf.Draw(1, 0, 0, 0);
-    secondary_cmd_buf.Draw(1, 0, 0, 0);
-    secondary_cmd_buf.Draw(1, 0, 0, 0);
-    secondary_cmd_buf.Draw(1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
 
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

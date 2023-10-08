@@ -557,7 +557,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     protected_pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
-    VkCommandBufferObj unprotected_cmdbuf(m_device, &command_pool);
+    vkt::CommandBuffer unprotected_cmdbuf(m_device, &command_pool);
     unprotected_cmdbuf.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
     vk::CmdBindPipeline(unprotected_cmdbuf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.Handle());
@@ -775,7 +775,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
-    VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
+    vkt::CommandBuffer protectedCommandBuffer(m_device, &protectedCommandPool);
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -1048,7 +1048,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 0, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
     }
     m_commandBuffer->end();
 

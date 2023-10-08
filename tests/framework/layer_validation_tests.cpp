@@ -307,25 +307,26 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
     }
 }
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, VkPipelineStageFlags src_stages,
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, VkPipelineStageFlags src_stages,
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier) {
     cb->begin();
     uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
     uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
-    cb->PipelineBarrier(src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier, img_barrier);
+    vk::CmdPipelineBarrier(cb->handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
+                           img_barrier);
     cb->end();
     cb->QueueCommandBuffer();  // Implicitly waits
 }
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
                             VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
                             const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier) {
     ValidOwnershipTransferOp(monitor, cb_from, src_stages, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, buf_barrier, img_barrier);
     ValidOwnershipTransferOp(monitor, cb_to, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, dst_stages, buf_barrier, img_barrier);
 }
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
                               const VkImageMemoryBarrier2KHR *img_barrier) {
     cb->begin();
     VkDependencyInfoKHR dep_info = vku::InitStructHelper();
@@ -333,12 +334,12 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, con
     dep_info.pBufferMemoryBarriers = buf_barrier;
     dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
     dep_info.pImageMemoryBarriers = img_barrier;
-    cb->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(cb->handle(), &dep_info);
     cb->end();
     cb->QueueCommandBuffer();  // Implicitly waits
 }
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
                             const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier) {
     VkBufferMemoryBarrier2KHR fixup_buf_barrier;
     VkImageMemoryBarrier2KHR fixup_img_barrier;
@@ -521,7 +522,7 @@ void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatu
     InitState(features, features2, flags);
 }
 
-VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
+vkt::CommandBuffer *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 
 VkLayerTest::VkLayerTest() {
 #if !defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -839,7 +840,7 @@ VkBufferTest::~VkBufferTest() {
 
 void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
     vkt::CommandPool pool(*device, device->graphics_queue_node_index_);
-    VkCommandBufferObj cmd_buf(device, &pool);
+    vkt::CommandBuffer cmd_buf(device, &pool);
 
     cmd_buf.begin();
     VkImageMemoryBarrier layout_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -853,8 +854,8 @@ void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage imag
                                         image,
                                         {aspect, 0, 1, 0, 1}};
 
-    cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                            &layout_barrier);
+    vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &layout_barrier);
     cmd_buf.end();
 
     cmd_buf.QueueCommandBuffer();
@@ -1059,8 +1060,8 @@ void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, uint32_t
     index = qf_index;
     queue = new vkt::Queue(qf_queue, qf_index);
     command_pool = new vkt::CommandPool(*device, qf_index, cp_flags);
-    command_buffer = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-    command_buffer2 = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    command_buffer = new vkt::CommandBuffer(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    command_buffer2 = new vkt::CommandBuffer(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 }
 
 BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices) : layer_test(test) {
@@ -1159,7 +1160,7 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
 
     QueueFamilyObjs *qf = GetQueueFamilyInfo(context_, queue_family_index);
 
-    VkCommandBufferObj *command_buffer = qf->command_buffer;
+    vkt::CommandBuffer *command_buffer = qf->command_buffer;
     for (int cb_repeat = 0; cb_repeat < (mod == Modifier::DOUBLE_COMMAND_BUFFER ? 2 : 1); cb_repeat++) {
         command_buffer->begin();
         for (int repeat = 0; repeat < (mod == Modifier::DOUBLE_RECORD ? 2 : 1); repeat++) {
@@ -1211,11 +1212,11 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
 
     QueueFamilyObjs *qf = GetQueueFamilyInfo(context_, queue_family_index);
 
-    VkCommandBufferObj *command_buffer = qf->command_buffer;
+    vkt::CommandBuffer *command_buffer = qf->command_buffer;
     for (int cb_repeat = 0; cb_repeat < (mod == Modifier::DOUBLE_COMMAND_BUFFER ? 2 : 1); cb_repeat++) {
         command_buffer->begin();
         for (int repeat = 0; repeat < (mod == Modifier::DOUBLE_RECORD ? 2 : 1); repeat++) {
-            command_buffer->PipelineBarrier2KHR(&dep_info);
+            vk::CmdPipelineBarrier2KHR(command_buffer->handle(), &dep_info);
         }
         command_buffer->end();
         command_buffer = qf->command_buffer2;  // Second pass (if any) goes to the secondary command_buffer.

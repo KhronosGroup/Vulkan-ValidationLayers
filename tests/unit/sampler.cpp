@@ -431,7 +431,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
                                   &pipe.descriptor_set_->set_, 0, nullptr);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_struct.err_msg.c_str());
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->EndRenderPass();
@@ -500,7 +500,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-flags-02696");
-    m_commandBuffer->Draw(1, 0, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -859,9 +859,9 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015");
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 

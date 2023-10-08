@@ -156,7 +156,7 @@ class VkLayerTest : public VkLayerTestBase {
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
     void AddSurfaceExtension();
-    VkCommandBufferObj *CommandBuffer();
+    vkt::CommandBuffer *CommandBuffer();
 
     template <typename Features>
     VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {
@@ -673,8 +673,8 @@ class BarrierQueueFamilyBase {
         // We would use std::unique_ptr, but this triggers a compiler error on older compilers
         vkt::Queue *queue = nullptr;
         vkt::CommandPool *command_pool = nullptr;
-        VkCommandBufferObj *command_buffer = nullptr;
-        VkCommandBufferObj *command_buffer2 = nullptr;
+        vkt::CommandBuffer *command_buffer = nullptr;
+        vkt::CommandBuffer *command_buffer2 = nullptr;
         ~QueueFamilyObjs();
         void Init(vkt::Device *device, uint32_t qf_index, VkQueue qf_queue, VkCommandPoolCreateFlags cp_flags);
     };
@@ -827,18 +827,18 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 
 // Helpers for the tests below
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, VkPipelineStageFlags src_stages,
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, VkPipelineStageFlags src_stages,
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier);
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
                               const VkImageMemoryBarrier2KHR *img_barrier);
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
                             VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
                             const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier);
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
                             const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier);
 
 VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits = nullptr);

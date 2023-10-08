@@ -118,22 +118,22 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     m_commandBuffer->begin();
     // Introduce failure by using dstOffset that is not multiple of 4
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " is not a multiple of 4");
-    m_commandBuffer->UpdateBuffer(buffer.handle(), 1, 4, updateData);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), 1, 4, updateData);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using dataSize that is not multiple of 4
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " is not a multiple of 4");
-    m_commandBuffer->UpdateBuffer(buffer.handle(), 0, 6, updateData);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), 0, 6, updateData);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using dataSize that is < 0
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "must be greater than zero and less than or equal to 65536");
-    m_commandBuffer->UpdateBuffer(buffer.handle(), 0, (VkDeviceSize)-44, updateData);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), 0, (VkDeviceSize)-44, updateData);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using dataSize that is > 65536
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "must be greater than zero and less than or equal to 65536");
-    m_commandBuffer->UpdateBuffer(buffer.handle(), 0, (VkDeviceSize)80000, updateData);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), 0, (VkDeviceSize)80000, updateData);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -148,27 +148,27 @@ TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
 
     // Introduce failure by using dstOffset greater than bufferSize
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-dstOffset-00024");
-    m_commandBuffer->FillBuffer(buffer.handle(), 40, 4, 0x11111111);
+    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 40, 4, 0x11111111);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using size <= buffersize minus dstoffset
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-size-00027");
-    m_commandBuffer->FillBuffer(buffer.handle(), 16, 12, 0x11111111);
+    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 16, 12, 0x11111111);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using dstOffset that is not multiple of 4
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " is not a multiple of 4");
-    m_commandBuffer->FillBuffer(buffer.handle(), 1, 4, 0x11111111);
+    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 1, 4, 0x11111111);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using size that is not multiple of 4
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " is not a multiple of 4");
-    m_commandBuffer->FillBuffer(buffer.handle(), 0, 6, 0x11111111);
+    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 0, 6, 0x11111111);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using size that is zero
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "must be greater than zero");
-    m_commandBuffer->FillBuffer(buffer.handle(), 0, 0, 0x11111111);
+    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 0, 0, 0x11111111);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -488,7 +488,7 @@ TEST_F(NegativeBuffer, FillBufferWithinRenderPass) {
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
     vkt::Buffer dst_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, reqs);
-    m_commandBuffer->FillBuffer(dst_buffer.handle(), 0, 4, 0x11111111);
+    vk::CmdFillBuffer(m_commandBuffer->handle(), dst_buffer.handle(), 0, 4, 0x11111111);
 
     m_errorMonitor->VerifyFound();
 
@@ -560,7 +560,7 @@ TEST_F(NegativeBuffer, VertexBuffer) {
         vkt::Buffer vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &offset);
 
-        m_commandBuffer->Draw(1, 0, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
         m_commandBuffer->EndRenderPass();
     }
@@ -660,17 +660,17 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
 
     // Set offset over buffer size
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-08782");
-    m_commandBuffer->BindIndexBuffer(&buffer, buffer_size + 4, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_size + 4, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     // Set offset to be misaligned with index buffer UINT32 type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-08783");
-    m_commandBuffer->BindIndexBuffer(&buffer, 1, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 1, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     // Test for missing pNext struct for index buffer UINT8 type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-indexType-08787");
-    m_commandBuffer->BindIndexBuffer(&buffer, 1, VK_INDEX_TYPE_UINT8_EXT);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 1, VK_INDEX_TYPE_UINT8_EXT);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -876,11 +876,11 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
     vkt::Queue *queue = m_device->queue_family_queues(transfer.value())[0].get();
 
     vkt::CommandPool pool(*m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    vkt::CommandBuffer cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-apiVersion-07894");
-    cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
+    vk::CmdFillBuffer(cb.handle(), buffer.handle(), 0, 12, 0x11111111);
     m_errorMonitor->VerifyFound();
     cb.end();
 }

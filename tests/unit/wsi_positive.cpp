@@ -614,11 +614,11 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp1.handle(), fb1.handle(), VkRect2D{{0, 0}, {1u, 1u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     rpbi.framebuffer = fb2.handle();
     rpbi.renderPass = rp2.handle();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
@@ -955,7 +955,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     fbci.layers = 1;
     vkt::Framebuffer framebuffer(*m_device, fbci);
 
-    VkCommandBufferObj cmdbuff(DeviceObj(), m_commandPool);
+    vkt::CommandBuffer cmdbuff(DeviceObj(), m_commandPool);
     cmdbuff.begin();
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.renderPass = render_pass.handle();
@@ -1213,7 +1213,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
 
     // Create a protected command buffer/pool to use
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
-    VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
+    vkt::CommandBuffer protectedCommandBuffer(m_device, &protectedCommandPool);
 
     protectedCommandBuffer.begin();
     VkRect2D render_area = {{0, 0}, swapchain_create_info.imageExtent};

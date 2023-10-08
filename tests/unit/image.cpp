@@ -1226,7 +1226,7 @@ TEST_F(NegativeImage, MinImageTransferGranularity) {
     ASSERT_TRUE(dst_image_obj.initialized());
     dstImage = dst_image_obj.handle();
 
-    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
     ASSERT_TRUE(command_buffer.initialized());
     command_buffer.begin();
 
@@ -1253,7 +1253,7 @@ TEST_F(NegativeImage, MinImageTransferGranularity) {
     copyRegion.srcOffset.y = 3;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImage-srcOffset-01783");  // srcOffset image transfer granularity
-    command_buffer.CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    vk::CmdCopyImage(command_buffer.handle(), srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by setting extent to a granularity value that is bad
@@ -1264,7 +1264,7 @@ TEST_F(NegativeImage, MinImageTransferGranularity) {
                                          "VUID-vkCmdCopyImage-srcOffset-01783");  // src extent image transfer granularity
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImage-dstOffset-01784");  // dst extent image transfer granularity
-    command_buffer.CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    vk::CmdCopyImage(command_buffer.handle(), srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
 
     // Now do some buffer/image copies
@@ -1431,47 +1431,47 @@ TEST_F(NegativeImage, ImageLayout) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
     m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // The first call hits the expected WARNING and skips the call down the chain, so call a second time to call down chain and
     // update layer state
     m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
     m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     // Now cause error due to src image layout changing
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImageLayout-00128");
     m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // Final src error is due to bad layout type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImageLayout-01917");
     m_errorMonitor->SetUnexpectedError(
         "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL.");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // Now verify same checks for dst
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
     m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // Now cause error due to src image layout changing
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImageLayout-00133");
     m_errorMonitor->SetUnexpectedError(
         "is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL.");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_UNDEFINED, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImageLayout-01395");
     m_errorMonitor->SetUnexpectedError(
         "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL.");
-    m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_UNDEFINED, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     // Equivalent tests using KHR_copy_commands2
@@ -1567,11 +1567,13 @@ TEST_F(NegativeImage, ImageLayout) {
     // Since the image is currently not in UNDEFINED layout, this will emit two errors.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-imageLayout-01394");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-imageLayout-00004");
-    m_commandBuffer->ClearColorImage(dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, &color_clear_value, 1, &clear_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, &color_clear_value, 1,
+                           &clear_range);
     m_errorMonitor->VerifyFound();
     // Fail due to provided layout not matching actual current layout for color clear.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-imageLayout-00004");
-    m_commandBuffer->ClearColorImage(dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1,
+                           &clear_range);
     m_errorMonitor->VerifyFound();
 
     VkClearDepthStencilValue depth_clear_value = {};
@@ -1581,11 +1583,13 @@ TEST_F(NegativeImage, ImageLayout) {
     // Since the image is currently not in UNDEFINED layout, this will emit two errors.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-imageLayout-00012");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-imageLayout-00011");
-    m_commandBuffer->ClearDepthStencilImage(depth_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, &depth_clear_value, 1, &clear_range);
+    vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), depth_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, &depth_clear_value, 1,
+                                  &clear_range);
     m_errorMonitor->VerifyFound();
     // Fail due to provided layout not matching actual current layout for depth clear.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-imageLayout-00011");
-    m_commandBuffer->ClearDepthStencilImage(depth_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &depth_clear_value, 1, &clear_range);
+    vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), depth_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &depth_clear_value, 1,
+                                  &clear_range);
     m_errorMonitor->VerifyFound();
 
     VkImageMemoryBarrier image_barrier[1] = {};
@@ -1719,13 +1723,13 @@ TEST_F(NegativeImage, CopyImageMemory) {
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-07966");
     m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
-    m_commandBuffer->CopyImage(image_no_mem.handle(), VK_IMAGE_LAYOUT_UNDEFINED, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_no_mem.handle(), VK_IMAGE_LAYOUT_UNDEFINED, image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-07966");
     m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
-    m_commandBuffer->CopyImage(image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, image_no_mem.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copy_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, image_no_mem.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     if (copy_commands2) {
@@ -5482,7 +5486,7 @@ TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-attachmentFeedbackLoopLayout-07313");
-    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
     m_errorMonitor->VerifyFound();
 
     VkAttachmentReference attach = {};
@@ -6112,7 +6116,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     {  // Verify invalid image layout with CmdDispatch
-        VkCommandBufferObj cmd(m_device, m_commandPool);
+        vkt::CommandBuffer cmd(m_device, m_commandPool);
         cmd.begin();
         vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, nullptr);
@@ -6126,7 +6130,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
     }
 
     {  // Verify invalid image layout with CmdDispatchBaseKHR
-        VkCommandBufferObj cmd(m_device, m_commandPool);
+        vkt::CommandBuffer cmd(m_device, m_commandPool);
         cmd.begin();
         vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, nullptr);

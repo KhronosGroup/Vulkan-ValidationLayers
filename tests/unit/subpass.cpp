@@ -329,7 +329,7 @@ TEST_F(NegativeSubpass, NextSubpassExcessive) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-None-00909");
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     m_errorMonitor->VerifyFound();
 
     if (rp2Supported) {
@@ -376,7 +376,7 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRenderPass-None-00910");
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_errorMonitor->VerifyFound();
 
     if (rp2Supported) {
@@ -488,23 +488,23 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
 
     // subtest 1: bind in the wrong subpass
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "built for subpass 0 but used in subpass 1");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     // subtest 2: bind in correct subpass, then transition to next subpass
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "built for subpass 0 but used in subpass 1");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
 }
@@ -847,7 +847,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
@@ -1298,14 +1298,14 @@ TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-renderpass");
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_commandBuffer->EndRenderPass();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-renderpass");
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->NextSubpass();
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }

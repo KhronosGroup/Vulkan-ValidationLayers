@@ -328,7 +328,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     // Make another buffer to write to

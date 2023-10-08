@@ -71,7 +71,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 1,
                            &mem_barrier, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     rpbi.renderPass = rp.handle();
     rpbi.framebuffer = fb.handle();
@@ -198,7 +198,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &img_barrier);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 }
 
 TEST_F(NegativeSyncObject, BufferMemoryBarrierNoBuffer) {
@@ -304,7 +304,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Can't send buffer memory barrier during a render pass
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     // Duplicate barriers that change layout
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -734,7 +734,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcStageMask-06461");
 
     vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj bad_command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer bad_command_buffer(m_device, &command_pool);
 
     bad_command_buffer.begin();
     // Set two bits that should both be supported as a bonus positive check
@@ -824,7 +824,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Can't send buffer memory barrier during a render pass
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     // Duplicate barriers that change layout
     VkImageMemoryBarrier2KHR img_barrier = vku::InitStructHelper();
@@ -850,7 +850,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     dep_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     // Transitions from UNDEFINED  are valid, even if duplicated
-    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
 
     // Duplication of layout transitions (not from undefined) are not valid
     img_barriers[0].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -858,7 +858,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     img_barriers[1].oldLayout = img_barriers[0].oldLayout;
     img_barriers[1].newLayout = img_barriers[0].newLayout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-oldLayout-01197");
-    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
     m_errorMonitor->VerifyFound();
 
     {
@@ -874,7 +874,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
         img_barrier.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         img_barrier.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-        m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
 
         img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -883,7 +883,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
         img_barrier.srcAccessMask = 0;
         img_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 
-        m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
     }
 
     // Exceed the buffer size
@@ -1176,12 +1176,12 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buf_barrier;
 
-    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-srcStageMask-03849");
 
     vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj bad_command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer bad_command_buffer(m_device, &command_pool);
 
     bad_command_buffer.begin();
     buf_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -1190,7 +1190,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     buf_barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-    bad_command_buffer.PipelineBarrier2KHR(&dep_info);
+    vk::CmdPipelineBarrier2KHR(bad_command_buffer.handle(), &dep_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1835,90 +1835,90 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     mem_barrier.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03900");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_INDEX_READ_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03901");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03902");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03903");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_UNIFORM_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03904");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03905");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03906");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     if (DeviceExtensionSupported(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME)) {
         mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-07272");
-        m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     }
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03907");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-07454");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03909");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03910");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03911");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03912");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03913");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03914");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03915");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_READ_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03916");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03917");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     // now test dstAccessMask and dstStageMask
     mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
@@ -1927,82 +1927,82 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     mem_barrier.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03900");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_INDEX_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03901");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03902");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03903");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_UNIFORM_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03904");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03905");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03906");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     if (DeviceExtensionSupported(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME)) {
         mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-07272");
-        m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     }
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03907");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-07454");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03909");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03910");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03911");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03912");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03913");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03914");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03915");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_HOST_READ_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03916");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03917");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     m_commandBuffer->end();
 
@@ -2039,19 +2039,19 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-04858");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-04859");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_VIDEO_ENCODE_READ_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-04860");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_VIDEO_ENCODE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-04861");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     m_commandBuffer->end();
 
@@ -3419,8 +3419,8 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
-    VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer1(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer2(m_device, m_commandPool);
 
     vkt::Event event(*m_device);
 
@@ -3441,8 +3441,8 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
-    VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer1(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer2(m_device, m_commandPool);
 
     vkt::Event event(*m_device);
 
@@ -3466,8 +3466,8 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
-    VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer1(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer2(m_device, m_commandPool);
 
     vkt::Event event(*m_device);
 
@@ -3494,8 +3494,8 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
-    VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer1(m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer2(m_device, m_commandPool);
 
     vkt::Event event(*m_device);
 
@@ -3529,7 +3529,7 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
 
     const char *queue_forward_progress_message = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
 
-    VkCommandBufferObj cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
     cb1.begin();
     cb1.end();
 
@@ -3588,7 +3588,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex);
-    VkCommandBufferObj commandBuffer(m_device, &commandPool);
+    vkt::CommandBuffer commandBuffer(m_device, &commandPool);
 
     commandBuffer.begin();
 

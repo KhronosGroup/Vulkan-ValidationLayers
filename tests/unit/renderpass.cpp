@@ -1888,7 +1888,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     m_errorMonitor->VerifyFound();
     // Cleanup
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     vk::EndCommandBuffer(m_commandBuffer->handle());
 }
 
@@ -2029,7 +2029,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     // Finalize recording of the command buffer
     m_commandBuffer->EndRenderPass();
@@ -2133,7 +2133,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     // Finalize recording of the command buffer
     m_commandBuffer->EndRenderPass();
@@ -2893,7 +2893,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -3428,7 +3428,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
     m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper.pipeline_);
-    m_commandBuffer->Draw(1, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_commandBuffer->EndRendering();
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
 
@@ -3439,7 +3439,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     test_pipe.CreateGraphicsPipeline();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.pipeline_);
-    m_commandBuffer->Draw(1, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
 
     // Find an image format that can't be sampled
@@ -4271,7 +4271,7 @@ TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
     cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     cmd_buffer_begin_info.pInheritanceInfo = &inheritance_info;
 
-    VkCommandBufferObj secondary_cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-00055");
     vk::BeginCommandBuffer(secondary_cmd_buffer.handle(), &cmd_buffer_begin_info);

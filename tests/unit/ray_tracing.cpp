@@ -84,7 +84,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     vkt::CommandPool ray_tracing_command_pool(*m_device, ray_tracing_queue_family_index,
                                               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj ray_tracing_command_buffer(m_device, &ray_tracing_command_pool);
+    vkt::CommandBuffer ray_tracing_command_buffer(m_device, &ray_tracing_command_pool);
 
     constexpr std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
 
@@ -176,18 +176,19 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     ray_tracing_command_buffer.begin();
 
     // Build bot level acceleration structure
-    ray_tracing_command_buffer.BuildAccelerationStructure(&bot_level_as, scratch_buffer.handle());
+    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &bot_level_as.info(), VK_NULL_HANDLE, 0, VK_FALSE,
+                                        bot_level_as.handle(), VK_NULL_HANDLE, scratch_buffer.handle(), 0);
 
     // Barrier to prevent using scratch buffer for top level build before bottom level build finishes
     VkMemoryBarrier memory_barrier = vku::InitStructHelper();
     memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
     memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-    ray_tracing_command_buffer.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-                                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memory_barrier, 0,
-                                               nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(ray_tracing_command_buffer.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
+                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
 
     // Build top level acceleration structure
-    ray_tracing_command_buffer.BuildAccelerationStructure(&top_level_as, scratch_buffer.handle(), instance_buffer.handle());
+    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &top_level_as.info(), instance_buffer.handle(), 0,
+                                        VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, scratch_buffer.handle(), 0);
 
     ray_tracing_command_buffer.end();
 
@@ -1035,22 +1036,22 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03927");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03928");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03927");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03928");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     m_commandBuffer->end();
 
@@ -1126,7 +1127,7 @@ TEST_F(NegativeRayTracing, BarrierSync2AccessAccelerationStructureRayQueryDisabl
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-06256");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferMemoryBarrier2-dstAccessMask-06256");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-dstAccessMask-06256");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
     m_commandBuffer->end();
 
@@ -1183,8 +1184,8 @@ TEST_F(NegativeRayTracing, BarrierSync1AccessAccelerationStructureRayQueryDisabl
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstAccessMask-06257");
 
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0, 1,
-                                     &memory_barrier, 1, &buffer_barrier, 1, &image_barrier);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                           VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0, 1, &memory_barrier, 1, &buffer_barrier, 1, &image_barrier);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3118,7 +3119,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     copy_info.src = as;
     copy_info.dst = output_data;
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
-    VkCommandBufferObj cb(m_device, m_commandPool);
+    vkt::CommandBuffer cb(m_device, m_commandPool);
     cb.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");

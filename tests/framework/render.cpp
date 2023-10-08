@@ -562,7 +562,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_commandPool = new vkt::CommandPool(*m_device, m_device->graphics_queue_node_index_, flags);
 
-    m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
+    m_commandBuffer = new vkt::CommandBuffer(m_device, m_commandPool);
 }
 
 bool VkRenderFramework::InitSurface() {
@@ -1054,7 +1054,7 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkDescriptorImageInfo &image_info) 
     return m_nextSlot++;
 }
 
-void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer) {
+void VkDescriptorSetObj::CreateVKDescriptorSet(vkt::CommandBuffer *commandBuffer) {
     if (m_type_counts.size()) {
         // create VkDescriptorPool
         VkDescriptorPoolSize poolSize;
@@ -1113,7 +1113,7 @@ VkImageObj::VkImageObj(vkt::Device *dev) {
 }
 
 // clang-format off
-void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect,
+void VkImageObj::ImageMemoryBarrier(vkt::CommandBuffer *cmd_buf, VkImageAspectFlags aspect,
                                     VkFlags output_mask /*=
                                     VK_ACCESS_HOST_WRITE_BIT |
                                     VK_ACCESS_SHADER_WRITE_BIT |
@@ -1145,7 +1145,7 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
                            pmemory_barrier);
 }
 
-void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+void VkImageObj::SetLayout(vkt::CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
     VkFlags src_mask, dst_mask;
     const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1220,7 +1220,7 @@ void VkImageObj::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout
     }
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    VkCommandBufferObj cmd_buf(m_device, &pool);
+    vkt::CommandBuffer cmd_buf(m_device, &pool);
 
     /* Build command buffer to set image layout in the driver */
     cmd_buf.begin();
@@ -1445,7 +1445,7 @@ VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
     VkImageLayout src_image_layout, dest_image_layout;
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    VkCommandBufferObj cmd_buf(m_device, &pool);
+    vkt::CommandBuffer cmd_buf(m_device, &pool);
 
     /* Build command buffer to copy staging texture to usable texture */
     cmd_buf.begin();
@@ -1492,7 +1492,7 @@ VkResult VkImageObj::CopyImageOut(VkImageObj &dst_image) {
     VkImageLayout src_image_layout, dest_image_layout;
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    VkCommandBufferObj cmd_buf(m_device, &pool);
+    vkt::CommandBuffer cmd_buf(m_device, &pool);
 
     cmd_buf.begin();
 
@@ -1652,208 +1652,4 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework *frame
         return shader;
     }
     return {};
-}
-
-void VkCommandBufferObj::Init(vkt::Device *device, const vkt::CommandPool *pool, VkCommandBufferLevel level, vkt::Queue *queue) {
-    m_device = device;
-    if (queue) {
-        m_queue = queue;
-    } else {
-        m_queue = m_device->graphics_queues()[0];
-    }
-    assert(m_queue);
-
-    auto create_info = vkt::CommandBuffer::create_info(pool->handle());
-    create_info.level = level;
-    init(*device, create_info);
-}
-
-VkCommandBufferObj::VkCommandBufferObj(vkt::Device *device, const vkt::CommandPool *pool, VkCommandBufferLevel level,
-                                       vkt::Queue *queue) {
-    Init(device, pool, level, queue);
-}
-
-void VkCommandBufferObj::PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages,
-                                         VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                                         const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                         const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                         const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    vk::CmdPipelineBarrier(handle(), src_stages, dest_stages, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
-                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-}
-
-void VkCommandBufferObj::PipelineBarrier2KHR(const VkDependencyInfoKHR *pDependencyInfo) {
-    auto fpCmdPipelineBarrier2KHR =
-        (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
-    assert(fpCmdPipelineBarrier2KHR != nullptr);
-
-    fpCmdPipelineBarrier2KHR(handle(), pDependencyInfo);
-}
-
-void VkCommandBufferObj::FillBuffer(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize fill_size, uint32_t data) {
-    vk::CmdFillBuffer(handle(), buffer, offset, fill_size, data);
-}
-
-void VkCommandBufferObj::UpdateBuffer(VkBuffer buffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData) {
-    vk::CmdUpdateBuffer(handle(), buffer, dstOffset, dataSize, pData);
-}
-
-void VkCommandBufferObj::CopyImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
-                                   uint32_t regionCount, const VkImageCopy *pRegions) {
-    vk::CmdCopyImage(handle(), srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
-}
-
-void VkCommandBufferObj::ResolveImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                      VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve *pRegions) {
-    vk::CmdResolveImage(handle(), srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
-}
-
-void VkCommandBufferObj::ClearColorImage(VkImage image, VkImageLayout imageLayout, const VkClearColorValue *pColor,
-                                         uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
-    vk::CmdClearColorImage(handle(), image, imageLayout, pColor, rangeCount, pRanges);
-}
-
-void VkCommandBufferObj::ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue *pColor,
-                                                uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
-    vk::CmdClearDepthStencilImage(handle(), image, imageLayout, pColor, rangeCount, pRanges);
-}
-
-void VkCommandBufferObj::BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer) {
-    BuildAccelerationStructure(as, scratchBuffer, VK_NULL_HANDLE);
-}
-
-void VkCommandBufferObj::BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer, VkBuffer instanceData) {
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        (PFN_vkCmdBuildAccelerationStructureNV)vk::GetDeviceProcAddr(as->dev(), "vkCmdBuildAccelerationStructureNV");
-    assert(vkCmdBuildAccelerationStructureNV != nullptr);
-
-    vkCmdBuildAccelerationStructureNV(handle(), &as->info(), instanceData, 0, VK_FALSE, as->handle(), VK_NULL_HANDLE, scratchBuffer,
-                                      0);
-}
-
-void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents) {
-    vk::CmdBeginRenderPass(handle(), &info, contents);
-}
-
-void VkCommandBufferObj::NextSubpass(VkSubpassContents contents) { vk::CmdNextSubpass(handle(), contents); }
-
-void VkCommandBufferObj::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
-
-void VkCommandBufferObj::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
-    if (vk::CmdBeginRenderingKHR) {
-        vk::CmdBeginRenderingKHR(handle(), &renderingInfo);
-    } else {
-        vk::CmdBeginRendering(handle(), &renderingInfo);
-    }
-}
-
-void VkCommandBufferObj::BeginRenderingColor(const VkImageView imageView) {
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = imageView;
-    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
-    renderingInfo.colorAttachmentCount = 1;
-    renderingInfo.pColorAttachments = &color_attachment;
-    renderingInfo.layerCount = 1;
-    renderingInfo.renderArea = {{0, 0}, {1, 1}};
-
-    BeginRendering(renderingInfo);
-}
-
-void VkCommandBufferObj::EndRendering() {
-    if (vk::CmdEndRenderingKHR) {
-        vk::CmdEndRenderingKHR(handle());
-    } else {
-        vk::CmdEndRendering(handle());
-    }
-}
-
-void VkCommandBufferObj::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
-    PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR =
-        (PFN_vkCmdBeginVideoCodingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginVideoCodingKHR");
-    ASSERT_NE(vkCmdBeginVideoCodingKHR, nullptr);
-
-    vkCmdBeginVideoCodingKHR(handle(), &beginInfo);
-}
-
-void VkCommandBufferObj::ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo) {
-    PFN_vkCmdControlVideoCodingKHR vkCmdControlVideoCodingKHR =
-        (PFN_vkCmdControlVideoCodingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdControlVideoCodingKHR");
-    ASSERT_NE(vkCmdControlVideoCodingKHR, nullptr);
-
-    vkCmdControlVideoCodingKHR(handle(), &controlInfo);
-}
-
-void VkCommandBufferObj::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) {
-    PFN_vkCmdDecodeVideoKHR vkCmdDecodeVideoKHR =
-        (PFN_vkCmdDecodeVideoKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDecodeVideoKHR");
-    ASSERT_NE(vkCmdDecodeVideoKHR, nullptr);
-
-    vkCmdDecodeVideoKHR(handle(), &decodeInfo);
-}
-
-void VkCommandBufferObj::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
-    PFN_vkCmdEndVideoCodingKHR vkCmdEndVideoCodingKHR =
-        (PFN_vkCmdEndVideoCodingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndVideoCodingKHR");
-    ASSERT_NE(vkCmdEndVideoCodingKHR, nullptr);
-
-    vkCmdEndVideoCodingKHR(handle(), &endInfo);
-}
-
-void VkCommandBufferObj::SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports) {
-    vk::CmdSetViewport(handle(), firstViewport, viewportCount, pViewports);
-}
-
-void VkCommandBufferObj::SetStencilReference(VkStencilFaceFlags faceMask, uint32_t reference) {
-    vk::CmdSetStencilReference(handle(), faceMask, reference);
-}
-
-void VkCommandBufferObj::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
-                                     uint32_t firstInstance) {
-    vk::CmdDrawIndexed(handle(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
-}
-
-void VkCommandBufferObj::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
-    vk::CmdDraw(handle(), vertexCount, instanceCount, firstVertex, firstInstance);
-}
-
-void VkCommandBufferObj::QueueCommandBuffer(bool check_success) {
-    vkt::Fence null_fence;
-    QueueCommandBuffer(null_fence, check_success);
-}
-
-void VkCommandBufferObj::QueueCommandBuffer(const vkt::Fence &fence, bool check_success, bool submit_2) {
-    VkResult err = VK_SUCCESS;
-
-    if (submit_2) {
-        err = m_queue->submit2(*this, fence, check_success);
-    } else {
-        err = m_queue->submit(*this, fence, check_success);
-    }
-    if (check_success) {
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    err = m_queue->wait();
-    if (check_success) {
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    // TODO: Determine if we really want this serialization here
-    // Wait for work to finish before cleaning up.
-    vk::DeviceWaitIdle(m_device->device());
-}
-void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
-    VkDescriptorSet set_obj = descriptorSet.GetDescriptorSetHandle();
-
-    // bind pipeline, vertex buffer (descriptor set) and WVP (dynamic buffer view)
-    if (set_obj) {
-        vk::CmdBindDescriptorSets(handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0, 1, &set_obj, 0,
-                                  NULL);
-    }
-}
-
-void VkCommandBufferObj::BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType) {
-    vk::CmdBindIndexBuffer(handle(), indexBuffer->handle(), offset, indexType);
 }

@@ -240,7 +240,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     for (int i = 0; i < 10; i++) {
-        m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
+        vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
     }
 
     m_errorMonitor->VerifyFound();
@@ -388,7 +388,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-        m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
         // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
         ibo.memory().map();
@@ -396,7 +396,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                                  "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
         }
-        m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
+        vk::CmdDrawIndexed(m_commandBuffer->handle(), index_count, 0, 0, 0, 0);
         if (expect_error) {
             m_errorMonitor->VerifyFound();
         } else {
@@ -408,10 +408,10 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
                                                  "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
         }
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pr_pipe.pipeline_);
-        m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
         ibo.memory().map();
-        m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
+        vk::CmdDrawIndexed(m_commandBuffer->handle(), index_count, 0, 0, 0, 0);
         if (expect_error) {
             m_errorMonitor->VerifyFound();
         }
@@ -477,23 +477,23 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     // make sure the worst-case indices throw a warning
     VkConstantBufferObj worst_ibo(m_device, worst_indices.size() * sizeof(uint16_t), worst_indices.data(),
                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    m_commandBuffer->BindIndexBuffer(&worst_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), worst_ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
     // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
     worst_ibo.memory().map();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCmdDrawIndexed-post-transform-cache-thrashing");
-    m_commandBuffer->DrawIndexed(worst_indices.size(), 0, 0, 0, 0);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), worst_indices.size(), 0, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     worst_ibo.memory().unmap();
 
     // make sure that the best-case indices don't throw a warning
     VkConstantBufferObj best_ibo(m_device, best_indices.size() * sizeof(uint16_t), best_indices.data(),
                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    m_commandBuffer->BindIndexBuffer(&best_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), best_ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
     best_ibo.memory().map();
-    m_commandBuffer->DrawIndexed(best_indices.size(), 0, 0, 0, 0);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), best_indices.size(), 0, 0, 0, 0);
     best_ibo.memory().unmap();
 }
 
@@ -679,16 +679,16 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     VkConstantBufferObj ibo(m_device, sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     m_commandBuffer->begin();
-    m_commandBuffer->BindIndexBuffer(&ibo, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     // record a command buffer which doesn't use enough depth pre-passes or geometry to matter
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
-    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 10, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_commandBuffer->handle(), indices.size(), 10, 0, 0, 0);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_equal.pipeline_);
-    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 10, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_commandBuffer->handle(), indices.size(), 10, 0, 0, 0);
 
     m_commandBuffer->EndRenderPass();
 
@@ -700,10 +700,10 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
-    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 1000, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_commandBuffer->handle(), indices.size(), 1000, 0, 0, 0);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_equal.pipeline_);
-    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 1000, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_commandBuffer->handle(), indices.size(), 1000, 0, 0, 0);
 
     m_commandBuffer->EndRenderPass();
 
@@ -944,7 +944,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
 
-    const auto execute_work = [&](const std::function<void(VkCommandBufferObj & command_buffer)>& work) {
+    const auto execute_work = [&](const std::function<void(vkt::CommandBuffer & command_buffer)>& work) {
         vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
         m_commandBuffer->begin();
 
@@ -959,7 +959,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
         vk::QueueWaitIdle(m_default_queue);
     };
 
-    const auto start_and_end_renderpass = [&](VkCommandBufferObj& command_buffer) {
+    const auto start_and_end_renderpass = [&](vkt::CommandBuffer& command_buffer) {
         command_buffer.BeginRenderPass(render_pass_begin_info);
         command_buffer.EndRenderPass();
     };
@@ -967,7 +967,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     execute_work(start_and_end_renderpass);
 
     // Use the image somehow.
-    execute_work([&](VkCommandBufferObj& command_buffer) {
+    execute_work([&](vkt::CommandBuffer& command_buffer) {
         VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
         rpbi.renderPass = renderpasses[1];
         rpbi.framebuffer = framebuffers[1];
@@ -985,8 +985,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
         viewport.height = static_cast<float>(HEIGHT);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        command_buffer.SetViewport(0, 1, &viewport);
-        command_buffer.Draw(3, 1, 0, 0);
+        vk::CmdSetViewport(command_buffer.handle(), 0, 1, &viewport);
+        vk::CmdDraw(command_buffer.handle(), 3, 1, 0, 0);
+
         command_buffer.EndRenderPass();
     });
 
@@ -1048,7 +1049,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(images[0]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), images[0]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
+                           &subresource_range);
 
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
@@ -1059,9 +1061,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     viewport.height = static_cast<float>(HEIGHT);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    m_commandBuffer->SetViewport(0, 1, &viewport);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
 
@@ -1151,7 +1153,8 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(image->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
+                           &subresource_range);
 
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
@@ -1162,9 +1165,9 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     viewport.height = static_cast<float>(HEIGHT);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    m_commandBuffer->SetViewport(0, 1, &viewport);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
 
@@ -1297,7 +1300,8 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(images[1]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    vk::CmdClearColorImage(m_commandBuffer->handle(), images[1]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
+                           &subresource_range);
 
     // Trigger a read on the image.
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
@@ -1312,9 +1316,9 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
         viewport.height = static_cast<float>(HEIGHT);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        m_commandBuffer->SetViewport(0, 1, &viewport);
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
-        m_commandBuffer->Draw(3, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     }
     m_commandBuffer->EndRenderPass();
 
@@ -1329,9 +1333,9 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
         viewport.height = static_cast<float>(HEIGHT);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        m_commandBuffer->SetViewport(0, 1, &viewport);
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
-        m_commandBuffer->Draw(3, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     }
     m_commandBuffer->EndRenderPass();
 
@@ -1379,8 +1383,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[1]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
     };
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                     0, 0, nullptr, 0, nullptr, 2, image_barriers);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                           nullptr, 0, nullptr, 2, image_barriers);
 
     VkOffset3D blit_size{WIDTH, HEIGHT, 1};
     VkImageBlit blit_region{};
@@ -1419,8 +1423,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
          {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
     };
 
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr,
-                                     0, nullptr, 2, pre_render_pass_barriers);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           0, 0, nullptr, 0, nullptr, 2, pre_render_pass_barriers);
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
@@ -1523,7 +1527,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_all.pipeline_);
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
     }
 
@@ -1533,9 +1537,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
                                              "UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth.pipeline_);
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_stencil.pipeline_);
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_errorMonitor->VerifyFound();
         m_commandBuffer->EndRenderPass();
@@ -1547,9 +1551,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
                                              "UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_color.pipeline_);
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_stencil.pipeline_);
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_errorMonitor->VerifyFound();
         m_commandBuffer->EndRenderPass();
@@ -1572,7 +1576,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_att, 1, &clear_rect);
 
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth.pipeline_);
-        m_commandBuffer->Draw(1, 1, 0, 0);
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_errorMonitor->VerifyFound();
         m_commandBuffer->EndRenderPass();

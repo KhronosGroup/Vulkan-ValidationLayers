@@ -87,10 +87,10 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -185,7 +185,7 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -213,7 +213,7 @@ TEST_F(PositiveRenderPass, BeginTransitionsAttachmentUnused) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -302,7 +302,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     destImage.Init(100, 100, 1, depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                    VK_IMAGE_TILING_OPTIMAL, 0);
     fence.wait(kWaitTimeout);
-    VkCommandBufferObj cmdbuf(m_device, m_commandPool);
+    vkt::CommandBuffer cmdbuf(m_device, m_commandPool);
     cmdbuf.begin();
 
     m_depthStencil->ImageMemoryBarrier(&cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -331,7 +331,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     cregion.extent.width = 100;
     cregion.extent.height = 100;
     cregion.extent.depth = 1;
-    cmdbuf.CopyImage(m_depthStencil->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destImage.handle(),
+    vk::CmdCopyImage(cmdbuf.handle(), m_depthStencil->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destImage.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cregion);
     cmdbuf.end();
 
@@ -356,9 +356,9 @@ TEST_F(PositiveRenderPass, BeginInlineAndSecondaryCommandBuffers) {
     m_commandBuffer->begin();
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
 }
@@ -423,7 +423,7 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
 }
@@ -486,7 +486,7 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
     //  created between CB & renderPass, which we used to do.
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -801,7 +801,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     // At this point the first miplevel should be in GENERAL due to the "finalLayout" in the render pass.
     // Note that these image barriers attempt to transition *all* miplevels, even though only 1 miplevel has transitioned.
@@ -968,8 +968,8 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
     vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
                                 &descriptor_write);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->NextSubpass();
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -1067,7 +1067,7 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
     // and used in the validation code, 06887 would trigger with the following draw call
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -1170,7 +1170,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 2, buffer.handle(), 0, 0, 0);
     m_commandBuffer->end();
@@ -1385,9 +1385,9 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     for (unsigned i = 0; i < (depth_count - 1); ++i) {
-        vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+        m_commandBuffer->NextSubpass();
     }
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -1525,10 +1525,10 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     m_commandBuffer->begin();
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info_1, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info_2, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
 }
@@ -1588,8 +1588,8 @@ TEST_F(PositiveRenderPass, SubpassWithReadOnlyLayoutWithoutDependency) {
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->NextSubpass();
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -1749,12 +1749,12 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     rp_begin_info.framebuffer = framebuffer_separate.handle();
     rp_begin_info.renderArea.extent = {1, 1};
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     rp_begin_info.renderPass = render_pass_combined.handle();
     rp_begin_info.framebuffer = framebuffer_combined.handle();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);

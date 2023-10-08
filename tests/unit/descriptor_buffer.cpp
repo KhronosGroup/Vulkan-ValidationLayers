@@ -733,7 +733,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
             if (no_gfx_qfi) {
                 vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
                 ASSERT_TRUE(command_pool.initialized());
-                VkCommandBufferObj command_buffer(m_device, &command_pool);
+                vkt::CommandBuffer command_buffer(m_device, &command_pool);
 
                 index = 0;
                 offset = 0;
@@ -995,7 +995,7 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
 
         vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
-        VkCommandBufferObj command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(m_device, &command_pool);
 
         command_buffer.begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,

@@ -993,7 +993,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stage-06481");
-    m_commandBuffer->Draw(3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());

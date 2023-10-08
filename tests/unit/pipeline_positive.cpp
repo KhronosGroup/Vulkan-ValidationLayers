@@ -867,7 +867,7 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
 
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -940,7 +940,7 @@ TEST_F(PositivePipeline, ConditionalRendering) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
                            VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0, 0, nullptr, 0, nullptr, 1, &imb);
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 

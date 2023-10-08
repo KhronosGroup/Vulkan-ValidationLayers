@@ -167,7 +167,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     for (uint32_t i = 0; i < messages.size(); i++) {
@@ -195,7 +195,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
@@ -219,9 +219,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
-        m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
         vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         data = (VkDeviceAddress *)buffer0.memory().map();
@@ -277,7 +277,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
@@ -550,7 +550,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     std::vector<char const *> messages;
@@ -592,7 +592,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
@@ -616,9 +616,9 @@ TEST_F(NegativeDebugPrintf, GPL) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
-        m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
         vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         data = (VkDeviceAddress *)buffer0.memory().map();
@@ -686,7 +686,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
         VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
@@ -857,7 +857,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     VkRect2D scissor = {{0, 0}, {1, 1}};
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
@@ -1012,7 +1012,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     VkRect2D scissor = {{0, 0}, {1, 1}};
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
@@ -1233,7 +1233,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         }
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
-        m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
         vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
         m_commandBuffer->EndRendering();
         m_commandBuffer->end();

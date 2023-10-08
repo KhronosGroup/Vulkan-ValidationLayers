@@ -482,7 +482,7 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -527,7 +527,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
 
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    VkCommandBufferObj cb(m_device, m_commandPool);
+    vkt::CommandBuffer cb(m_device, m_commandPool);
     cb.begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 

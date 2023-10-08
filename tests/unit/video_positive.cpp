@@ -26,7 +26,7 @@ TEST_F(VkPositiveVideoLayerTest, VideoCodingScope) {
     VideoContext context(DeviceObj(), GetConfigDecode());
     context.CreateAndBindSessionMemory();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -53,8 +53,8 @@ TEST_F(VkPositiveVideoLayerTest, MultipleCmdBufs) {
     context.CreateResources();
 
     vkt::CommandPool cmd_pool(*m_device, config.QueueFamilyIndex(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj cb1(m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &context.Queue());
-    VkCommandBufferObj cb2(m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &context.Queue());
+    vkt::CommandBuffer cb1(m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &context.Queue());
+    vkt::CommandBuffer cb2(m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &context.Queue());
 
     cb1.begin();
     cb1.BeginVideoCoding(context.Begin());
@@ -63,7 +63,7 @@ TEST_F(VkPositiveVideoLayerTest, MultipleCmdBufs) {
     cb1.end();
 
     cb2.begin();
-    cb2.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb2.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     cb2.BeginVideoCoding(context.Begin());
     cb2.DecodeVideo(context.DecodeFrame());
     cb2.EndVideoCoding(context.End());
@@ -98,11 +98,11 @@ TEST_F(VkPositiveVideoLayerTest, VideoDecodeH264) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset());
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));
@@ -149,11 +149,11 @@ TEST_F(VkPositiveVideoLayerTest, VideoDecodeH264Interlaced) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1));
     cb.ControlVideoCoding(context.Control().Reset());
     cb.DecodeVideo(context.DecodeTopField().SetupTopField(0));
@@ -200,11 +200,11 @@ TEST_F(VkPositiveVideoLayerTest, VideoDecodeH265) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset());
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));

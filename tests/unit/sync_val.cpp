@@ -118,26 +118,26 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_commandBuffer->end();
 
     // Create secondary buffers to use
-    VkCommandBufferObj secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     vk::CmdCopyBuffer(scb1, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
     secondary_cb1.end();
 
-    VkCommandBufferObj secondary_cb2(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb2(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb2 = secondary_cb2.handle();
     secondary_cb2.begin();
     vk::CmdCopyBuffer(scb2, buffer_a.handle(), buffer_c.handle(), 1, &front2front);
     secondary_cb2.end();
 
-    VkCommandBufferObj secondary_cb3(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb3(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb3 = secondary_cb3.handle();
     secondary_cb3.begin();
-    secondary_cb3.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 0,
-                                  nullptr);
+    vk::CmdPipelineBarrier(secondary_cb3.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 0, nullptr);
     secondary_cb3.end();
 
-    VkCommandBufferObj secondary_cb4(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb4(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb4 = secondary_cb4.handle();
     secondary_cb4.begin();
     vk::CmdCopyBuffer(scb4, buffer_b.handle(), buffer_c.handle(), 1, &front2front);
@@ -651,7 +651,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
     // Test secondary command buffers
     // Create secondary buffers to use
-    VkCommandBufferObj secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     vk::CmdCopyImage(scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
@@ -1695,7 +1695,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
@@ -1713,7 +1713,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
                               &descriptor_set.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
-    m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -2148,13 +2148,13 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {16, 16, 1};
 
-    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_dp.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copyRegion);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_dp.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
 
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_st.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                               &copyRegion);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_st.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_renderPassBeginInfo.renderPass = rp_ds.handle();
     m_renderPassBeginInfo.framebuffer = fb_ds.handle();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
@@ -3125,13 +3125,13 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         for (uint32_t i = 1; i < subpasses.size(); i++) {
             // we're racing the writes from subpass 0 with our layout transitions... (from initial)
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             m_errorMonitor->VerifyFound();
         }
 
         // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
         // No sync error here, as all of the NextSubpass calls *failed*
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
         // m_errorMonitor->VerifyFound();
 
         vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
@@ -3206,7 +3206,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
                 // We've fixed the dependency with 0, but 2 and 3 still fight with 1
                 m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
             }
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             if (i > 1) {
                 m_errorMonitor->VerifyFound();
             }
@@ -3218,7 +3218,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
         // There is no race, because the NextSubpass calls failed above
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
 
         vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
     }
@@ -3284,7 +3284,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
-            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
@@ -3292,7 +3292,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
 
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
 
         m_commandBuffer->end();
     }
@@ -3545,14 +3545,14 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0, nullptr, 0,
-                                     nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
                                 nullptr, 0, nullptr);
     m_commandBuffer->ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0, nullptr, 0,
-                                     nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Need a barrier between set and a reset
@@ -3586,7 +3586,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     buffer_barrier_front_waw.offset = front2front.dstOffset;
     buffer_barrier_front_waw.size = front2front.size;
 
-    VkCommandBufferObj secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     secondary_cb1.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
@@ -3932,7 +3932,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_default_queue);
@@ -4345,9 +4345,9 @@ struct QSTestContext {
     VkBufferCopy second_to_first;
     vkt::CommandPool pool;
 
-    VkCommandBufferObj cba;
-    VkCommandBufferObj cbb;
-    VkCommandBufferObj cbc;
+    vkt::CommandBuffer cba;
+    vkt::CommandBuffer cbb;
+    vkt::CommandBuffer cbc;
 
     VkCommandBuffer h_cba = VK_NULL_HANDLE;
     VkCommandBuffer h_cbb = VK_NULL_HANDLE;
@@ -4356,13 +4356,13 @@ struct QSTestContext {
     vkt::Semaphore semaphore;
     vkt::Event event;
 
-    VkCommandBufferObj* current_cb = nullptr;
+    vkt::CommandBuffer* current_cb = nullptr;
 
     QSTestContext(vkt::Device* device, vkt::Queue* force_q0 = nullptr, vkt::Queue* force_q1 = nullptr);
-    VkCommandBuffer InitFromPool(VkCommandBufferObj& cb_obj);
+    VkCommandBuffer InitFromPool(vkt::CommandBuffer& cb_obj);
     bool Valid() const { return q1 != VK_NULL_HANDLE; }
 
-    void Begin(VkCommandBufferObj& cb);
+    void Begin(vkt::CommandBuffer& cb);
     void BeginA() { Begin(cba); }
     void BeginB() { Begin(cbb); }
     void BeginC() { Begin(cbc); }
@@ -4393,30 +4393,30 @@ struct QSTestContext {
     void TransferBarrierRAW(const vkt::Buffer& buffer);
     void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
 
-    void Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+    void Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
                 VkFence fence = VK_NULL_HANDLE);
 
     // X == Submit 2 but since we already have numeric overloads for the queues X -> eXtension version
-    void SubmitX(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+    void SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
                  VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
                  VkPipelineStageFlags signal_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkFence fence = VK_NULL_HANDLE);
 
-    void Submit0(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+    void Submit0(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
                  VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
                  VkFence fence = VK_NULL_HANDLE) {
         Submit(q0, cb, wait, wait_mask, signal, fence);
     }
-    void Submit0Wait(VkCommandBufferObj& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
-    void Submit0Signal(VkCommandBufferObj& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
+    void Submit0Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
+    void Submit0Signal(vkt::CommandBuffer& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
 
-    void Submit1(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+    void Submit1(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
                  VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
                  VkFence fence = VK_NULL_HANDLE) {
         Submit(q1, cb, wait, wait_mask, signal, fence);
     }
-    void Submit1Wait(VkCommandBufferObj& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
-    void Submit1Signal(VkCommandBufferObj& cb, VkPipelineStageFlags signal_mask) {
+    void Submit1Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
+    void Submit1Signal(vkt::CommandBuffer& cb, VkPipelineStageFlags signal_mask) {
         Submit1(cb, VK_NULL_HANDLE, 0U, semaphore.handle());
     }
     void SetEvent(VkPipelineStageFlags src_mask) { event.cmd_set(*current_cb, src_mask); }
@@ -4433,8 +4433,8 @@ struct QSTestContext {
     void QueueWait1() { QueueWait(q1); }
     void DeviceWait() { vk::DeviceWaitIdle(dev->handle()); }
 
-    void RecordCopy(VkCommandBufferObj& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region);
-    void RecordCopy(VkCommandBufferObj& cb, vkt::Buffer& from, vkt::Buffer& to) { RecordCopy(cb, from, to, full_buffer); }
+    void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region);
+    void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to) { RecordCopy(cb, from, to, full_buffer); }
 };
 
 QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Queue* force_q1)
@@ -4500,12 +4500,12 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
     event.init(*device, eci);
 }
 
-VkCommandBuffer QSTestContext::InitFromPool(VkCommandBufferObj& cb_obj) {
+VkCommandBuffer QSTestContext::InitFromPool(vkt::CommandBuffer& cb_obj) {
     cb_obj.Init(dev, &pool);
     return cb_obj.handle();
 }
 
-void QSTestContext::Begin(VkCommandBufferObj& cb) {
+void QSTestContext::Begin(vkt::CommandBuffer& cb) {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     info.pInheritanceInfo = nullptr;
@@ -4546,7 +4546,7 @@ void QSTestContext::TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier)
 void QSTestContext::TransferBarrierWAR(const vkt::Buffer& buffer) { TransferBarrier(InitBufferBarrierWAR(buffer)); }
 void QSTestContext::TransferBarrierRAW(const vkt::Buffer& buffer) { TransferBarrier(InitBufferBarrierRAW(buffer)); }
 
-void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
+void QSTestContext::Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                            VkFence fence) {
     VkSubmitInfo submit1 = vku::InitStructHelper();
     submit1.commandBufferCount = 1;
@@ -4564,7 +4564,7 @@ void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, 
     vk::QueueSubmit(q, 1, &submit1, fence);
 }
 
-void QSTestContext::SubmitX(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
+void QSTestContext::SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                             VkPipelineStageFlags signal_mask, VkFence fence) {
     VkSubmitInfo2 submit1 = vku::InitStructHelper();
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
@@ -4591,7 +4591,7 @@ void QSTestContext::SubmitX(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait,
     vk::QueueSubmit2(q, 1, &submit1, fence);
 }
 
-void QSTestContext::RecordCopy(VkCommandBufferObj& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region) {
+void QSTestContext::RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region) {
     Begin(cb);
     Copy(from, to, copy_region);
     End();
@@ -4746,7 +4746,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     fence.init(*m_device, vkt::Fence::create_info());
     VkFence fence_handle = fence.handle();
     VkResult wait_result;
-    VkCommandBufferObj cbd;
+    vkt::CommandBuffer cbd;
     test.InitFromPool(cbd);
 
     // Set up four CB with copy commands
@@ -4795,7 +4795,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     // Need an extra buffer and CB
     vkt::Buffer buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VkCommandBufferObj cbd;
+    vkt::CommandBuffer cbd;
     test.InitFromPool(cbd);
     // This gives a noop command buffer w.r.t. buffers a, b, and c.
     test.RecordCopy(cbd, buffer_d, buffer_d, test.first_to_second);
@@ -4903,7 +4903,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     test.End();
 
     // Ensure this would work on one queue (sanity check)
-    VkCommandBufferObj reset(test.dev, &test.pool);
+    vkt::CommandBuffer reset(test.dev, &test.pool);
     test.Begin(reset);
     test.ResetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
     test.End();
@@ -5049,10 +5049,10 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     rp_helper.InitFramebuffer();
     rp_helper.InitBeginInfo();
 
-    VkCommandBufferObj cb0(m_device, m_commandPool);
-    VkCommandBufferObj cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
 
-    auto do_clear = [](VkCommandBufferObj& cb_obj, CreateRenderPassHelper& rp_helper) {
+    auto do_clear = [](vkt::CommandBuffer& cb_obj, CreateRenderPassHelper& rp_helper) {
         VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
         vk::CmdClearColorImage(cb_obj.handle(), rp_helper.image_input->handle(), VK_IMAGE_LAYOUT_GENERAL, &rp_helper.ccv, 1,
                                &full_subresource_range);

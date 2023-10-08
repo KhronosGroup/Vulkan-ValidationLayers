@@ -86,7 +86,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
-    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
     command_buffer.begin();
     vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
                                         VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
@@ -176,7 +176,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
-    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
     command_buffer.begin();
     vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
                                         VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
@@ -245,7 +245,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
 
         const vkt::Buffer bot_level_as_scratch = destroyed_bot_level_as.create_scratch_buffer(*m_device);
 
-        VkCommandBufferObj command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(m_device, &command_pool);
         command_buffer.begin();
         vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                             destroyed_bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
@@ -287,7 +287,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
-    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
     command_buffer.begin();
     vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
                                         VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
@@ -476,7 +476,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     push_descriptor_set_write.dstBinding = 0;
     push_descriptor_set_write.pBufferInfo = &push_descriptor_buffer_info;
 
-    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
     command_buffer.begin();
     vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
     vk::CmdPushConstants(command_buffer.handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, 4,

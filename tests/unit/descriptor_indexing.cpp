@@ -149,7 +149,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 0, 0, 0, 0);
-        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->EndRenderPass();
 
         // Valid to update binding 1 after being bound
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[1], 0, NULL);

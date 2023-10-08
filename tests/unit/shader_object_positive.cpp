@@ -1447,7 +1447,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
-    VkCommandBufferObj command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     command_buffer.begin();
     command_buffer.BeginRenderingColor(GetDynamicRenderTarget());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
@@ -1573,7 +1573,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
-    VkCommandBufferObj command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferInheritanceRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachmentFormats = &m_render_target_fmt;

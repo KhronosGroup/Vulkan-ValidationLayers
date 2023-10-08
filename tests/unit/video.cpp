@@ -24,7 +24,7 @@ TEST_F(VkVideoLayerTest, VideoCodingScope) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     // Video coding block must be ended before command buffer
     cb.begin();
@@ -222,7 +222,7 @@ TEST_F(VkVideoLayerTest, InUseDestroyed) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -1508,7 +1508,7 @@ TEST_F(VkVideoLayerTest, BeginCodingUnsupportedCodecOp) {
     context.CreateAndBindSessionMemory();
 
     vkt::CommandPool pool(*DeviceObj(), queue_family_index);
-    VkCommandBufferObj cb(DeviceObj(), &pool);
+    vkt::CommandBuffer cb(DeviceObj(), &pool);
 
     cb.begin();
 
@@ -1537,7 +1537,7 @@ TEST_F(VkVideoLayerTest, BeginCodingActiveQueriesNotAllowed) {
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     vk::CmdBeginQuery(cb.handle(), context.StatusQueryPool(), 0, 0);
@@ -1566,13 +1566,13 @@ TEST_F(VkVideoLayerTest, BeginCodingProtectedNoFaultSession) {
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources();
 
-    VkCommandBufferObj& unprotected_cb = unprotected_context.CmdBuffer();
+    vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
     VideoContext protected_context(DeviceObj(), config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected);
 
-    VkCommandBufferObj& protected_cb = protected_context.CmdBuffer();
+    vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
     unprotected_cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07233");
@@ -1608,13 +1608,13 @@ TEST_F(VkVideoLayerTest, BeginCodingProtectedNoFaultSlots) {
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources(use_protected);
 
-    VkCommandBufferObj& unprotected_cb = unprotected_context.CmdBuffer();
+    vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
     VideoContext protected_context(DeviceObj(), config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources();
 
-    VkCommandBufferObj& protected_cb = protected_context.CmdBuffer();
+    vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
     unprotected_cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07235");
@@ -1672,7 +1672,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionMemoryNotBound) {
         ASSERT_VK_SUCCESS(context.vk.BindVideoSessionMemoryKHR(m_device->device(), context.Session(), 1, &bind_info));
     }
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
 
@@ -1706,7 +1706,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionUninitialized) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoCodingControlInfoKHR control_info = vku::InitStructHelper();
     control_info.flags = VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR;
@@ -1736,7 +1736,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidSessionParams) {
 
     VideoContext context1(DeviceObj(), config);
     VideoContext context2(DeviceObj(), config);
-    VkCommandBufferObj& cb = context1.CmdBuffer();
+    vkt::CommandBuffer& cb = context1.CmdBuffer();
 
     context1.CreateAndBindSessionMemory();
 
@@ -1763,7 +1763,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeH264RequiresParams) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoBeginCodingInfoKHR beginInfo = context.Begin();
     beginInfo.videoSessionParameters = VK_NULL_HANDLE;
@@ -1788,7 +1788,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeH265RequiresParams) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoBeginCodingInfoKHR beginInfo = context.Begin();
     beginInfo.videoSessionParameters = VK_NULL_HANDLE;
@@ -1837,7 +1837,7 @@ TEST_F(VkVideoLayerTest, BeginCodingIncompatRefPicProfile) {
     context2.CreateAndBindSessionMemory();
     context2.CreateResources();
 
-    VkCommandBufferObj& cb = context1.CmdBuffer();
+    vkt::CommandBuffer& cb = context1.CmdBuffer();
 
     cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07240");
@@ -1863,7 +1863,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidResourceLayer) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
 
@@ -1895,7 +1895,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeSlotInactive) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
@@ -1910,8 +1910,8 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeSlotInactive) {
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
     cb.ControlVideoCoding(context.Control().Reset());
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));
     cb.EndVideoCoding(context.End());
     cb.end();
@@ -1953,13 +1953,13 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeInvalidSlotResourceAssociation) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
     cb.ControlVideoCoding(context.Control().Reset());
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));
     cb.EndVideoCoding(context.End());
 
@@ -1990,7 +1990,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidSlotIndex) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
 
@@ -2018,7 +2018,7 @@ TEST_F(VkVideoLayerTest, BeginCodingResourcesNotUnique) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
 
@@ -2061,7 +2061,7 @@ TEST_F(VkVideoLayerTest, BeginCodingReferenceFormatMismatch) {
     config2.SetFormatProps(config.SupportedPictureFormatProps(), {config.SupportedDpbFormatProps()[alt_ref_format_index]});
     VideoDPB dpb(m_device, config2);
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
 
@@ -2089,7 +2089,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidCodedOffset) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoPictureResourceInfoKHR res = context.Dpb()->Picture(0);
 
@@ -2127,7 +2127,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidCodedExtent) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoPictureResourceInfoKHR res = context.Dpb()->Picture(0);
 
@@ -2193,7 +2193,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidSeparateReferenceImages) {
 
     VideoDPB separate_dpb(DeviceObj(), config);
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
 
@@ -2225,7 +2225,7 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoPictureResourceInfoKHR res = context.Dpb()->Picture(0);
 
@@ -2270,7 +2270,7 @@ TEST_F(VkVideoLayerTest, EndCodingActiveQueriesNotAllowed) {
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2297,7 +2297,7 @@ TEST_F(VkVideoLayerTest, DecodeSessionUninitialized) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2329,13 +2329,13 @@ TEST_F(VkVideoLayerTest, DecodeProtectedNoFaultBitstreamBuffer) {
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources();
 
-    VkCommandBufferObj& unprotected_cb = unprotected_context.CmdBuffer();
+    vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
     VideoContext protected_context(DeviceObj(), config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected);
 
-    VkCommandBufferObj& protected_cb = protected_context.CmdBuffer();
+    vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
     unprotected_cb.begin();
     unprotected_cb.BeginVideoCoding(unprotected_context.Begin());
@@ -2376,13 +2376,13 @@ TEST_F(VkVideoLayerTest, DecodeProtectedNoFaultDecodeOutput) {
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources();
 
-    VkCommandBufferObj& unprotected_cb = unprotected_context.CmdBuffer();
+    vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
     VideoContext protected_context(DeviceObj(), config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected);
 
-    VkCommandBufferObj& protected_cb = protected_context.CmdBuffer();
+    vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
     unprotected_cb.begin();
     unprotected_cb.BeginVideoCoding(unprotected_context.Begin());
@@ -2422,19 +2422,19 @@ TEST_F(VkVideoLayerTest, DecodeImageLayouts) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
 
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
 
     cb.DecodeVideo(context.DecodeFrame());
 
     // Decode output must be in DECODE_DST layout if there is no reconstructed
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
     cb.DecodeVideo(context.DecodeFrame());
     m_errorMonitor->VerifyFound();
 
@@ -2443,16 +2443,16 @@ TEST_F(VkVideoLayerTest, DecodeImageLayouts) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
         cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));
         m_errorMonitor->VerifyFound();
-        cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+        vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     }
 
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
 
     // Decode output must be in DECODE_DPB layout if it coincides with reconstructed
     if (config.SupportsDecodeOutputCoincide()) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253");
-        cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, 0, 1));
+        vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, 0, 1));
         cb.DecodeVideo(context.DecodeFrame().SetupFrame(0, true /* force coincide */));
         m_errorMonitor->VerifyFound();
     }
@@ -2460,14 +2460,14 @@ TEST_F(VkVideoLayerTest, DecodeImageLayouts) {
     // Reconstructed must be in DECODE_DPB layout
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254");
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));
     m_errorMonitor->VerifyFound();
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
 
     // Reference must be in DECODE_DPB layout
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(0));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pPictureResource-07255");
     cb.DecodeVideo(context.DecodeFrame().AddReferenceFrame(0));
     m_errorMonitor->VerifyFound();
@@ -2493,7 +2493,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidResourceLayer) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoPictureResourceInfoKHR dpb_res = context.Dpb()->Picture(0);
     dpb_res.baseArrayLayer = 5;
@@ -2553,7 +2553,7 @@ TEST_F(VkVideoLayerTest, DecodeQueryTooManyOperations) {
     context.CreateResources();
     context.CreateStatusQueryPool(2);
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2586,7 +2586,7 @@ TEST_F(VkVideoLayerTest, DecodeIncompatBufferProfile) {
     context2.CreateAndBindSessionMemory();
     context2.CreateResources();
 
-    VkCommandBufferObj& cb = context1.CmdBuffer();
+    vkt::CommandBuffer& cb = context1.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context1.Begin());
@@ -2627,7 +2627,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferMissingDecodeSrcUsage) {
     VkBuffer buffer = VK_NULL_HANDLE;
     ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &create_info, nullptr, &buffer));
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2655,7 +2655,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferOffsetOutOfBounds) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2689,7 +2689,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferOffsetAlignment) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2720,7 +2720,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferRangeOutOfBounds) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2757,7 +2757,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferRangeAlignment) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -2794,7 +2794,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidOutputAndSetupCoincide) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
@@ -2829,7 +2829,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidOutputAndSetupDistinct) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
@@ -2859,7 +2859,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidSetupSlotIndex) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
@@ -2893,7 +2893,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidRefSlotIndex) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
@@ -2928,7 +2928,7 @@ TEST_F(VkVideoLayerTest, DecodeSetupResourceNull) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
@@ -2958,7 +2958,7 @@ TEST_F(VkVideoLayerTest, DecodeReferenceResourceNull) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
@@ -3003,7 +3003,7 @@ TEST_F(VkVideoLayerTest, DecodeIncompatOutputPicProfile) {
     context2.CreateAndBindSessionMemory();
     context2.CreateResources();
 
-    VkCommandBufferObj& cb = context1.CmdBuffer();
+    vkt::CommandBuffer& cb = context1.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context1.Begin());
@@ -3044,7 +3044,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputFormatMismatch) {
     config2.SetFormatProps({config.SupportedPictureFormatProps()[alt_pic_format_index]}, config.SupportedDpbFormatProps());
     VideoDecodeOutput output(m_device, config2);
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -3075,7 +3075,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkImageViewUsageCreateInfo view_usage_ci = vku::InitStructHelper();
     view_usage_ci.usage = config.PictureFormatProps()->imageUsageFlags ^ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
@@ -3117,7 +3117,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputCodedOffsetExtent) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -3169,7 +3169,7 @@ TEST_F(VkVideoLayerTest, DecodeSetupAndRefCodedOffset) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
@@ -3231,7 +3231,7 @@ TEST_F(VkVideoLayerTest, DecodeSetupResourceNotBound) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -3263,7 +3263,7 @@ TEST_F(VkVideoLayerTest, DecodeRefResourceNotBoundToDPBSlot) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
@@ -3278,8 +3278,8 @@ TEST_F(VkVideoLayerTest, DecodeRefResourceNotBoundToDPBSlot) {
     cb.DecodeVideo(context.DecodeFrame().AddReferenceFrame(1, 0));
     m_errorMonitor->VerifyFound();
 
-    cb.PipelineBarrier2KHR(context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    cb.PipelineBarrier2KHR(context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     cb.DecodeVideo(context.DecodeFrame().SetupFrame(1, 0));
     cb.DecodeVideo(context.DecodeFrame().AddReferenceFrame(1, 0));
 
@@ -3317,7 +3317,7 @@ TEST_F(VkVideoLayerTest, DecodeTooManyReferences) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).AddResource(1, 1));
@@ -3349,7 +3349,7 @@ TEST_F(VkVideoLayerTest, DecodeTooManyReferencesH264Interlaced) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).AddResource(1, 1));
@@ -3383,7 +3383,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateRefResource) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkVideoPictureResourceInfoKHR res = context.Dpb()->Picture(0);
 
@@ -3423,7 +3423,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateRefResourceH264Interlaced) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
@@ -3453,7 +3453,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateFrame) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).AddResource(0, 1));
@@ -3483,7 +3483,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateFrameFieldH264Interlaced) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).AddResource(0, 1));
@@ -3538,7 +3538,7 @@ TEST_F(VkVideoLayerTest, DecodeRefPictureKindMismatch) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     // Setup frame in DPB slot
     cb.begin();
@@ -3654,7 +3654,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH264) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VideoDecodeInfo decode_info = context.DecodeFrame();
 
@@ -3805,7 +3805,7 @@ TEST_F(VkVideoLayerTest, DecodeFieldFrameMismatchH264) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
@@ -3861,7 +3861,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH265) {
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VideoDecodeInfo decode_info = context.DecodeFrame();
 
@@ -4131,7 +4131,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
     vkt::QueryPool query_pool(*m_device, create_info);
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBufferObj cb(m_device, &cmd_pool);
+    vkt::CommandBuffer cb(m_device, &cmd_pool);
 
     cb.begin();
 
@@ -4160,7 +4160,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeQueryAlreadyActive) {
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool(2);
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -4195,7 +4195,7 @@ TEST_F(VkVideoLayerTest, BeginQueryResultStatusProfileMismatch) {
     context1.CreateAndBindSessionMemory();
     context2.CreateStatusQueryPool();
 
-    VkCommandBufferObj& cb = context1.CmdBuffer();
+    vkt::CommandBuffer& cb = context1.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context1.Begin());
@@ -4226,7 +4226,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, create_info);
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
@@ -4324,7 +4324,7 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
     VideoContext context(DeviceObj(), config);
     context.CreateResources();
 
-    VkCommandBufferObj& cb = context.CmdBuffer();
+    vkt::CommandBuffer& cb = context.CmdBuffer();
 
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -4377,15 +4377,15 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, params.vuid);
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = params.invalid_layout;
-        cb.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
+        vk::CmdPipelineBarrier(cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                               0, nullptr, 1, &image_barrier);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, params.vuid);
         image_barrier.oldLayout = params.invalid_layout;
         image_barrier.newLayout = params.valid_layout;
-        cb.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
+        vk::CmdPipelineBarrier(cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                               0, nullptr, 1, &image_barrier);
         m_errorMonitor->VerifyFound();
 
         image_barrier2.image = params.image;
@@ -4393,13 +4393,13 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, params.vuid2);
         image_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier2.newLayout = params.invalid_layout;
-        cb.PipelineBarrier2KHR(&dep_info);
+        vk::CmdPipelineBarrier2KHR(cb.handle(), &dep_info);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, params.vuid2);
         image_barrier2.oldLayout = params.invalid_layout;
         image_barrier2.newLayout = params.valid_layout;
-        cb.PipelineBarrier2KHR(&dep_info);
+        vk::CmdPipelineBarrier2KHR(cb.handle(), &dep_info);
         m_errorMonitor->VerifyFound();
     }
 

@@ -938,9 +938,15 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     explicit CommandBuffer() : Handle() {}
     explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { init(dev, info); }
+    explicit CommandBuffer(Device *device, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                           Queue *queue = nullptr) {
+        Init(device, pool, level, queue);
+    }
 
     // vkAllocateCommandBuffers()
     void init(const Device &dev, const VkCommandBufferAllocateInfo &info);
+    void Init(Device *device, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+              Queue *queue = nullptr);
 
     // vkBeginCommandBuffer()
     void begin(const VkCommandBufferBeginInfo *info);
@@ -954,9 +960,35 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     static VkCommandBufferAllocateInfo create_info(VkCommandPool const &pool);
 
+    void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+    void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+    void EndRenderPass();
+    void BeginRendering(const VkRenderingInfoKHR &renderingInfo);
+    void BeginRenderingColor(const VkImageView imageView);
+    void EndRendering();
+
+    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
+    void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);
+    void DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo);
+    void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
+
+    void QueueCommandBuffer(bool check_success = true);
+    void QueueCommandBuffer(const Fence &fence, bool check_success = true, bool submit_2 = false);
+
+    void SetEvent(Event &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
+    void ResetEvent(Event &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
+    void WaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
+                    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+        vk::CmdWaitEvents(handle(), eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                          bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    }
+
   private:
     VkDevice dev_handle_;
     VkCommandPool cmd_pool_;
+    Queue *m_queue;
 };
 
 class RenderPass : public internal::NonDispHandle<VkRenderPass> {
@@ -1218,13 +1250,6 @@ inline VkCopyDescriptorSet Device::copy_descriptor_set(const DescriptorSet &src_
     copy.descriptorCount = count;
 
     return copy;
-}
-
-inline VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool const &pool) {
-    VkCommandBufferAllocateInfo info = vku::InitStructHelper();
-    info.commandPool = pool;
-    info.commandBufferCount = 1;
-    return info;
 }
 
 struct GraphicsPipelineLibraryStage {

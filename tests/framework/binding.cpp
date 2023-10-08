@@ -1106,6 +1106,19 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
     }
 }
 
+void CommandBuffer::Init(Device *device, const CommandPool *pool, VkCommandBufferLevel level, Queue *queue) {
+    if (queue) {
+        m_queue = queue;
+    } else {
+        m_queue = device->graphics_queues()[0];
+    }
+    assert(m_queue);
+
+    auto create_info = CommandBuffer::create_info(pool->handle());
+    create_info.level = level;
+    init(*device, create_info);
+}
+
 void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { EXPECT(vk::BeginCommandBuffer(handle(), info) == VK_SUCCESS); }
 
 void CommandBuffer::begin() {
@@ -1126,6 +1139,111 @@ void CommandBuffer::begin() {
 void CommandBuffer::end() { EXPECT(vk::EndCommandBuffer(handle()) == VK_SUCCESS); }
 
 void CommandBuffer::reset(VkCommandBufferResetFlags flags) { EXPECT(vk::ResetCommandBuffer(handle(), flags) == VK_SUCCESS); }
+
+VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool const &pool) {
+    VkCommandBufferAllocateInfo info = vku::InitStructHelper();
+    info.commandPool = pool;
+    info.commandBufferCount = 1;
+    return info;
+}
+
+void CommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents) {
+    vk::CmdBeginRenderPass(handle(), &info, contents);
+}
+
+void CommandBuffer::NextSubpass(VkSubpassContents contents) { vk::CmdNextSubpass(handle(), contents); }
+
+void CommandBuffer::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
+
+void CommandBuffer::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
+    if (vk::CmdBeginRenderingKHR) {
+        vk::CmdBeginRenderingKHR(handle(), &renderingInfo);
+    } else {
+        vk::CmdBeginRendering(handle(), &renderingInfo);
+    }
+}
+
+void CommandBuffer::BeginRenderingColor(const VkImageView imageView) {
+    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = imageView;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &color_attachment;
+    renderingInfo.layerCount = 1;
+    renderingInfo.renderArea = {{0, 0}, {1, 1}};
+
+    BeginRendering(renderingInfo);
+}
+
+void CommandBuffer::EndRendering() {
+    if (vk::CmdEndRenderingKHR) {
+        vk::CmdEndRenderingKHR(handle());
+    } else {
+        vk::CmdEndRendering(handle());
+    }
+}
+
+void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
+    PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR =
+        (PFN_vkCmdBeginVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdBeginVideoCodingKHR");
+    assert(vkCmdBeginVideoCodingKHR);
+
+    vkCmdBeginVideoCodingKHR(handle(), &beginInfo);
+}
+
+void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo) {
+    PFN_vkCmdControlVideoCodingKHR vkCmdControlVideoCodingKHR =
+        (PFN_vkCmdControlVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdControlVideoCodingKHR");
+    assert(vkCmdControlVideoCodingKHR);
+
+    vkCmdControlVideoCodingKHR(handle(), &controlInfo);
+}
+
+void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) {
+    PFN_vkCmdDecodeVideoKHR vkCmdDecodeVideoKHR =
+        (PFN_vkCmdDecodeVideoKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdDecodeVideoKHR");
+    assert(vkCmdDecodeVideoKHR);
+
+    vkCmdDecodeVideoKHR(handle(), &decodeInfo);
+}
+
+void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
+    PFN_vkCmdEndVideoCodingKHR vkCmdEndVideoCodingKHR =
+        (PFN_vkCmdEndVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdEndVideoCodingKHR");
+    assert(vkCmdEndVideoCodingKHR);
+
+    vkCmdEndVideoCodingKHR(handle(), &endInfo);
+}
+
+void CommandBuffer::QueueCommandBuffer(bool check_success) {
+    vkt::Fence null_fence;
+    QueueCommandBuffer(null_fence, check_success);
+}
+
+void CommandBuffer::QueueCommandBuffer(const vkt::Fence &fence, bool check_success, bool submit_2) {
+    VkResult err = VK_SUCCESS;
+    (void) err;
+
+    if (submit_2) {
+        err = m_queue->submit2(*this, fence, check_success);
+    } else {
+        err = m_queue->submit(*this, fence, check_success);
+    }
+    if (check_success) {
+        assert(err == VK_SUCCESS);
+    }
+
+    err = m_queue->wait();
+    if (check_success) {
+        assert(err == VK_SUCCESS);
+    }
+
+    // TODO: Determine if we really want this serialization here
+    // Wait for work to finish before cleaning up.
+    vk::DeviceWaitIdle(dev_handle_);
+}
 
 void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
