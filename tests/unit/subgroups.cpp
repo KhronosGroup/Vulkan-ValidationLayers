@@ -893,6 +893,114 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
     }
 }
 
+TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
+    TEST_DESCRIPTION("Test size of local workgroud with requiredSubgroupSize.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkPhysicalDeviceMaintenance4Features m4f = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderFeaturesEXT msf = vku::InitStructHelper(&m4f);
+    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = vku::InitStructHelper(&msf);
+    auto features2 = GetPhysicalDeviceFeatures2(sscf);
+    if (m4f.maintenance4 == VK_FALSE) {
+        GTEST_SKIP() << "maintenance4 not supported";
+    }
+    if (msf.taskShader == VK_FALSE) {
+        GTEST_SKIP() << "taskShader not supported";
+    }
+    if (msf.meshShader == VK_FALSE) {
+        GTEST_SKIP() << "meshShader not supported";
+    }
+    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
+        GTEST_SKIP() << "Required features are not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_properties = vku::InitStructHelper();
+    VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_properties = vku::InitStructHelper(&mesh_properties);
+    GetPhysicalDeviceProperties2(subgroup_properties);
+
+    if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_TASK_BIT_EXT) == 0) {
+        GTEST_SKIP() << "Required shader stage not present in requiredSubgroupSizeStages";
+    }
+
+    VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_control = vku::InitStructHelper();
+    subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
+
+    if (subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups >
+        mesh_properties.maxTaskWorkGroupInvocations) {
+        GTEST_SKIP() << "maxTaskWorkGroupSize smaller than required";
+    }
+
+    uint32_t x = mesh_properties.maxTaskWorkGroupSize[0];
+    uint32_t y = mesh_properties.maxTaskWorkGroupInvocations / x;
+    uint32_t z = mesh_properties.maxTaskWorkGroupInvocations / x / y;
+
+    std::stringstream taskSrc;
+    taskSrc << R"(
+                OpCapability MeshShadingEXT
+                OpExtension "SPV_EXT_mesh_shader"
+            %1 = OpExtInstImport "GLSL.std.450"
+                OpMemoryModel Logical GLSL450
+                OpEntryPoint TaskEXT %main "main"
+                OpExecutionMode %main LocalSize )";
+    taskSrc << x << " " << y << " " << z;
+    taskSrc << R"(
+                ; Debug Information
+                OpSource GLSL 450
+                OpSourceExtension "GL_EXT_mesh_shader"
+                OpName %main "main"  ; id %4
+
+                ; Annotations
+                OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+
+                ; Types, variables and constants
+        %void = OpTypeVoid
+            %3 = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+        %uint_1 = OpConstant %uint 1
+        %uint_2 = OpConstant %uint )";
+    taskSrc << x;
+    taskSrc << R"(
+        %uint_3 = OpConstant %uint )";
+    taskSrc << y;
+    taskSrc << R"(
+        %uint_4 = OpConstant %uint )";
+    taskSrc << z;
+    taskSrc << R"(
+        %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_2 %uint_3 %uint_4
+
+                ; Function main
+        %main = OpFunction %void None %3
+            %5 = OpLabel
+                OpEmitMeshTasksEXT %uint_1 %uint_1 %uint_1
+                OpFunctionEnd)";
+
+    VkShaderObj task_shader(this, taskSrc.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    VkShaderObj mesh_shader(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.LateBindPipelineInfo();
+    pipe.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo()};
+    pipe.shader_stages_[0].pNext = &subgroup_size_control;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02756");
+    pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSubgroup, SubgroupSizeControlFeature) {
     TEST_DESCRIPTION("Test using subgroupSizeControl feature when it's not enabled");
 
