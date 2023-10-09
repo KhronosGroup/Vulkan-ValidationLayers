@@ -1335,6 +1335,15 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
         sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
         SetImageLayout(*image_state, sub_range, layoutStencil);
     } else {
+        // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth and
+        // stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will also be
+        // transitioned and thus must be included explicitly
+        if (const VkFormat format = view_state.create_info.format; vkuFormatIsDepthAndStencil(format)) {
+            if (layoutStencil == kInvalidLayout &&
+                (sub_range.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+                sub_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+        }
         SetImageLayout(*image_state, sub_range, layout);
     }
 }

@@ -24,13 +24,13 @@
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 
 VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
-    const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
-    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+    constexpr std::array depth_formats = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
+    for (VkFormat depth_format : depth_formats) {
         VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
+        vk::GetPhysicalDeviceFormatProperties(phy, depth_format, &format_props);
 
         if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            return ds_formats[i];
+            return depth_format;
         }
     }
     assert(false);  // Vulkan drivers are guaranteed to have at least one supported format
@@ -38,13 +38,13 @@ VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
 }
 
 VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy) {
-    const VkFormat ds_formats[] = {VK_FORMAT_S8_UINT};
-    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+    constexpr std::array stencil_formats = {VK_FORMAT_S8_UINT};
+    for (VkFormat stencil_format : stencil_formats) {
         VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
+        vk::GetPhysicalDeviceFormatProperties(phy, stencil_format, &format_props);
 
         if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            return ds_formats[i];
+            return stencil_format;
         }
     }
     return VK_FORMAT_UNDEFINED;
