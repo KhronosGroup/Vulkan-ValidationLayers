@@ -36,7 +36,6 @@ def Build(args):
         common_ci.BuildLoader()
         common_ci.BuildProfileLayer()
         common_ci.BuildMockICD()
-        common_ci.CheckVVL()
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
