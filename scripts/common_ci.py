@@ -102,29 +102,6 @@ def BuildVVL(config, cmake_args, build_tests):
     RunShellCmd(install_cmd)
 
 #
-# Run VVL scripts
-def CheckVVL():
-    vulkan_registry = f'{CI_EXTERNAL_DIR}/Vulkan-Headers/build/install/share/vulkan/registry'
-    if not os.path.exists(vulkan_registry):
-        print(f'Unable to find Vulkan Registry: {vulkan_registry}')
-        sys.exit(1)
-
-    spirv_unified = f'{CI_EXTERNAL_DIR}/SPIRV-Headers/build/install/include/spirv/unified1/'
-    if not os.path.exists(spirv_unified):
-        print(f'Unable to find Spirv Unified: {spirv_unified}')
-        sys.exit(1)
-
-    print("Check Generated Source Code Consistency")
-    gen_check_cmd = f'python scripts/generate_source.py --verify {vulkan_registry} {spirv_unified}'
-    RunShellCmd(gen_check_cmd)
-
-    print('Run vk_validation_stats.py')
-    valid_usage_json = f'{vulkan_registry}/validusage.json'
-    text_file = f'{CI_BUILD_DIR}/vuid_coverage_database.txt'
-    gen_check_cmd = f'python scripts/vk_validation_stats.py {valid_usage_json} -text {text_file}'
-    RunShellCmd(gen_check_cmd)
-
-#
 # Prepare Loader for executing Layer Validation Tests
 def BuildLoader():
     SRC_DIR = f'{CI_EXTERNAL_DIR}/Vulkan-Loader'

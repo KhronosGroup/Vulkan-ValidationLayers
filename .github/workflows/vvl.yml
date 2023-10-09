@@ -249,3 +249,16 @@ jobs:
         run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Test chromium build
         run: python scripts/gn.py
+
+  check_vvl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install python dependencies
+        run: python3 -m pip install jsonschema pyparsing
+      - run: scripts/update_deps.py --dir ext --no-build
+      - run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/ ext/SPIRV-Headers/include/spirv/unified1/
+      - run: scripts/vk_validation_stats.py ext/Vulkan-Headers/registry/validusage.json -summary -c
