@@ -854,7 +854,16 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
                 sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
                 cb_state->SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
             } else {
-                cb_state->SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
+                // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
+                // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
+                // also be transitioned and thus must be included explicitly
+                auto subresource_range = view_state->normalized_subresource_range;
+                if (const VkFormat format = view_state->create_info.format; vkuFormatIsDepthAndStencil(format)) {
+                    if (subresource_range.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
+                        subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                    }
+                }
+                cb_state->SetImageInitialLayout(*image_state, subresource_range, initial_layout);
             }
         }
     }
