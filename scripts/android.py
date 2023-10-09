@@ -25,6 +25,7 @@ import os
 import sys
 import shutil
 import common_ci
+import concurrent.futures
 
 # Manifest file describing out test application
 def get_android_manifest() -> str:
@@ -71,6 +72,40 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
 
     # Sign APK
     common_ci.RunShellCmd(f'apksigner sign --verbose --ks {debug_key} --ks-pass pass:{ks_pass} {test_apk}')
+
+def cmake_build(abi : str, clean : str, cmake_config : str, android_toolchain: str, build_tests: str, android_stl: str, cmake_install_dir : str):
+    build_dir = common_ci.RepoRelative(f'build-android/cmake/{abi}')
+    lib_dir = f'lib/{abi}'
+
+    if clean:
+        print("Deleting CMakeCache.txt")
+
+        # Delete CMakeCache.txt to ensure clean builds
+        # NOTE: CMake 3.24 has --fresh which would be better to use in the future.
+        cmake_cache = f'{build_dir}/CMakeCache.txt'
+        if os.path.isfile(cmake_cache):
+            os.remove(cmake_cache)
+
+    cmake_cmd =  f'cmake -S . -B {build_dir} -G Ninja'
+
+    cmake_cmd += f' -D CMAKE_BUILD_TYPE={cmake_config}'
+    cmake_cmd += f' -D UPDATE_DEPS=ON -D UPDATE_DEPS_DIR={build_dir}'
+    cmake_cmd += f' -D CMAKE_TOOLCHAIN_FILE={android_toolchain}'
+    cmake_cmd += f' -D CMAKE_ANDROID_ARCH_ABI={abi}'
+    cmake_cmd += f' -D CMAKE_INSTALL_LIBDIR={lib_dir}'
+    cmake_cmd += f' -D BUILD_TESTS={build_tests}'
+    cmake_cmd += f' -D CMAKE_ANDROID_STL_TYPE={android_stl}'
+
+    cmake_cmd += ' -D ANDROID_PLATFORM=26'
+    cmake_cmd += ' -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO'
+
+    common_ci.RunShellCmd(cmake_cmd)
+
+    build_cmd = f'cmake --build {build_dir}'
+    common_ci.RunShellCmd(build_cmd)
+
+    install_cmd = f'cmake --install {build_dir} --prefix {cmake_install_dir}'
+    common_ci.RunShellCmd(install_cmd)
 
 # Android APKs can contain binaries for multiple ABIs (armeabi-v7a, arm64-v8a, x86, x86_64).
 # https://en.wikipedia.org/wiki/Apk_(file_format)#Package_contents
@@ -137,39 +172,9 @@ def main():
         print("Cleaning CMake install")
         shutil.rmtree(cmake_install_dir)
 
-    for abi in android_abis:
-        build_dir = common_ci.RepoRelative(f'build-android/cmake/{abi}')
-        lib_dir = f'lib/{abi}'
-
-        if clean:
-            print("Deleting CMakeCache.txt")
-
-            # Delete CMakeCache.txt to ensure clean builds
-            # NOTE: CMake 3.24 has --fresh which would be better to use in the future.
-            cmake_cache = f'{build_dir}/CMakeCache.txt'
-            if os.path.isfile(cmake_cache):
-                os.remove(cmake_cache)
-
-        cmake_cmd =  f'cmake -S . -B {build_dir} -G Ninja'
-
-        cmake_cmd += f' -D CMAKE_BUILD_TYPE={cmake_config}'
-        cmake_cmd += f' -D UPDATE_DEPS=ON -D UPDATE_DEPS_DIR={build_dir}'
-        cmake_cmd += f' -D CMAKE_TOOLCHAIN_FILE={android_toolchain}'
-        cmake_cmd += f' -D CMAKE_ANDROID_ARCH_ABI={abi}'
-        cmake_cmd += f' -D CMAKE_INSTALL_LIBDIR={lib_dir}'
-        cmake_cmd += f' -D BUILD_TESTS={build_tests}'
-        cmake_cmd += f' -D CMAKE_ANDROID_STL_TYPE={android_stl}'
-
-        cmake_cmd += ' -D ANDROID_PLATFORM=26'
-        cmake_cmd += ' -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO'
-
-        common_ci.RunShellCmd(cmake_cmd)
-
-        build_cmd = f'cmake --build {build_dir}'
-        common_ci.RunShellCmd(build_cmd)
-
-        install_cmd = f'cmake --install {build_dir} --prefix {cmake_install_dir}'
-        common_ci.RunShellCmd(install_cmd)
+    # https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor-example
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(android_abis)) as executor:
+        {executor.submit(cmake_build, abi, clean, cmake_config, android_toolchain, build_tests, android_stl, cmake_install_dir): abi for abi in android_abis}
 
     if create_apk:
         generate_apk(SDK_ROOT = android_sdk_root, CMAKE_INSTALL_DIR = cmake_install_dir)
