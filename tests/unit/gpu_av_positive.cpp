@@ -32,9 +32,6 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -136,9 +133,6 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     }
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -398,9 +392,6 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     }
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);

@@ -856,7 +856,7 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -1263,7 +1263,7 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

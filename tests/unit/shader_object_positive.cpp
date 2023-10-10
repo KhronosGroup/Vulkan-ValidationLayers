@@ -179,7 +179,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -884,7 +884,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -1716,7 +1716,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     InitDynamicRenderTarget();

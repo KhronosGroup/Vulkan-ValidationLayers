@@ -1678,7 +1678,7 @@ TEST_F(NegativePipeline, CreationFeedbackCount) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Driver data writeback check not supported by MockICD";
     }
 
@@ -2025,7 +2025,7 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // MockICD will return 0 for the executable count
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

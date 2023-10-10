@@ -49,7 +49,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, Debug Printf test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
@@ -317,7 +317,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     InitDebugPrintfFramework();
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
@@ -410,7 +410,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
@@ -727,7 +727,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
@@ -877,7 +877,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
@@ -1047,7 +1047,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
 
     ASSERT_NO_FATAL_FAILURE(InitDynamicRenderTarget());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, Debug Printf test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
@@ -1337,7 +1337,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 

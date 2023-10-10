@@ -299,7 +299,7 @@ TEST_F(VkVideoLayerTest, CreateSessionUnsupportedProfile) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - unsupported profile");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -4309,7 +4309,7 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
     TEST_DESCRIPTION("Image layout in image memory barrier is invalid for image usage");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

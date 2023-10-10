@@ -43,7 +43,7 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
 
     // TODO - Currently not working on MockICD with Profiles using 1.0
     // Seems API version is not being passed through correctly
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -95,7 +95,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -806,7 +806,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
 
@@ -898,7 +898,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
 
@@ -1208,7 +1208,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         // This test leaks a fence (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
     }
@@ -1249,7 +1249,7 @@ TEST_F(VkLayerTest, LeakABuffer) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the buffer.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         // This test leaks a buffer (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
     }

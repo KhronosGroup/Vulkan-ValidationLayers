@@ -84,7 +84,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     InitHostImageCopyTest(image_ci);
     if (::testing::Test::IsSkipped()) return;
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Positive host image copy test requires a driver that can copy.";
     }
     if (!CopyLayoutSupported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_GENERAL)) {

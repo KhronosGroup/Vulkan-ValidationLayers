@@ -137,10 +137,6 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (IsPlatform(PlatformType::kShieldTVb)) {
-        GTEST_SKIP() << "Test is unstable on ShieldTV";
-    }
-
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
@@ -781,10 +777,6 @@ TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on this device";
-    }
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);

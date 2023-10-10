@@ -41,19 +41,6 @@ static constexpr VkDeviceSize kZeroDeviceSize{0};
 
 class VkImageObj;
 
-typedef enum {
-    kGalaxyS10,
-    kPixel3,
-    kShieldTVb,
-    kMockICD,
-} PlatformType;
-
-const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table = {
-    {kGalaxyS10, "Mali-G76"},
-    {kPixel3, "Adreno (TM) 630"},
-    {kShieldTVb, "NVIDIA Tegra X1 (rev B) (nvgpu)"},
-    {kMockICD, "Vulkan Mock Device"},
-};
 struct SurfaceContext {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     HWND m_win32Window{};
@@ -118,7 +105,7 @@ class VkRenderFramework : public VkTestFramework {
     void DestroyRenderTarget();
 
     static bool IgnoreDisableChecks();
-    bool IsPlatform(PlatformType platform);
+    bool IsPlatformMockICD();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);
     VkFormat GetRenderTargetFormat();

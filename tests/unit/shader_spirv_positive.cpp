@@ -498,7 +498,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, need real device to produce output to check";
     }
 

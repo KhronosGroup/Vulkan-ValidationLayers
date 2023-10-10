@@ -125,12 +125,6 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
     TEST_DESCRIPTION("Test shader interface with structs.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    // There is a crash inside the driver on S10
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource = R"glsl(

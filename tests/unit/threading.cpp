@@ -23,7 +23,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Test takes magnitude of time longer for profiles and slows down testing
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

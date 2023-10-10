@@ -186,7 +186,7 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "VK_GOOGLE_surfaceless_query not supported on desktop";
     }
 

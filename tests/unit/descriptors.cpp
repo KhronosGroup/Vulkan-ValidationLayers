@@ -2539,9 +2539,6 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
 
     // Enable descriptor indexing if supported, but don't require it.
     bool has_descriptor_indexing =

@@ -142,9 +142,6 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     InitBasicTransformFeedback();
     if (::testing::Test::IsSkipped()) return;
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "Test temporarily disabled on S10 device";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -297,10 +294,6 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     InitBasicTransformFeedback();
     if (::testing::Test::IsSkipped()) return;
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "Test temporarily disabled on S10 device";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -389,9 +382,6 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
     InitBasicTransformFeedback();
     if (::testing::Test::IsSkipped()) return;
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "Test temporarily disabled on S10 device";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);

@@ -1095,9 +1095,6 @@ TEST_F(NegativeRenderPass, BeginRenderArea) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "ShieldTV reports api version 1.1, but does not list VK_KHR_device_group";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

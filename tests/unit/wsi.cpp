@@ -106,11 +106,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
 
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "This test appears to leave the image created a swapchain in a weird state that leads to 00378 when it "
                         "shouldn't. Requires further investigation.";
     }
@@ -209,11 +205,6 @@ TEST_F(NegativeWsi, SwapchainImage) {
     AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
@@ -1753,7 +1744,7 @@ TEST_F(NegativeWsi, LeakASwapchain) {
 
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         // This test leaks a swapchain (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
     }
@@ -2121,7 +2112,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -2439,7 +2430,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     // Add this after check, surfacless checks are done conditionally
     AddOptionalExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -2577,7 +2568,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -2735,7 +2726,7 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
@@ -2817,7 +2808,7 @@ TEST_F(NegativeWsi, CreateSwapchainFullscreenExclusive) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
@@ -2868,7 +2859,7 @@ TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 

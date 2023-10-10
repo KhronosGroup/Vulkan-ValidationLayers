@@ -78,7 +78,7 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD because will always return VK_SUCCESS";
     }
 
@@ -113,7 +113,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD - currently can't create 2 concurrent instances";
     }
 
@@ -256,11 +256,6 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 
     InitBestPracticesFramework();
     InitState();
-
-    if (IsPlatform(PlatformType::kShieldTVb)) {
-        GTEST_SKIP() << "Test CmdClearAttachmentTestSecondary is unstable on ShieldTV";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
@@ -657,10 +652,6 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(kPixel3) || IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test seems super-picky on Android platforms";
-    }
-
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
 
@@ -885,10 +876,6 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
 
     InitBestPracticesFramework();
     InitState();
-
-    if (IsPlatform(PlatformType::kShieldTVb)) {
-        GTEST_SKIP() << "Test CmdClearAttachmentAfterLoadSecondary is unstable on ShieldTV";
-    }
 
     m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

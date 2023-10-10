@@ -1811,7 +1811,7 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
 
