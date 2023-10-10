@@ -81,7 +81,7 @@
                 "-Dgtest_force_shared_crt=ON",
                 "-DBUILD_SHARED_LIBS=OFF"
             ],
-            "commit": "ec4fed93217bc2830959bb8e86798c1d86956949",
+            "commit": "v1.14.0",
             "optional": [
                 "tests"
             ]
