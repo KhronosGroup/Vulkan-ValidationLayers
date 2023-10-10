@@ -1270,7 +1270,7 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
@@ -1476,7 +1476,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -2142,7 +2142,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
         // Older AMD driver does not like timeline + export properties combo
         GTEST_SKIP() << "Please update AMD drivers at least to Adrenalin 23.5.2 to run this test. Then remove this check.";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {

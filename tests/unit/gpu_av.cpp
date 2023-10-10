@@ -44,7 +44,7 @@ bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
     if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
         printf("fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV\n");
         return false;
-    } else if (IsPlatform(kMockICD)) {
+    } else if (IsPlatformMockICD()) {
         printf("Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw\n");
         return false;
     }
@@ -66,10 +66,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     }
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
@@ -538,10 +534,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
     auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&maintenance4_features);
@@ -741,10 +733,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
     }
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
@@ -1212,12 +1200,6 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -1994,9 +1976,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -2098,9 +2077,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     }
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features = vku::InitStructHelper(&indexing_features);
@@ -2394,9 +2370,6 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
-    }
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2463,11 +2436,8 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -2572,14 +2542,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
 
     auto validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
 
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
@@ -2753,11 +2720,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
 
     auto validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -2969,11 +2933,8 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
-    }
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";

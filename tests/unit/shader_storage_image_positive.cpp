@@ -308,10 +308,6 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kPixel3)) {
-        GTEST_SKIP() << "Pixel 3 compilers can't compile this valid SPIR-V";
-    }
-
     // The vertex and fragment shader are just a passthrough
     // The compute shader has the invalid OpImageWrite
     const char *source = R"(

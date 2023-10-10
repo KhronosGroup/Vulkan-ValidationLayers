@@ -170,7 +170,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     TEST_DESCRIPTION("Signal semaphore on the host and wait on the host");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         // Mock does not support proper ordering of events, e.g. wait can return before signal
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -228,7 +228,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     TEST_DESCRIPTION("Singal semaphore on the host and regularly read semaphore payload value");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         // Mock does not support precise semaphore counter reporting
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -277,7 +277,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     TEST_DESCRIPTION("Read semaphore counter value from multiple threads");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         // Mock does not support precise semaphore counter reporting
         GTEST_SKIP() << "Test not supported by MockICD";
     }

@@ -1020,7 +1020,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "External tests are not supported by MockICD, skipping tests";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());

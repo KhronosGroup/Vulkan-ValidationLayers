@@ -164,7 +164,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     // Needed for Ray Tracing

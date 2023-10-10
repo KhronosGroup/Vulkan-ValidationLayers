@@ -25,12 +25,6 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    // NOTE (ncesario): This appears to be failing in the driver on the Shield.
-    //      It's clear what is causing this; more investigation is necessary.
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "Test not supported by Shield TV";
-    }
-
     // Needed for both protected memory and vkGetDeviceQueue2
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";

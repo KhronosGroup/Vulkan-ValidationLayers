@@ -23,10 +23,6 @@ TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -65,10 +61,6 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -137,10 +129,6 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -310,10 +298,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10 - fails in gralloc";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
@@ -403,10 +387,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10 - fails in gralloc";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());

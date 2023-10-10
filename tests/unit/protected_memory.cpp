@@ -754,9 +754,6 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kShieldTVb)) {
-        GTEST_SKIP() << "CreateImageView calls crash ShieldTV";
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }

@@ -1506,7 +1506,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     GetPhysicalDeviceProperties2(fsrProperties);
 
     if (!fsrProperties.layeredShadingRateAttachments) {
-        if (IsPlatform(kMockICD)) {
+        if (IsPlatformMockICD()) {
             GTEST_SKIP() << "Test not supported by MockICD, doesn't correctly advertise format support for fragment shading "
                             "rate attachments";
         } else {
@@ -2740,7 +2740,7 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     // TODO - Currently not working on MockICD with Profiles
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

@@ -235,7 +235,7 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
 TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         // This test leaks a device (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
     }

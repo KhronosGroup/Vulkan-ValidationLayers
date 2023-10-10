@@ -639,7 +639,7 @@ bool VkLayerTest::IsDriver(VkDriverId driver_id) {
 bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
     }
@@ -663,7 +663,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatProperties2EXT &fpvkSetPhysicalDeviceFormatProperties2EXT,
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT &fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
     }
@@ -687,7 +687,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 
 bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkSetPhysicalDeviceLimitsEXT,
                                          PFN_vkGetOriginalPhysicalDeviceLimitsEXT &fpvkGetOriginalPhysicalDeviceLimitsEXT) {
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
     }
@@ -710,7 +710,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
 
 bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpvkSetPhysicalDeviceFeaturesEXT,
                                          PFN_vkGetOriginalPhysicalDeviceFeaturesEXT &fpvkGetOriginalPhysicalDeviceFeaturesEXT) {
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
     }
@@ -732,7 +732,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpv
 }
 
 bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT) {
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
     }

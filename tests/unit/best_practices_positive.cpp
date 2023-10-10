@@ -143,7 +143,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         // Several drivers have been observed to crash on the legal null pAttachments - restrict to MockICD for now
         GTEST_SKIP() << "This test only runs on MockICD";
     }

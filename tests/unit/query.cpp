@@ -544,7 +544,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     if (!performance_features.performanceCounterQueryPools) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR doesn't match up with profile queues";
     }
 

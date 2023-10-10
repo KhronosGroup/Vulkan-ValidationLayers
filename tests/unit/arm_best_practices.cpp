@@ -201,11 +201,6 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
 TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
-
-    if (IsPlatform(kShieldTVb)) {
-        return;
-    }
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls");
 
@@ -334,7 +329,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -442,7 +437,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -891,11 +886,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     TEST_DESCRIPTION("Test for appropriate warnings to be thrown when a redundant store is used.");
 
     InitBestPracticesFramework(kEnableArmValidation);
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "Test temporarily disabled on S10 device";
-    }
-
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-RenderPass-redundant-store");

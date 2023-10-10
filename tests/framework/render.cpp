@@ -503,15 +503,12 @@ bool VkRenderFramework::IgnoreDisableChecks() {
     return skip_disable_checks;
 }
 
-bool VkRenderFramework::IsPlatform(PlatformType platform) {
+static const std::string mock_icd_device_name = "Vulkan Mock Device";
+bool VkRenderFramework::IsPlatformMockICD() {
     if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
-        const auto search = vk_gpu_table.find(platform);
-        if (search != vk_gpu_table.end()) {
-            return 0 == search->second.compare(physDevProps().deviceName);
-        }
-        return false;
+        return 0 == mock_icd_device_name.compare(physDevProps().deviceName);
     }
 }
 

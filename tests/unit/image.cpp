@@ -6060,7 +6060,7 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
 TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
     TEST_DESCRIPTION("If flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, imageType must be VK_IMAGE_TYPE_2D");
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         // The following create info is malformed will cause validation issues on various GPUs.
         // EX: MoltenVK, GalaxyS10, and Pixel6.
         GTEST_SKIP() << "Only run on MockICD.";
@@ -6196,7 +6196,7 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 is a hardcoded format that is known to fail in MockICD
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only supported by MockICD";
     }
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL,

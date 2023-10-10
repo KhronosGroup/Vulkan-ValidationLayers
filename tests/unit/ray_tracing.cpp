@@ -38,7 +38,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (gpu_assisted && IsPlatform(kMockICD)) {
+    if (gpu_assisted && IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-AV can't run on MockICD";
     }
 
@@ -1710,7 +1710,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -1757,7 +1757,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -2068,7 +2068,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (IsPlatform(kMockICD)) {
+    if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     // Needed for Ray Tracing

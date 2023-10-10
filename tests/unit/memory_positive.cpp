@@ -342,7 +342,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
 TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (!IsPlatform(kMockICD)) {
+    if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "This test can crash drivers with threading issues";
     }
 
