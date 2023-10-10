@@ -987,6 +987,12 @@ class CoreChecks : public ValidationStateTracker {
                                            const PipelineStageState& stage_state, const Location& loc) const;
     bool ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory, const Location& loc) const;
+    bool ValidateTaskMemorySize(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+                                uint32_t total_workgroup_shared_memory, uint32_t total_task_payload_memory,
+                                const Location& loc) const;
+    bool ValidateMeshMemorySize(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage, uint32_t total_output_memory,
+                                uint32_t total_workgroup_shared_memory, uint32_t total_task_payload_memory,
+                                const Location& loc) const;
     bool ValidateShaderTileImage(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                  const StageCreateInfo& create_info, const VkShaderStageFlagBits stage, const Location& loc) const;
     bool ValidateAtomicsTypes(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;

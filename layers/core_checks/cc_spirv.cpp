@@ -1491,11 +1491,6 @@ bool CoreChecks::ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE &module_
                                                uint32_t total_workgroup_shared_memory, const Location &loc) const {
     bool skip = false;
 
-    // If not found before with spec constants, find here
-    if (total_workgroup_shared_memory == 0) {
-        total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory();
-    }
-
     switch (stage) {
         case VK_SHADER_STAGE_COMPUTE_BIT: {
             if (total_workgroup_shared_memory > phys_dev_props.limits.maxComputeSharedMemorySize) {
@@ -1527,6 +1522,64 @@ bool CoreChecks::ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE &module_
         default:
             assert(false);  // other stages should not have called this function
             break;
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateTaskMemorySize(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+                                        uint32_t total_workgroup_shared_memory, uint32_t total_task_payload_memory,
+                                        const Location &loc) const {
+    bool skip = false;
+
+    if (total_task_payload_memory + total_workgroup_shared_memory >
+        phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadAndSharedMemorySize) {
+        skip |=
+            LogError("VUID-RuntimeSpirv-maxTaskPayloadAndSharedMemorySize-08760", module_state.handle(), loc,
+                     "SPIR-V uses %" PRIu32
+                     " bytes of task payload or shared memory, which is more than maxTaskPayloadAndSharedMemorySize (%" PRIu32 ").",
+                     total_task_payload_memory + total_workgroup_shared_memory,
+                     phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadAndSharedMemorySize);
+    }
+    if (total_task_payload_memory > phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadSize) {
+        skip |=
+            LogError("VUID-RuntimeSpirv-maxTaskPayloadSize-08758", module_state.handle(), loc,
+                     "SPIR-V uses %" PRIu32 " bytes of task payload memory, which is more than maxTaskPayloadSize (%" PRIu32 ").",
+                     total_workgroup_shared_memory, phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadSize);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateMeshMemorySize(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+                                        uint32_t total_output_memory, uint32_t total_workgroup_shared_memory,
+                                        uint32_t total_task_payload_memory, const Location &loc) const {
+    bool skip = false;
+
+    if (total_task_payload_memory + total_workgroup_shared_memory >
+        phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndSharedMemorySize) {
+        skip |=
+            LogError("VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755", module_state.handle(), loc,
+                     "SPIR-V uses %" PRIu32
+                     " bytes of task payload or shared memory, which is more than maxMeshPayloadAndSharedMemorySize (%" PRIu32 ").",
+                     total_task_payload_memory + total_workgroup_shared_memory,
+                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndSharedMemorySize);
+    }
+    if (total_task_payload_memory + total_output_memory >
+        phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndOutputMemorySize) {
+        skip |=
+            LogError("VUID-RuntimeSpirv-maxMeshPayloadAndOutputMemorySize-08757", module_state.handle(), loc,
+                     "SPIR-V uses %" PRIu32
+                     " bytes of task payload or output memory, which is more than maxMeshPayloadAndOutputMemorySize (%" PRIu32 ").",
+                     total_task_payload_memory + total_output_memory,
+                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndOutputMemorySize);
+    }
+
+    if (total_output_memory > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputMemorySize) {
+        skip |=
+            LogError("VUID-RuntimeSpirv-maxMeshOutputMemorySize-08756", module_state.handle(), loc,
+                     "SPIR-V uses %" PRIu32 " bytes of output memory, which is more than maxMeshOutputMemorySize (%" PRIu32 ").",
+                     total_output_memory, phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputMemorySize);
     }
 
     return skip;
@@ -2095,6 +2148,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
     uint32_t total_workgroup_shared_memory = 0;
+    uint32_t total_task_payload_memory = 0;
+    uint32_t total_mesh_output_memory = 0;
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.static_data_.has_specialization_constants) {
@@ -2230,6 +2285,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
             spec_mod.FindLocalSize(*spec_entrypoint, local_size_x, local_size_y, local_size_z);
 
             total_workgroup_shared_memory = spec_mod.CalculateWorkgroupSharedMemory();
+            if ((stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT)) {
+                total_task_payload_memory = spec_mod.CalculateTaskPayloadMemory();
+            }
+            if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+                total_mesh_output_memory = spec_mod.CalculateMeshOutputMemory(phys_dev_ext_props.mesh_shader_props_ext, entrypoint,
+                                                                              module_state.static_data_.builtin_decoration_inst);
+            }
 
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
@@ -2291,6 +2353,16 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     }
 
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+        if (total_workgroup_shared_memory == 0) {
+            total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory();
+        }
+        if ((stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) && total_task_payload_memory == 0) {
+            total_task_payload_memory = module_state.CalculateTaskPayloadMemory();
+        }
+        if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && total_mesh_output_memory == 0) {
+            total_mesh_output_memory = module_state.CalculateMeshOutputMemory(phys_dev_ext_props.mesh_shader_props_ext, entrypoint,
+                                                                              module_state.static_data_.builtin_decoration_inst);
+        }
         // If spec constants were used then the local size are already found if possible
         if (local_size_x == 0) {
             module_state.FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z);
@@ -2337,6 +2409,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
             ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z, loc);
         if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
             skip |= ValidateEmitMeshTasksSize(module_state, entrypoint, stage_state, loc);
+            skip |= ValidateTaskMemorySize(module_state, stage, total_workgroup_shared_memory, total_task_payload_memory, loc);
+        } else {
+            skip |= ValidateMeshMemorySize(module_state, stage, total_mesh_output_memory, total_workgroup_shared_memory,
+                                           total_task_payload_memory, loc);
         }
     }
 

@@ -49,6 +49,7 @@ struct DecorationBase {
         input_attachment_bit = 1 << 8,
         per_task_nv = 1 << 9,
         per_primitive_ext = 1 << 10,
+        per_view_bit = 1 << 11,
     };
 
     // bits to know if things have been set or not by a Decoration
@@ -252,7 +253,9 @@ struct StageInteraceVariable : public VariableBase {
     // Only will be true in BuiltIns
     const bool is_patch;
     const bool is_per_vertex;   // VK_KHR_fragment_shader_barycentric
+    const bool is_per_primitive;
     const bool is_per_task_nv;  // VK_NV_mesh_shader
+    const bool is_per_view;
 
     const bool is_array_interface;
     uint32_t array_size = 1;  // flatten size of all dimensions; 1 if no array
@@ -269,6 +272,7 @@ struct StageInteraceVariable : public VariableBase {
 
   protected:
     static bool IsPerTaskNV(const StageInteraceVariable &variable);
+    static bool IsPerPrimitiveEXT(const StageInteraceVariable &variable);
     static bool IsArrayInterface(const StageInteraceVariable &variable);
     static const Instruction &FindBaseType(StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
     static bool IsBuiltin(const StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
@@ -566,6 +570,10 @@ struct SPIRV_MODULE_STATE {
     bool FindLocalSize(const EntryPoint &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
 
     uint32_t CalculateWorkgroupSharedMemory() const;
+    uint32_t CalculateTaskPayloadMemory() const;
+    uint32_t CalculateMeshOutputMemory(const VkPhysicalDeviceMeshShaderPropertiesEXT &mesh_shader_properties,
+                                       const EntryPoint &entrypoint,
+                                       std::vector<const Instruction *> builtin_decoration_inst) const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;

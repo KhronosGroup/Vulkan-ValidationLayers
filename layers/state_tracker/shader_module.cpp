@@ -64,10 +64,14 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationPerPrimitiveEXT:  // VK_EXT_mesh_shader
             flags |= per_primitive_ext;
             break;
+        case spv::DecorationPerViewNV:
+            flags |= per_view_bit;
+            break;
         case spv::DecorationOffset:
             offset |= value;
             break;
         default:
+            location = location;
             break;
     }
 }
@@ -1160,6 +1164,100 @@ uint32_t SPIRV_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
     return total_size;
 }
 
+uint32_t SPIRV_MODULE_STATE::CalculateTaskPayloadMemory() const {
+    uint32_t total_size = 0;
+
+    for (const Instruction* insn : static_data_.variable_inst) {
+        // StorageClass Workgroup is shared memory
+        if (insn->StorageClass() == spv::StorageClassTaskPayloadWorkgroupEXT) {
+            const uint32_t result_type_id = insn->Word(1);
+            const Instruction* result_type = FindDef(result_type_id);
+            const Instruction* type = FindDef(result_type->Word(3));
+            const uint32_t variable_shared_size = GetTypeBytesSize(type);
+
+            total_size += variable_shared_size;
+        }
+    }
+    return total_size;
+}
+
+uint32_t SPIRV_MODULE_STATE::CalculateMeshOutputMemory(const VkPhysicalDeviceMeshShaderPropertiesEXT& mesh_shader_properties,
+                                                       const EntryPoint& entrypoint,
+                                                       std::vector<const Instruction*> builtin_decoration_inst) const {
+    // Number of effective scalar per vertex attributes not dependent on ViewIndex
+    uint32_t vertex_attributes_size = 0u;
+    // Number of effective scalar per vertex attributes dependent on ViewIndex
+    uint32_t vertex_attributes_per_view_size = 0u;
+    // Number of views
+    uint32_t views = 1u;
+    // Maximum number of vertices specified by the OutputVertices Execution Mode
+    uint32_t number_of_vertices = entrypoint.execution_mode.output_vertices;
+    uint32_t vertex_granularity = mesh_shader_properties.meshOutputPerVertexGranularity;
+    // Number of effective scalar per primitive attributes not dependent on ViewIndex
+    uint32_t primitive_attributes_size = 0u;
+    // Number of effective scalar per primitive attributes dependent on ViewIndex
+    uint32_t primitive_attributes_per_view_size = 0u;
+    // Maximum number of primitives specified by the OutputPrimitivesEXT ExecutionMode
+    uint32_t number_of_primitives = entrypoint.execution_mode.output_primitives;
+    uint32_t primitive_granularity = mesh_shader_properties.meshOutputPerPrimitiveGranularity;
+
+    for (const Instruction* decoration_inst : builtin_decoration_inst) {
+        if (decoration_inst->GetBuiltIn() == spv::BuiltInMeshViewCountNV) {
+            views = decoration_inst->Word(1);
+        }
+    }
+
+    for (const auto& variable : entrypoint.stage_interface_variables) {
+        for (const auto& slot : variable.interface_slots) {
+            uint32_t size = slot.bit_width / 8u;
+            if (variable.is_per_view) {
+                if (variable.is_per_primitive) {
+                    primitive_attributes_per_view_size += size;
+                } else {
+                    vertex_attributes_per_view_size += size;
+                }
+            } else {
+                if (variable.is_per_primitive) {
+                    primitive_attributes_size += size;
+                } else {
+                    vertex_attributes_size += size;
+                }
+            }
+        }
+        if (variable.interface_slots.empty()) {
+            uint32_t size = variable.array_size;
+            if (variable.base_type.Opcode() == spv::OpTypeStruct) {
+                uint32_t member_bytes = 0;
+                for (const auto& member : variable.type_struct_info->members) {
+                    member_bytes += member.insn->GetByteWidth();
+                }
+                size *= member_bytes;
+            } else {
+                size *= variable.base_type.GetByteWidth();
+            }
+            if (variable.is_per_view) {
+                if (variable.is_per_primitive) {
+                    primitive_attributes_per_view_size += size;
+                } else {
+                    vertex_attributes_per_view_size += size;
+                }
+            } else {
+                if (variable.is_per_primitive) {
+                    primitive_attributes_size += size;
+                } else {
+                    vertex_attributes_size += size;
+                }
+            }
+        }
+    }
+
+    const auto align = [](int value, int granularity) { return (value + granularity - 1) / granularity * granularity; };
+    return (vertex_attributes_size + (vertex_attributes_per_view_size * views)) * 4 *
+               align(number_of_vertices, vertex_granularity) +
+           (primitive_attributes_size + (primitive_attributes_per_view_size * views)) * 4 *
+               align(number_of_primitives, primitive_granularity);
+}
+
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
 const Instruction* SPIRV_MODULE_STATE::GetConstantDef(uint32_t id) const {
@@ -1499,6 +1597,14 @@ bool StageInteraceVariable::IsPerTaskNV(const StageInteraceVariable& variable) {
     return false;
 }
 
+bool StageInteraceVariable::IsPerPrimitiveEXT(const StageInteraceVariable& variable) {
+    // will always be in a struct member
+    if (variable.type_struct_info && (variable.stage == VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        return variable.type_struct_info->decorations.HasInMember(DecorationSet::per_primitive_ext);
+    }
+    return false;
+}
+
 // Some cases there is an array that is there to be "per-vertex" (or related)
 // We want to remove this as it is not part of the Location caluclation or true type of variable
 bool StageInteraceVariable::IsArrayInterface(const StageInteraceVariable& variable) {
@@ -1719,7 +1825,9 @@ StageInteraceVariable::StageInteraceVariable(const SPIRV_MODULE_STATE& module_st
     : VariableBase(module_state, insn, stage),
       is_patch(decorations.Has(DecorationSet::patch_bit)),
       is_per_vertex(decorations.Has(DecorationSet::per_vertex_bit)),
+      is_per_primitive(IsPerPrimitiveEXT(*this)),
       is_per_task_nv(IsPerTaskNV(*this)),
+      is_per_view(decorations.Has(DecorationSet::per_view_bit)),
       is_array_interface(IsArrayInterface(*this)),
       base_type(FindBaseType(*this, module_state)),
       is_builtin(IsBuiltin(*this, module_state)),
