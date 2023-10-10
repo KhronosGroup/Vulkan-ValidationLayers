@@ -301,3 +301,61 @@ TEST_F(PositiveMesh, MeshPerTaskNV) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveMesh, TaskSharedMemory) {
+    TEST_DESCRIPTION("Validate Task shader shared memory limit");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
+        GTEST_SKIP() << "Mesh and Task shader not supported";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    RETURN_IF_SKIP(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    const uint32_t max_shared_memory_size = mesh_shader_properties.maxTaskSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    VkShaderObj mesh(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+
+    std::stringstream task_source;
+    task_source << R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout (constant_id = 0) const int v = )glsl";
+    task_source << (max_shared_ints + 16);
+    task_source << R"glsl(;
+        shared int a[v];
+        void main(){}
+    )glsl";
+
+    VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+
+    int data = max_shared_ints;
+
+    VkSpecializationMapEntry map_entry = {};
+    map_entry.constantID = 0u;
+    map_entry.offset = 0u;
+    map_entry.size = sizeof(int);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &map_entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+        helper.shader_stages_[0].pSpecializationInfo = &specialization_info;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}

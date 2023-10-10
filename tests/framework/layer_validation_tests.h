@@ -507,7 +507,10 @@ class ShaderLimitsTest : public VkLayerTest {};
 class NegativeShaderLimits : public ShaderLimitsTest {};
 class PositiveShaderLimits : public ShaderLimitsTest {};
 
-class NegativeShaderMesh : public VkLayerTest {};
+class NegativeShaderMesh : public VkLayerTest {
+  public:
+    void InitBasicMeshShader(void *pNextFeatures = nullptr);
+};
 
 class ShaderPushConstantsTest : public VkLayerTest {};
 class NegativeShaderPushConstants : public ShaderPushConstantsTest {};
