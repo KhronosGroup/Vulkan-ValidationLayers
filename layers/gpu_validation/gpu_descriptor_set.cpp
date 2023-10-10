@@ -160,6 +160,9 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::BufferDescri
 
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::TexelDescriptor &desc) {
     auto buffer_view_state = static_cast<const gpuav_state::BufferView *>(desc.GetBufferViewState());
+    if (!buffer_view_state) {
+        return gpuav_glsl::DescriptorState(DescriptorClass::TexelBuffer, gpuav_glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+    }
     auto view_size = buffer_view_state->Size();
     uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
     return gpuav_glsl::DescriptorState(DescriptorClass::TexelBuffer, buffer_view_state->id, res_size);
@@ -167,7 +170,8 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::TexelDescrip
 
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::ImageDescriptor &desc) {
     auto image_state = static_cast<const gpuav_state::ImageView *>(desc.GetImageViewState());
-    return gpuav_glsl::DescriptorState(DescriptorClass::Image, image_state->id);
+    return gpuav_glsl::DescriptorState(DescriptorClass::Image,
+                                       image_state ? image_state->id : gpuav_glsl::kDebugInputBindlessSkipId);
 }
 
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::SamplerDescriptor &desc) {
@@ -178,17 +182,19 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::SamplerDescr
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::ImageSamplerDescriptor &desc) {
     auto image_state = static_cast<const gpuav_state::ImageView *>(desc.GetImageViewState());
     auto sampler_state = static_cast<const gpuav_state::Sampler *>(desc.GetSamplerState());
-    return gpuav_glsl::DescriptorState(DescriptorClass::ImageSampler, image_state ? image_state->id : 0, sampler_state ? sampler_state->id : 0);
+    return gpuav_glsl::DescriptorState(DescriptorClass::ImageSampler,
+                                       image_state ? image_state->id : gpuav_glsl::kDebugInputBindlessSkipId,
+                                       sampler_state ? sampler_state->id : 0);
 }
 
 static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::AccelerationStructureDescriptor &ac) {
     uint32_t id;
     if (ac.is_khr()) {
         auto ac_state = static_cast<const gpuav_state::AccelerationStructureKHR *>(ac.GetAccelerationStructureStateKHR());
-        id = ac_state->id;
+        id = ac_state ? ac_state->id : gpuav_glsl::kDebugInputBindlessSkipId;
     } else {
         auto ac_state = static_cast<const gpuav_state::AccelerationStructureNV *>(ac.GetAccelerationStructureStateNV());
-        id = ac_state->id;
+        id = ac_state ? ac_state->id : gpuav_glsl::kDebugInputBindlessSkipId;
     }
     return gpuav_glsl::DescriptorState(DescriptorClass::AccelerationStructure, id);
 }
@@ -206,6 +212,9 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::MutableDescr
         }
         case DescriptorClass::TexelBuffer: {
             auto buffer_view_state = std::static_pointer_cast<const gpuav_state::BufferView>(desc.GetSharedBufferViewState());
+            if (!buffer_view_state) {
+                return gpuav_glsl::DescriptorState(desc_class, gpuav_glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+            }
             auto view_size = buffer_view_state->Size();
             uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
             return gpuav_glsl::DescriptorState(desc_class, buffer_view_state->id, res_size);
@@ -217,20 +226,22 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::MutableDescr
         case DescriptorClass::ImageSampler: {
             auto image_state = std::static_pointer_cast<const gpuav_state::ImageView>(desc.GetSharedImageViewState());
             auto sampler_state = std::static_pointer_cast<const gpuav_state::Sampler>(desc.GetSharedSamplerState());
-            return gpuav_glsl::DescriptorState(desc_class, image_state ? image_state->id : 0, sampler_state ? sampler_state->id : 0);
+            // image can be null in some cases, but the sampler can't
+            return gpuav_glsl::DescriptorState(desc_class, image_state ? image_state->id : gpuav_glsl::kDebugInputBindlessSkipId,
+                                               sampler_state ? sampler_state->id : 0);
         }
         case DescriptorClass::Image: {
             auto image_state = std::static_pointer_cast<const gpuav_state::ImageView>(desc.GetSharedImageViewState());
-            return gpuav_glsl::DescriptorState(desc_class, image_state->id);
+            return gpuav_glsl::DescriptorState(desc_class, image_state ? image_state->id : gpuav_glsl::kDebugInputBindlessSkipId);
         }
         case DescriptorClass::AccelerationStructure: {
             uint32_t id;
             if (desc.IsAccelerationStructureKHR()) {
                 auto ac_state = static_cast<const gpuav_state::AccelerationStructureKHR *>(desc.GetAccelerationStructureStateKHR());
-                id = ac_state->id;
+                id = ac_state ? ac_state->id : gpuav_glsl::kDebugInputBindlessSkipId;
             } else {
                 auto ac_state = static_cast<const gpuav_state::AccelerationStructureNV *>(desc.GetAccelerationStructureStateNV());
-                id = ac_state->id;
+                id = ac_state ? ac_state->id : gpuav_glsl::kDebugInputBindlessSkipId;
             }
             return gpuav_glsl::DescriptorState(desc_class, id);
         }
