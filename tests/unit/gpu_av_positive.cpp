@@ -576,10 +576,6 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
     auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&maintenance4_features);
