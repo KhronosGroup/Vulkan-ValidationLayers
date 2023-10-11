@@ -190,7 +190,7 @@ TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
 
     VkCommandPool secondary_cmd_pool;
     VkResult res = vk::CreateCommandPool(m_device->handle(), &cmd_pool_info, NULL, &secondary_cmd_pool);
-    ASSERT_VK_SUCCESS(res);
+    ASSERT_EQ(VK_SUCCESS, res);
 
     VkCommandBufferAllocateInfo cmdalloc = vkt::CommandBuffer::create_info(secondary_cmd_pool);
     cmdalloc.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
@@ -211,7 +211,7 @@ TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
     secondary_begin.pInheritanceInfo = &cmd_buf_inheritance_info;
 
     res = vk::BeginCommandBuffer(secondary_cmds, &secondary_begin);
-    ASSERT_VK_SUCCESS(res);
+    ASSERT_EQ(VK_SUCCESS, res);
     vk::EndCommandBuffer(secondary_cmds);
 
     m_commandBuffer->begin();
@@ -222,7 +222,7 @@ TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
     vk::DestroyCommandPool(m_device->handle(), secondary_cmd_pool, NULL);
     // If bookkeeping has been lax, validating the reset will attempt to touch deleted data
     res = vk::ResetCommandPool(m_device->handle(), m_commandPool->handle(), 0);
-    ASSERT_VK_SUCCESS(res);
+    ASSERT_EQ(VK_SUCCESS, res);
 }
 
 TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
@@ -236,7 +236,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
     command_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_command_buffer;
-    ASSERT_VK_SUCCESS(vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_inheritance_info.renderPass = m_renderPass;
@@ -754,12 +754,12 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
         constexpr int iteration_count = 1000;
         for (int frame = 0; frame < iteration_count; frame++) {
             std::array<VkCommandBuffer, command_buffers_per_pool> command_buffers;
-            ASSERT_VK_SUCCESS(vk::AllocateCommandBuffers(m_device->device(), &commands_allocate_info, command_buffers.data()));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(m_device->device(), &commands_allocate_info, command_buffers.data()));
             for (int i = 0; i < command_buffers_per_pool; i++) {
-                ASSERT_VK_SUCCESS(vk::BeginCommandBuffer(command_buffers[i], &begin_info));
+                ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(command_buffers[i], &begin_info));
                 // Record debug label. It's a required step to reproduce the original issue
                 vk::CmdInsertDebugUtilsLabelEXT(command_buffers[i], &label);
-                ASSERT_VK_SUCCESS(vk::EndCommandBuffer(command_buffers[i]));
+                ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(command_buffers[i]));
             }
             vk::FreeCommandBuffers(m_device->device(), pool.handle(), command_buffers_per_pool, command_buffers.data());
         }

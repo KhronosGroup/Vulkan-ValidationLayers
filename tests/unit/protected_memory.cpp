@@ -578,7 +578,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         pre_raster_lib.InitPreRasterLibInfo(&stage_ci);
         pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         pre_raster_lib.InitState();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, pre_raster_lib.CreateGraphicsPipeline());
 
         VkPipeline libraries[1] = {
             pre_raster_lib.pipeline_,
@@ -603,7 +603,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         protected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         protected_pre_raster_lib.InitState();
         protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
-        ASSERT_VK_SUCCESS(protected_pre_raster_lib.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, protected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = protected_pre_raster_lib.pipeline_;
         VkGraphicsPipelineCreateInfo protected_lib_ci = vku::InitStructHelper(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
@@ -616,7 +616,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         unprotected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         unprotected_pre_raster_lib.InitState();
         unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
-        ASSERT_VK_SUCCESS(unprotected_pre_raster_lib.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, unprotected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = unprotected_pre_raster_lib.pipeline_;
         VkGraphicsPipelineCreateInfo unprotected_lib_ci = vku::InitStructHelper(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");
@@ -948,7 +948,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 

@@ -83,7 +83,7 @@ void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const 
 
     VkCommandBuffer secondary_cmd_buffer;
     VkResult err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-06003");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-colorAttachmentCount-06004");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-variableMultisampleRate-06005");
@@ -578,7 +578,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                 renderpass_image_views[0] = depth_image_view.handle();
 
                 const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[0]);
-                ASSERT_VK_SUCCESS(err);
+                ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[0];
                 m_commandBuffer->BeginRenderPass(renderpass_bi);
             }
@@ -614,7 +614,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                 renderpass_image_views[0] = stencil_image_view.handle();
 
                 const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[1]);
-                ASSERT_VK_SUCCESS(err);
+                ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[1];
                 m_commandBuffer->BeginRenderPass(renderpass_bi);
             }
@@ -641,7 +641,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
         {
             if (!use_dynamic_rendering) {
                 const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[2]);
-                ASSERT_VK_SUCCESS(err);
+                ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[2];
             }
 
@@ -739,7 +739,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                 cmd_buffer_inheritance_info.pNext = &inheritance_rendering_info;
             } else {
                 const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[3]);
-                ASSERT_VK_SUCCESS(err);
+                ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[3];
                 cmd_buffer_inheritance_info.renderPass = renderpass.handle();
                 cmd_buffer_inheritance_info.subpass = 0;
@@ -1839,7 +1839,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
 
     VkCommandBuffer secondary_cmd_buffer;
     VkResult err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // Invalid RenderPass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-06000");

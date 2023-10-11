@@ -114,7 +114,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
 
     // Create a device with a single queue family
     VkDevice second_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &dev_info, nullptr, &second_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &dev_info, nullptr, &second_device));
 
     // Select Queue family for CONCURRENT buffer that is not owned by device
     buffCI.queueFamilyIndexCount = 2;

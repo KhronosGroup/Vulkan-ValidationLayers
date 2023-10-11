@@ -102,7 +102,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 3, descriptor_sets);
 
     vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
@@ -149,7 +149,7 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
 
     VkBuffer buffer;
     VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkMemoryRequirements memory_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &memory_reqs);
@@ -167,10 +167,10 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
 
     VkDeviceMemory buffer_memory;
     err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &buffer_memory);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
     vk::FreeMemory(m_device->device(), buffer_memory, NULL);
@@ -240,7 +240,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
     VkDevice device;
     err = vk::CreateDevice(gpu(), &dev_info, nullptr, &device);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     if (features2.features.samplerAnisotropy) {
         // Test that the parameter layer is caching the features correctly using CreateSampler
@@ -251,7 +251,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
         VkSampler sampler = VK_NULL_HANDLE;
         err = vk::CreateSampler(device, &sampler_ci, nullptr, &sampler);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
         vk::DestroySampler(device, sampler, nullptr);
     } else {
         printf("Feature samplerAnisotropy not enabled;  parameter_layer check skipped.\n");
@@ -264,7 +264,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         qpci.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
         qpci.queryCount = 1;
         err = vk::CreateQueryPool(device, &qpci, nullptr, &query_pool);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         vk::DestroyQueryPool(device, query_pool, nullptr);
     } else {
@@ -457,7 +457,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     buffer_alloc_info.pNext = &alloc_flags;
     VkDeviceMemory buffer_mem;
     VkResult err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, NULL, &buffer_mem);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
 
     VkBufferDeviceAddressInfo bda_info = vku::InitStructHelper();
@@ -526,7 +526,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
             si.commandBufferCount = 1;
             si.pCommandBuffers = &mock_cmdbuff.handle();
             queue_mutex.lock();
-            ASSERT_VK_SUCCESS(vk::QueueSubmit(queue_h, 1, &si, VK_NULL_HANDLE));
+            ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(queue_h, 1, &si, VK_NULL_HANDLE));
             queue_mutex.unlock();
         }
     };
@@ -534,7 +534,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     const auto &testing_thread3 = [&]() {
         for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
             queue_mutex.lock();
-            ASSERT_VK_SUCCESS(vk::QueueWaitIdle(queue_h));
+            ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(queue_h));
             queue_mutex.unlock();
         }
     };
@@ -569,7 +569,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     auto ici = GetInstanceCreateInfo();
 
     VkInstance test_instance = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &test_instance));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &test_instance));
     for (const char *instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(test_instance, instance_ext_name);
     }
@@ -650,7 +650,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
 
         VkDeviceMemory memory;
         const VkResult err = vk::AllocateMemory(device, &mem_info, NULL, &memory);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkExportMetalBufferInfoEXT bufferInfo = vku::InitStructHelper();
         bufferInfo.memory = memory;
@@ -885,7 +885,7 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     VkDebugUtilsMessengerCreateInfoEXT dbgUtils1 = vku::InitStructHelper(&dbgUtils0);
     ici.pNext = &dbgUtils1;
 
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance));
 
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance, nullptr));
 }

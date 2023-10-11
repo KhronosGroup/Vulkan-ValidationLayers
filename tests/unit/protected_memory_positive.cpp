@@ -82,7 +82,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     device_create_info.pEnabledFeatures = nullptr;
     device_create_info.enabledLayerCount = 0;
     device_create_info.enabledExtensionCount = 0;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device));
 
     VkQueue test_queue_protected = VK_NULL_HANDLE;
     VkQueue test_queue_unprotected = VK_NULL_HANDLE;

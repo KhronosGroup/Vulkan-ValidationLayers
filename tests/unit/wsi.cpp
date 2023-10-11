@@ -644,9 +644,9 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
-    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
     VkSurfaceCapabilitiesKHR caps;
-    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
 
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
     std::vector<vkt::Fence> fences(acquirable_count);
@@ -791,9 +791,9 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
 
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
-    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
     VkSurfaceCapabilitiesKHR caps;
-    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
 
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
     std::vector<vkt::Fence> fences(acquirable_count);
@@ -1468,13 +1468,13 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249");
     vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), plane_prop_count, &plane_count, nullptr);
     m_errorMonitor->VerifyFound();
-    ASSERT_VK_SUCCESS(vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, nullptr));
     if (plane_count == 0) {
         GTEST_SKIP() << "test requires at least 1 supported display plane";
     }
     std::vector<VkDisplayKHR> supported_displays(plane_count);
     plane_count = 1;
-    ASSERT_VK_SUCCESS(vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, supported_displays.data()));
+    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, supported_displays.data()));
     if (supported_displays[0] != current_display) {
         GTEST_SKIP() << "Current VkDisplayKHR used is not supported";
     }
@@ -1496,7 +1496,7 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     }
 
     VkDisplayPlaneCapabilitiesKHR plane_capabilities;
-    ASSERT_VK_SUCCESS(vk::GetDisplayPlaneCapabilitiesKHR(gpu(), display_mode, 0, &plane_capabilities));
+    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneCapabilitiesKHR(gpu(), display_mode, 0, &plane_capabilities));
 
     VkSurfaceKHR surface;
     VkDisplaySurfaceCreateInfoKHR display_surface_info = vku::InitStructHelper();

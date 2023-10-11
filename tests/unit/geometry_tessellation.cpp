@@ -45,12 +45,12 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
 
     VkCommandBuffer cmd_buffer;
     VkResult err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkEvent event;
     VkEventCreateInfo evci = vku::InitStructHelper();
     VkResult result = vk::CreateEvent(test_device.handle(), &evci, NULL, &event);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     vk::BeginCommandBuffer(cmd_buffer, &cbbi);
@@ -988,14 +988,14 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
     VkDescriptorSet descriptorSet;
     err = vk::AllocateDescriptorSets(m_device->device(), ds_pool.handle(),
 VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.pNext = NULL;
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkPipelineShaderStageCreateInfo shaderStages[3];
     memset(&shaderStages, 0, 3 * sizeof(VkPipelineShaderStageCreateInfo));
@@ -1046,7 +1046,7 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
 
     err = vk::CreatePipelineCache(m_device->device(), &pc_ci, NULL,
 &pipelineCache);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     err = vk::CreateGraphicsPipelines(m_device->device(), pipelineCache, 1,
 &gp_ci, NULL, &pipeline);
 

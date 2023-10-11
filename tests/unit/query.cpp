@@ -182,7 +182,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
@@ -191,7 +191,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         m_commandBuffer->begin();
@@ -227,7 +227,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
@@ -236,7 +236,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         m_commandBuffer->begin();
@@ -474,7 +474,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
@@ -483,7 +483,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         m_commandBuffer->reset();
@@ -630,7 +630,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
@@ -639,7 +639,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         alloc_info.allocationSize = mem_reqs.size;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
@@ -874,7 +874,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
@@ -883,7 +883,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
@@ -1059,7 +1059,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice second_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-queryPool-parent");
     // Run vk::ResetQueryPoolExt on the wrong device.
@@ -1078,7 +1078,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     qpci.queryCount = 1;
     VkResult result = vk::CreateQueryPool(m_device->device(), &qpci, nullptr, &query_pool);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
 
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
@@ -1136,7 +1136,7 @@ TEST_F(NegativeQuery, PoolCreate) {
     device_create_info.enabledExtensionCount = m_device_extension_names.size();
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
     VkResult err = vk::CreateDevice(gpu(), &device_create_info, nullptr, &local_device);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
     qpci.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
@@ -1316,11 +1316,11 @@ TEST_F(NegativeQuery, PreciseBit) {
 
     VkCommandBuffer cmd_buffer;
     VkResult err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkCommandBuffer cmd_buffer2;
     err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer2);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkEvent event;
     VkEventCreateInfo event_create_info = vku::InitStructHelper();

@@ -144,7 +144,7 @@ TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-descriptorPool-00312");
     vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &descriptorSet);
@@ -633,7 +633,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
@@ -1629,12 +1629,12 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     alloc_info.descriptorSetCount = ds_vk_layouts.size();
     alloc_info.pSetLayouts = ds_vk_layouts.data();
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptorSet);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     VkDescriptorSet ds0_fs_only = {};
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = &ds_layout_fs_only.handle();
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &ds0_fs_only);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layouts[0], &ds_layouts[1]});
     // Create pipelineLayout with only one setLayout
@@ -1982,7 +1982,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
             continue;
         }
         VkResult err = vk::BindBufferMemory(m_device->device(), buffer.handle(), mem.handle(), 0);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkDescriptorBufferInfo buff_info = {};
         buff_info.buffer = buffer.handle();
@@ -2658,7 +2658,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     alloc_info.descriptorPool = pool.handle();
     alloc_info.pSetLayouts = set_layouts;
     VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // Test invalid VkWriteDescriptorSet parameters (array element and size must be multiple of 4)
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -3153,7 +3153,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     g_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     g_pipe.gp_ci_.renderPass = rp.handle();
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
     // input attachment and combined image sampler use the same view to cause DesiredFailure.
@@ -3522,7 +3522,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
 
     VkDescriptorSet descriptor_set;
     VkResult err = vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -4303,7 +4303,7 @@ TEST_F(NegativeDescriptors, AllocatingVariableDescriptorSets) {
 
     VkDescriptorSet ds;
     VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
@@ -4978,7 +4978,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);

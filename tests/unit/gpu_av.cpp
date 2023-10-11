@@ -1744,7 +1744,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 
     if (!IsDriver(VK_DRIVER_ID_MESA_RADV) && features13.dynamicRendering) {
@@ -1759,7 +1759,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1841,7 +1841,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     vkt::Fence null_fence;
     // use vkQueueSumit2
     m_commandBuffer->QueueCommandBuffer(null_fence, true, true);
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 }
 
@@ -2513,7 +2513,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
@@ -2530,7 +2530,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 }
 
@@ -2631,7 +2631,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, vi.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
@@ -2655,7 +2655,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     frag_out.InitFragmentOutputLibInfo();
     frag_out.gp_ci_.renderPass = render_pass;
     frag_out.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -2811,7 +2811,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, vi.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
@@ -2852,7 +2852,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -3012,7 +3012,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
@@ -3029,6 +3029,6 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 }

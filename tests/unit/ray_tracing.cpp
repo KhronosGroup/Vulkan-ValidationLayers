@@ -770,11 +770,11 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         pipeline_ci.layout = test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle();
 
         VkPipeline pipeline = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
+        ASSERT_EQ(VK_SUCCESS, vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
 
         std::vector<uint8_t> shader_binding_table_data;
         shader_binding_table_data.resize(static_cast<std::size_t>(shader_binding_table_buffer_size), 0);
-        ASSERT_VK_SUCCESS(vkGetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
+        ASSERT_EQ(VK_SUCCESS, vkGetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
                                                               static_cast<std::size_t>(shader_binding_table_buffer_size),
                                                               shader_binding_table_data.data()));
 
@@ -2116,7 +2116,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
 
         const VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
                                                                  &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
-        ASSERT_VK_SUCCESS(result);
+        ASSERT_EQ(VK_SUCCESS, result);
     }
 
     vkt::Buffer buffer;
@@ -3946,7 +3946,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
     // Can not bind already freed memory
     {
         VkDeviceMemory as_memory_freed = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_freed));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_freed));
         vk::FreeMemory(device(), as_memory_freed, NULL);
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_freed = as_bind_info;
@@ -3963,7 +3963,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         as_memory_alloc_bad_alignment.allocationSize += 1;
 
         VkDeviceMemory as_memory_bad_alignment = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc_bad_alignment, NULL, &as_memory_bad_alignment));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc_bad_alignment, NULL, &as_memory_bad_alignment));
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_alignment = as_bind_info;
         as_bind_info_bad_alignment.memory = as_memory_bad_alignment;
@@ -3979,7 +3979,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
     // Can not bind with offset outside the allocation
     {
         VkDeviceMemory as_memory_bad_offset = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_offset = as_bind_info;
         as_bind_info_bad_offset.memory = as_memory_bad_offset;
@@ -3998,7 +3998,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         VkDeviceSize offset = (as_memory_requirements.size - 1) & ~(as_memory_requirements.alignment - 1);
         if (offset > 0 && (as_memory_requirements.size < (as_memory_alloc.allocationSize - as_memory_requirements.alignment))) {
             VkDeviceMemory as_memory_bad_offset = VK_NULL_HANDLE;
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
 
             VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_offset = as_bind_info;
             as_bind_info_bad_offset.memory = as_memory_bad_offset;
@@ -4024,7 +4024,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
             ASSERT_TRUE(m_device->phy().set_memory_type(unsupported_mem_type_bits, &as_memory_alloc_bad_type, 0));
 
             VkDeviceMemory as_memory_bad_type = VK_NULL_HANDLE;
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc_bad_type, NULL, &as_memory_bad_type));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc_bad_type, NULL, &as_memory_bad_type));
 
             VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_type = as_bind_info;
             as_bind_info_bad_type.memory = as_memory_bad_type;
@@ -4043,8 +4043,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
 
         VkDeviceMemory as_memory_twice_1 = VK_NULL_HANDLE;
         VkDeviceMemory as_memory_twice_2 = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_twice_1));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_twice_2));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_twice_1));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_twice_2));
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_twice_1 = as_bind_info;
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_twice_2 = as_bind_info;
         as_bind_info_twice_1.accelerationStructure = as_twice.handle();
@@ -4052,7 +4052,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         as_bind_info_twice_1.memory = as_memory_twice_1;
         as_bind_info_twice_2.memory = as_memory_twice_2;
 
-        ASSERT_VK_SUCCESS(vk::BindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_1));
+        ASSERT_EQ(VK_SUCCESS, vk::BindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_1));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-03620");
         vk::BindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_2);
         m_errorMonitor->VerifyFound();

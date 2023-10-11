@@ -5690,7 +5690,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler_reduction.handle());
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -5782,7 +5782,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler.handle());
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -7176,7 +7176,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageFormatProperties image_format_properties{};
-    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), m_renderTargets[0]->format(),
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), m_renderTargets[0]->format(),
                                                                  VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                                  m_renderTargets[0]->usage(), 0, &image_format_properties));
     if (image_format_properties.maxArrayLayers < 4) {

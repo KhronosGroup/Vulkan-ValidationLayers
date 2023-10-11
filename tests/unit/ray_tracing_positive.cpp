@@ -212,7 +212,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
 
         const VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
                                                                  &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
-        ASSERT_VK_SUCCESS(result);
+        ASSERT_EQ(VK_SUCCESS, result);
     }
 
     vkt::Buffer buffer;

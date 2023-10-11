@@ -1866,7 +1866,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
 
     VkCommandBuffer sec_cb;
     auto err = vk::AllocateCommandBuffers(m_device->device(), &cbai, &sec_cb);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = renderPass();
@@ -3575,7 +3575,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     device_create_info.ppEnabledExtensionNames = nullptr;
 
     VkDevice second_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     bad_flag_image = VK_NULL_HANDLE;
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT requires multisampledRenderToSingleSampled feature

@@ -496,7 +496,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, vi.CreateGraphicsPipeline(false));
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
     vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -525,7 +525,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     frag_out.InitFragmentOutputLibInfo();
     frag_out.gp_ci_.renderPass = render_pass;
     frag_out.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -576,8 +576,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 
@@ -601,8 +601,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[0]);
         }
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
 
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -627,8 +627,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[1]);
         }
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 
@@ -693,8 +693,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         data[0] = 0;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
 
         data = (VkDeviceAddress *)buffer0.memory().map();
@@ -702,8 +702,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
             kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
 
         data = (VkDeviceAddress *)buffer0.memory().map();
@@ -711,8 +711,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                              "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -785,7 +785,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, vi.CreateGraphicsPipeline(false));
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -836,7 +836,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -940,7 +940,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, vi.CreateGraphicsPipeline(false));
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -991,7 +991,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
+    ASSERT_EQ(VK_SUCCESS, frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,

@@ -537,14 +537,14 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
 
     ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, no_tempory_tl_vuid);
     err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR);
     m_errorMonitor->VerifyFound();
 
     err = import_semaphore.import_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
@@ -783,7 +783,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     m_errorMonitor->VerifyFound();
 #endif
     auto err = import_fence.import_handle(ext_handle, handle_type);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 TEST_F(NegativeExternalMemorySync, SyncFdFence) {
@@ -1144,8 +1144,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
                                                 image_export.memory().handle(), handle_type};
     HANDLE handle_buffer;
     HANDLE handle_image;
-    ASSERT_VK_SUCCESS(vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi_buffer, &handle_buffer));
-    ASSERT_VK_SUCCESS(vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi_image, &handle_image));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi_buffer, &handle_buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi_image, &handle_image));
 
     VkImportMemoryWin32HandleInfoKHR import_info_buffer = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, nullptr,
                                                            handle_type, handle_buffer};
@@ -1163,8 +1163,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 
     int fd_buffer;
     int fd_image;
-    ASSERT_VK_SUCCESS(vk::GetMemoryFdKHR(m_device->device(), &mgfi_buffer, &fd_buffer));
-    ASSERT_VK_SUCCESS(vk::GetMemoryFdKHR(m_device->device(), &mgfi_image, &fd_image));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(m_device->device(), &mgfi_buffer, &fd_buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(m_device->device(), &mgfi_image, &fd_image));
 
     VkImportMemoryFdInfoKHR import_info_buffer = vku::InitStructHelper();
     import_info_buffer.handleType = handle_type;
@@ -1586,7 +1586,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
         VkMemoryGetFdInfoKHR get_handle_info = vku::InitStructHelper();
         get_handle_info.memory = memory;
         get_handle_info.handleType = handle_type;
-        ASSERT_VK_SUCCESS(vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd));
+        ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd));
     }
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
     import_info.handleType = handle_type;
@@ -1689,7 +1689,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
         VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
         get_handle_info.memory = memory;
         get_handle_info.handleType = handle_type;
-        ASSERT_VK_SUCCESS(vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle));
+        ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle));
     }
     VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper();
     import_info.handleType = handle_type;

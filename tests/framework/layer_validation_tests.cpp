@@ -440,7 +440,7 @@ void AllocateDisjointMemory(vkt::Device *device, PFN_vkGetImageMemoryRequirement
     VkMemoryAllocateInfo mp_image_alloc_info = vku::InitStructHelper();
     mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
     ASSERT_TRUE(device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
-    ASSERT_VK_SUCCESS(vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
+    ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
 }
 
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, const std::string &code) {
@@ -1244,7 +1244,8 @@ void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     const char *kEnableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
     const VkLayerSettingEXT settings[] = {
         {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, kEnableQueuSubmitSyncValidation}};
-    const VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, static_cast<uint32_t>(std::size(settings)), settings};
+    const VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+                                                   static_cast<uint32_t>(std::size(settings)), settings};
 
     if (enable_queue_submit_validation) {
         features_.pNext = &qs_settings;

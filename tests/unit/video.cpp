@@ -531,14 +531,14 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
     VideoContext context(DeviceObj(), config);
 
     uint32_t mem_req_count;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         context.vk.GetVideoSessionMemoryRequirementsKHR(m_device->device(), context.Session(), &mem_req_count, nullptr));
     if (mem_req_count == 0) {
         GTEST_SKIP() << "Test can only run if video session needs memory bindings";
     }
 
     std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count, vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         context.vk.GetVideoSessionMemoryRequirementsKHR(m_device->device(), context.Session(), &mem_req_count, mem_reqs.data()));
 
     std::vector<VkDeviceMemory> session_memory;
@@ -549,7 +549,7 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size * 2;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
         session_memory.push_back(memory);
 
         bind_info[i].memoryBindIndex = mem_reqs[i].memoryBindIndex;
@@ -609,7 +609,7 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
         alloc_info.allocationSize = mem_req.size * 2;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07198");
         auto& invalid = bind_info[invalid_mem_type_req_index];
@@ -809,7 +809,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsH264ExceededCapacity) {
 
     h264_ci.maxStdSPSCount = 3;
     h264_ci.maxStdPPSCount = 6;
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     create_info.videoSessionParametersTemplate = params;
     sps_list[1].seq_parameter_set_id = 4;
@@ -915,7 +915,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsH265ExceededCapacity) {
     h265_ci.maxStdVPSCount = 2;
     h265_ci.maxStdSPSCount = 4;
     h265_ci.maxStdPPSCount = 7;
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     create_info.videoSessionParametersTemplate = params;
     vps_list[1].vps_video_parameter_set_id = 3;
@@ -1023,7 +1023,7 @@ TEST_F(VkVideoLayerTest, H264ParametersAddInfoUniqueness) {
     m_errorMonitor->VerifyFound();
 
     h264_ci.pParametersAddInfo = nullptr;
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoDecodeH264SessionParametersAddInfoKHR-None-04825");
     sps_list[0].seq_parameter_set_id = 3;
@@ -1112,7 +1112,7 @@ TEST_F(VkVideoLayerTest, H265ParametersAddInfoUniqueness) {
     m_errorMonitor->VerifyFound();
 
     h265_ci.pParametersAddInfo = nullptr;
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoDecodeH265SessionParametersAddInfoKHR-None-04833");
     vps_list[0].vps_video_parameter_set_id = 2;
@@ -1154,7 +1154,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsIncorrectSequenceCount) {
     m_errorMonitor->VerifyFound();
 
     update_info.updateSequenceCount = 1;
-    ASSERT_VK_SUCCESS(context.vk.UpdateVideoSessionParametersKHR(m_device->device(), context.SessionParams(), &update_info));
+    ASSERT_EQ(VK_SUCCESS, context.vk.UpdateVideoSessionParametersKHR(m_device->device(), context.SessionParams(), &update_info));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateVideoSessionParametersKHR-pUpdateInfo-07215");
     update_info.updateSequenceCount = 1;
@@ -1167,7 +1167,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsIncorrectSequenceCount) {
     m_errorMonitor->VerifyFound();
 
     update_info.updateSequenceCount = 2;
-    ASSERT_VK_SUCCESS(context.vk.UpdateVideoSessionParametersKHR(m_device->device(), context.SessionParams(), &update_info));
+    ASSERT_EQ(VK_SUCCESS, context.vk.UpdateVideoSessionParametersKHR(m_device->device(), context.SessionParams(), &update_info));
 }
 
 TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ConflictingKeys) {
@@ -1209,7 +1209,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ConflictingKeys) {
     h264_ai.stdPPSCount = (uint32_t)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     std::vector<StdVideoH264SequenceParameterSet> sps_list2{CreateH264SPS(4), CreateH264SPS(5)};
 
@@ -1289,7 +1289,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ConflictingKeys) {
     h265_ai.stdPPSCount = (uint32_t)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     std::vector<StdVideoH265VideoParameterSet> vps_list2{CreateH265VPS(3)};
 
@@ -1364,7 +1364,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ExceededCapacity) {
     h264_ai.stdPPSCount = (uint32_t)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     std::vector<StdVideoH264SequenceParameterSet> sps_list2{CreateH264SPS(4), CreateH264SPS(5)};
 
@@ -1442,7 +1442,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ExceededCapacity) {
     h265_ai.stdPPSCount = (uint32_t)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
-    ASSERT_VK_SUCCESS(context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
+    ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params));
 
     std::vector<StdVideoH265VideoParameterSet> vps_list2{CreateH265VPS(3)};
 
@@ -1660,7 +1660,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionMemoryNotBound) {
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory));
         session_memory.push_back(memory);
 
         VkBindVideoSessionMemoryInfoKHR bind_info = vku::InitStructHelper();
@@ -1669,7 +1669,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionMemoryNotBound) {
         bind_info.memoryOffset = 0;
         bind_info.memorySize = mem_reqs[i].memoryRequirements.size;
 
-        ASSERT_VK_SUCCESS(context.vk.BindVideoSessionMemoryKHR(m_device->device(), context.Session(), 1, &bind_info));
+        ASSERT_EQ(VK_SUCCESS, context.vk.BindVideoSessionMemoryKHR(m_device->device(), context.Session(), 1, &bind_info));
     }
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -2625,7 +2625,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferMissingDecodeSrcUsage) {
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkBuffer buffer = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &create_info, nullptr, &buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(m_device->device(), &create_info, nullptr, &buffer));
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 

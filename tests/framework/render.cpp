@@ -255,7 +255,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         ici.pNext = instance_pnext;
     }
 
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance_));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance_));
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
     vk::ResetAllExtensions();

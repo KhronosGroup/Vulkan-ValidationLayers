@@ -38,7 +38,7 @@ TEST_F(PositiveMemory, MapMemory2) {
 
     VkDeviceMemory memory;
     VkResult err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
     map_info.memory = memory;
@@ -50,21 +50,21 @@ TEST_F(PositiveMemory, MapMemory2) {
 
     uint32_t *pData = NULL;
     err = vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_TRUE(pData != NULL);
 
     err = vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     map_info.size = VK_WHOLE_SIZE;
 
     pData = NULL;
     err = vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_TRUE(pData != NULL);
 
     err = vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     vk::FreeMemory(m_device->device(), memory, NULL);
 }
@@ -242,58 +242,58 @@ TEST_F(PositiveMemory, NonCoherentMapping) {
     }
 
     err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and zero offsets and entire mapped range
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     VkMappedMemoryRange mmr = vku::InitStructHelper();
     mmr.memory = mem;
     mmr.offset = 0;
     mmr.size = VK_WHOLE_SIZE;
     err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     vk::UnmapMemory(m_device->device(), mem);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and an offset and entire mapped range
     err = vk::MapMemory(m_device->device(), mem, 5 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     mmr.memory = mem;
     mmr.offset = 6 * atom_size;
     mmr.size = VK_WHOLE_SIZE;
     err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     vk::UnmapMemory(m_device->device(), mem);
 
     // Map with offset and size
     // Flush/Invalidate subrange of mapped area with offset and size
     err = vk::MapMemory(m_device->device(), mem, 3 * atom_size, 9 * atom_size, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     mmr.memory = mem;
     mmr.offset = 4 * atom_size;
     mmr.size = 2 * atom_size;
     err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     vk::UnmapMemory(m_device->device(), mem);
 
     // Map without offset and flush WHOLE_SIZE with two separate offsets
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     mmr.memory = mem;
     mmr.offset = allocation_size - (4 * atom_size);
     mmr.size = VK_WHOLE_SIZE;
     err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     mmr.offset = allocation_size - (6 * atom_size);
     mmr.size = VK_WHOLE_SIZE;
     err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     vk::UnmapMemory(m_device->device(), mem);
 
     vk::FreeMemory(m_device->device(), mem, NULL);
@@ -367,7 +367,7 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
             VkMemoryRequirements mem_reqs;
 
             VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
-            ASSERT_VK_SUCCESS(err);
+            ASSERT_EQ(VK_SUCCESS, err);
 
             vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
 
@@ -378,10 +378,10 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
             ASSERT_TRUE(pass);
 
             err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
-            ASSERT_VK_SUCCESS(err);
+            ASSERT_EQ(VK_SUCCESS, err);
 
             err = vk::BindImageMemory(m_device->device(), image, mem, 0);
-            ASSERT_VK_SUCCESS(err);
+            ASSERT_EQ(VK_SUCCESS, err);
 
             vk::DestroyImage(m_device->device(), image, nullptr);
 
@@ -436,7 +436,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
     vkt::DeviceMemory buffer_memory(*m_device, memory_info);
 
     VkResult err = vk::BindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
@@ -481,5 +481,5 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     vkt::DeviceMemory mem(*m_device, mem_alloc);
 
     VkResult err = vk::BindImageMemory(m_device->device(), image, mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }

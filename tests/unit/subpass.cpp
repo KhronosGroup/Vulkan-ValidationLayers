@@ -676,7 +676,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = rp.handle();
         g_pipe.InitState();
-        ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
         g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe.descriptor_set_->UpdateDescriptorSets();

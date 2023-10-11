@@ -382,7 +382,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     pipe.gp_ci_.renderPass = render_pass;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.InitState();
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
 
     struct AspectInfo {
         VkImageAspectFlagBits aspect;
@@ -1615,7 +1615,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -2087,18 +2087,18 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     g_pipe_ds.gp_ci_.renderPass = rp_ds.handle();
     g_pipe_ds.gp_ci_.pDepthStencilState = &ds_ci;
     g_pipe_ds.InitState();
-    ASSERT_VK_SUCCESS(g_pipe_ds.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe_ds.CreateGraphicsPipeline());
     g_pipe_dp.gp_ci_.renderPass = rp_dp.handle();
     ds_ci.stencilTestEnable = VK_FALSE;
     g_pipe_dp.gp_ci_.pDepthStencilState = &ds_ci;
     g_pipe_dp.InitState();
-    ASSERT_VK_SUCCESS(g_pipe_dp.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe_dp.CreateGraphicsPipeline());
     g_pipe_st.gp_ci_.renderPass = rp_st.handle();
     ds_ci.depthTestEnable = VK_FALSE;
     ds_ci.stencilTestEnable = VK_TRUE;
     g_pipe_st.gp_ci_.pDepthStencilState = &ds_ci;
     g_pipe_st.InitState();
-    ASSERT_VK_SUCCESS(g_pipe_st.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe_st.CreateGraphicsPipeline());
 
     m_commandBuffer->begin();
     m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
@@ -2359,7 +2359,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
 
     g_pipe.gp_ci_.pDepthStencilState = &ds_ci;
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     m_commandBuffer->begin();
     VkClearValue clear = {};
@@ -2654,7 +2654,7 @@ struct CreateRenderPassHelper {
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = render_pass->handle();
         g_pipe.InitState();
-        ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
     }
 
     void Init() {
@@ -2690,7 +2690,7 @@ struct SyncTestPipeline {
         g_pipe.InitState();
     }
     void Init() {
-        ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
         g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe.descriptor_set_->UpdateDescriptorSets();
     }
@@ -3076,7 +3076,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
         g_pipe_0.InitState();
-        ASSERT_VK_SUCCESS(g_pipe_0.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -3157,7 +3157,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
         g_pipe_0.InitState();
-        ASSERT_VK_SUCCESS(g_pipe_0.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -3240,7 +3240,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
         g_pipe_0.InitState();
-        ASSERT_VK_SUCCESS(g_pipe_0.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -4041,7 +4041,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     pipe.gp_ci_.renderPass = render_pass.handle();
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.InitState();
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
 
@@ -4264,7 +4264,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -5171,9 +5171,9 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
     std::vector<VkImage> images;
-    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
     images.resize(image_count, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
+    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
 
     std::vector<bool> image_used(images.size(), false);
 
@@ -5351,7 +5351,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -5394,7 +5394,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     submit.pCommandBufferInfos = &command_buffer_info;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
@@ -5424,7 +5424,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
@@ -5454,7 +5454,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.

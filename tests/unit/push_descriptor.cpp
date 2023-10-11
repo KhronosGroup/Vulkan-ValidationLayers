@@ -79,7 +79,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
 
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template));
 
     std::unique_ptr<vkt::DescriptorSetLayout> push_dsl = nullptr;
     std::unique_ptr<vkt::PipelineLayout> pipeline_layout = nullptr;
@@ -97,7 +97,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     push_template_ci.pipelineLayout = pipeline_layout->handle();
     push_template_ci.set = 0;
-    ASSERT_VK_SUCCESS(vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &push_template_ci, nullptr, &push_template));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &push_template_ci, nullptr, &push_template));
 
     auto do_test = [&](const char *desired_failure) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);

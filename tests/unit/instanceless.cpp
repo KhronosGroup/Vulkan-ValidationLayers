@@ -223,7 +223,7 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
 
     {
         VkInstance instance;
-        ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance));
 
         Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00631");
         vk::DestroyInstance(instance, &alloc_callbacks);
@@ -242,7 +242,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     const auto ici = GetInstanceCreateInfo();
 
     VkInstance instance;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance));
     uint32_t physical_device_count = 1;
     VkPhysicalDevice physical_device;
     const VkResult err = vk::EnumeratePhysicalDevices(instance, &physical_device_count, &physical_device);
@@ -260,7 +260,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     dci.pQueueCreateInfos = &dqci;
 
     VkDevice leaked_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(physical_device, &dci, nullptr, &leaked_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device, &dci, nullptr, &leaked_device));
 
     // VUID-vkDestroyInstance-instance-00629
     Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-ObjectTracker-ObjectLeak");

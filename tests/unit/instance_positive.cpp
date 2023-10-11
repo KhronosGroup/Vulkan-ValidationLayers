@@ -29,12 +29,12 @@ TEST_F(PositiveInstance, TwoInstances) {
     ici.enabledLayerCount = instance_layers_.size();
     ici.ppEnabledLayerNames = instance_layers_.data();
 
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i1));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &i1));
 
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i2));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &i2));
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i2, nullptr));
 
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i3));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &i3));
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i3, nullptr));
 
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i1, nullptr));

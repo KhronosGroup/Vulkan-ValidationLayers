@@ -81,7 +81,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
 
     VkDescriptorSet ds = VK_NULL_HANDLE;
     VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkBufferCreateInfo buffCI = vku::InitStructHelper();
     buffCI.size = 1024;
@@ -224,7 +224,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     ds_alloc_info.descriptorSetCount = 1;
     ds_alloc_info.pSetLayouts = &ds_layout.handle();
     VkDescriptorSet ds = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds));
+    ASSERT_EQ(VK_SUCCESS, vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds));
 
     VkBufferCreateInfo buff_create_info = vku::InitStructHelper();
     buff_create_info.size = 1024;
@@ -396,7 +396,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
 
             VkDescriptorSet ds;
             VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
-            ASSERT_VK_SUCCESS(err);
+            ASSERT_EQ(VK_SUCCESS, err);
             vkt::Buffer buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
             VkDescriptorBufferInfo buffer_info[3] = {};
             for (int i = 0; i < 3; i++) {

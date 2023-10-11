@@ -454,7 +454,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -486,7 +486,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     submit_info.pWaitDstStageMask = &stage_mask;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -494,8 +494,8 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
@@ -514,8 +514,8 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index));
-    ASSERT_VK_SUCCESS(vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index));
+    ASSERT_EQ(VK_SUCCESS, vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout));
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
@@ -542,15 +542,15 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.pWaitDstStageMask = &stage_mask;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(PositiveWsi, SwapchainImageLayout) {
@@ -567,7 +567,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     const auto swapchainImages = GetSwapchainImages(m_swapchain);
     const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
     VkAttachmentDescription attach[] = {
         {0, m_surface_formats[0].format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -936,7 +936,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     const vkt::Fence fence(*m_device);
 
     uint32_t image_index;
-    ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
+    ASSERT_EQ(VK_SUCCESS, vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
     fence.wait(vvl::kU32Max);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -1155,7 +1155,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
     uint32_t bogus_int = 99;
     swapchain_create_info.pQueueFamilyIndices = &bogus_int;
-    ASSERT_VK_SUCCESS(vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
 
     // Get VkImage from swapchain which should be protected
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
@@ -1191,7 +1191,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
                                       VK_DEPENDENCY_BY_REGION_BIT};
     // Use framework render pass and framebuffer so pipeline helper uses it
     m_renderPass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachments, 1, &subpass, 1, &dependency};
-    ASSERT_VK_SUCCESS(vk::CreateRenderPass(device(), &m_renderPass_info, nullptr, &m_renderPass));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateRenderPass(device(), &m_renderPass_info, nullptr, &m_renderPass));
     m_framebuffer_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                           nullptr,
                           0,
@@ -1201,7 +1201,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
                           swapchain_create_info.imageExtent.width,
                           swapchain_create_info.imageExtent.height,
                           1};
-    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &m_framebuffer_info, nullptr, &m_framebuffer));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateFramebuffer(device(), &m_framebuffer_info, nullptr, &m_framebuffer));
 
     // basic pipeline to allow for a valid vkCmdDraw()
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);

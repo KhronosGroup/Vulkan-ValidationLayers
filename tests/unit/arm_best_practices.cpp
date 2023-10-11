@@ -15,7 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
-const char *kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
+const char* kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
 
 class VkConstantBufferObj : public vkt::Buffer {
   public:
@@ -290,14 +290,14 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     alloc_info.pSetLayouts = ds_layouts.data();
 
     VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets.data());
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // free one descriptor set
     VkDescriptorSet* ds = descriptor_sets.data();
     err = vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, ds);
 
     // the previous allocate and free should not cause any warning
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // allocate the previously freed descriptor set
     alloc_info = {};
@@ -544,14 +544,13 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
         }
     }
 
-    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    ASSERT_EQ(VK_ERROR_VALIDATION_FAILED_EXT, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    ASSERT_VK_SUCCESS(err)
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
 }
 
 TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
@@ -1368,10 +1367,26 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
 
     VkImageMemoryBarrier image_barriers[2] = {
-        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[0]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
-        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[1]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
+        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+         nullptr,
+         0,
+         VK_ACCESS_TRANSFER_READ_BIT,
+         VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+         VK_QUEUE_FAMILY_IGNORED,
+         VK_QUEUE_FAMILY_IGNORED,
+         images[0]->image(),
+         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
+        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+         nullptr,
+         0,
+         VK_ACCESS_TRANSFER_WRITE_BIT,
+         VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+         VK_QUEUE_FAMILY_IGNORED,
+         VK_QUEUE_FAMILY_IGNORED,
+         images[1]->image(),
+         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
     };
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
                            nullptr, 0, nullptr, 2, image_barriers);
@@ -1385,10 +1400,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     blit_region.dstSubresource.layerCount = 1;
     blit_region.dstOffsets[1] = blit_size;
 
-    vk::CmdBlitImage(m_commandBuffer->handle(),
-                     images[0]->image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                     images[1]->image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                     1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_commandBuffer->handle(), images[0]->image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[1]->image(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     VkImageMemoryBarrier pre_render_pass_barriers[2] = {
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -1418,17 +1431,12 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
-        {0, FMT, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, FMT, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
     VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
     VkSubpassDescription subpass = {
-        0, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        0, nullptr,
-        1, &ref, nullptr,
-        nullptr,
-        0, nullptr,
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr,
     };
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
     vkt::RenderPass rp(*m_device, rpci);
@@ -1475,8 +1483,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
 
     m_clear_via_load_op = true;
     m_depth_stencil_fmt = ds_format;
-    auto ds_view = ds->targetView(ds_format,
-                                  VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    auto ds_view = ds->targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
     CreatePipelineHelper pipe_all(*this);
@@ -1562,7 +1569,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         clear_att.colorAttachment = 0;
         clear_att.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         clear_rect.layerCount = 1;
-        clear_rect.rect = { { 0, 0 }, { 1, 1 } };
+        clear_rect.rect = {{0, 0}, {1, 1}};
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_att, 1, &clear_rect);
 
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth.pipeline_);
