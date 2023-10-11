@@ -147,7 +147,7 @@ TEST_F(NegativeImage, CopyBufferToCompressedImage) {
 
     VkImage depth_image = VK_NULL_HANDLE;
     err = vk::CreateImage(m_device->handle(), &depth_image_create_info, NULL, &depth_image);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkDeviceMemory mem1;
     VkMemoryRequirements mem_reqs;
@@ -161,7 +161,7 @@ TEST_F(NegativeImage, CopyBufferToCompressedImage) {
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
     err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem1);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     err = vk::BindImageMemory(m_device->device(), depth_image, mem1, 0);
 
     region.imageExtent.depth = 2;
@@ -2344,7 +2344,7 @@ TEST_F(NegativeImage, ImageViewNoMemoryBoundToImage) {
     image_create_info.flags = 0;
 
     err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
     image_view_create_info.image = image;
@@ -3120,7 +3120,7 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
 
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     VkImageFormatProperties img_limits;
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &image_ci, &img_limits));
     std::optional<VkImageObj> image_3d_array;
     image_ci.arrayLayers = 1;  // arrayLayers must be 1 for 3D images
     if (img_limits.maxArrayLayers >= image_ci.arrayLayers) {
@@ -3227,7 +3227,7 @@ TEST_F(NegativeImage, ImageMisc) {
 
     const VkImageCreateInfo safe_image_ci = DefaultImageInfo();
 
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &safe_image_ci));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &safe_image_ci));
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
@@ -3455,7 +3455,7 @@ TEST_F(NegativeImage, MaxLimitsArrayLayers) {
     VkImageCreateInfo image_ci = DefaultImageInfo();
 
     VkImageFormatProperties img_limits;
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
     if (img_limits.maxArrayLayers == vvl::kU32Max) {
         GTEST_SKIP() << "VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test";
@@ -3494,7 +3494,7 @@ TEST_F(NegativeImage, MaxLimitsExtent) {
     image_ci.imageType = VK_IMAGE_TYPE_3D;
 
     VkImageFormatProperties img_limits;
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
     image_ci.extent = {img_limits.maxExtent.width + 1, 1, 1};
     CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02252");
@@ -3515,7 +3515,7 @@ TEST_F(NegativeImage, MaxLimitsFramebuffer) {
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
     VkImageFormatProperties img_limits;
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
     if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
         image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
@@ -4739,7 +4739,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
 
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &ci));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &ci));
 
     // Invalid pQueueFamilyIndices
     {

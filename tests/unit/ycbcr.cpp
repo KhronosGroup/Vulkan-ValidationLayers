@@ -316,7 +316,7 @@ TEST_F(NegativeYcbcr, Formats) {
     VkImageCreateInfo reset_create_info = image_create_info;
 
     VkImageFormatProperties img_limits;
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_create_info, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &image_create_info, &img_limits));
 
     // invalid mipLevels
     if (img_limits.maxMipLevels == 1) {
@@ -724,11 +724,11 @@ TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     VkImage image_2plane, image_3plane;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
     VkResult err = vk::CreateImage(device(), &ci, NULL, &image_2plane);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
     err = vk::CreateImage(device(), &ci, NULL, &image_3plane);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // Query layout of 3rd plane, for a 2-plane image
     VkImageSubresource subres = {};
@@ -780,7 +780,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
         VkImage image;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device(), &image_create_info, NULL, &image));
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -796,7 +796,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
 
         // Bind disjoint with BindImageMemory instead of BindImageMemory2
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01608");
@@ -847,7 +847,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         image_create_info.flags = 0;  // no disjoint bit set
 
         VkImage image;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device(), &image_create_info, NULL, &image));
 
         VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
         mem_req_info2.image = image;
@@ -860,7 +860,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
+        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
 
         VkBindImagePlaneMemoryInfo plane_memory_info = vku::InitStructHelper();
         plane_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;

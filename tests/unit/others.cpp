@@ -523,14 +523,14 @@ TEST_F(VkLayerTest, LayerInfoMessages) {
     ici.pNext = &callback_create_info;
 
     // Create an instance, error if layer status INFO message not found
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
     vk::DestroyInstance(local_instance, nullptr);
 
 #ifndef NDEBUG
     // Create an instance, error if layer DEBUG_BUILD warning message not found
     callback_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
     vk::DestroyInstance(local_instance, nullptr);
 #endif
 }
@@ -1229,11 +1229,11 @@ TEST_F(VkLayerTest, LeakAnObject) {
     device_ci.pQueueCreateInfos = &queue_ci;
 
     VkDevice leaky_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
 
     const VkFenceCreateInfo fence_ci = vku::InitStructHelper();
     VkFence leaked_fence;
-    ASSERT_VK_SUCCESS(vk::CreateFence(leaky_device, &fence_ci, nullptr, &leaked_fence));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateFence(leaky_device, &fence_ci, nullptr, &leaked_fence));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
     vk::DestroyDevice(leaky_device, nullptr);
@@ -1276,7 +1276,7 @@ TEST_F(VkLayerTest, LeakABuffer) {
     device_ci.pEnabledFeatures = &features;
 
     VkDevice leaky_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -1284,7 +1284,7 @@ TEST_F(VkLayerTest, LeakABuffer) {
     buffer_create_info.size = 1;
 
     VkBuffer buffer{};
-    ASSERT_VK_SUCCESS(vk::CreateBuffer(leaky_device, &buffer_create_info, nullptr, &buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(leaky_device, &buffer_create_info, nullptr, &buffer));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
     vk::DestroyDevice(leaky_device, nullptr);
@@ -1321,7 +1321,7 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     device_create_info.pEnabledFeatures = &features;
 
     VkDevice second_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, NULL, &second_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_create_info, NULL, &second_device));
 
     // Try to destroy the renderpass from the first device using the second device
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyRenderPass-renderPass-parent");
@@ -1661,7 +1661,7 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     validationCacheCreateInfo.flags = 0;
     VkValidationCacheEXT validationCache = VK_NULL_HANDLE;
     VkResult res = vk::CreateValidationCacheEXT(m_device->device(), &validationCacheCreateInfo, nullptr, &validationCache);
-    ASSERT_VK_SUCCESS(res);
+    ASSERT_EQ(VK_SUCCESS, res);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMergeValidationCachesEXT-dstCache-01536");
     res = vk::MergeValidationCachesEXT(m_device->device(), validationCache, 1, &validationCache);
@@ -2519,7 +2519,7 @@ TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
         ici.enabledExtensionCount = 1;
         ici.ppEnabledExtensionNames = enabled_extensions.data();
 
-        ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
         vk::DestroyInstance(local_instance, nullptr);
     }
 }
@@ -2657,7 +2657,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     alloc_info.pNext = nullptr;
     VkResult err = vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     VkExportMetalBufferInfoEXT metal_buffer_info = vku::InitStructHelper();
     metal_buffer_info.memory = memory;
     export_metal_objects_info.pNext = &metal_buffer_info;
@@ -2809,7 +2809,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
             VkSamplerYcbcrConversion conversion;
             err = vk::CreateSamplerYcbcrConversionKHR(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
-            ASSERT_VK_SUCCESS(err);
+            ASSERT_EQ(VK_SUCCESS, err);
 
             VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
             ycbcr_info.conversion = conversion;

@@ -227,7 +227,7 @@ void CreatePipelineHelper::InitPipelineCache() {
         vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
     }
     VkResult err = vk::CreatePipelineCache(device_->handle(), &pc_ci_, NULL, &pipeline_cache_);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 void CreatePipelineHelper::LateBindPipelineInfo() {
@@ -313,7 +313,7 @@ void CreateComputePipelineHelper::InitPipelineCache() {
         vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
     }
     VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 void CreateComputePipelineHelper::LateBindPipelineInfo() {
@@ -556,7 +556,7 @@ void RayTracingPipelineHelper::InitPipelineCache() {
         vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
     }
     VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 }
 
 void RayTracingPipelineHelper::LateBindPipelineInfo(bool isKHR) {

@@ -98,7 +98,7 @@ TEST_F(PositiveImageDrm, Basic) {
 
         VkImage image;
         VkResult err = vk::CreateImage(device(), &ci, nullptr, &image);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         // bind memory
         VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -114,13 +114,13 @@ TEST_F(PositiveImageDrm, Basic) {
                 VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
                 alloc_info.allocationSize = mem_reqs.size;
                 alloc_info.memoryTypeIndex = type;
-                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &mem_obj));
+                ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, nullptr, &mem_obj));
                 break;
             }
         }
 
         ASSERT_NE((VkDeviceMemory)VK_NULL_HANDLE, mem_obj);
-        ASSERT_VK_SUCCESS(vk::BindImageMemory(device(), image, mem_obj, 0));
+        ASSERT_EQ(VK_SUCCESS, vk::BindImageMemory(device(), image, mem_obj, 0));
 
         // create image view
         VkImageViewCreateInfo ivci = {

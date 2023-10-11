@@ -80,7 +80,7 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
         alloc_info.descriptorPool = ds_pool_one.handle();
         alloc_info.pSetLayouts = &ds_layout.handle();
         err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
     }  // ds_layout destroyed
     vk::FreeDescriptorSets(m_device->device(), ds_pool_one.handle(), 1, &descriptorSet);
 }
@@ -969,7 +969,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             set_alloc_info.descriptorSetCount = 2;
             set_alloc_info.pSetLayouts = set_layouts;
             VkDescriptorSet sets[2] = {};
-            ASSERT_VK_SUCCESS(vk::AllocateDescriptorSets(device(), &set_alloc_info, sets));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateDescriptorSets(device(), &set_alloc_info, sets));
             set_A = sets[0];
             set_B = sets[1];
         }
@@ -1025,11 +1025,11 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             VkSubmitInfo submit_info = vku::InitStructHelper();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cb.handle();
-            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+            ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
         }
 
         // Wait for the queue. After this set A should be no longer in use.
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 
         // Bind set B to a command buffer and submit the command buffer;
         {
@@ -1044,14 +1044,14 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             VkSubmitInfo submit_info = vku::InitStructHelper();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cb.handle();
-            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+            ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
         }
 
         // Update set A. It should not cause VU 03047 error.
         vkt::Buffer buffer2(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         update_set(set_A, buffer2);
 
-        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+        ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
     }
 }
 

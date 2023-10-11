@@ -203,7 +203,7 @@ TEST_F(NegativeBuffer, BufferViewObject) {
         bvci.range = VK_WHOLE_SIZE;
 
         err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
     }
     // First Destroy buffer underlying view which should hit error in CV
 
@@ -241,7 +241,7 @@ TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkBuffer buffer;
     err = vk::CreateBuffer(m_device->device(), &buff_ci, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer;

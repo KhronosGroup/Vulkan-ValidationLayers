@@ -92,7 +92,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = render_pass;
     pipe.InitState();
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
@@ -198,7 +198,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
             signal_info.semaphore = semaphore;
             signal_info.value = ++last_signalled_value;
-            ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
+            ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(*m_device, &signal_info));
             if (bailout.load()) {
                 break;
             }
@@ -212,7 +212,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &semaphore.handle();
         wait_info.pValues = &wait_value;
-        ASSERT_VK_SUCCESS(vk::WaitSemaphores(*m_device, &wait_info, vvl::kU64Max));
+        ASSERT_EQ(VK_SUCCESS, vk::WaitSemaphores(*m_device, &wait_info, vvl::kU64Max));
         ++wait_value;
         if (bailout.load()) {
             break;
@@ -256,7 +256,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
             signal_info.semaphore = semaphore;
             signal_info.value = ++last_signalled_value;
-            ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
+            ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(*m_device, &signal_info));
             if (bailout.load()) {
                 break;
             }
@@ -265,7 +265,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     // Spin until semaphore payload value equals maximum signaled value
     uint64_t counter = 0;
     while (counter != max_signal_value) {
-        ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
+        ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
         if (bailout.load()) {
             break;
         }
@@ -306,7 +306,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         auto timeout_guard = timeout_helper.ThreadGuard();
         uint64_t counter = 0;
         while (counter != max_signal_value) {
-            ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
+            ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
             if (bailout.load()) {
                 break;
             }
@@ -324,7 +324,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
             signal_info.semaphore = semaphore;
             signal_info.value = ++last_signalled_value;
-            ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
+            ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(*m_device, &signal_info));
             if (bailout.load()) {
                 break;
             }
@@ -418,7 +418,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -472,7 +472,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     submit.pCommandBufferInfos = &command_buffer_info;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -480,8 +480,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 }
 
 TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
@@ -500,7 +500,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_VK_SUCCESS(
+    ASSERT_EQ(VK_SUCCESS,
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
@@ -535,7 +535,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -543,6 +543,6 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
 }

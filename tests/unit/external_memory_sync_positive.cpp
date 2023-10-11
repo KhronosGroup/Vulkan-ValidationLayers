@@ -124,7 +124,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     VkMemoryGetWin32HandleInfoKHR mghi = {VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr, memory_export.handle(),
                                           handle_type};
     HANDLE handle;
-    ASSERT_VK_SUCCESS(vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi, &handle));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi, &handle));
 
     VkImportMemoryWin32HandleInfoKHR import_info = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, nullptr, handle_type,
                                                     handle};
@@ -132,7 +132,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     // Export memory to fd
     VkMemoryGetFdInfoKHR mgfi = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_export.handle(), handle_type};
     int fd;
-    ASSERT_VK_SUCCESS(vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd));
 
     VkImportMemoryFdInfoKHR import_info = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd};
 #endif

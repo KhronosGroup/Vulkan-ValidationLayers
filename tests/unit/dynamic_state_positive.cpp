@@ -346,7 +346,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.ds_ci_.depthTestEnable = VK_TRUE;
     pipe.ds_ci_.stencilTestEnable = VK_TRUE;
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
 
     m_commandBuffer->begin();
     m_renderPassBeginInfo.renderPass = rp.handle();

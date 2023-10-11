@@ -104,7 +104,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
 
     VkResult err =
         vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_NE(pipeline, VK_NULL_HANDLE);
 
     vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
@@ -220,7 +220,7 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     RayTracingPipelineHelper rt_pipeline_lib(*this);
     rt_pipeline_lib.InitLibraryInfoKHR(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
     rt_pipeline_lib.InitState();
-    ASSERT_VK_SUCCESS(rt_pipeline_lib.CreateKHRRayTracingPipeline());
+    ASSERT_EQ(VK_SUCCESS, rt_pipeline_lib.CreateKHRRayTracingPipeline());
 
     RayTracingPipelineHelper rt_pipe(*this);
     rt_pipe.InitLibraryInfoKHR(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
@@ -228,7 +228,7 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.rp_ci_KHR_.groupCount = 0;
     rt_pipe.AddLibrary(rt_pipeline_lib);
     rt_pipe.InitState();
-    ASSERT_VK_SUCCESS(rt_pipe.CreateKHRRayTracingPipeline());
+    ASSERT_EQ(VK_SUCCESS, rt_pipe.CreateKHRRayTracingPipeline());
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;

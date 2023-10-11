@@ -828,7 +828,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.rp_ci_KHR_.flags = VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
     rt_pipe.InitState();
     VkResult err = rt_pipe.CreateKHRRayTracingPipeline();
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -1198,7 +1198,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     rt_pipe.rp_ci_KHR_.layout = pipeline_layout.handle();
     rt_pipe.rp_ci_KHR_.pLibraryInterface = &interface_ci;
     VkResult err = rt_pipe.CreateKHRRayTracingPipeline(false);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     std::vector<uint8_t> handle_buffer;
     handle_buffer.resize(ray_tracing_properties.shaderGroupHandleSize);

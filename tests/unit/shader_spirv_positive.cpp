@@ -650,7 +650,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
 
     // Make sure spec constants were updated correctly
     void *pData;
-    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), buffer.memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(m_device->device(), buffer.memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
     uint32_t *ssbo_data = reinterpret_cast<uint32_t *>(pData);
     ASSERT_EQ(ssbo_data[0], 0x02);
     ASSERT_EQ(ssbo_data[1], 0x05040302);
@@ -862,7 +862,7 @@ TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;

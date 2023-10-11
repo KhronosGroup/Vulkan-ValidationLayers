@@ -1314,7 +1314,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
                             {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_GENERAL);

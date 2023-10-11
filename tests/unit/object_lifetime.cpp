@@ -49,7 +49,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
 
@@ -62,10 +62,10 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
         GTEST_SKIP() << "Failed to set memory type";
     }
     err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     m_commandBuffer->begin();
     vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, VK_WHOLE_SIZE, 0);
@@ -108,7 +108,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     vkt::DeviceMemory buffer_mem(*m_device, alloc_info);
     ASSERT_TRUE(buffer_mem.initialized());
 
-    ASSERT_VK_SUCCESS(vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
+    ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
 
     m_commandBuffer->begin();
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -155,7 +155,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     image_mem.init(*m_device, alloc_info);
 
     auto err = vk::BindImageMemory(m_device->device(), image.handle(), image_mem.handle(), 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     m_commandBuffer->begin();
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -200,7 +200,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
 
@@ -213,10 +213,10 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
         GTEST_SKIP() << "Failed to set memory type";
     }
     err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->begin();
@@ -269,7 +269,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
                                                   VK_IMAGE_TILING_OPTIMAL);
 
     auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
@@ -280,10 +280,10 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     ASSERT_TRUE(pass);
 
     err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &image_mem);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     err = vk::BindImageMemory(m_device->device(), image, image_mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->begin();
@@ -344,7 +344,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         bvci.range = VK_WHOLE_SIZE;
 
         VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         descriptor_set.WriteDescriptorBufferView(0, view);
         descriptor_set.UpdateDescriptorSets();
@@ -390,7 +390,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
 
     bvci.buffer = buffer.handle();
     VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
     descriptor_set.Clear();
     descriptor_set.WriteDescriptorBufferView(0, view);
     descriptor_set.UpdateDescriptorSets();
@@ -500,11 +500,11 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
             {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
         };
         err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 32, 32, 1};
         err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_EQ(VK_SUCCESS, err);
 
         // Just use default renderpass with our framebuffer
         m_renderPassBeginInfo.framebuffer = fb;
@@ -651,7 +651,7 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 256, 256, 1};
     VkFramebuffer fb;
     err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // Just use default renderpass with our framebuffer
     m_renderPassBeginInfo.framebuffer = fb;
@@ -772,7 +772,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 256, 256, 1};
     VkFramebuffer fb;
     err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     // Just use default renderpass with our framebuffer
     m_renderPassBeginInfo.framebuffer = fb;
@@ -830,10 +830,10 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
     VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
     VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     VkFence fence;
-    ASSERT_VK_SUCCESS(vk::CreateFence(m_device->device(), &fence_create_info, nullptr, &fence));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateFence(m_device->device(), &fence_create_info, nullptr, &fence));
 
     VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
@@ -941,7 +941,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
 
     VkResult err;
     err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -1012,7 +1012,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     bvci.range = VK_WHOLE_SIZE;
 
     VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1076,7 +1076,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
 
     VkResult err;
     err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -1134,7 +1134,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     VkEvent event;
     VkEventCreateInfo evci = vku::InitStructHelper();
     VkResult result = vk::CreateEvent(m_device->device(), &evci, NULL, &event);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
 
     m_commandBuffer->begin();
     vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
@@ -1176,14 +1176,14 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore export_semaphore(*m_device, create_info);
     int fd = -1;
-    ASSERT_VK_SUCCESS(export_semaphore.export_handle(fd, handle_type));
+    ASSERT_EQ(VK_SUCCESS, export_semaphore.export_handle(fd, handle_type));
 
     // Create a new semaphore and put it to work
     vkt::Semaphore semaphore(*m_device);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     // Try to import fd handle while semaphore is still in use
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
@@ -1217,14 +1217,14 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore export_semaphore(*m_device, create_info);
     HANDLE handle = NULL;
-    ASSERT_VK_SUCCESS(export_semaphore.export_handle(handle, handle_type));
+    ASSERT_EQ(VK_SUCCESS, export_semaphore.export_handle(handle, handle_type));
 
     // Create a new semaphore and put it to work
     vkt::Semaphore semaphore(*m_device);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
-    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     // Try to import Win32 handle while semaphore is still in use
     // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507

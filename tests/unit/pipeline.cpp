@@ -741,7 +741,7 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                                                nullptr,
@@ -810,7 +810,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info =
         pipeline_rasterization_state_create_info_template;

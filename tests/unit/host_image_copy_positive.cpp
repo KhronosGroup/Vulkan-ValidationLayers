@@ -119,7 +119,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     copy_to_image.pRegions = &region_to_image;
 
     VkResult result = vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
 
     // Copy back to host memory
     std::vector<uint8_t> welcome_back(width * height * 4);
@@ -140,7 +140,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     copy_from_image.pRegions = &region_from_image;
 
     result = vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
     ASSERT_EQ(pixels, welcome_back);
 
     // Copy from one image to another
@@ -161,7 +161,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     copy_image_to_image.dstImage = image2;
 
     result = vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
 
     // Copy back from destination image to memory
     std::vector<uint8_t> after_image_copy(width * height * 4);
@@ -169,7 +169,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     copy_from_image.srcImage = image2;
     region_from_image.pHostPointer = after_image_copy.data();
     result = vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
     ASSERT_EQ(pixels, after_image_copy);
 
     // Do a layout transition, then use the image in new layout
@@ -179,7 +179,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     transition_info.image = image2;
     result = vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
-    ASSERT_VK_SUCCESS(result);
+    ASSERT_EQ(VK_SUCCESS, result);
     VkImageSubresource image_sub = VkImageObj::subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
     VkImageSubresourceRange image_sub_range = VkImageObj::subresource_range(image_sub);
     VkImageMemoryBarrier image_barrier =

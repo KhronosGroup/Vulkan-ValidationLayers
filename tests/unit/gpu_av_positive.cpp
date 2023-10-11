@@ -375,10 +375,10 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreInfoCount = 1;
     submit_info.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     std::uint64_t counter = 0;
-    ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
+    ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
 }
 
 TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {

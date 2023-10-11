@@ -277,7 +277,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
     m_commandBuffer->begin();
@@ -369,7 +369,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
     m_commandBuffer->begin();
@@ -455,7 +455,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
     VkBufferCopy copy_info;

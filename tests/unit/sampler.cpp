@@ -418,7 +418,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
             {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
         };
         pipe.InitState();
-        ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+        ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
 
         pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         pipe.descriptor_set_->UpdateDescriptorSets();
@@ -920,7 +920,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
                             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL_GRAPHICS, nullptr},
                             {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1033,7 +1033,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
                             {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1121,7 +1121,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
                             {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1190,7 +1190,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
                             {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1296,7 +1296,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;

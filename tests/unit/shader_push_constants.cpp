@@ -110,7 +110,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
 
     // Sanity check its a valid range before making duplicate
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
-    ASSERT_VK_SUCCESS(vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout));
+    ASSERT_EQ(VK_SUCCESS, vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout));
     vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, nullptr);
 
     // Duplicate ranges
@@ -296,7 +296,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ci_ = pipeline_layout_info;
     g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     pipeline_layout_info.pPushConstantRanges = &push_constant_range_small;
     vkt::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);

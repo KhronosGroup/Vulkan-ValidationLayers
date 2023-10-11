@@ -471,7 +471,7 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
 
     VkRenderPass rp;
     err = vk::CreateRenderPass(device(), &rp_info, NULL, &rp);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_EQ(VK_SUCCESS, err);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

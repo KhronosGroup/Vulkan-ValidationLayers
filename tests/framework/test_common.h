@@ -47,8 +47,5 @@
 
 #include "binding.h"
 
-#define ASSERT_VK_SUCCESS(err)                                                \
-    {                                                                         \
-        const VkResult resolved_err = err;                                    \
-        ASSERT_EQ(VK_SUCCESS, resolved_err) << string_VkResult(resolved_err); \
-    }
+// Stream operator for VkResult so GTEST will print out error codes as strings (automatically)
+inline std::ostream& operator<<(std::ostream& os, const VkResult& result) { return os << string_VkResult(result); }

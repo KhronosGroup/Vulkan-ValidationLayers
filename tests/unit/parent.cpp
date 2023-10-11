@@ -200,7 +200,7 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
@@ -225,7 +225,7 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
@@ -254,7 +254,7 @@ TEST_F(NegativeParent, Instance_Surface) {
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
@@ -299,7 +299,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
@@ -334,7 +334,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     swapchain_ci.oldSwapchain = VK_NULL_HANDLE;
 
     VkSwapchainKHR other_device_swapchain = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(vk::CreateSwapchainKHR(instance2_device.device(), &swapchain_ci, nullptr, &other_device_swapchain));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(instance2_device.device(), &swapchain_ci, nullptr, &other_device_swapchain));
 
     // oldSwapchain from a different device
     swapchain_ci.surface = m_surface;
@@ -357,7 +357,7 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
@@ -382,7 +382,7 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {};
     DebugUtilsLabelCheckData callback_data{};
@@ -395,7 +395,7 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
         messenger_ci.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         messenger_ci.pfnUserCallback = DebugUtilsCallback;
         messenger_ci.pUserData = &callback_data;
-        ASSERT_VK_SUCCESS(vk::CreateDebugUtilsMessengerEXT(instance2, &messenger_ci, nullptr, &messenger));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateDebugUtilsMessengerEXT(instance2, &messenger_ci, nullptr, &messenger));
     }
 
     // debug utils messenger from a different instance
@@ -416,14 +416,14 @@ TEST_F(NegativeParent, Instance_DebugReportCallback) {
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     VkDebugReportCallbackEXT callback = VK_NULL_HANDLE;
     {
         auto callback_ci = vku::InitStruct<VkDebugReportCallbackCreateInfoEXT>();
         callback_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT;
         callback_ci.pfnCallback = &EmptyDebugReportCallback;
-        ASSERT_VK_SUCCESS(vk::CreateDebugReportCallbackEXT(instance2, &callback_ci, nullptr, &callback));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateDebugReportCallbackEXT(instance2, &callback_ci, nullptr, &callback));
     }
 
     // debug report callback from a different instance
@@ -444,7 +444,7 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     VkPhysicalDevice instance2_gpu = VK_NULL_HANDLE;
     {
@@ -458,12 +458,12 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
     VkDisplayKHR display = VK_NULL_HANDLE;
     {
         uint32_t display_count = 0;
-        ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, nullptr));
         if (display_count == 0) {
             GTEST_SKIP() << "No VkDisplayKHR displays found";
         }
         std::vector<VkDisplayPropertiesKHR> display_props{display_count};
-        ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, display_props.data()));
+        ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, display_props.data()));
         display = display_props[0].display;
     }
     // display from a different physical device
@@ -484,7 +484,7 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
 
     VkPhysicalDevice instance2_gpu = VK_NULL_HANDLE;
     {
@@ -498,12 +498,12 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     VkDisplayKHR display = VK_NULL_HANDLE;
     {
         uint32_t plane_count = 0;
-        ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(instance2_gpu, &plane_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(instance2_gpu, &plane_count, nullptr));
         if (plane_count == 0) {
             GTEST_SKIP() << "No display planes found";
         }
         std::vector<VkDisplayPlanePropertiesKHR> display_planes(plane_count);
-        ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(instance2_gpu, &plane_count, display_planes.data()));
+        ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(instance2_gpu, &plane_count, display_planes.data()));
         display = display_planes[0].currentDisplay;
         if (display == VK_NULL_HANDLE) {
             GTEST_SKIP() << "Null display";
@@ -512,12 +512,12 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     VkDisplayModeKHR display_mode = VK_NULL_HANDLE;
     {
         uint32_t mode_count = 0;
-        ASSERT_VK_SUCCESS(vk::GetDisplayModePropertiesKHR(instance2_gpu, display, &mode_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, vk::GetDisplayModePropertiesKHR(instance2_gpu, display, &mode_count, nullptr));
         if (mode_count == 0) {
             GTEST_SKIP() << "No display modes found";
         }
         std::vector<VkDisplayModePropertiesKHR> display_modes(mode_count);
-        ASSERT_VK_SUCCESS(vk::GetDisplayModePropertiesKHR(instance2_gpu, display, &mode_count, display_modes.data()));
+        ASSERT_EQ(VK_SUCCESS, vk::GetDisplayModePropertiesKHR(instance2_gpu, display, &mode_count, display_modes.data()));
         display_mode = display_modes[0].displayMode;
         if (display_mode == VK_NULL_HANDLE) {
             GTEST_SKIP() << "Null display mode";

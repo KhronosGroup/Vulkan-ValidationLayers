@@ -253,7 +253,7 @@ class RayTracingPipelineHelper {
         info_override(helper);
         helper.InitState();
 
-        ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
+        ASSERT_EQ(VK_SUCCESS, helper.CreateNVRayTracingPipeline());
     }
 };
 
