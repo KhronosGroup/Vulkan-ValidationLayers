@@ -23,7 +23,7 @@ These resources can be helpful to refine your issue, work out an application/dri
 
 ## Info
 * [BUILD.md](BUILD.md) - Instructions for building the Validation Layers
-* [LAYER_CONFIGURATION.md](LAYER_CONFIGURATION.md) - Instructions for configuring the Validation Layers at runtime.
+* [KHRONOS_VALIDATION_LAYER.md](docs/khronos_validation_layer.md) - Instructions for configuring the Validation Layers
 * [CONTRIBUTING.md](CONTRIBUTING.md) - Information needed to make a contribution.
     * [./docs](./docs/) - Details of the Validation Layer source code. **For those wanting to make contributions**
     * [./tests](./tests) - Information about testing the Validation Layers.
