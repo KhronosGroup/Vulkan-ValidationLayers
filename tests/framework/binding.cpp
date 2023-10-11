@@ -24,19 +24,16 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-namespace {
-
-#define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                                                 \
-    do {                                                                                                    \
-        assert(!initialized());                                                                             \
-        handle_type handle;                                                                                 \
-        auto result = create_func(dev.handle(), __VA_ARGS__, NULL, &handle);                                \
-        if (EXPECT((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT) ||                  \
-                   (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) || (result == VK_ERROR_OUT_OF_HOST_MEMORY))) { \
-            if (result == VK_SUCCESS) {                                                                     \
-                NonDispHandle::init(dev.handle(), handle);                                                  \
-            }                                                                                               \
-        }                                                                                                   \
+#define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                                                \
+    do {                                                                                                   \
+        assert(!initialized());                                                                            \
+        handle_type handle;                                                                                \
+        auto result = create_func(dev.handle(), __VA_ARGS__, NULL, &handle);                               \
+        ASSERT_TRUE((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT) ||                \
+                    (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) || (result == VK_ERROR_OUT_OF_HOST_MEMORY)); \
+        if (result == VK_SUCCESS) {                                                                        \
+            NonDispHandle::init(dev.handle(), handle);                                                     \
+        }                                                                                                  \
     } while (0)
 
 #define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)        \
@@ -49,17 +46,6 @@ namespace {
         internal::NonDispHandle<decltype(handle_)>::destroy(); \
     }                                                          \
     cls::~cls() noexcept { destroy(); }
-
-bool expect_failure(const char *expr, const char *file, unsigned int line) {
-    ADD_FAILURE_AT(file, line) << "Assertion: `" << expr << "'";
-
-    return false;
-}
-
-#define STRINGIFY(x) #x
-#define EXPECT(expr) ((expr) ? true : expect_failure(STRINGIFY(expr), __FILE__, __LINE__))
-
-}  // namespace
 
 namespace vkt {
 
@@ -281,7 +267,8 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 void Device::init(const VkDeviceCreateInfo &info) {
     VkDevice dev;
 
-    if (EXPECT(vk::CreateDevice(phy_.handle(), &info, NULL, &dev) == VK_SUCCESS)) Handle::init(dev);
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(phy_.handle(), &info, NULL, &dev));
+    Handle::init(dev);
 
     init_queues(info);
     init_formats();
@@ -321,7 +308,7 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
         }
     }
 
-    EXPECT(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[DMA].empty());
+    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[DMA].empty());
 }
 
 const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {
@@ -357,7 +344,7 @@ void Device::init_formats() {
         }
     }
 
-    EXPECT(!formats_.empty());
+    ASSERT_TRUE(!formats_.empty());
 }
 
 bool Device::IsEnabledExtension(const char *extension) {
@@ -372,13 +359,13 @@ VkFormatProperties Device::format_properties(VkFormat format) {
     return data;
 }
 
-void Device::wait() { EXPECT(vk::DeviceWaitIdle(handle()) == VK_SUCCESS); }
+void Device::wait() { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
 
 VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
     VkResult err =
         vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
-    EXPECT(err == VK_SUCCESS || err == VK_TIMEOUT);
+    EXPECT_TRUE(err == VK_SUCCESS || err == VK_TIMEOUT);
 
     return err;
 }
@@ -401,7 +388,9 @@ VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fen
     submit_info.pSignalSemaphores = nullptr;
 
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
-    if (expect_success) EXPECT(result == VK_SUCCESS);
+    if (expect_success) {
+        EXPECT_EQ(VK_SUCCESS, result);
+    }
     return result;
 }
 
@@ -434,7 +423,9 @@ VkResult Queue::submit2(const std::vector<const CommandBuffer *> &cmds, const Fe
 
     // requires synchronization2 to be enabled
     VkResult result = vk::QueueSubmit2(handle(), 1, &submit_info, fence.handle());
-    if (expect_success) EXPECT(result == VK_SUCCESS);
+    if (expect_success) {
+        EXPECT_EQ(VK_SUCCESS, result);
+    }
     return result;
 }
 
@@ -444,7 +435,7 @@ VkResult Queue::submit2(const CommandBuffer &cmd, const Fence &fence, bool expec
 
 VkResult Queue::wait() {
     VkResult result = vk::QueueWaitIdle(handle());
-    EXPECT(result == VK_SUCCESS);
+    EXPECT_EQ(VK_SUCCESS, result);
     return result;
 }
 
@@ -476,14 +467,17 @@ VkResult DeviceMemory::try_init(const Device &dev, const VkMemoryAllocateInfo &i
 
 const void *DeviceMemory::map(VkFlags flags) const {
     void *data;
-    if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = NULL;
-
+    VkResult result = vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data);
+    EXPECT_EQ(VK_SUCCESS, result);
+    if (result != VK_SUCCESS) data = NULL;
     return data;
 }
 
 void *DeviceMemory::map(VkFlags flags) {
     void *data;
-    if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = NULL;
+    VkResult result = vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data);
+    EXPECT_EQ(VK_SUCCESS, result);
+    if (result != VK_SUCCESS) data = NULL;
 
     return data;
 }
@@ -494,7 +488,7 @@ VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, co
                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
-    EXPECT(dev.phy().set_memory_type(reqs.memoryTypeBits, &alloc_info, mem_props));
+    EXPECT_TRUE(dev.phy().set_memory_type(reqs.memoryTypeBits, &alloc_info, mem_props));
     return alloc_info;
 }
 
@@ -594,7 +588,7 @@ NON_DISPATCHABLE_HANDLE_DTOR(Event, vk::DestroyEvent)
 
 void Event::init(const Device &dev, const VkEventCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateEvent, dev, &info); }
 
-void Event::set() { EXPECT(vk::SetEvent(device(), handle()) == VK_SUCCESS); }
+void Event::set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
 
 void Event::cmd_set(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
     vk::CmdSetEvent(cmd.handle(), handle(), stage_mask);
@@ -613,7 +607,7 @@ void Event::cmd_wait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_ma
                       static_cast<uint32_t>(image_barriers.size()), image_barriers.data());
 }
 
-void Event::reset() { EXPECT(vk::ResetEvent(device(), handle()) == VK_SUCCESS); }
+void Event::reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetEvent(device(), handle())); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)
 
@@ -623,7 +617,7 @@ void QueryPool::init(const Device &dev, const VkQueryPoolCreateInfo &info) {
 
 VkResult QueryPool::results(uint32_t first, uint32_t count, size_t size, void *data, size_t stride) {
     VkResult err = vk::GetQueryPoolResults(device(), handle(), first, count, size, data, stride, 0);
-    EXPECT(err == VK_SUCCESS || err == VK_NOT_READY);
+    EXPECT_TRUE(err == VK_SUCCESS || err == VK_NOT_READY);
 
     return err;
 }
@@ -662,7 +656,7 @@ void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
-    EXPECT(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
+    ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
 VkDeviceAddress Buffer::address(APIVersion vk_api_version /*= VK_API_VERSION_1_2*/) const {
@@ -736,7 +730,7 @@ void Image::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindImageMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
-    EXPECT(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
+    ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
 VkSubresourceLayout Image::subresource_layout(const VkImageSubresource &subres) const {
@@ -802,8 +796,7 @@ VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
     VkMemoryRequirements2 memoryRequirements = {};
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
-        vku::InitStructHelper();
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = vku::InitStructHelper();
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
     vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
@@ -816,8 +809,7 @@ VkMemoryRequirements2 AccelerationStructure::build_scratch_memory_requirements()
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
-        vku::InitStructHelper();
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = vku::InitStructHelper();
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
 
@@ -846,12 +838,12 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
         bind_info.accelerationStructure = handle();
         bind_info.memory = memory_.handle();
-        EXPECT(vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info) == VK_SUCCESS);
+        ASSERT_EQ(VK_SUCCESS, vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info));
 
         PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
             (PFN_vkGetAccelerationStructureHandleNV)vk::GetDeviceProcAddr(dev.handle(), "vkGetAccelerationStructureHandleNV");
         assert(vkGetAccelerationStructureHandleNV != nullptr);
-        EXPECT(vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_) == VK_SUCCESS);
+        ASSERT_EQ(VK_SUCCESS, vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_));
     }
 }
 vkt::Buffer AccelerationStructure::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
@@ -909,7 +901,7 @@ VkResult Shader::init_try(const Device &dev, const VkShaderCreateInfoEXT &info) 
 }
 
 Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
-               const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange* pushConstRange) {
+               const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -975,7 +967,7 @@ VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInf
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
-    EXPECT(err == VK_SUCCESS);
+    EXPECT_EQ(VK_SUCCESS, err);
     if (err == VK_SUCCESS) {
         err = vk::CreateGraphicsPipelines(dev.handle(), cache, 1, &info, NULL, &pipe);
         if (err == VK_SUCCESS) {
@@ -1031,7 +1023,7 @@ void DescriptorPool::init(const Device &dev, const VkDescriptorPoolCreateInfo &i
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorPool, dev, &info);
 }
 
-void DescriptorPool::reset() { EXPECT(vk::ResetDescriptorPool(device(), handle(), 0) == VK_SUCCESS); }
+void DescriptorPool::reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
 
 std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
                                                         const std::vector<const DescriptorSetLayout *> &layouts) {
@@ -1045,7 +1037,7 @@ std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
     alloc_info.descriptorPool = handle();
     alloc_info.pSetLayouts = layout_handles.data();
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, set_handles.data());
-    EXPECT(err == VK_SUCCESS);
+    EXPECT_EQ(VK_SUCCESS, err);
 
     std::vector<DescriptorSet *> sets;
     for (std::vector<VkDescriptorSet>::const_iterator it = set_handles.begin(); it != set_handles.end(); it++) {
@@ -1071,7 +1063,7 @@ void DescriptorSet::destroy() noexcept {
     // Only call vk::Free* on sets allocated from pool with usage *_DYNAMIC
     if (containing_pool_->getDynamicUsage()) {
         VkDescriptorSet sets[1] = {handle()};
-        EXPECT(vk::FreeDescriptorSets(device(), containing_pool_->handle(), 1, sets) == VK_SUCCESS);
+        ASSERT_EQ(VK_SUCCESS, vk::FreeDescriptorSets(device(), containing_pool_->handle(), 1, sets));
     }
     handle_ = VK_NULL_HANDLE;
 }
@@ -1099,11 +1091,10 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
     // Make sure commandPool is set
     assert(info.commandPool);
 
-    if (EXPECT(vk::AllocateCommandBuffers(dev.handle(), &info, &cmd) == VK_SUCCESS)) {
-        Handle::init(cmd);
-        dev_handle_ = dev.handle();
-        cmd_pool_ = info.commandPool;
-    }
+    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(dev.handle(), &info, &cmd));
+    Handle::init(cmd);
+    dev_handle_ = dev.handle();
+    cmd_pool_ = info.commandPool;
 }
 
 void CommandBuffer::Init(Device *device, const CommandPool *pool, VkCommandBufferLevel level, Queue *queue) {
@@ -1119,7 +1110,7 @@ void CommandBuffer::Init(Device *device, const CommandPool *pool, VkCommandBuffe
     init(*device, create_info);
 }
 
-void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { EXPECT(vk::BeginCommandBuffer(handle(), info) == VK_SUCCESS); }
+void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info)); }
 
 void CommandBuffer::begin() {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
@@ -1136,9 +1127,9 @@ void CommandBuffer::begin() {
     begin(&info);
 }
 
-void CommandBuffer::end() { EXPECT(vk::EndCommandBuffer(handle()) == VK_SUCCESS); }
+void CommandBuffer::end() { ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(handle())); }
 
-void CommandBuffer::reset(VkCommandBufferResetFlags flags) { EXPECT(vk::ResetCommandBuffer(handle(), flags) == VK_SUCCESS); }
+void CommandBuffer::reset(VkCommandBufferResetFlags flags) { ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags)); }
 
 VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool const &pool) {
     VkCommandBufferAllocateInfo info = vku::InitStructHelper();
@@ -1224,7 +1215,7 @@ void CommandBuffer::QueueCommandBuffer(bool check_success) {
 
 void CommandBuffer::QueueCommandBuffer(const vkt::Fence &fence, bool check_success, bool submit_2) {
     VkResult err = VK_SUCCESS;
-    (void) err;
+    (void)err;
 
     if (submit_2) {
         err = m_queue->submit2(*this, fence, check_success);
