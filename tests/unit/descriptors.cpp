@@ -5274,3 +5274,91 @@ TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
+    TEST_DESCRIPTION("Create descriptor set layout with incompatible flags with binding flags");
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(indexing_features);
+    if (indexing_features.descriptorBindingVariableDescriptorCount == VK_FALSE) {
+        GTEST_SKIP() << "descriptorBindingVariableDescriptorCount feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &indexing_features));
+
+    VkDescriptorSetLayoutBinding bindings[2];
+    bindings[0].binding = 0u;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[0].descriptorCount = 1u;
+    bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[0].pImmutableSamplers = nullptr;
+    bindings[1].binding = 1u;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[1].descriptorCount = 1u;
+    bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[1].pImmutableSamplers = nullptr;
+
+    VkDescriptorBindingFlagsEXT binding_flags[] = {VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1u;
+    flags_create_info.pBindingFlags = binding_flags;
+
+    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&flags_create_info);
+    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    create_info.bindingCount = 1u;
+    create_info.pBindings = bindings;
+
+    VkDescriptorSetLayout set_layout;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-flags-03003");
+    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    create_info.flags = 0u;
+    flags_create_info.bindingCount = 2u;
+    create_info.bindingCount = 2u;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03004");
+    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    flags_create_info.bindingCount = 1u;
+    create_info.bindingCount = 1u;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03015");
+    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
+    m_errorMonitor->VerifyFound();
+
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uint32_t descriptorCounts[2] = {1u, 1u};
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_allocate = vku::InitStructHelper();
+    variable_allocate.descriptorSetCount = 2u;
+    variable_allocate.pDescriptorCounts = descriptorCounts;
+
+    VkDescriptorPoolSize ds_type_count;
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    ds_type_count.descriptorCount = 1u;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1u;
+    ds_pool_ci.poolSizeCount = 1u;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {bindings[0]});
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper(&variable_allocate);
+    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorSetCount = 1u;
+    allocate_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet descriptor_set;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045");
+    vk::AllocateDescriptorSets(*m_device, &allocate_info, &descriptor_set);
+    m_errorMonitor->VerifyFound();
+}
