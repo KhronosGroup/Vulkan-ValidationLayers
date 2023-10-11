@@ -17,7 +17,7 @@
 TEST_F(PositiveSparseImage, MultipleBinds) {
     TEST_DESCRIPTION("Bind 2 memory ranges to one image using vkQueueBindSparse, destroy the image and then free the memory");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto index = m_device->graphics_queue_node_index_;
     if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
@@ -92,7 +92,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
 TEST_F(PositiveSparseImage, BindFreeMemory) {
     TEST_DESCRIPTION("Test using a sparse image after freeing memory that was bound to it.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto index = m_device->graphics_queue_node_index_;
     if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
@@ -188,7 +188,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
 TEST_F(PositiveSparseImage, BindMetadata) {
     TEST_DESCRIPTION("Bind memory for the metadata aspect of a sparse image");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto index = m_device->graphics_queue_node_index_;
     if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
@@ -268,7 +268,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
 TEST_F(PositiveSparseImage, OpImageSparse) {
     TEST_DESCRIPTION("Use OpImageSparse* operations at draw time");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto index = m_device->graphics_queue_node_index_;
     if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
@@ -280,7 +280,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     if (!m_device->phy().features().shaderResourceResidency) {
         GTEST_SKIP() << "Device does not support OpCapability SparseResidency";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;

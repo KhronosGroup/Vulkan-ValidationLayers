@@ -14,7 +14,7 @@
 TEST_F(VkVideoLayerTest, VideoCodingScope) {
     TEST_DESCRIPTION("Tests calling functions inside/outside video coding scope");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -70,7 +70,7 @@ TEST_F(VkVideoLayerTest, VideoCodingScope) {
 TEST_F(VkVideoLayerTest, VideoProfileInvalidLumaChromaSubsampling) {
     TEST_DESCRIPTION("Test single bit set in VkVideoProfileInfoKHR chromaSubsampling, lumaBitDepth, and chromaBitDepth");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -105,7 +105,7 @@ TEST_F(VkVideoLayerTest, VideoProfileInvalidLumaChromaSubsampling) {
 TEST_F(VkVideoLayerTest, VideoProfileMissingCodecInfo) {
     TEST_DESCRIPTION("Test missing codec-specific structure in profile definition");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkVideoProfileInfoKHR profile;
 
@@ -137,7 +137,7 @@ TEST_F(VkVideoLayerTest, VideoProfileMissingCodecInfo) {
 TEST_F(VkVideoLayerTest, CapabilityQueryMissingChain) {
     TEST_DESCRIPTION("vkGetPhysicalDeviceVideoCapabilitiesKHR - missing return structures in chain");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (GetConfigDecodeH264()) {
         VideoConfig config = GetConfigDecodeH264();
@@ -183,7 +183,7 @@ TEST_F(VkVideoLayerTest, CapabilityQueryMissingChain) {
 TEST_F(VkVideoLayerTest, VideoFormatQueryMissingProfile) {
     TEST_DESCRIPTION("vkGetPhysicalDeviceVideoFormatPropertiesKHR - missing profile info");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!GetConfig()) {
         GTEST_SKIP() << "Test requires video support";
@@ -208,7 +208,7 @@ TEST_F(VkVideoLayerTest, VideoFormatQueryMissingProfile) {
 TEST_F(VkVideoLayerTest, InUseDestroyed) {
     TEST_DESCRIPTION("Test destroying objects while they are still in use");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigWithParams(GetConfigs());
     if (!config) {
@@ -248,7 +248,7 @@ TEST_F(VkVideoLayerTest, InUseDestroyed) {
 TEST_F(VkVideoLayerTest, CreateSessionProtectedMemoryNotEnabled) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - cannot enable protected content without protected memory");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -272,7 +272,7 @@ TEST_F(VkVideoLayerTest, CreateSessionProtectedContentUnsupported) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - cannot enable protected content if not supported");
 
     const bool enable_protected_memory = true;
-    ASSERT_NO_FATAL_FAILURE(Init(enable_protected_memory));
+    RETURN_IF_SKIP(Init(enable_protected_memory));
     if (!IsProtectedMemoryEnabled()) {
         GTEST_SKIP() << "Test requires protectedMemory support";
     }
@@ -298,7 +298,7 @@ TEST_F(VkVideoLayerTest, CreateSessionProtectedContentUnsupported) {
 TEST_F(VkVideoLayerTest, CreateSessionUnsupportedProfile) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - unsupported profile");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -343,7 +343,7 @@ TEST_F(VkVideoLayerTest, CreateSessionUnsupportedProfile) {
 TEST_F(VkVideoLayerTest, CreateSessionInvalidReferencePictureCounts) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - invalid reference picture slot and active counts");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -394,7 +394,7 @@ TEST_F(VkVideoLayerTest, CreateSessionInvalidReferencePictureCounts) {
 TEST_F(VkVideoLayerTest, CreateSessionInvalidMaxCodedExtent) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - maxCodedExtent outside of supported range");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -440,7 +440,7 @@ TEST_F(VkVideoLayerTest, CreateSessionInvalidMaxCodedExtent) {
 TEST_F(VkVideoLayerTest, CreateSessionInvalidDecodeReferencePictureFormat) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - invalid decode reference picture format");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -466,7 +466,7 @@ TEST_F(VkVideoLayerTest, CreateSessionInvalidDecodeReferencePictureFormat) {
 TEST_F(VkVideoLayerTest, CreateSessionInvalidDecodePictureFormat) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - invalid decode picture format");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecode();
     if (!config) {
@@ -489,7 +489,7 @@ TEST_F(VkVideoLayerTest, CreateSessionInvalidDecodePictureFormat) {
 TEST_F(VkVideoLayerTest, CreateSessionInvalidStdHeaderVersion) {
     TEST_DESCRIPTION("vkCreateVideoSessionKHR - invalid Video Std header version");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -521,7 +521,7 @@ TEST_F(VkVideoLayerTest, CreateSessionInvalidStdHeaderVersion) {
 TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
     TEST_DESCRIPTION("vkBindVideoSessionMemoryKHR - memory binding related invalid usages");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -700,7 +700,7 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
 TEST_F(VkVideoLayerTest, CreateSessionParamsIncompatibleTemplate) {
     TEST_DESCRIPTION("vkCreateVideoSessionParametersKHR - incompatible template");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigWithParams(GetConfigs());
     if (!config) {
@@ -724,7 +724,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsIncompatibleTemplate) {
 TEST_F(VkVideoLayerTest, CreateSessionParamsMissingCodecInfo) {
     TEST_DESCRIPTION("vkCreateVideoSessionParametersKHR - missing codec-specific chained structure");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (GetConfigDecodeH264()) {
         VideoConfig config = GetConfigDecodeH264();
@@ -765,7 +765,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsMissingCodecInfo) {
 TEST_F(VkVideoLayerTest, CreateSessionParamsH264ExceededCapacity) {
     TEST_DESCRIPTION("vkCreateVideoSessionParametersKHR - H.264 parameter set capacity exceeded");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH264();
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 decode support";
@@ -849,7 +849,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsH264ExceededCapacity) {
 TEST_F(VkVideoLayerTest, CreateSessionParamsH265ExceededCapacity) {
     TEST_DESCRIPTION("vkCreateVideoSessionParametersKHR - H.265 parameter set capacity exceeded");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH265();
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 decode support";
@@ -974,7 +974,7 @@ TEST_F(VkVideoLayerTest, CreateSessionParamsH265ExceededCapacity) {
 TEST_F(VkVideoLayerTest, H264ParametersAddInfoUniqueness) {
     TEST_DESCRIPTION("VkVideoDecodeH264SessionParametersAddInfoKHR - parameter set uniqueness");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH264();
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 decode support";
@@ -1043,7 +1043,7 @@ TEST_F(VkVideoLayerTest, H264ParametersAddInfoUniqueness) {
 TEST_F(VkVideoLayerTest, H265ParametersAddInfoUniqueness) {
     TEST_DESCRIPTION("VkVideoDecodeH265SessionParametersAddInfoKHR - parameter set uniqueness");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH265();
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 decode support";
@@ -1138,7 +1138,7 @@ TEST_F(VkVideoLayerTest, H265ParametersAddInfoUniqueness) {
 TEST_F(VkVideoLayerTest, UpdateSessionParamsIncorrectSequenceCount) {
     TEST_DESCRIPTION("vkUpdateVideoSessionParametersKHR - invalid update sequence count");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigWithParams(GetConfigs());
     if (!config) {
         GTEST_SKIP() << "Test requires a video profile with session parameters";
@@ -1173,7 +1173,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsIncorrectSequenceCount) {
 TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ConflictingKeys) {
     TEST_DESCRIPTION("vkUpdateVideoSessionParametersKHR - H.264 conflicting parameter set keys");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH264();
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 decode support";
@@ -1239,7 +1239,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ConflictingKeys) {
 TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ConflictingKeys) {
     TEST_DESCRIPTION("vkUpdateVideoSessionParametersKHR - H.265 conflicting parameter set keys");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH265();
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 decode support";
@@ -1328,7 +1328,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ConflictingKeys) {
 TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ExceededCapacity) {
     TEST_DESCRIPTION("vkUpdateVideoSessionParametersKHR - H.264 parameter set capacity exceeded");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH264();
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 decode support";
@@ -1392,7 +1392,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH264ExceededCapacity) {
 TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ExceededCapacity) {
     TEST_DESCRIPTION("vkUpdateVideoSessionParametersKHR - H.265 parameter set capacity exceeded");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VideoConfig config = GetConfigDecodeH265();
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 decode support";
@@ -1484,7 +1484,7 @@ TEST_F(VkVideoLayerTest, UpdateSessionParamsH265ExceededCapacity) {
 TEST_F(VkVideoLayerTest, BeginCodingUnsupportedCodecOp) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - unsupported video codec operation");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -1522,7 +1522,7 @@ TEST_F(VkVideoLayerTest, BeginCodingUnsupportedCodecOp) {
 TEST_F(VkVideoLayerTest, BeginCodingActiveQueriesNotAllowed) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - there must be no active query");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -1552,7 +1552,7 @@ TEST_F(VkVideoLayerTest, BeginCodingProtectedNoFaultSession) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - protectedNoFault tests for video session");
 
     const bool use_protected = true;
-    ASSERT_NO_FATAL_FAILURE(Init(use_protected));
+    RETURN_IF_SKIP(Init(use_protected));
     if (!IsProtectedMemoryEnabled() || IsProtectedNoFaultSupported()) {
         GTEST_SKIP() << "Test requires protectedMemory support without protectedNoFault support";
     }
@@ -1591,7 +1591,7 @@ TEST_F(VkVideoLayerTest, BeginCodingProtectedNoFaultSlots) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - protectedNoFault tests for reference slots");
 
     const bool use_protected = true;
-    ASSERT_NO_FATAL_FAILURE(Init(use_protected));
+    RETURN_IF_SKIP(Init(use_protected));
     if (!IsProtectedMemoryEnabled() || IsProtectedNoFaultSupported()) {
         GTEST_SKIP() << "Test requires protectedMemory support without protectedNoFault support";
     }
@@ -1632,7 +1632,7 @@ TEST_F(VkVideoLayerTest, BeginCodingProtectedNoFaultSlots) {
 TEST_F(VkVideoLayerTest, BeginCodingSessionMemoryNotBound) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - session uninitialized");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -1690,7 +1690,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionMemoryNotBound) {
 TEST_F(VkVideoLayerTest, BeginCodingSessionUninitialized) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - session uninitialized");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     // NOTE: Once encode validation implementation is ready, this should be converted to
     // a test using an encode session, as, with the decode extensions only, there's no
@@ -1727,7 +1727,7 @@ TEST_F(VkVideoLayerTest, BeginCodingSessionUninitialized) {
 TEST_F(VkVideoLayerTest, BeginCodingInvalidSessionParams) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - invalid session parameters");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigWithParams(GetConfigs());
     if (!config) {
@@ -1753,7 +1753,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidSessionParams) {
 TEST_F(VkVideoLayerTest, BeginCodingDecodeH264RequiresParams) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - H.264 decode requires session parameters");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecodeH264();
     if (!config) {
@@ -1778,7 +1778,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeH264RequiresParams) {
 TEST_F(VkVideoLayerTest, BeginCodingDecodeH265RequiresParams) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - H.265 decode requires session parameters");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecodeH265();
     if (!config) {
@@ -1803,7 +1803,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeH265RequiresParams) {
 TEST_F(VkVideoLayerTest, BeginCodingIncompatRefPicProfile) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - reference picture must be compatible with the video profile");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig configs[2] = {};
     const auto& all_configs = GetConfigs();
@@ -1849,7 +1849,7 @@ TEST_F(VkVideoLayerTest, BeginCodingIncompatRefPicProfile) {
 TEST_F(VkVideoLayerTest, BeginCodingInvalidResourceLayer) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - out-of-bounds layer index in VkVideoPictureResourceInfoKHR");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs()));
     if (!config) {
@@ -1881,7 +1881,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidResourceLayer) {
 TEST_F(VkVideoLayerTest, BeginCodingDecodeSlotInactive) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - referenced DPB slot is inactive");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -1939,7 +1939,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeSlotInactive) {
 TEST_F(VkVideoLayerTest, BeginCodingDecodeInvalidSlotResourceAssociation) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - referenced DPB slot is not associated with the specified resource");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -1976,7 +1976,7 @@ TEST_F(VkVideoLayerTest, BeginCodingDecodeInvalidSlotResourceAssociation) {
 TEST_F(VkVideoLayerTest, BeginCodingInvalidSlotIndex) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - referenced DPB slot index is invalid");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs(), 4));
     if (!config) {
@@ -2004,7 +2004,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidSlotIndex) {
 TEST_F(VkVideoLayerTest, BeginCodingResourcesNotUnique) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - referenced video picture resources are not unique");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs(), 2));
     if (!config) {
@@ -2032,7 +2032,7 @@ TEST_F(VkVideoLayerTest, BeginCodingResourcesNotUnique) {
 TEST_F(VkVideoLayerTest, BeginCodingReferenceFormatMismatch) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - reference picture format mismatch");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     uint32_t alt_ref_format_index = 0;
     VideoConfig config =
@@ -2075,7 +2075,7 @@ TEST_F(VkVideoLayerTest, BeginCodingReferenceFormatMismatch) {
 TEST_F(VkVideoLayerTest, BeginCodingInvalidCodedOffset) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - invalid coded offset");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs()));
     if (!config) {
@@ -2113,7 +2113,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidCodedOffset) {
 TEST_F(VkVideoLayerTest, BeginCodingInvalidCodedExtent) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - invalid coded extent");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs()));
     if (!config) {
@@ -2173,7 +2173,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidCodedExtent) {
 TEST_F(VkVideoLayerTest, BeginCodingInvalidSeparateReferenceImages) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - unsupported use of separate reference images");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs(), 2));
     if (!config) {
@@ -2207,7 +2207,7 @@ TEST_F(VkVideoLayerTest, BeginCodingInvalidSeparateReferenceImages) {
 TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
     TEST_DESCRIPTION("vkCmdBeginCodingKHR - reference picture resource missing VIDEO_DECODE_DPB usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode(), 1));
     if (!config) {
@@ -2255,7 +2255,7 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
 TEST_F(VkVideoLayerTest, EndCodingActiveQueriesNotAllowed) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - there must be no active query");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -2286,7 +2286,7 @@ TEST_F(VkVideoLayerTest, EndCodingActiveQueriesNotAllowed) {
 TEST_F(VkVideoLayerTest, DecodeSessionUninitialized) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - session uninitialized");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecode();
     if (!config) {
@@ -2315,7 +2315,7 @@ TEST_F(VkVideoLayerTest, DecodeProtectedNoFaultBitstreamBuffer) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - protectedNoFault tests for bitstream buffer");
 
     const bool use_protected = true;
-    ASSERT_NO_FATAL_FAILURE(Init(use_protected));
+    RETURN_IF_SKIP(Init(use_protected));
     if (!IsProtectedMemoryEnabled() || IsProtectedNoFaultSupported()) {
         GTEST_SKIP() << "Test requires protectedMemory support without protectedNoFault support";
     }
@@ -2362,7 +2362,7 @@ TEST_F(VkVideoLayerTest, DecodeProtectedNoFaultDecodeOutput) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - protectedNoFault tests for bitstream buffer");
 
     const bool use_protected = true;
-    ASSERT_NO_FATAL_FAILURE(Init(use_protected));
+    RETURN_IF_SKIP(Init(use_protected));
     if (!IsProtectedMemoryEnabled() || IsProtectedNoFaultSupported()) {
         GTEST_SKIP() << "Test requires protectedMemory support without protectedNoFault support";
     }
@@ -2408,7 +2408,7 @@ TEST_F(VkVideoLayerTest, DecodeProtectedNoFaultDecodeOutput) {
 TEST_F(VkVideoLayerTest, DecodeImageLayouts) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - pictures should be in the expected layout");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -2479,7 +2479,7 @@ TEST_F(VkVideoLayerTest, DecodeImageLayouts) {
 TEST_F(VkVideoLayerTest, DecodeInvalidResourceLayer) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - out-of-bounds layer index in VkVideoPictureResourceInfoKHR");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -2537,7 +2537,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidResourceLayer) {
 TEST_F(VkVideoLayerTest, DecodeQueryTooManyOperations) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - no more queries available to store operation results");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecode();
     if (!config) {
@@ -2572,7 +2572,7 @@ TEST_F(VkVideoLayerTest, DecodeQueryTooManyOperations) {
 TEST_F(VkVideoLayerTest, DecodeIncompatBufferProfile) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - bitstream buffer must be compatible with the video profile");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto configs = GetConfigsDecode();
     if (configs.size() < 2) {
@@ -2602,7 +2602,7 @@ TEST_F(VkVideoLayerTest, DecodeIncompatBufferProfile) {
 TEST_F(VkVideoLayerTest, DecodeBufferMissingDecodeSrcUsage) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - bitstream buffer missing DECODE_SRC usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfigDecode();
     if (!config) {
@@ -2644,7 +2644,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferMissingDecodeSrcUsage) {
 TEST_F(VkVideoLayerTest, DecodeBufferOffsetOutOfBounds) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - bitstream buffer offset out of bounds");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfigDecode();
     if (!config) {
@@ -2677,7 +2677,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferOffsetOutOfBounds) {
 TEST_F(VkVideoLayerTest, DecodeBufferOffsetAlignment) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - bitstream buffer offset needs to be aligned");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(FilterConfigs(
         GetConfigsDecode(), [](const VideoConfig& config) { return config.Caps()->minBitstreamBufferOffsetAlignment > 1; }));
@@ -2709,7 +2709,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferOffsetAlignment) {
 TEST_F(VkVideoLayerTest, DecodeBufferRangeOutOfBounds) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - bitstream buffer range out of bounds");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfigDecode();
     if (!config) {
@@ -2745,7 +2745,7 @@ TEST_F(VkVideoLayerTest, DecodeBufferRangeOutOfBounds) {
 TEST_F(VkVideoLayerTest, DecodeBufferRangeAlignment) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - bitstream buffer range needs to be aligned");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(FilterConfigs(
         GetConfigsDecode(), [](const VideoConfig& config) { return config.Caps()->minBitstreamBufferSizeAlignment > 1; }));
@@ -2778,7 +2778,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidOutputAndSetupCoincide) {
         "vkCmdDecodeVideoKHR - decode output and reconstructed pictures must not match "
         "if VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR is not supported");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecode()),
                                           [](const VideoConfig& config) { return !config.SupportsDecodeOutputCoincide(); }));
@@ -2813,7 +2813,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidOutputAndSetupDistinct) {
         "vkCmdDecodeVideoKHR - decode output and reconstructed pictures must match "
         "if VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR is not supported");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecode()),
                                           [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
@@ -2845,7 +2845,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidOutputAndSetupDistinct) {
 TEST_F(VkVideoLayerTest, DecodeInvalidSetupSlotIndex) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid slot index specified for reconstructed picture");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecode(), 3));
     if (!config) {
@@ -2879,7 +2879,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidSetupSlotIndex) {
 TEST_F(VkVideoLayerTest, DecodeInvalidRefSlotIndex) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid slot index specified for reference picture");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecode(), 3));
     if (!config) {
@@ -2914,7 +2914,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidRefSlotIndex) {
 TEST_F(VkVideoLayerTest, DecodeSetupResourceNull) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - reconstructed picture resource must not be NULL");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -2944,7 +2944,7 @@ TEST_F(VkVideoLayerTest, DecodeSetupResourceNull) {
 TEST_F(VkVideoLayerTest, DecodeReferenceResourceNull) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - reference picture resource must not be NULL");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -2974,7 +2974,7 @@ TEST_F(VkVideoLayerTest, DecodeReferenceResourceNull) {
 TEST_F(VkVideoLayerTest, DecodeIncompatOutputPicProfile) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output picture must be compatible with the video profile");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig configs[2] = {};
     const auto& all_configs = GetConfigsDecode();
@@ -3019,7 +3019,7 @@ TEST_F(VkVideoLayerTest, DecodeIncompatOutputPicProfile) {
 TEST_F(VkVideoLayerTest, DecodeOutputFormatMismatch) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output picture format mismatch");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     uint32_t alt_pic_format_index = 0;
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsDecode(), [&alt_pic_format_index](const VideoConfig& config) {
@@ -3060,7 +3060,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputFormatMismatch) {
 TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output picture resource missing VIDEO_DECODE_DST usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfigDecode();
     if (!config) {
@@ -3106,7 +3106,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
 TEST_F(VkVideoLayerTest, DecodeOutputCodedOffsetExtent) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid decode output picture coded offset/extent");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfigDecode();
     if (!config) {
@@ -3155,7 +3155,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputCodedOffsetExtent) {
 TEST_F(VkVideoLayerTest, DecodeSetupAndRefCodedOffset) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid reconstructed/reference picture coded offset");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -3217,7 +3217,7 @@ TEST_F(VkVideoLayerTest, DecodeSetupAndRefCodedOffset) {
 TEST_F(VkVideoLayerTest, DecodeSetupResourceNotBound) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - used reconstructed picture resource is not bound");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -3249,7 +3249,7 @@ TEST_F(VkVideoLayerTest, DecodeRefResourceNotBoundToDPBSlot) {
         "vkCmdDecodeVideoKHR - used reference picture resource is not bound as a resource "
         "currently associated with the corresponding DPB slot");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2));
     if (!config) {
@@ -3303,7 +3303,7 @@ TEST_F(VkVideoLayerTest, DecodeRefResourceNotBoundToDPBSlot) {
 TEST_F(VkVideoLayerTest, DecodeTooManyReferences) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - reference picture count exceeds maxActiveReferencePictures");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2));
     if (!config) {
@@ -3335,7 +3335,7 @@ TEST_F(VkVideoLayerTest, DecodeTooManyReferencesH264Interlaced) {
         "vkCmdDecodeVideoKHR - reference picture count exceeds maxActiveReferencePictures"
         " (specific test for H.264 interlaced with both top and bottom field referenced)");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced(), 2), 2));
     if (!config) {
@@ -3369,7 +3369,7 @@ TEST_F(VkVideoLayerTest, DecodeTooManyReferencesH264Interlaced) {
 TEST_F(VkVideoLayerTest, DecodeDuplicateRefResource) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - same reference picture resource is used twice");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2));
     if (!config) {
@@ -3409,7 +3409,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateRefResourceH264Interlaced) {
         "vkCmdDecodeVideoKHR - same reference picture resource is used twice "
         "with one referring to the top field and another referring to the bottom field");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced(), 2));
     if (!config) {
@@ -3439,7 +3439,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateRefResourceH264Interlaced) {
 TEST_F(VkVideoLayerTest, DecodeDuplicateFrame) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - same DPB frame reference is used twice");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2));
     if (!config) {
@@ -3469,7 +3469,7 @@ TEST_F(VkVideoLayerTest, DecodeDuplicateFrame) {
 TEST_F(VkVideoLayerTest, DecodeDuplicateFrameFieldH264Interlaced) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - same DPB frame, top field, or bottom field reference is used twice");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced(), 4), 2));
     if (!config) {
@@ -3524,7 +3524,7 @@ TEST_F(VkVideoLayerTest, DecodeRefPictureKindMismatch) {
         "vkCmdDecodeVideoKHR - reference picture kind (frame, top field, bottom field) mismatch "
         "between actual DPB slot contents and specified reference pictures");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()));
     if (!config) {
@@ -3640,7 +3640,7 @@ TEST_F(VkVideoLayerTest, DecodeRefPictureKindMismatch) {
 TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH264) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid/missing H.264 codec-specific information");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecodeH264(), 2));
     if (!config) {
@@ -3791,7 +3791,7 @@ TEST_F(VkVideoLayerTest, DecodeFieldFrameMismatchH264) {
         "vkCmdDecodeVideoKHR - H.264 interlaced field/frame mismatch between "
         "decode output picture and reconstructed picture");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()));
     if (!config) {
@@ -3847,7 +3847,7 @@ TEST_F(VkVideoLayerTest, DecodeFieldFrameMismatchH264) {
 TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH265) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid/missing H.265 codec-specific information");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecodeH265()));
     if (!config) {
@@ -3965,7 +3965,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidCodecInfoH265) {
 TEST_F(VkVideoLayerTest, CreateBufferInvalidProfileList) {
     TEST_DESCRIPTION("vkCreateBuffer - invalid/missing profile list");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecode();
     if (!config) {
@@ -3999,7 +3999,7 @@ TEST_F(VkVideoLayerTest, CreateBufferInvalidProfileList) {
 TEST_F(VkVideoLayerTest, CreateImageInvalidProfileList) {
     TEST_DESCRIPTION("vkCreateImage - invalid/missing profile list");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfigDecode();
     if (!config) {
@@ -4029,7 +4029,7 @@ TEST_F(VkVideoLayerTest, CreateImageInvalidProfileList) {
 TEST_F(VkVideoLayerTest, CreateImageIncompatibleProfile) {
     TEST_DESCRIPTION("vkCreateImage - image parameters are incompatible with the profile");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -4064,7 +4064,7 @@ TEST_F(VkVideoLayerTest, CreateImageIncompatibleProfile) {
 TEST_F(VkVideoLayerTest, CreateImageViewInvalidViewType) {
     TEST_DESCRIPTION("vkCreateImageView - view type not compatible with video usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
     if (!config) {
@@ -4111,7 +4111,7 @@ TEST_F(VkVideoLayerTest, CreateImageViewInvalidViewType) {
 TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
     TEST_DESCRIPTION("vkCmdBeginQuery - result status only queries require queue family support");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
     for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
@@ -4145,7 +4145,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
 TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeQueryAlreadyActive) {
     TEST_DESCRIPTION("vkCmdBeginQuery - there must be no active query in video scope");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -4179,7 +4179,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeQueryAlreadyActive) {
 TEST_F(VkVideoLayerTest, BeginQueryResultStatusProfileMismatch) {
     TEST_DESCRIPTION("vkCmdBeginQuery - result status query must have been created with the same profile");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     auto configs = GetConfigs();
     if (configs.size() < 2) {
@@ -4211,7 +4211,7 @@ TEST_F(VkVideoLayerTest, BeginQueryResultStatusProfileMismatch) {
 TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     TEST_DESCRIPTION("vkCmdBeginQuery - incompatible query type used in video coding scope");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -4244,7 +4244,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
 TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
     TEST_DESCRIPTION("vkGetQueryPoolResults - test invalid use of VK_QUERY_RESULT_WITH_STATUS_BIT_KHR");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!GetConfig()) {
         GTEST_SKIP() << "Test requires video support";
@@ -4272,7 +4272,7 @@ TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
 TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
     TEST_DESCRIPTION("vkCmdCopyQueryPoolResults - test invalid use of VK_QUERY_RESULT_WITH_STATUS_BIT_KHR");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!GetConfig()) {
         GTEST_SKIP() << "Test requires video support";
@@ -4308,7 +4308,7 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
 TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
     TEST_DESCRIPTION("Image layout in image memory barrier is invalid for image usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -4409,7 +4409,7 @@ TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {
 TEST_F(VkVideoBestPracticesLayerTest, GetVideoSessionMemoryRequirements) {
     TEST_DESCRIPTION("vkGetVideoSessionMemoryRequirementsKHR - best practices");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -4430,7 +4430,7 @@ TEST_F(VkVideoBestPracticesLayerTest, GetVideoSessionMemoryRequirements) {
 TEST_F(VkVideoBestPracticesLayerTest, BindVideoSessionMemory) {
     TEST_DESCRIPTION("vkBindVideoSessionMemoryKHR - best practices");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VideoConfig config = GetConfig();
     if (!config) {

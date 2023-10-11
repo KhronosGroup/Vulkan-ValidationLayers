@@ -403,13 +403,13 @@ class ViewportInheritanceTestData {
 TEST_F(NegativeViewportInheritance, BasicUsage) {
     TEST_DESCRIPTION("Simple correct and incorrect usage of VK_NV_inherited_viewport_scissor");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
-    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
-                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
-                                &missing_feature_string, true, false));
+    RETURN_IF_SKIP(has_features = ViewportInheritanceTestData::InitState(
+                       this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                       &missing_feature_string, true, false));
     if (!has_features) {
         GTEST_SKIP() << missing_feature_string;
     }
@@ -637,13 +637,13 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
 TEST_F(NegativeViewportInheritance, MissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling feature.");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
-    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
-                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
-                                &missing_feature_string, false, false));
+    RETURN_IF_SKIP(has_features = ViewportInheritanceTestData::InitState(
+                       this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                       &missing_feature_string, false, false));
     if (!has_features) {
         GTEST_SKIP() << missing_feature_string;
     }
@@ -664,13 +664,13 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
 TEST_F(NegativeViewportInheritance, MultiViewport) {
     TEST_DESCRIPTION("VK_NV_inherited_viewport_scissor tests with multiple viewports/scissors");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
-    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
-                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
-                                &missing_feature_string, true, true));
+    RETURN_IF_SKIP(has_features = ViewportInheritanceTestData::InitState(
+                       this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                       &missing_feature_string, true, true));
     if (!has_features) {
         GTEST_SKIP() << missing_feature_string;
     }
@@ -894,13 +894,13 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
 TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling multiViewport feature.");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
-    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
-                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
-                                &missing_feature_string, true, false, true));
+    RETURN_IF_SKIP(has_features = ViewportInheritanceTestData::InitState(
+                       this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                       &missing_feature_string, true, false, true));
     if (!has_features) {
         GTEST_SKIP() << missing_feature_string;
     }
@@ -921,11 +921,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rect_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(discard_rect_props);
@@ -936,14 +932,14 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
-    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
-                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
-                                &missing_feature_string, true, false, true));
+    RETURN_IF_SKIP(has_features = ViewportInheritanceTestData::InitState(
+                       this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                       &missing_feature_string, true, false, true));
     if (!has_features) {
         GTEST_SKIP() << missing_feature_string;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);

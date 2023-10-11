@@ -21,8 +21,8 @@ TEST_F(NegativePipeline, NotBound) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipeline badPipeline = CastToHandle<VkPipeline, uintptr_t>(0xbaadb1be);
 
@@ -37,8 +37,8 @@ TEST_F(NegativePipeline, WrongBindPointGraphics) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00779");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
@@ -52,7 +52,7 @@ TEST_F(NegativePipeline, WrongBindPointGraphics) {
 
 TEST_F(NegativePipeline, BasicCompute) {
     TEST_DESCRIPTION("Bind a compute pipeline (no subpasses)");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     const char *cs = R"glsl(#version 450
     layout(local_size_x=1) in;
@@ -88,8 +88,8 @@ TEST_F(NegativePipeline, WrongBindPointCompute) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00780");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -107,7 +107,7 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
         "attachments");
     VkPhysicalDeviceFeatures features = {};
     features.independentBlend = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    RETURN_IF_SKIP(Init(&features));
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
@@ -161,7 +161,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     TEST_DESCRIPTION("Test that blending is not enabled with a format not support blending");
     VkPhysicalDeviceFeatures features = {};
     features.independentBlend = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    RETURN_IF_SKIP(Init(&features));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06041");
 
@@ -221,8 +221,8 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
 TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline that is incompatible with the requirements of its contained Renderpass/subpasses.");
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipelineColorBlendAttachmentState att_state1 = {};
     att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
@@ -237,8 +237,8 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
 
 TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a pipeline dependency being destroyed.");
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     {
         // Use helper to create graphics pipeline
@@ -267,10 +267,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
     AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.2";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
@@ -279,8 +276,8 @@ TEST_F(NegativePipeline, BadPipelineObject) {
         GTEST_SKIP() << VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME << " is enabled, but the drawIndirectCount is not supported.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    InitRenderTarget();
 
     // Attempt to bind an invalid Pipeline to a valid Command Buffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
@@ -356,8 +353,8 @@ TEST_F(NegativePipeline, BadPipelineObject) {
 TEST_F(NegativePipeline, ShaderStageName) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -384,8 +381,8 @@ TEST_F(NegativePipeline, ShaderStageName) {
 TEST_F(NegativePipeline, ShaderStageBit) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // Make sure compute pipeline has a compute shader stage set
     char const *csSource = R"glsl(
@@ -413,8 +410,8 @@ TEST_F(NegativePipeline, SampleRateFeatureDisable) {
     VkPhysicalDeviceFeatures device_features = {};
     device_features.sampleRateShading = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(Init(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&device_features));
+    InitRenderTarget();
 
     // Cause the error by enabling sample shading...
     auto set_shading_enable = [](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.sampleShadingEnable = VK_TRUE; };
@@ -424,17 +421,17 @@ TEST_F(NegativePipeline, SampleRateFeatureDisable) {
 
 TEST_F(NegativePipeline, SampleRateFeatureEnable) {
     // Enable sample shading in pipeline when the feature is disabled.
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
 
     // Require sampleRateShading here
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
     if (device_features.sampleRateShading == VK_FALSE) {
         GTEST_SKIP() << "SampleRateShading feature is disabled";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(&device_features));
+    InitRenderTarget();
 
     auto range_test = [this](float value, bool positive_test) {
         auto info_override = [value](CreatePipelineHelper &helper) {
@@ -457,8 +454,8 @@ TEST_F(NegativePipeline, SampleRateFeatureEnable) {
 
 TEST_F(NegativePipeline, DepthClipControlFeatureDisable) {
     // Enable negativeOneToOne (VK_EXT_depth_clip_control) in pipeline when the feature is disabled.
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipelineViewportDepthClipControlCreateInfoEXT clip_control = vku::InitStructHelper();
     clip_control.negativeOneToOne = VK_TRUE;
@@ -471,8 +468,8 @@ TEST_F(NegativePipeline, SamplePNextUnknown) {
     TEST_DESCRIPTION("Pass unknown pNext into VkPipelineMultisampleStateCreateInfo");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipelineSampleLocationsStateCreateInfoEXT sample_locations = vku::InitStructHelper();
     sample_locations.sampleLocationsInfo = vku::InitStructHelper();
@@ -488,8 +485,8 @@ TEST_F(NegativePipeline, SamplePNextUnknown) {
 TEST_F(NegativePipeline, DISABLED_SamplePNextDisabled) {
     TEST_DESCRIPTION("Pass valid pNext VkPipelineMultisampleStateCreateInfo, but without extension enabled");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipelineSampleLocationsStateCreateInfoEXT sample_locations = vku::InitStructHelper();
     sample_locations.sampleLocationsInfo = vku::InitStructHelper();
@@ -500,13 +497,13 @@ TEST_F(NegativePipeline, DISABLED_SamplePNextDisabled) {
 TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     TEST_DESCRIPTION("Test creating two pipelines referring to the same subpass but with different rasterization samples count");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures device_features = {};
     device_features.variableMultisampleRate = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(&device_features));
+    InitRenderTarget();
 
     // Create a render pass with 1 subpass. This subpass uses no attachment.
     std::array<VkAttachmentReference, 1> attachmentRefs = {};
@@ -587,20 +584,17 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
 TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     TEST_DESCRIPTION("Test pipeline creation VUIDs added with VK_QCOM_render_pass_shader_resolve extension.");
     AddRequiredExtensions(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Require sampleRateShading for these tests
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
     if (device_features.sampleRateShading == VK_FALSE) {
         GTEST_SKIP() << "SampleRateShading feature is disabled -- skipping related checks.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(&device_features));
+    InitRenderTarget();
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
@@ -704,14 +698,14 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
 
 TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
     TEST_DESCRIPTION("Create Graphics Pipeline with fragment shader and rasterizer discard");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
     VkImageView depth_image_view =
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
+    InitRenderTarget(&depth_image_view);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -774,7 +768,7 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
 TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
@@ -782,7 +776,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
                          VK_IMAGE_TILING_OPTIMAL);
     VkImageView depth_image_view =
         m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(&depth_image_view));
+    InitRenderTarget(&depth_image_view);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -858,15 +852,12 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = vku::InitStructHelper();
     cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cache_control_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &cache_control_features));
+    InitRenderTarget();
 
     const auto set_graphics_flags = [&](CreatePipelineHelper &helper) {
         helper.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT;
@@ -894,8 +885,8 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
     // sampleCount
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -936,8 +927,8 @@ TEST_F(NegativePipeline, NumBlendAttachMismatch) {
     // blend attachments even though we have a color attachment.
 
     AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -955,8 +946,8 @@ TEST_F(NegativePipeline, NumBlendAttachMismatch) {
 TEST_F(NegativePipeline, ColorBlendInvalidLogicOp) {
     TEST_DESCRIPTION("Attempt to use invalid VkPipelineColorBlendStateCreateInfo::logicOp value.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());  // enables all supported features
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())  // enables all supported features
+    InitRenderTarget();
 
     if (!m_device->phy().features().logicOp) {
         GTEST_SKIP() << "Device does not support logicOp feature";
@@ -974,8 +965,8 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
     TEST_DESCRIPTION("Attempt enabling VkPipelineColorBlendStateCreateInfo::logicOpEnable when logicOp feature is disabled.");
 
     VkPhysicalDeviceFeatures features{};
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&features));
+    InitRenderTarget();
 
     const auto set_shading_enable = [](CreatePipelineHelper &helper) { helper.cb_ci_.logicOpEnable = VK_TRUE; };
     CreatePipelineHelper::OneshotTest(*this, set_shading_enable, kErrorBit,
@@ -986,8 +977,8 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
     TEST_DESCRIPTION("Attempt to use dual-source blending when dualSrcBlend feature is disabled.");
 
     VkPhysicalDeviceFeatures features{};
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&features));
+    InitRenderTarget();
 
     VkPipelineColorBlendAttachmentState cb_attachments = {};
 
@@ -1037,8 +1028,8 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
 TEST_F(NegativePipeline, DuplicateStage) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline containing multiple shaders for the same stage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.vs_->GetStageCreateInfo(),
@@ -1048,8 +1039,8 @@ TEST_F(NegativePipeline, DuplicateStage) {
 }
 
 TEST_F(NegativePipeline, MissingEntrypoint) {
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // Graphics
     {
@@ -1093,8 +1084,8 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "pDepthStencilState is NULL when rasterization is enabled and subpass uses a depth/stencil attachment");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
@@ -1144,7 +1135,7 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
 TEST_F(NegativePipeline, NullStagepName) {
     TEST_DESCRIPTION("Test that an error is produced for a stage with a null pName pointer");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
@@ -1161,13 +1152,10 @@ TEST_F(NegativePipeline, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
     TEST_DESCRIPTION("Verify an error message for an incorrect graphics pipeline rasterization sample count.");
 
     AddRequiredExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     // Set a mismatched sample count
     VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
@@ -1180,19 +1168,16 @@ TEST_F(NegativePipeline, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
 TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
     TEST_DESCRIPTION("Verify VK_NV_framebuffer_mixed_samples.");
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
     if (VK_TRUE != device_features.sampleRateShading) {
         GTEST_SKIP() << "Test requires unsupported sampleRateShading feature";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     struct TestCase {
         VkSampleCountFlagBits color_samples;
@@ -1292,9 +1277,9 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
 TEST_F(NegativePipeline, FramebufferMixedSamples) {
     TEST_DESCRIPTION("Verify that the expected VUIds are hits when VK_NV_framebuffer_mixed_samples is disabled.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
@@ -1376,18 +1361,15 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
     AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     if (!IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME) &&
         !IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
         GTEST_SKIP() << "Extensions not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     struct TestCase {
         VkSampleCountFlagBits raster_samples;
@@ -1403,16 +1385,14 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     uint32_t combination_count = 0;
     std::vector<VkFramebufferMixedSamplesCombinationNV> combinations;
 
-    ASSERT_NO_FATAL_FAILURE(
-        vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr));
+    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr);
     if (combination_count < 1) {
         GTEST_SKIP() << "No mixed sample combinations are supported";
     }
     combinations.resize(combination_count);
     // TODO this fill can be removed once https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4138 merges
     std::fill(combinations.begin(), combinations.end(), vku::InitStruct<VkFramebufferMixedSamplesCombinationNV>());
-    ASSERT_NO_FATAL_FAILURE(
-        vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, &combinations[0]));
+    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, &combinations[0]);
 
     // Pick the first supported combination for a positive test.
     test_cases.push_back({combinations[0].rasterizationSamples, static_cast<VkSampleCountFlagBits>(combinations[0].colorSamples),
@@ -1514,13 +1494,10 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
     TEST_DESCRIPTION("Verify VK_NV_fragment_coverage_to_color.");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     struct TestCase {
         VkFormat format;
@@ -1607,13 +1584,10 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
 
 TEST_F(NegativePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPipelineViewportSwizzleStateCreateInfoNV vp_swizzle_state = vku::InitStructHelper();
 
@@ -1672,12 +1646,9 @@ TEST_F(NegativePipeline, CreationFeedbackCount) {
     TEST_DESCRIPTION("Test graphics pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Driver data writeback check not supported by MockICD";
     }
@@ -1708,13 +1679,10 @@ TEST_F(NegativePipeline, CreationFeedbackCountCompute) {
     TEST_DESCRIPTION("Test compute pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
     VkPipelineCreationFeedbackEXT feedbacks[3] = {};
@@ -1736,10 +1704,7 @@ TEST_F(NegativePipeline, LineRasterization) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceLineRasterizationFeaturesEXT line_rasterization_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(line_rasterization_features);
@@ -1751,8 +1716,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     line_rasterization_features.stippledBresenhamLines = VK_FALSE;
     line_rasterization_features.stippledSmoothLines = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    InitRenderTarget();
 
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
@@ -1822,7 +1787,7 @@ TEST_F(NegativePipeline, LineRasterization) {
 
 TEST_F(NegativePipeline, NotCompatibleForSet) {
     TEST_DESCRIPTION("Check that validation path catches pipeline layout inconsistencies for bind vs. dispatch");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (m_device->compute_queues().empty()) {
         GTEST_SKIP() << "compute queue not supported";
@@ -1918,7 +1883,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
 TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
@@ -1931,9 +1896,9 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     props.limits.maxPerStageResources = maxPerStageResources;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
     // Adds the one color attachment
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // A case where it shouldn't error because no single stage is over limit
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings_normal = {
@@ -2011,18 +1976,15 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features =
         vku::InitStructHelper();
     pipeline_exe_features.pipelineExecutableInfo = VK_FALSE;  // Starting with it off
 
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&pipeline_exe_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     // MockICD will return 0 for the executable count
     if (IsPlatformMockICD()) {
@@ -2060,8 +2022,8 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
 TEST_F(NegativePipeline, SampledInvalidImageViews) {
     TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -2271,8 +2233,8 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled10) {
     TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.0 without the shaderDrawParameters feature enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
     if (DeviceValidationVersion() > VK_API_VERSION_1_0) {
         GTEST_SKIP() << "Test requires Vulkan exactly 1.0";
     }
@@ -2299,11 +2261,8 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled11) {
     TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.1 without the shaderDrawParameters feature enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     char const *vsSource = R"glsl(
         #version 460
@@ -2325,8 +2284,8 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled11) {
 TEST_F(NegativePipeline, CreateFlags) {
     TEST_DESCRIPTION("Create a graphics pipeline with invalid VkPipelineCreateFlags.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkPipelineCreateFlags flags;
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.gp_ci_.flags = flags; };
@@ -2357,7 +2316,7 @@ TEST_F(NegativePipeline, CreateFlags) {
 TEST_F(NegativePipeline, CreateFlagsCompute) {
     TEST_DESCRIPTION("Create a compute pipeline with invalid VkPipelineCreateFlags.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkPipelineCreateFlags flags;
     const auto set_info = [&](CreateComputePipelineHelper &helper) { helper.cp_ci_.flags = flags; };
@@ -2391,8 +2350,8 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
 TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
     TEST_DESCRIPTION("Test mergeing pipeline caches with dst cache in src list");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -2413,7 +2372,7 @@ TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
 TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Compute Pipeline with bad base pointer");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     char const *csSource = R"glsl(
         #version 450
@@ -2458,13 +2417,10 @@ TEST_F(NegativePipeline, DiscardRectangle) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(discard_rectangle_properties);
@@ -2490,12 +2446,9 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXT) {
     TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPipelineColorWriteCreateInfoEXT color_write = vku::InitStructHelper();
 
@@ -2518,12 +2471,9 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXTMaxAttachments) {
     TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext with too many attachments");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
 
@@ -2550,11 +2500,8 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(sample_locations);
@@ -2707,12 +2654,9 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     TEST_DESCRIPTION("Test PipelineRasterizationConservativeStateCreateInfo.");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
@@ -2741,7 +2685,7 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
 TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     TEST_DESCRIPTION("Test for a creating a pipeline with a null renderpass but VK_KHR_dynamic_rendering is not enabled");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     char const *fsSource = R"glsl(
         #version 450
@@ -2772,11 +2716,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM rasterization_order_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(rasterization_order_features);
@@ -2785,7 +2725,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
     rasterization_order_features.rasterizationOrderDepthAttachmentAccess = 0;
     rasterization_order_features.rasterizationOrderStencilAttachmentAccess = 0;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &rasterization_order_features));
+    RETURN_IF_SKIP(InitState(nullptr, &rasterization_order_features));
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     VkPipelineColorBlendAttachmentState cb_as = {};
@@ -2872,11 +2812,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM rasterization_order_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(rasterization_order_features);
@@ -2887,7 +2823,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
         GTEST_SKIP() << "Test requires (unsupported) rasterizationOrder*AttachmentAccess";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &rasterization_order_features));
+    RETURN_IF_SKIP(InitState(nullptr, &rasterization_order_features));
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     VkPipelineColorBlendAttachmentState cb_as = {};
@@ -3014,8 +2950,8 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
 TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
     TEST_DESCRIPTION("Test creating a pipeline with no attachments with a render pass with attachments.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609");
 
@@ -3058,13 +2994,10 @@ TEST_F(NegativePipeline, IncompatibleScissorCountAndViewportCount) {
     TEST_DESCRIPTION("Validate creating a pipeline with incompatible scissor and viewport count, without dynamic states.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceFeatures features{};
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
@@ -3089,15 +3022,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
@@ -3117,7 +3042,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
     shader_tile_image_features.shaderTileImageDepthReadAccess = false;
     shader_tile_image_features.shaderTileImageStencilReadAccess = false;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -3170,15 +3095,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
@@ -3194,7 +3111,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -3305,8 +3222,8 @@ TEST_F(NegativePipeline, ShaderTileImage) {
 TEST_F(NegativePipeline, PipelineSubpassOutOfBounds) {
     TEST_DESCRIPTION("Create pipeline with subpass index larger than number of subpasses in render pass");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -3320,13 +3237,10 @@ TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormats) {
     TEST_DESCRIPTION("Create pipeline with invalid pipeline rendering formats");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
 
     VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
     pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT;
@@ -3356,10 +3270,7 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
 
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
@@ -3375,8 +3286,8 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     depth_bias_control_features.floatRepresentation = VK_FALSE;
     depth_bias_control_features.depthBiasExact = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
         CreatePipelineHelper pipe(*this);
@@ -3407,10 +3318,10 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
 TEST_F(NegativePipeline, InvalidPipelineDepthBias) {
     TEST_DESCRIPTION("Create pipeline with invalid depth bias");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features = {};
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(&features));
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -3426,10 +3337,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 
     AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT msrtss_features = vku::InitStructHelper();
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper(&msrtss_features);
@@ -3441,7 +3349,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
 
     VkImageObj image(m_device);
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -3504,9 +3412,9 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 TEST_F(NegativePipeline, PipelineMissingFeatures) {
     TEST_DESCRIPTION("Enabled depth bounds when the features is disabled");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features = {};
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    RETURN_IF_SKIP(InitState(&features));
 
     VkAttachmentDescription attachment = {};
     attachment.format = FindSupportedDepthStencilFormat(m_device->phy().handle());
@@ -3554,10 +3462,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusued_attachment_features =
         vku::InitStructHelper(&dynamic_rendering_features);
@@ -3568,7 +3473,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
     if (!unusued_attachment_features.dynamicRenderingUnusedAttachments) {
         GTEST_SKIP() << "dynamicRenderingUnusedAttachments not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &unusued_attachment_features));
+    RETURN_IF_SKIP(InitState(nullptr, &unusued_attachment_features));
 
     VkFormat undefined = VK_FORMAT_UNDEFINED;
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;

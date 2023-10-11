@@ -20,11 +20,8 @@ TEST_F(PositiveThreading, DisplayObjects) {
 
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     uint32_t prop_count = 0;
     vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
@@ -47,11 +44,8 @@ TEST_F(PositiveThreading, DisplayPlaneObjects) {
 
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     uint32_t prop_count = 0;
     vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
@@ -73,10 +67,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
@@ -85,8 +76,8 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
         GTEST_SKIP() << "Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    InitRenderTarget();
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
@@ -132,7 +123,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
 }
 
 TEST_F(PositiveThreading, NullFenceCollision) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     ThreadTestData data;
     data.device = m_device->device();

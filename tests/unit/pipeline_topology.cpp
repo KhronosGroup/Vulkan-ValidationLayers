@@ -20,8 +20,8 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
     VkPhysicalDeviceFeatures device_features = {};
     device_features.fillModeNonSolid = VK_FALSE;
     // The sacrificial device object
-    ASSERT_NO_FATAL_FAILURE(Init(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&device_features));
+    InitRenderTarget();
 
     VkPipelineRasterizationStateCreateInfo rs_ci = vku::InitStructHelper();
     rs_ci.lineWidth = 1.0f;
@@ -68,8 +68,8 @@ static const char *NoPointSizeVertShader = R"glsl(
 TEST_F(NegativePipelineTopology, PointSize) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -86,12 +86,9 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
         "dynamicPrimitiveTopologyUnrestricted is false.");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
@@ -114,12 +111,9 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
         "dynamicPrimitiveTopologyUnrestricted is true, but not dynamic state.");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
@@ -143,18 +137,15 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
@@ -183,8 +174,8 @@ TEST_F(NegativePipelineTopology, PrimitiveTopology) {
     deviceFeatures.geometryShader = VK_FALSE;
     deviceFeatures.tessellationShader = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&deviceFeatures));
+    InitRenderTarget();
 
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -239,24 +230,18 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT ptl_restart_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ptl_restart_features);
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
-    }
     if (!ptl_restart_features.primitiveTopologyListRestart) {
         GTEST_SKIP() << "primitive topology list restart feature is not available, skipping test";
     }
     ptl_restart_features.primitiveTopologyListRestart = false;
     ptl_restart_features.primitiveTopologyPatchListRestart = false;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ptl_restart_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &ptl_restart_features));
+    InitRenderTarget();
 
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -283,8 +268,8 @@ TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
     TEST_DESCRIPTION("Use VK_PRIMITIVE_TOPOLOGY_PATCH_LIST without tessellation shader");
 
     AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -300,20 +285,17 @@ TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
 TEST_F(NegativePipelineTopology, FillRectangleNV) {
     TEST_DESCRIPTION("Verify VK_NV_fill_rectangle");
     AddRequiredExtensions(VK_NV_FILL_RECTANGLE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
 
     // Disable non-solid fill modes to make sure that the usage of VK_POLYGON_MODE_LINE and
     // VK_POLYGON_MODE_POINT will cause an error when the VK_NV_fill_rectangle extension is enabled.
     device_features.fillModeNonSolid = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(&device_features));
+    InitRenderTarget();
 
     VkPolygonMode polygon_mode = VK_POLYGON_MODE_LINE;
 

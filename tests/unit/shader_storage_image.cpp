@@ -19,14 +19,11 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
     features.shaderStorageImageReadWithoutFormat = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    RETURN_IF_SKIP(InitState(&features));
 
     // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
     // disabled if VK_KHR_format_feature_flags2 is supported.
@@ -99,14 +96,11 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
     features.shaderStorageImageWriteWithoutFormat = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    RETURN_IF_SKIP(InitState(&features));
 
     // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
     // disabled if VK_KHR_format_feature_flags2 is supported.
@@ -174,15 +168,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     struct {
         VkFormat format;
@@ -339,15 +326,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     struct {
         VkFormat format;
@@ -504,14 +484,11 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
     // rather than as a device feature. The code we test here only looks at
     // the shader.
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
     features.shaderStorageImageReadWithoutFormat = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    RETURN_IF_SKIP(InitState(&features));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
@@ -578,14 +555,11 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
     // rather than as a device feature. The code we test here only looks at
     // the shader.
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
     features.shaderStorageImageWriteWithoutFormat = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    RETURN_IF_SKIP(InitState(&features));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
@@ -643,12 +617,9 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Rgba8ui) uniform uimage2D storageImage;
@@ -698,12 +669,9 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     // not valid GLSL, but would look like:
     // layout (constant_id = 0) const uint sc = 1;
@@ -769,11 +737,8 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image unknown format with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Unknown) readonly uniform uimage2D storageImage;
@@ -854,14 +819,8 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Unknown) readonly uniform image2D storageImage;

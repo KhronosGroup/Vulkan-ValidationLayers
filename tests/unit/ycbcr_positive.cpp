@@ -21,14 +21,7 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
     if (!use_12) {
         AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper(pNextFeatures);
@@ -45,16 +38,13 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
         }
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
 TEST_F(PositiveYcbcr, PlaneAspectNone) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
     VkImageCreateInfo image_createinfo = vku::InitStructHelper();
     image_createinfo.imageType = VK_IMAGE_TYPE_2D;
     image_createinfo.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
@@ -75,8 +65,7 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
 
 TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
     TEST_DESCRIPTION("Positive test, query layout of a single plane of a multiplane image. (repro Github #2530)");
-    InitBasicYcbcr();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicYcbcr())
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -112,9 +101,8 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
 
 TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     TEST_DESCRIPTION("Positive test of multiplane copy buffer to image");
-    InitBasicYcbcr();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicYcbcr())
+    InitRenderTarget();
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -166,9 +154,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     TEST_DESCRIPTION("Copy Plane 0 to Plane 2");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicYcbcr();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicYcbcr())
+    InitRenderTarget();
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
@@ -235,9 +222,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     TEST_DESCRIPTION("Bind image with disjoint memory");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicYcbcr();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicYcbcr())
+    InitRenderTarget();
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
@@ -326,9 +312,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
 TEST_F(PositiveYcbcr, ImageLayout) {
     TEST_DESCRIPTION("Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicYcbcr();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicYcbcr())
+    InitRenderTarget();
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {

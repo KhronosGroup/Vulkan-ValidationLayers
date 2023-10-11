@@ -41,7 +41,7 @@ ParentTest::~ParentTest() {
 TEST_F(NegativeParent, FillBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -62,11 +62,8 @@ TEST_F(NegativeParent, BindBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -102,11 +99,8 @@ TEST_F(NegativeParent, BindImage) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -139,7 +133,7 @@ TEST_F(NegativeParent, BindImage) {
 TEST_F(NegativeParent, ImageView) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -166,7 +160,7 @@ TEST_F(NegativeParent, ImageView) {
 TEST_F(NegativeParent, BindPipeline) {
     TEST_DESCRIPTION("Test binding pipeline from another device");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -192,11 +186,8 @@ TEST_F(NegativeParent, BindPipeline) {
 TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetPhysicalDeviceSurfaceSupportKHR");
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -217,11 +208,8 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 TEST_F(NegativeParent, Instance_DeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetDeviceGroupSurfacePresentModesKHR");
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -242,11 +230,8 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 TEST_F(NegativeParent, Instance_Surface) {
     TEST_DESCRIPTION("Surface from a different instance in vkCreateSwapchainKHR");
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -287,11 +272,8 @@ TEST_F(NegativeParent, Instance_Surface) {
 TEST_F(NegativeParent, Device_OldSwapchain) {
     TEST_DESCRIPTION("oldSwapchain from a different device in vkCreateSwapchainKHR");
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -349,11 +331,8 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
 TEST_F(NegativeParent, Instance_Surface_2) {
     TEST_DESCRIPTION("Surface from a different instance in vkDestroySurfaceKHR");
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -374,11 +353,8 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
     TEST_DESCRIPTION("VkDebugUtilsMessengerEXT from a different instance in vkDestroyDebugUtilsMessengerEXT");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -408,11 +384,8 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
 TEST_F(NegativeParent, Instance_DebugReportCallback) {
     TEST_DESCRIPTION("VkDebugReportCallbackEXT from a different instance in vkDestroyDebugReportCallbackEXT");
     AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -436,11 +409,8 @@ TEST_F(NegativeParent, Instance_DebugReportCallback) {
 TEST_F(NegativeParent, PhysicalDevice_Display) {
     TEST_DESCRIPTION("VkDisplayKHR from a different physical device in vkGetDisplayModePropertiesKHR");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -476,11 +446,8 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
 TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     TEST_DESCRIPTION("VkDisplayModeKHR from a different physical device in vkGetDisplayPlaneCapabilitiesKHR");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;

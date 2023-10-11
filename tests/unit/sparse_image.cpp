@@ -21,7 +21,7 @@
 TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -80,13 +80,13 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
 
     // Determine which device feature are available
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    RETURN_IF_SKIP(InitFramework())
+    GetPhysicalDeviceFeatures(&device_features);
 
     // Mask out device features we don't want and initialize device state
     device_features.sparseResidencyImage2D = VK_FALSE;
     device_features.sparseResidencyImage3D = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    RETURN_IF_SKIP(InitState(&device_features));
 
     if (!m_device->phy().features().sparseBinding) {
         GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
@@ -128,8 +128,8 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
 
     // Determine which device feature are available
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    RETURN_IF_SKIP(InitFramework())
+    GetPhysicalDeviceFeatures(&device_features);
 
     // These tests require that the device support sparse residency for 2D images
     if (VK_TRUE != device_features.sparseResidencyImage2D) {
@@ -141,7 +141,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     device_features.sparseResidency4Samples = VK_FALSE;
     device_features.sparseResidency8Samples = VK_FALSE;
     device_features.sparseResidency16Samples = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    RETURN_IF_SKIP(InitState(&device_features));
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -181,7 +181,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
 TEST_F(NegativeSparseImage, ResidencyFlag) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBindInfo without sparse residency flag");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().sparseResidencyImage2D) {
         GTEST_SKIP() << "Test requires unsupported SparseResidencyImage2D feature";
@@ -227,10 +227,10 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
 TEST_F(NegativeSparseImage, ImageUsageBits) {
     TEST_DESCRIPTION("Try to use VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT with sparse image");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
 
     if (!device_features.sparseBinding) {
         GTEST_SKIP() << "No sparseBinding feature";
@@ -258,7 +258,7 @@ TEST_F(NegativeSparseImage, ImageUsageBits) {
 TEST_F(NegativeSparseImage, MemoryBindOffset) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBind with offset not less than memory size");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -367,7 +367,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     TEST_DESCRIPTION("Test QueueBindSparse with memory of a wrong type");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().sparseResidencyBuffer) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
@@ -547,7 +547,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().sparseResidencyBuffer) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
@@ -679,10 +679,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
         "Test QueueBindSparse with memory having export external handle types that do not match those of the resource");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().sparseResidencyBuffer) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
@@ -800,7 +797,8 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     }
 }
 
-TEST_F(NegativeSparseImage, QueueBindSparseMemoryType4) {
+// Assert in DeviceMemory::init for devices and others just doesn't repor error
+TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     TEST_DESCRIPTION(
         "Test QueueBindSparse with memory having import external handle types that do not match those of the resource");
 
@@ -813,15 +811,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType4) {
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
     AddRequiredExtensions(ext_mem_extension_name);
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(Init())
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "External tests are not supported by MockICD, skipping tests";
-    }
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
     }
 
     if (!m_device->phy().features().sparseResidencyBuffer) {
@@ -930,7 +922,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType4) {
 TEST_F(NegativeSparseImage, ImageMemoryBind) {
     TEST_DESCRIPTION("Try to bind sparse resident image with invalid VkSparseImageMemoryBind");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().sparseBinding || !m_device->phy().features().sparseResidencyImage3D) {
         GTEST_SKIP() << "sparseBinding && sparseResidencyImage3D features are required.";

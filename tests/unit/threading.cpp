@@ -19,8 +19,8 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // Test takes magnitude of time longer for profiles and slows down testing
     if (IsPlatformMockICD()) {
@@ -75,8 +75,8 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR : vkUpdateDescriptorSets");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     OneOffDescriptorSet normal_descriptor_set(m_device,
                                               {

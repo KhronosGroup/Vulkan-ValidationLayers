@@ -14,13 +14,7 @@
 void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptor_buffer_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(descriptor_buffer_features);
@@ -28,13 +22,12 @@ void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
         GTEST_SKIP() << "Test requires (unsupported) descriptorBuffer , skipping.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_buffer_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_buffer_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
 TEST_F(PositiveDescriptorBuffer, BasicUsage) {
     TEST_DESCRIPTION("Create VkBuffer with extension.");
-    InitBasicDescriptorBuffer();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer())
 
     // *descriptorBufferAddressSpaceSize properties are guaranteed to be 2^27
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -61,8 +54,7 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     TEST_DESCRIPTION("Bind descriptor buffer and set descriptor offset.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    InitBasicDescriptorBuffer(&buffer_device_address_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features))
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;

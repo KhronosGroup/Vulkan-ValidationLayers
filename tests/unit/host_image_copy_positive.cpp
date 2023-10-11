@@ -23,14 +23,8 @@ bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &sr
 void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
     // Assumes VK_KHR_sampler_ycbcr_conversion and VK_EXT_separate_stencil_usage,
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "Need 1.2 api version";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features = vku::InitStructHelper();
     VkPhysicalDeviceHostImageCopyFeaturesEXT host_copy_features = vku::InitStructHelper(&separate_depth_stencil_layouts_features);
@@ -40,7 +34,7 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci)
     }
     separate_depth_stencil = separate_depth_stencil_layouts_features.separateDepthStencilLayouts;
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
     compressed_format = VK_FORMAT_UNDEFINED;
     if (device_features.textureCompressionBC) {
         compressed_format = VK_FORMAT_BC3_SRGB_BLOCK;
@@ -50,7 +44,7 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci)
         compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_copy_features));
+    RETURN_IF_SKIP(InitState(nullptr, &host_copy_features));
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
                                                                  image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
@@ -81,8 +75,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_TILING_OPTIMAL);
-    InitHostImageCopyTest(image_ci);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci))
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Positive host image copy test requires a driver that can copy.";
@@ -222,8 +215,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
         width, height, 4, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_TILING_OPTIMAL);
-    InitHostImageCopyTest(image_ci);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci))
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
     VkImageObj image(m_device);

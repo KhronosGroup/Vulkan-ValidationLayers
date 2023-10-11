@@ -15,7 +15,7 @@
 TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a OpFunctionParameter to a OpVariable");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -47,7 +47,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
 TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a chain of OpFunctionParameter to a OpVariable");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -84,7 +84,7 @@ TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
 TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a different ImageAccess from the same OpFunctionParameter to a OpVariable");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -118,7 +118,7 @@ TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
 TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a OpFunctionParameter to a OpLoad");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -179,7 +179,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
 TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
     TEST_DESCRIPTION("Test getting a OpSampledImage ImageAccess from a OpFunctionParameter to a OpVariable");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -213,7 +213,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
 TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
     TEST_DESCRIPTION("Test getting a OpSampledImage ImageAccess from a OpFunctionParameter to a OpLoad");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -281,7 +281,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
 TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
     TEST_DESCRIPTION("Use a OpCopyObject from a OpLoad");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -334,7 +334,7 @@ TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
 TEST_F(PositiveShaderImageAccess, UndefImage) {
     TEST_DESCRIPTION("A OpSampledImage has the Image ID pointing to a OpUndef");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},

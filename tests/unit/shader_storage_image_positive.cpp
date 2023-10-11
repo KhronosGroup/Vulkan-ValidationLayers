@@ -18,17 +18,14 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    GetPhysicalDeviceFeatures(&available_features);
     if (!available_features.shaderStorageImageExtendedFormats) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+    RETURN_IF_SKIP(InitState(&available_features));
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Rg32ui) uniform uimage2D storageImage;
@@ -106,19 +103,16 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components for Unknown for OpTypeImage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    GetPhysicalDeviceFeatures(&available_features);
     if (!available_features.shaderStorageImageExtendedFormats) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
     } else if (!available_features.shaderStorageImageWriteWithoutFormat) {
         GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+    RETURN_IF_SKIP(InitState(&available_features));
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Unknown) readonly uniform uimage2D storageImage;
@@ -198,17 +192,14 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    GetPhysicalDeviceFeatures(&available_features);
     if (!available_features.shaderStorageImageExtendedFormats) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+    RETURN_IF_SKIP(InitState(&available_features));
 
     // not valid GLSL, but would look like:
     // layout (constant_id = 0) const uint sc = 1;
@@ -301,12 +292,9 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     TEST_DESCRIPTION("Test writing to image unknown format with less components, but in unused Entrypoint.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     // The vertex and fragment shader are just a passthrough
     // The compute shader has the invalid OpImageWrite

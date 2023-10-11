@@ -518,8 +518,8 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
                        const VkCommandPoolCreateFlags flags, void *instance_pnext) {
-    InitFramework(m_errorMonitor, instance_pnext);
-    InitState(features, features2, flags);
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, instance_pnext));
+    RETURN_IF_SKIP(InitState(features, features2, flags));
 }
 
 vkt::CommandBuffer *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
@@ -589,8 +589,7 @@ void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
     if (target_api_version < m_attempted_api_version) return;
 
     m_attempted_api_version = target_api_version;  // used to know if request failed
-
-    m_target_api_version = std::min(target_api_version, m_instance_api_version);
+    m_target_api_version = target_api_version;
     app_info_.apiVersion = m_target_api_version.Value();
 }
 

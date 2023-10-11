@@ -17,8 +17,8 @@
 TEST_F(PositivePipelineTopology, PointSizeWriteInFunction) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize in vertex shader function.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // Create VS declaring PointSize and write to it in a function call.
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -36,12 +36,12 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, and write in the final geometry stage.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // Create VS declaring PointSize and writing to it
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -59,12 +59,12 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
 TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
     TEST_DESCRIPTION("If vertex is not emitted, don't need Point Size in Geometry shader");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // Never calls OpEmitVertex
     static char const *gsSource = R"glsl(
@@ -90,8 +90,8 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
 TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize outside of a structure.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     const char *LoosePointSizeWrite = R"(
                                        OpCapability Shader
@@ -178,17 +178,11 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMaintenance4FeaturesKHR maint4features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maint4features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maint4features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &maint4features));
+    InitRenderTarget();
 
     const std::string vs_src = R"asm(
                OpCapability Shader
@@ -323,8 +317,8 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
 TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
     TEST_DESCRIPTION("Verify that using a solid polygon fill mode works correctly.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
@@ -385,12 +379,12 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
 TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST, but geometry shader doesn't include PointSize.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if ((!m_device->phy().features().geometryShader)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     static char const geom_src[] = R"glsl(
         #version 460
@@ -415,9 +409,9 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
 TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     TEST_DESCRIPTION("Test topology set when creating a pipeline with tessellation and geometry shader.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -492,15 +486,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
@@ -509,8 +495,8 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    InitRenderTarget();
 
     // Verify each vkCmdSet command
     CreatePipelineHelper pipe(*this);
@@ -548,18 +534,15 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
@@ -594,19 +577,13 @@ TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     const char *source = R"glsl(
         #version 450

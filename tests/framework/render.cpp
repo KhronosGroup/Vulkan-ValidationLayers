@@ -315,9 +315,18 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         driver_printed = true;
     }
 
+    APIVersion used_version = std::min(m_instance_api_version, APIVersion(physDevProps_.apiVersion));
+    if (used_version < m_target_api_version) {
+        GTEST_SKIP() << "At least Vulkan version 1." << m_target_api_version.Minor() << " is required";
+    }
+
     for (const auto &ext : m_required_extensions) {
         AddRequestedDeviceExtensions(ext);
     }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
     for (const auto &ext : m_optional_extensions) {
         AddRequestedDeviceExtensions(ext);
     }

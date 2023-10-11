@@ -195,10 +195,6 @@ class VkLayerTest : public VkLayerTestBase {
     bool IsDriver(VkDriverId driver_id);
 
   protected:
-    APIVersion m_instance_api_version = 0;
-    APIVersion m_target_api_version = 0;
-    APIVersion m_attempted_api_version = 0;
-
     void SetTargetApiVersion(APIVersion target_api_version);
     APIVersion DeviceValidationVersion() const;
     bool LoadDeviceProfileLayer(

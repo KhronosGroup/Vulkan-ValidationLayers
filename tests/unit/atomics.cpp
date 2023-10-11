@@ -21,8 +21,8 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
 
     VkPhysicalDeviceFeatures features{};
     features.vertexPipelineStoresAndAtomics = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&features))
+    InitRenderTarget();
 
     // Test StoreOp
     {
@@ -74,8 +74,8 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
 
     VkPhysicalDeviceFeatures features{};
     features.fragmentStoresAndAtomics = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&features))
+    InitRenderTarget();
 
     // Test StoreOp
     {
@@ -128,21 +128,14 @@ TEST_F(NegativeAtomic, Int64) {
 
     // Create device without VK_KHR_shader_atomic_int64 extension or features enabled
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    GetPhysicalDeviceFeatures(&available_features);
     if (!available_features.shaderInt64) {
         GTEST_SKIP() << "VkPhysicalDeviceFeatures::shaderInt64 is not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(InitState())
 
     // For sanity check without GL_EXT_shader_atomic_int64
     std::string cs_positive = R"glsl(
@@ -221,20 +214,15 @@ TEST_F(NegativeAtomic, ImageInt64) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     // Create device without VK_EXT_shader_image_atomic_int64 extension or features enabled
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
+
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    GetPhysicalDeviceFeatures(&available_features);
     if (!available_features.shaderInt64) {
         GTEST_SKIP() << "VkPhysicalDeviceFeatures::shaderInt64 is not supported, skipping tests.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     // clang-format off
     std::string cs_image_base = R"glsl(
@@ -325,10 +313,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 64 bit image view.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
@@ -338,11 +323,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
         GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     std::string cs_source = R"glsl(
         #version 450
@@ -384,10 +365,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
@@ -397,11 +375,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
         GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     std::string cs_source = R"glsl(
         #version 450
@@ -443,10 +417,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
@@ -458,10 +429,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
         GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
     }
     image_atomic_int64_features.sparseImageInt64Atomics = VK_FALSE;  // turn off
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     const char *cs_source = R"glsl(
         #version 450
@@ -522,10 +490,7 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper(&mesh_shader_features);
@@ -537,11 +502,8 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
     } else if (mesh_shader_features.meshShader == VK_FALSE) {
         GTEST_SKIP() << "Mesh shader feature not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     const char *mesh_source = R"glsl(
         #version 460
@@ -597,17 +559,10 @@ TEST_F(NegativeAtomic, Float) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     // Create device without VK_EXT_shader_atomic_float extension or features enabled
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    GetPhysicalDeviceFeatures(&available_features);
+    RETURN_IF_SKIP(InitState())
 
     // clang-format off
     std::string cs_32_base = R"glsl(
@@ -859,10 +814,7 @@ TEST_F(NegativeAtomic, Float2) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     // Create device without VK_EXT_shader_atomic_float2 extension or features enabled
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Still check for proper 16-bit storage/float support for most tests
     VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper();
@@ -872,7 +824,7 @@ TEST_F(NegativeAtomic, Float2) {
     const bool support_16_bit =
         (float16int8_features.shaderFloat16 == VK_TRUE) && (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     // clang-format off
     std::string cs_16_base = R"glsl(
@@ -1167,13 +1119,7 @@ TEST_F(NegativeAtomic, Float2WidthMismatch) {
     TEST_DESCRIPTION("VK_EXT_shader_atomic_float2 but enable wrong bitwidth.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();  // need maintenance4
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT atomic_float2_features = vku::InitStructHelper(&features13);
@@ -1186,7 +1132,7 @@ TEST_F(NegativeAtomic, Float2WidthMismatch) {
     }
     // turn off 32-bit support
     atomic_float2_features.shaderBufferFloat32AtomicMinMax = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &storage_16_bit_features));
+    RETURN_IF_SKIP(InitState(nullptr, &storage_16_bit_features));
 
     // clang-format off
     std::string cs_buffer_float_16_min = R"glsl(
@@ -1238,14 +1184,11 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
 
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     if (atomic_float_features.shaderImageFloat32Atomics == VK_FALSE) {
         GTEST_SKIP() << "shaderImageFloat32Atomics not supported.";
@@ -1267,10 +1210,10 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
         GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT not supported.";
     }
     m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-buffer-08779");
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    GetPhysicalDeviceFeatures(&device_features);
     if (!device_features.vertexPipelineStoresAndAtomics || !device_features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "vertexPipelineStoresAndAtomics & fragmentStoresAndAtomics NOT supported";
     }

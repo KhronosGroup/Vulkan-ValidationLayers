@@ -16,23 +16,16 @@
 
 void DescriptorIndexingTest::InitBasicDescriptorIndexing(void* pNextFeatures) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     descriptor_indexing_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(descriptor_indexing_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_indexing_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
 void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings) {
-    InitBasicDescriptorIndexing();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing())
+    InitRenderTarget();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_.resize(bindings.size());
@@ -45,14 +38,13 @@ void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::
 TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicDescriptorIndexing();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing())
 
     if (!descriptor_indexing_features.descriptorBindingPartiallyBound) {
         GTEST_SKIP() << "Partially bound bindings not supported, skipping test";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = vku::InitStructHelper();
@@ -140,8 +132,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    InitBasicDescriptorIndexing(&synchronization2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing(&synchronization2))
 
     if (descriptor_indexing_features.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
         GTEST_SKIP() << "descriptorBindingStorageBufferUpdateAfterBind feature is not available";
@@ -149,7 +140,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     if (synchronization2.synchronization2 == VK_FALSE) {
         GTEST_SKIP() << "synchronization2 feature is not available";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
@@ -260,8 +251,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    InitBasicDescriptorIndexing(&synchronization2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing(&synchronization2))
 
     if (descriptor_indexing_features.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
         GTEST_SKIP() << "descriptorBindingStorageBufferUpdateAfterBind feature is not available";
@@ -270,7 +260,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
         GTEST_SKIP() << "synchronization2 feature is not available";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;

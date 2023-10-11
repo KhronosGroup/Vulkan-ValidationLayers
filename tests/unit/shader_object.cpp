@@ -16,8 +16,7 @@ TEST_F(NegativeShaderObject, SpirvCodeSize) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-codeSize-08735");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -39,8 +38,7 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08412");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
 
@@ -61,8 +59,7 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
 TEST_F(NegativeShaderObject, InvalidFlags) {
     TEST_DESCRIPTION("Create shader with invalid flags.");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -102,8 +99,7 @@ TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -129,8 +125,7 @@ TEST_F(NegativeShaderObject, VertexNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08427");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -153,8 +148,7 @@ TEST_F(NegativeShaderObject, TessellationControlNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08430");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
 
@@ -177,8 +171,7 @@ TEST_F(NegativeShaderObject, TessellationEvaluationNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08431");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
 
@@ -201,8 +194,7 @@ TEST_F(NegativeShaderObject, GeometryNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08433");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
 
@@ -225,8 +217,7 @@ TEST_F(NegativeShaderObject, FragmentNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08434");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
@@ -251,8 +242,7 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -280,8 +270,7 @@ TEST_F(NegativeShaderObject, MeshNextStage) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -309,8 +298,7 @@ TEST_F(NegativeShaderObject, TaskNVNextStage) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -338,8 +326,7 @@ TEST_F(NegativeShaderObject, MeshNVNextStage) {
 
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -365,8 +352,7 @@ TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08492");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     std::vector<uint32_t> spv(256);
 
@@ -390,8 +376,7 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08493");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -415,8 +400,7 @@ TEST_F(NegativeShaderObject, InvalidStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08425");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -449,8 +433,7 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_3);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_3))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -502,8 +485,7 @@ TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -552,18 +534,12 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     features2.features.tessellationShader = VK_FALSE;
     features2.features.geometryShader = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08419");
@@ -609,26 +585,17 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&shaderObjectFeatures);
     GetPhysicalDeviceFeatures2(maintenance4Features);
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
     if (shaderObjectFeatures.shaderObject == VK_FALSE) {
         GTEST_SKIP() << "shaderObject not supported.";
     }
     if (maintenance4Features.maintenance4 == VK_FALSE) {
         GTEST_SKIP() << "maintenance4 not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance4Features));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance4Features));
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08421");
@@ -670,8 +637,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08476");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_COMPUTE_BIT);
 
@@ -706,8 +672,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08477");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_GRAPHICS_BIT);
 
@@ -746,8 +711,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -788,8 +752,7 @@ TEST_F(NegativeShaderObject, NonUniqueShadersBind) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pStages-08463");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -825,8 +788,7 @@ TEST_F(NegativeShaderObject, InvalidShaderStageBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08469");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pStages-08464");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -854,8 +816,7 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderBinaryDataEXT-None-08499");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -889,8 +850,7 @@ TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08684");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08688");
 
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false))
 
     InitDynamicRenderTarget();
 
@@ -909,8 +869,7 @@ TEST_F(NegativeShaderObject, DrawWithMissingShaders) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08687");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     InitDynamicRenderTarget();
 
@@ -944,8 +903,7 @@ TEST_F(NegativeShaderObject, DrawWithoutBindingMeshShadersWhenEnabled) {
 
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    InitBasicShaderObject(&meshShaderFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -973,8 +931,7 @@ TEST_F(NegativeShaderObject, InvalidShaderCreateInfoFlags) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08487");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
@@ -1002,8 +959,7 @@ TEST_F(NegativeShaderObject, LinkSingleStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08401");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
@@ -1026,8 +982,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBit) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08402");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -1063,8 +1018,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -1105,8 +1059,7 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -1148,8 +1101,7 @@ TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -1191,8 +1143,7 @@ TEST_F(NegativeShaderObject, MissingNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08409");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -1229,8 +1180,7 @@ TEST_F(NegativeShaderObject, SameLinkedStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08410");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -1261,8 +1211,7 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08411");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -1316,13 +1265,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
@@ -1333,8 +1276,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     features2.features.tessellationShader = VK_FALSE;
     features2.features.geometryShader = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -1362,8 +1304,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationControlNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08430");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
 
@@ -1386,8 +1327,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationEvaluationNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08431");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
 
@@ -1410,8 +1350,7 @@ TEST_F(NegativeShaderObject, InvalidGeometryNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08433");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
 
@@ -1434,8 +1373,7 @@ TEST_F(NegativeShaderObject, InvalidFragmentNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08434");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
@@ -1460,8 +1398,7 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -1492,8 +1429,7 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -1519,8 +1455,7 @@ TEST_F(NegativeShaderObject, BindInvalidShaderStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08469");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
@@ -1538,8 +1473,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersOutsideRenderPass) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderpass");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
@@ -1559,8 +1493,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08876");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
@@ -1635,8 +1568,7 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     static const char vertSource[] = R"glsl(
@@ -1676,8 +1608,7 @@ TEST_F(NegativeShaderObject, NotSettingViewportAndScissor) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08635");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1700,8 +1631,7 @@ TEST_F(NegativeShaderObject, DifferentViewportAndScissorCount) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08635");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1729,8 +1659,7 @@ TEST_F(NegativeShaderObject, InvalidViewportWScaling) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08636");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1766,8 +1695,7 @@ TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&shadingRateImageFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures))
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
@@ -1810,8 +1738,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetExclusiveScissorEnableNV) {
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusiveScissorFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&exclusiveScissorFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&exclusiveScissorFeatures))
     if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
         GTEST_SKIP() << "exclusiveScissor not supported.";
     }
@@ -1839,8 +1766,7 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusiveScissorFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&exclusiveScissorFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&exclusiveScissorFeatures))
     if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
         GTEST_SKIP() << "exclusiveScissor not supported.";
     }
@@ -1887,8 +1813,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizerDiscardEnable) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08639");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1911,8 +1836,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEnable) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08640");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1937,10 +1861,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
@@ -1950,10 +1871,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
     if (features2.features.logicOp == VK_FALSE) {
         GTEST_SKIP() << "logicOp not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1977,8 +1895,7 @@ TEST_F(NegativeShaderObject, BlendEnabledWithNonBlendableFormat) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08643");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkFormatProperties props;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_R32_UINT, &props);
@@ -2012,8 +1929,7 @@ TEST_F(NegativeShaderObject, RasterizationSamplesMismatch) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08644");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2039,8 +1955,7 @@ TEST_F(NegativeShaderObject, MissingColorWriteEnable) {
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable_features = vku::InitStructHelper();
-    InitBasicShaderObject(&color_write_enable_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&color_write_enable_features))
     if (!color_write_enable_features.colorWriteEnable) {
         GTEST_SKIP() << "colorWriteEnable not supported.";
     }
@@ -2069,8 +1984,7 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08647");
 
     VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable_features = vku::InitStructHelper();
-    InitBasicShaderObject(&color_write_enable_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&color_write_enable_features))
     if (!color_write_enable_features.colorWriteEnable) {
         GTEST_SKIP() << "colorWriteEnable not supported.";
     }
@@ -2131,8 +2045,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEnableEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08648");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2156,8 +2069,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08649");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     uint32_t count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
@@ -2198,8 +2110,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizerDiscardEnable-09236");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     uint32_t count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
@@ -2236,8 +2147,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClampEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08650");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2260,8 +2170,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPolygonModeEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08651");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2284,8 +2193,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationSamplesEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08652");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2308,8 +2216,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleMaskEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08653");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2332,8 +2239,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAlphaToCoverageEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08654");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2356,8 +2262,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAlphaToOneEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08655");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2382,10 +2287,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOpEnableEXT) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
@@ -2395,10 +2297,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOpEnableEXT) {
     if (features2.features.logicOp == VK_FALSE) {
         GTEST_SKIP() << "logicOp not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2421,8 +2320,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08657");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2446,8 +2344,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08658");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2473,8 +2370,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendAdvancedEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08658");
 
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2501,8 +2397,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetFragmentShadingRateKHR) {
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    InitBasicShaderObject(&fsr_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&fsr_features))
     if (!fsr_features.pipelineFragmentShadingRate) {
         GTEST_SKIP() << "pipelineFragmentShadingRate not supported.";
     }
@@ -2528,8 +2423,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08659");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2554,8 +2448,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transformFeedbackFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&transformFeedbackFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&transformFeedbackFeatures))
     if (transformFeedbackFeatures.geometryStreams == VK_FALSE) {
         GTEST_SKIP() << "geometryStreams not supported.";
     }
@@ -2587,8 +2480,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetConservativeRasterizationModeEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08661");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2612,8 +2504,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetExtraPrimitiveOverestimationSizeEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08662");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2639,8 +2530,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipEnableEXT) {
 
     VkPhysicalDeviceDepthClipEnableFeaturesEXT depthClipEnableFeatures = vku::InitStructHelper();
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
-    InitBasicShaderObject(&depthClipEnableFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&depthClipEnableFeatures))
     if (depthClipEnableFeatures.depthClipEnable == VK_FALSE) {
         GTEST_SKIP() << "depthClipEnable not supported.";
     }
@@ -2667,8 +2557,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEnableEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08664");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2692,8 +2581,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetProvokingVertexModeEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08665");
 
     AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2717,8 +2605,7 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08666");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2744,8 +2631,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineRasterizationMode
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08667");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2771,8 +2657,7 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineStippleEnableEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08669");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2798,8 +2683,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08670");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2825,8 +2709,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLineStippleEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08672");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2852,8 +2735,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipNegativeOneToOneEXT) {
 
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
     VkPhysicalDeviceDepthClipControlFeaturesEXT depthClipControlFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&depthClipControlFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&depthClipControlFeatures))
     if (depthClipControlFeatures.depthClipControl == VK_FALSE) {
         GTEST_SKIP() << "depthClipControl not supported.";
     }
@@ -2880,8 +2762,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08674");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2905,8 +2786,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09232");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2931,8 +2811,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportSwizzleNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08675");
 
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2956,8 +2835,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageToColorEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08676");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2981,8 +2859,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageToColorLocationNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08677");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3007,8 +2884,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationModeNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08678");
 
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3033,8 +2909,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationTableEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08679");
 
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3059,8 +2934,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationTableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08680");
 
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3087,8 +2961,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&shadingRateImageFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures))
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
@@ -3117,8 +2990,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&shadingRateImageFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures))
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
@@ -3148,8 +3020,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&shadingRateImageFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures))
     if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
@@ -3178,8 +3049,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRepresentativeFragmentTestEnableNV) {
 
     AddRequiredExtensions(VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME);
     VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV representativeFragmentTestFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&representativeFragmentTestFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&representativeFragmentTestFeatures))
     if (representativeFragmentTestFeatures.representativeFragmentTest == VK_FALSE) {
         GTEST_SKIP() << "representativeFragmentTest not supported.";
     }
@@ -3207,8 +3077,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageReductionModeNV) {
 
     AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
     VkPhysicalDeviceCoverageReductionModeFeaturesNV coverageReductionFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&coverageReductionFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&coverageReductionFeatures))
     if (coverageReductionFeatures.coverageReductionMode == VK_FALSE) {
         GTEST_SKIP() << "coverageReductionMode not supported.";
     }
@@ -3237,8 +3106,7 @@ TEST_F(NegativeShaderObject, MissingVertexShaderBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08684");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -3265,10 +3133,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
@@ -3279,7 +3144,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
     if (features2.features.tessellationShader == VK_FALSE) {
         GTEST_SKIP() << "tessellationShader not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     InitDynamicRenderTarget();
 
@@ -3309,10 +3174,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
@@ -3323,7 +3185,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
     if (features2.features.tessellationShader == VK_FALSE) {
         GTEST_SKIP() << "tessellationShader not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     InitDynamicRenderTarget();
 
@@ -3353,10 +3215,7 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
@@ -3367,7 +3226,7 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
     if (features2.features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     InitDynamicRenderTarget();
 
@@ -3395,8 +3254,7 @@ TEST_F(NegativeShaderObject, MissingFragmentShaderBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08688");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3422,8 +3280,7 @@ TEST_F(NegativeShaderObject, MissingTaskShaderBind) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -3457,8 +3314,7 @@ TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -3495,8 +3351,7 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -3540,8 +3395,7 @@ TEST_F(NegativeShaderObject, MeshShaderWithMissingTaskShader) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -3590,8 +3444,7 @@ TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -3650,8 +3503,7 @@ TEST_F(NegativeShaderObject, VertAndTaskShadersBound) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.taskShader == VK_FALSE) {
         GTEST_SKIP() << "taskShader not supported.";
     }
@@ -3702,8 +3554,7 @@ TEST_F(NegativeShaderObject, MissingLinkedShaderBind) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08698");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -3754,8 +3605,7 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08699");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -3808,8 +3658,7 @@ TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08878");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkPushConstantRange pushConstRange;
@@ -3838,8 +3687,7 @@ TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08879");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkDescriptorSetObj descriptorSet(m_device);
@@ -3875,8 +3723,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
     VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT attachmentFeedbackLoopDynamicStateFeatures =
         vku::InitStructHelper();
-    InitBasicShaderObject(&attachmentFeedbackLoopDynamicStateFeatures);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&attachmentFeedbackLoopDynamicStateFeatures))
     if (attachmentFeedbackLoopDynamicStateFeatures.attachmentFeedbackLoopDynamicState == VK_FALSE) {
         GTEST_SKIP() << "attachmentFeedbackLoopDynamicState not supported.";
     }
@@ -3902,8 +3749,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveTopologyEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08881");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3926,8 +3772,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetVertexInputEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08882");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3950,8 +3795,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08883");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
     if (features.tessellationShader == VK_FALSE) {
@@ -3987,8 +3831,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09237");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
     if (features.tessellationShader == VK_FALSE) {
@@ -4024,8 +3867,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveRestartEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizerDiscardEnable-08884");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4052,8 +3894,7 @@ TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
     VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    InitBasicShaderObject(&maintenance4Features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -4095,8 +3936,7 @@ TEST_F(NegativeShaderObject, MissingPolygonLineCmdSetLineWidthEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08617");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4120,8 +3960,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyLineCmdSetLineWidthEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08618");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4145,8 +3984,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08620");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4170,8 +4008,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetBlendConstantsEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08621");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4212,8 +4049,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08622");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4237,8 +4073,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilCompareMaskEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08623");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4262,8 +4097,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilWriteMaskEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08624");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4287,8 +4121,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilReferenceEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08625");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4313,8 +4146,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08626");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4338,8 +4170,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCullModeEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08627");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4362,8 +4193,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetFrontFaceEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08628");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4387,8 +4217,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthTestEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08629");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4411,8 +4240,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthWriteEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08630");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4435,8 +4263,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthCompareOp) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08631");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4460,8 +4287,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08632");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -4489,8 +4315,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08633");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -4518,8 +4343,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08634");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -4546,8 +4370,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
 TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
     TEST_DESCRIPTION("Dispatch with group count higher than maxComputeWorkGroupCount.");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
     uint32_t y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
@@ -4580,8 +4403,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-maintenance4-08602");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkPushConstantRange pushConstRange;
     pushConstRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -4630,8 +4452,7 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
@@ -4667,8 +4488,7 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08992");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -4691,8 +4511,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationInfo-offset-00773");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     static const char kVertexSource[] = R"glsl(
         #version 460
@@ -4736,8 +4555,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationInfo-pMapEntries-00774");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     static const char kVertexSource[] = R"glsl(
         #version 460
@@ -4781,8 +4599,7 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     static const char kVertexSource[] = R"glsl(
         #version 460
@@ -4826,8 +4643,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationInfo-constantID-04911");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     static const char kVertexSource[] = R"glsl(
         #version 460
@@ -4874,8 +4690,7 @@ TEST_F(NegativeShaderObject, MissingEntrypoint) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pName-08440");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -4898,8 +4713,7 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08460");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     // Size an array using a specialization constant of default value equal to 1.
     const char* fs_src = R"(
@@ -4968,8 +4782,7 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     // Size an array using a specialization constant of default value equal to 1.
     const char* cs_src = R"(
@@ -5051,8 +4864,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08740");
 
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false))
 
     const char* vs_src = R"(
                OpCapability Shader
@@ -5128,8 +4940,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08741");
 
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false))
 
     const char* vs_src = R"(
                OpCapability Shader
@@ -5167,8 +4978,7 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08742");
 
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false))
 
     const char* cs_src = R"(
                    OpCapability Shader
@@ -5209,10 +5019,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper(&shaderObjectFeatures);
     auto features2 = GetPhysicalDeviceFeatures2(features12);
@@ -5220,10 +5027,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     if (features12.vulkanMemoryModel == VK_FALSE) {
         GTEST_SKIP() << "vulkanMemoryModel feature is not supported";
     }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     char const* cs_src = R"glsl(
         #version 450
@@ -5256,8 +5060,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    InitBasicShaderObject(&transform_feedback_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&transform_feedback_features))
     auto features2 = GetPhysicalDeviceFeatures2(transform_feedback_features);
     if (features2.features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported";
@@ -5341,8 +5144,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    InitBasicShaderObject(&transform_feedback_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&transform_feedback_features))
     auto features2 = GetPhysicalDeviceFeatures2(transform_feedback_features);
     if (features2.features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported";
@@ -5416,8 +5218,7 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
     if (meshShaderFeatures.meshShader == VK_FALSE) {
         GTEST_SKIP() << "meshShader not supported.";
     }
@@ -5472,11 +5273,10 @@ TEST_F(NegativeShaderObject, Atomics) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08740");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-None-06278");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    GetPhysicalDeviceFeatures(&available_features);
     if (!available_features.shaderInt64) {
         GTEST_SKIP() << "shaderInt64 is not supported";
     }
@@ -5518,19 +5318,13 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMaintenance4Features maintenance4 = vku::InitStructHelper();
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper(&maintenance4);
     VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR extended_types_features = vku::InitStructHelper(&float16_features);
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&extended_types_features);
     GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     extended_types_features.shaderSubgroupExtendedTypes = VK_FALSE;
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
     if (shaderObjectFeatures.shaderObject == VK_FALSE) {
         GTEST_SKIP() << "shaderObject not supported.";
     }
@@ -5541,10 +5335,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
         !maintenance4.maintenance4) {
         GTEST_SKIP() << "Required features not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shaderObjectFeatures));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &shaderObjectFeatures));
 
     char const* cs_src = R"glsl(
         #version 450
@@ -5578,8 +5369,7 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSubgroupClock-06267");
 
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     char const* vs_src = R"glsl(
         #version 450
@@ -5611,8 +5401,7 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* cs_src = R"(
                OpCapability Shader
@@ -5665,8 +5454,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* cs_src = R"(
                OpCapability Shader
@@ -5708,8 +5496,7 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* cs_src = R"(
                OpCapability Shader
@@ -5754,8 +5541,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07954");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07955");
 
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false))
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
@@ -5821,13 +5607,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
@@ -5841,8 +5621,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Set limit to match with hardcoded values in shaders
     VkPhysicalDeviceProperties props;
@@ -5883,8 +5662,7 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME);
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_2))
 
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
@@ -5937,8 +5715,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06429");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06432");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
 
@@ -5994,8 +5771,7 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08619");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
     if (features.geometryShader == VK_FALSE) {
@@ -6037,8 +5813,7 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    InitBasicShaderObject(&fsr_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&fsr_features))
     if (!fsr_features.pipelineFragmentShadingRate) {
         GTEST_SKIP() << "pipelineFragmentShadingRate not supported.";
     }
@@ -6090,8 +5865,7 @@ TEST_F(NegativeShaderObject, AlphaToCoverage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-alphaToCoverageEnable-08920");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     static const char frag_src[] = R"glsl(
@@ -6124,8 +5898,7 @@ TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08668");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
     if (features.geometryShader == VK_FALSE) {
@@ -6167,8 +5940,7 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08671");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
     if (features.geometryShader == VK_FALSE) {
@@ -6209,8 +5981,7 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09116");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkFormat format = VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
     VkFormatProperties props;
@@ -6257,8 +6028,7 @@ TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-format-08936");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64_SINT;
@@ -6313,8 +6083,7 @@ TEST_F(NegativeShaderObject, Mismatched32BitAttributeType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-format-08937");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     static const char vert_src[] = R"glsl(
@@ -6361,8 +6130,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09203");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64G64B64_SINT;
@@ -6418,8 +6186,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     OneOffDescriptorSet vert_descriptor_set(m_device,
@@ -6506,8 +6273,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08416");
 
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(subgroup_size_control_properties);
@@ -6542,8 +6308,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08417");
 
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    InitBasicShaderObject(nullptr, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_2))
 
     VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(properties11);
@@ -6577,8 +6342,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08454");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -6661,8 +6425,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08455");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -6745,8 +6508,7 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
     VkFormat format = VK_FORMAT_R16_SINT;
@@ -6811,8 +6573,7 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    InitBasicShaderObject(&features11, VK_API_VERSION_1_2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&features11, VK_API_VERSION_1_2))
 
     if (!features11.multiview) {
         GTEST_SKIP() << "multiview not supported.";
@@ -6861,8 +6622,7 @@ TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
     TEST_DESCRIPTION(
         "Test drawing with dual source blending with too many fragment output attachments, but using dynamic blending.");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -6969,13 +6729,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT pgq_features = vku::InitStructHelper();
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&pgq_features);
     VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
@@ -6990,9 +6744,8 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
         GTEST_SKIP() << "primitivesGeneratedQuery not supported.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    if (::testing::Test::IsSkipped()) return;
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -7034,8 +6787,7 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperative_matrix_features = vku::InitStructHelper(&float16_features);
     VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
 
-    InitBasicShaderObject(&memory_model_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject(&memory_model_features))
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
@@ -7074,8 +6826,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08867");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* tesc_src = R"(
 			   OpCapability Tessellation
@@ -7215,8 +6966,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08868");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* tesc_src = R"(
 			   OpCapability Tessellation
@@ -7356,8 +7106,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08869");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* tesc_src = R"(
 			   OpCapability Tessellation
@@ -7496,8 +7245,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08870");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* tesc_src = R"(
 			   OpCapability Tessellation
@@ -7637,8 +7385,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOutputPatchSize) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08871");
 
-    InitBasicShaderObject();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicShaderObject())
 
     const char* tesc_src = R"(
 			   OpCapability Tessellation

@@ -14,8 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 
 TEST_F(NegativeImageDrm, Basic) {
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     if (mods.empty()) {
@@ -110,8 +109,7 @@ TEST_F(NegativeImageDrm, Basic) {
 
 TEST_F(NegativeImageDrm, ImageFormatInfo) {
     TEST_DESCRIPTION("Validate VkPhysicalDeviceImageFormatInfo2.");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT image_drm_format_modifier = vku::InitStructHelper();
 
@@ -144,8 +142,7 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
 
 TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     TEST_DESCRIPTION("Try to get image subresource layout for drm image plane 3 when it only has 2");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
@@ -204,8 +201,7 @@ TEST_F(NegativeImageDrm, DeviceImageMemoryRequirements) {
     TEST_DESCRIPTION("Validate usage of VkDeviceImageMemoryRequirementsKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkSubresourceLayout planeLayout = {0, 0, 0, 0, 0};
     VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_modifier_create_info = vku::InitStructHelper();
@@ -235,8 +231,7 @@ TEST_F(NegativeImageDrm, DeviceImageMemoryRequirements) {
 
 TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     if (!ImageFormatAndFeaturesSupported(gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
@@ -264,8 +259,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
 
 TEST_F(NegativeImageDrm, MutableFormat) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT with no VkImageFormatListCreateInfo.");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
@@ -298,8 +292,7 @@ TEST_F(NegativeImageDrm, MutableFormat) {
 TEST_F(NegativeImageDrm, CompressionControl) {
     TEST_DESCRIPTION("mix VK_EXT_image_compression_control with DRM.");
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkImageCompressionControlEXT compression_control = vku::InitStructHelper();
     compression_control.flags = VK_IMAGE_COMPRESSION_DEFAULT_EXT;
@@ -326,8 +319,7 @@ TEST_F(NegativeImageDrm, CompressionControl) {
 
 TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {
     TEST_DESCRIPTION("Use vkGetImageDrmFormatModifierPropertiesEXT");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkImageCreateInfo image_info = vku::InitStructHelper();
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -356,8 +348,7 @@ TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {
 TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfo) {
     TEST_DESCRIPTION("Use vkPhysicalDeviceImageDrmFormatModifierInfo with VK_SHARING_MODE_CONCURRENT");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -389,8 +380,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfo) {
 TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     TEST_DESCRIPTION("Use vkPhysicalDeviceImageDrmFormatModifierInfo with VK_SHARING_MODE_CONCURRENT");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     uint32_t queue_family_property_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);
@@ -432,8 +422,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
 }
 
 TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
@@ -493,8 +482,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
 }
 
 TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);

@@ -18,11 +18,7 @@ TEST_F(PositiveMemory, MapMemory2) {
 
     AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(Init())
 
     /* Vulkan doesn't have any requirements on what allocationSize can be
      * other than that it must be non-zero.  Pick 64KB because that should
@@ -75,11 +71,8 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
         "errors when objects are bound and used");
 
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     // Create a test buffer
     vkt::Buffer buffer;
@@ -145,12 +138,9 @@ TEST_F(PositiveMemory, BindMemory2) {
         "used");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     // Create a test buffer
     vkt::Buffer buffer;
@@ -211,7 +201,7 @@ TEST_F(PositiveMemory, NonCoherentMapping) {
         "violations");
     VkResult err;
     uint8_t *pData;
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
@@ -303,11 +293,8 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
     TEST_DESCRIPTION("Test mapping memory that uses memory heap with VK_MEMORY_HEAP_MULTI_INSTANCE_BIT");
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
@@ -340,7 +327,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
 }
 
 TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "This test can crash drivers with threading issues";
@@ -405,11 +392,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(Init())
 
     uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -444,11 +427,7 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(Init())
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
