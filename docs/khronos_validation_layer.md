@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2022 LunarG, Inc. -->
+<!-- Copyright 2015-2023 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -42,7 +42,7 @@ accessing and controlling feedback from the layers:
 |  [VK_EXT_debug_utils](#debugutils)  | allows application control and capture of debug reporting information   |
 
 
-See the [Layers Overview and Configuration](../LAYER_CONFIGURATION.md) document for more detailed information on configuring Vulkan layers.
+See the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document for more detailed information on configuring Vulkan layers.
 
 ### <a name="validationfeatures"></a>VK\_EXT\_validation\_features
 The preferred method for an application to programmatically control validation layer features is through the `VK_EXT_validation_features` extension.
