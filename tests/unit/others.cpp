@@ -39,7 +39,7 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
     TEST_DESCRIPTION("Validate that promoted APIs are not valid in old versions.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     // TODO - Currently not working on MockICD with Profiles using 1.0
     // Seems API version is not being passed through correctly
@@ -61,7 +61,7 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     TEST_DESCRIPTION("Validate that newer pnext structs are not valid for old Vulkan versions.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper();
     VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
     phys_dev_props_2.pNext = &bad_version_1_1_struct;
@@ -93,14 +93,10 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDevicePrivateDataFeaturesEXT private_data_features = vku::InitStructHelper();
@@ -109,7 +105,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
         GTEST_SKIP() << "privateData feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = vku::InitStructHelper();
@@ -156,13 +152,10 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // feature not enabled
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
 
@@ -201,8 +194,8 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
                                        static_cast<uint32_t>(std::size(id)), &id};
     VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_setting_create_info));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_setting_create_info));
+    RETURN_IF_SKIP(InitState())
 
     uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -255,8 +248,8 @@ TEST_F(VkLayerTest, CustomStypeStructStringArray) {
     VkLayerSettingsCreateInfoEXT layer_setting_create_info = {
         VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_setting_create_info));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_setting_create_info));
+    RETURN_IF_SKIP(InitState())
 
     uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -307,8 +300,8 @@ TEST_F(VkLayerTest, CustomStypeStructIntegerArray) {
     };
     VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_setting_create_info));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_setting_create_info));
+    RETURN_IF_SKIP(InitState())
 
     uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -332,11 +325,8 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &create_info));
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &create_info));
+    RETURN_IF_SKIP(InitState())
 
     // Create an invalid pNext structure to trigger the stateless validation warning
     VkBaseOutStructure bogus_struct{};
@@ -394,12 +384,9 @@ TEST_F(VkLayerTest, VuidIdFilterString) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_settings_create_info));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_settings_create_info));
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
     VkAttachmentDescription attach = {0,
                                       VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_SAMPLE_COUNT_1_BIT,
@@ -430,12 +417,9 @@ TEST_F(VkLayerTest, VuidFilterHexInt) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_settings_create_info));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_settings_create_info));
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
     VkAttachmentDescription attach = {0,
                                       VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_SAMPLE_COUNT_1_BIT,
@@ -466,11 +450,8 @@ TEST_F(VkLayerTest, VuidFilterInt) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_settings_create_info));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_settings_create_info));
+    RETURN_IF_SKIP(InitState())
     VkAttachmentDescription attach = {0,
                                       VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_SAMPLE_COUNT_1_BIT,
@@ -538,7 +519,7 @@ TEST_F(VkLayerTest, LayerInfoMessages) {
 TEST_F(VkLayerTest, RequiredParameter) {
     TEST_DESCRIPTION("Specify VK_NULL_HANDLE, NULL, and 0 for required handle, pointer, array, and array count parameters");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
     // Specify NULL for a pointer to a handle
@@ -639,7 +620,7 @@ TEST_F(VkLayerTest, SpecLinks) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
 #ifdef ANNOTATED_SPEC_LINK
     bool test_annotated_spec_link = true;
@@ -712,8 +693,8 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -743,10 +724,7 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     // Create a device passing in a bad PdevFeatures2 value
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
@@ -782,7 +760,7 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
 TEST_F(VkLayerTest, ReservedParameter) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " must be 0");
     // Specify 0 for a reserved VkFlags parameter
@@ -800,11 +778,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
 
     AddRequiredExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
@@ -891,12 +866,9 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
@@ -1042,10 +1014,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
 
 TEST_F(VkLayerTest, DebugUtilsParameterFlags) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     DebugUtilsLabelCheckData callback_data;
     auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
@@ -1068,7 +1037,7 @@ TEST_F(VkLayerTest, DebugUtilsParameterFlags) {
 TEST_F(VkLayerTest, InvalidStructSType) {
     TEST_DESCRIPTION("Specify an invalid VkStructureType for a Vulkan structure's sType field");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-sType-sType");
     // Zero struct memory, effectively setting sType to
@@ -1094,10 +1063,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     TEST_DESCRIPTION("Specify an invalid value for a Vulkan structure's pNext field");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkCommandPoolCreateInfo-pNext-pNext");
     // Set VkCommandPoolCreateInfo::pNext to a non-NULL value, when pNext must be NULL.
@@ -1130,7 +1096,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "does not fall within the begin..end range of the core VkFormat enumeration tokens");
@@ -1143,7 +1109,7 @@ TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueBadMask) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags bitmask value
@@ -1155,7 +1121,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadMask) {
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags array entry
@@ -1177,11 +1143,8 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
 TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
     // Make sure using VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE doesn't trigger a false positive.
     AddRequiredExtensions(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     // Specify an invalid VkBool32 value, expecting a warning with StatelessValidation::ValidateBool32
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -1195,7 +1158,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueMaxEnum) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     // Specify MAX_ENUM
     VkFormatProperties format_properties;
@@ -1207,7 +1170,7 @@ TEST_F(VkLayerTest, UnrecognizedValueMaxEnum) {
 TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     if (!IsPlatformMockICD()) {
         // This test leaks a fence (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
@@ -1248,7 +1211,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
 TEST_F(VkLayerTest, LeakABuffer) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the buffer.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     if (!IsPlatformMockICD()) {
         // This test leaks a buffer (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
@@ -1301,8 +1264,8 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
         "Try to destroy a render pass object using a device other than the one it was created on. This should generate a distinct "
         "error from the invalid handle error.");
     // Create first device and renderpass
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // Create second device
     float priorities[] = {1.0f};
@@ -1334,7 +1297,7 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
 TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
     TEST_DESCRIPTION("Test with invalid VkAllocationCallbacks");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     const std::optional queueFamilyIndex = DeviceObj()->QueueFamilyMatching(0, 0, true);
     if (!queueFamilyIndex) {
@@ -1394,7 +1357,7 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
         "Submit command buffer created using one queue family and attempt to submit them on a queue created in a different queue "
         "family.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());  // assumes it initializes all queue families on vk::CreateDevice
+    RETURN_IF_SKIP(Init())  // assumes it initializes all queue families on vk::CreateDevice
 
     // This test is meaningless unless we have multiple queue families
     auto queue_family_properties = m_device->phy().queue_properties_;
@@ -1435,7 +1398,7 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
 
     VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper();
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&pd_features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -1462,13 +1425,7 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(Init())
 
     VkPhysicalDevice16BitStorageFeatures sixteen_bit = vku::InitStructHelper();
     sixteen_bit.storageBuffer16BitAccess = true;
@@ -1521,16 +1478,9 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
     const bool test_1_2 = (DeviceValidationVersion() >= VK_API_VERSION_1_2);
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
     vkt::PhysicalDevice physical_device(gpu());
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
@@ -1607,10 +1557,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     std::vector<const char *> device_extensions;
     device_extensions.push_back(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
@@ -1649,11 +1596,8 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
 
 TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     AddRequiredExtensions(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     VkValidationCacheCreateInfoEXT validationCacheCreateInfo = vku::InitStructHelper();
     validationCacheCreateInfo.initialDataSize = 0;
@@ -1673,7 +1617,7 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
 TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     TEST_DESCRIPTION("End a command buffer with a query still in progress, create nested queries.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
@@ -1700,8 +1644,8 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
 
 TEST_F(VkLayerTest, StageMaskHost) {
     TEST_DESCRIPTION("Test invalid usage of VK_PIPELINE_STAGE_HOST_BIT.");
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     vkt::Event event(*m_device);
     m_commandBuffer->begin();
@@ -1744,7 +1688,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
 TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     TEST_DESCRIPTION("Attempt vkQueueSubmit with a CB in the initial state");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     // never record m_commandBuffer
 
     VkSubmitInfo si = vku::InitStructHelper();
@@ -1769,13 +1713,13 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
 TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     TEST_DESCRIPTION("Attempt to enable AMD_negative_viewport_height and Maintenance1_KHR extension simultaneously");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
     if (!((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) &&
           (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)))) {
         GTEST_SKIP() << "Maintenance1 and AMD_negative viewport height extensions not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
@@ -1803,14 +1747,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     vkt::PhysicalDevice physical_device(gpu_);
     VkPhysicalDeviceFeatures features = physical_device.features();
@@ -1837,7 +1774,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
 TEST_F(VkLayerTest, ResetEventThenSet) {
     TEST_DESCRIPTION("Reset an event then set it after the reset has been submitted.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
     vkt::Event event(*m_device, event_create_info);
 
@@ -1884,7 +1821,7 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
 
 TEST_F(VkLayerTest, FreeCommandBuffersNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeCommandBuffers");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, nullptr);
@@ -1898,7 +1835,7 @@ TEST_F(VkLayerTest, FreeCommandBuffersNull) {
 
 TEST_F(VkLayerTest, FreeDescriptorSetsNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
@@ -1920,7 +1857,7 @@ TEST_F(VkLayerTest, FreeDescriptorSetsNull) {
 
 TEST_F(VkLayerTest, ValidateStride) {
     TEST_DESCRIPTION("Validate Stride.");
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
@@ -1930,7 +1867,7 @@ TEST_F(VkLayerTest, ValidateStride) {
         GTEST_SKIP() << " Device graphic queue has timestampValidBits of 0, skipping.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -2050,12 +1987,9 @@ TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     uint32_t data = 100;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
@@ -2073,8 +2007,8 @@ void ExtendedDynStateCalls(ErrorMonitor *error_monitor, VkCommandBuffer cmd_buf,
 TEST_F(VkLayerTest, ValidateArrayLength) {
     TEST_DESCRIPTION("Validate arraylength VUs");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // Used to have a valid pointed to set object too
     VkCommandBuffer unused_command_buffer;
@@ -2157,14 +2091,9 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
     TEST_DESCRIPTION("Use an invalid SPIR-V extension in OpExtension.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init())
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     const char *vertex_source = R"spirv(
                OpCapability Shader
@@ -2199,8 +2128,8 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
 TEST_F(VkLayerTest, ValidateViewportStateScissorOverflow) {
     TEST_DESCRIPTION("Validate sum of offset and width of viewport state scissor");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkRect2D scissor_x = {{vvl::kI32Max / 2, 0}, {vvl::kI32Max / 2 + 64, 64}};
@@ -2228,8 +2157,8 @@ TEST_F(VkLayerTest, ValidateViewportStateScissorOverflow) {
 TEST_F(VkLayerTest, ValidateViewportStateScissorNegative) {
     TEST_DESCRIPTION("Validate offset of viewport state scissor");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkRect2D scissor_x = {{-64, 0}, {256, 256}};
@@ -2255,7 +2184,7 @@ TEST_F(VkLayerTest, ValidateViewportStateScissorNegative) {
 TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     TEST_DESCRIPTION("Duplicated physical devices in DeviceGroupDeviceCreateInfo.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
@@ -2273,7 +2202,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     create_device_pnext.physicalDeviceCount = 2;
     create_device_pnext.pPhysicalDevices = physicalDevices;
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
 
@@ -2316,10 +2245,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
 
     VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&shader_image_atomic_int64_feature);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(Init())
     vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
     device_create_info.pNext = &pd_features2;
@@ -2355,11 +2281,8 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     TEST_DESCRIPTION("Test for invalid imageCreate flags bit with physicalDeviceCount.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
@@ -2373,7 +2296,7 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
     create_device_pnext.physicalDeviceCount = 1;
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkImageCreateInfo ici = vku::InitStructHelper();
     ici.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
@@ -2404,10 +2327,7 @@ TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     features12.bufferDeviceAddress = VK_TRUE;
 
@@ -2434,8 +2354,8 @@ TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
 TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
@@ -2491,7 +2411,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptor
 TEST_F(VkLayerTest, ZeroBitmask) {
     TEST_DESCRIPTION("Test a reserved flags field set to a non-zero value");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreCreateInfo-flags-zerobitmask");
     VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
@@ -2532,10 +2452,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     const bool ycbcr_conversion_extension = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(portability_features);
@@ -2546,7 +2463,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
         portability_features.pNext = &ycbcr_features;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkExportMetalObjectCreateInfoEXT metal_object_create_info = vku::InitStructHelper();
     auto instance_ci = GetInstanceCreateInfo();
@@ -2831,7 +2748,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
 TEST_F(VkLayerTest, InvalidExtEnum) {
     TEST_DESCRIPTION("Use an enum from an extension that is not enabled.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
@@ -2844,11 +2761,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Require YCbCr dependencies extensions except VK_KHR_GET_MEMORY_REQUIREMENTS_2 -- to create the needed error
     std::vector<const char *> required_device_extensions = {
@@ -2864,7 +2777,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
 
     // Need to ignore this error to get to the one we're testing
     m_errorMonitor->SetUnexpectedError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     // The feature bit samplerYcbcrConversion prevents the function from being called even in Vulkan 1.0
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSamplerYcbcrConversion-None-01648");
@@ -2887,14 +2800,11 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     TEST_DESCRIPTION("Create a pNext chain containing valid structures, but with a duplicate structure type");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
 
     // VK_KHR_get_physical_device_properties2 promoted to 1.1
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-sType-unique");
     // in VkPhysicalDeviceProperties2 create a chain of pNext of type A -> B -> A
@@ -2915,7 +2825,7 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
 }
 
 TEST_F(VkLayerTest, GetPhysicalDeviceImageFormatPropertiesFlags) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     VkImageFormatProperties dummy_props;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceImageFormatProperties-usage-requiredbitmask");
     vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
@@ -2932,14 +2842,8 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
     TEST_DESCRIPTION("vkGetCalibratedTimestampsEXT with duplicated timeDomain.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
@@ -2963,14 +2867,8 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
     TEST_DESCRIPTION("vkGetCalibratedTimestampsEXT with invalid timeDomain.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);

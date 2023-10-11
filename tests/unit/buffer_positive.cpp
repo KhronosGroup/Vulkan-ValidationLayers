@@ -16,7 +16,7 @@
 
 TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx) {
@@ -52,10 +52,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     TEST_DESCRIPTION("texelBufferAlignment is enabled by default in 1.3.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(Init())
 
     const VkDeviceSize minTexelBufferOffsetAlignment = m_device->phy().limits_.minTexelBufferOffsetAlignment;
     if (minTexelBufferOffsetAlignment == 1) {
@@ -94,17 +91,11 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_addr_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -146,17 +137,11 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_addr_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -187,17 +172,12 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     TEST_DESCRIPTION("Valid vkCmdBindIndexBuffer2KHR");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
+
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    InitRenderTarget();
 
     const uint32_t buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -216,16 +196,10 @@ TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with good flags.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -246,16 +220,10 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are a subset of the Buffer.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -276,16 +244,10 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
     TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
 
     VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
@@ -304,16 +266,11 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
     TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR, even if bad.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
+
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
 
     VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;

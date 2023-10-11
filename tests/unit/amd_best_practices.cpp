@@ -23,10 +23,10 @@ const char *kEnableAMDValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD"
 // disabled for now
 #ifdef AMD_LONG_RUNNING_TEST
 TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // create 1 more than the warning limit for pipeline objects
     const uint32_t warn_limit = 5001;
@@ -57,10 +57,10 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
 #endif
 
 TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
@@ -131,10 +131,10 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     if (m_device->phy().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Test not supported by a single queue family device";
@@ -190,10 +190,10 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkImage-DontUseStorageRenderTargets");
@@ -220,10 +220,10 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-CreatePipelines-AvoidPrimitiveRestart");
@@ -237,10 +237,10 @@ TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-CreatePipelines-MinimizeNumDynamicStates");
@@ -267,10 +267,10 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
 
 TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     // TODO: add dynamic buffer check as well
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-CreatePipelinesLayout-KeepLayoutSmall");
@@ -312,10 +312,10 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
 
 TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     // TODO: add dynamic buffer check as well
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-UpdateDescriptors-AvoidCopyingDescriptors");
@@ -370,9 +370,9 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
 TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     {
         VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -457,9 +457,9 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                   nullptr,
@@ -507,9 +507,9 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                  nullptr,
@@ -539,7 +539,7 @@ TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess");
@@ -567,9 +567,9 @@ TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo img_info = {
         VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -622,14 +622,11 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
 TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     AddSurfaceExtension();
 
-    InitBestPracticesFramework(kEnableAMDValidation);
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
 
     InitState();
     InitSwapchain();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                  nullptr,
@@ -681,9 +678,9 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     constexpr int fence_warn_limit = 5;
     const auto fence_ci = vkt::Fence::create_info();
@@ -709,10 +706,10 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -776,7 +773,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
 TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
     TEST_DESCRIPTION("On AMD make the workgroup size a multiple of 64 to obtain best performance across all GPU generations.");
 
-    InitBestPracticesFramework(kEnableAMDValidation);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation))
     InitState();
 
     CreateComputePipelineHelper pipe(*this);

@@ -26,7 +26,7 @@ bool QueryTest::HasZeroTimestampValidBits() {
 TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
     TEST_DESCRIPTION("Reset a query on one CB and use it in another.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -76,10 +76,10 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
 TEST_F(PositiveQuery, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, pool_flags));
+    InitRenderTarget();
 
     uint32_t qfi = 0;
     VkBufferCreateInfo bci = vku::InitStructHelper();
@@ -143,10 +143,10 @@ TEST_F(PositiveQuery, BasicQuery) {
 
 TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     TEST_DESCRIPTION("Destroy a QueryPool based on vkGetQueryPoolResults");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, pool_flags));
+    InitRenderTarget();
 
     std::array<uint64_t, 4> samples_passed = {};
     constexpr uint64_t sizeof_samples_passed = samples_passed.size() * sizeof(uint64_t);
@@ -219,7 +219,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     TEST_DESCRIPTION("Issue a query on a secondary command buffer and copy it on a primary.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -278,7 +278,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
 TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     TEST_DESCRIPTION("Issue a query and copy from it on a second command buffer.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -347,7 +347,7 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
 TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
     TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
@@ -381,10 +381,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     TEST_DESCRIPTION("Test using vkCmdWriteTimestamp2 with NONE and ALL_COMMANDS.");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
     synchronization2.synchronization2 = VK_TRUE;
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
@@ -393,7 +390,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     if (synchronization2.synchronization2 != VK_TRUE) {
         GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
     if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
@@ -411,11 +408,11 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
 
 TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     TEST_DESCRIPTION("Test executing secondary command buffer with VkCommandBufferInheritanceInfo::queryFlags.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if (!m_device->phy().features().inheritedQueries) {
         GTEST_SKIP() << "inheritedQueries not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -456,11 +453,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     auto performance_query_features = vku::InitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(performance_query_features);
@@ -469,7 +462,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         GTEST_SKIP() << "Test requires (unsupported) performanceCounterQueryPools";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     uint32_t counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,

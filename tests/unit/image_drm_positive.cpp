@@ -16,20 +16,14 @@
 void ImageDrmTest::InitBasicImageDrm(void *pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);  // required extension added here
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(features11);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features11, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features11, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
 std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {
@@ -58,8 +52,7 @@ std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatF
 TEST_F(PositiveImageDrm, Basic) {
     // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/2610
     TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     // we just hope that one of these formats supports modifiers
     // for more detailed checking, we could also check multi-planar formats.
@@ -151,8 +144,7 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
         "Create image with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and VkExternalMemoryImageCreateInfo in the pNext chain");
 
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
@@ -214,8 +206,7 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
 }
 
 TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
@@ -268,8 +259,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
 
 TEST_F(PositiveImageDrm, MutableFormat) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT with no VkImageFormatListCreateInfo .");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
@@ -302,8 +292,7 @@ TEST_F(PositiveImageDrm, MutableFormat) {
 
 TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
     TEST_DESCRIPTION("Use vkGetImageDrmFormatModifierPropertiesEXT");
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
@@ -334,8 +323,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
 TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoExclusive) {
     TEST_DESCRIPTION("Use vkPhysicalDeviceImageDrmFormatModifierInfo with VK_SHARING_MODE_EXCLUSIVE");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -359,8 +347,7 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoExclusive) {
 TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoConcurrent) {
     TEST_DESCRIPTION("Use vkPhysicalDeviceImageDrmFormatModifierInfo with VK_SHARING_MODE_CONCURRENT");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    InitBasicImageDrm();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicImageDrm())
 
     uint32_t queue_family_property_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);

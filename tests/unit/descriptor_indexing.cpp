@@ -22,10 +22,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
     descriptor_indexing_features = vku::InitStructHelper();
@@ -37,8 +34,8 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
         GTEST_SKIP() << "Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    InitRenderTarget();
 
     if (!m_device->phy().features().fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
@@ -179,10 +176,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     TEST_DESCRIPTION("VkWriteDescriptorSet must have identical VkDescriptorBindingFlagBits");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     descriptor_indexing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(descriptor_indexing_features);
@@ -191,7 +185,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
         GTEST_SKIP() << "Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_indexing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features));
 
     // not all identical VkDescriptorBindingFlags flags
     VkDescriptorBindingFlags flags[3] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0,
@@ -254,7 +248,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
 
 TEST_F(NegativeDescriptorIndexing, SetLayoutWithoutExtension) {
     TEST_DESCRIPTION("Create an update_after_bind set layout without loading the needed extension.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
@@ -270,10 +264,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
     TEST_DESCRIPTION("Exercise various create/allocate-time errors related to VK_EXT_descriptor_indexing.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
     descriptor_indexing_features = vku::InitStructHelper();
@@ -281,7 +272,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
 
     descriptor_indexing_features.descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_indexing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features));
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
@@ -420,8 +411,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
 
 TEST_F(NegativeDescriptorIndexing, SetLayoutBindings) {
     TEST_DESCRIPTION("Create descriptor set layout with incompatible bindings.");
-    InitBasicDescriptorIndexing();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing())
 
     if (!descriptor_indexing_features.descriptorBindingUniformBufferUpdateAfterBind) {
         GTEST_SKIP() << "Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind";

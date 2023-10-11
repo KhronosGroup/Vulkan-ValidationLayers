@@ -20,13 +20,10 @@
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkAttachmentDescription attachment = {0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,
@@ -118,13 +115,10 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
 TEST_F(PositiveSubpass, SubpassWithEventWait) {
     TEST_DESCRIPTION("Subpass waits for the event set outside of this subpass");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkAttachmentDescription attachment = {0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,

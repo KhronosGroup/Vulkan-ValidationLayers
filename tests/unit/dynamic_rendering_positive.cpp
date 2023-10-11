@@ -18,13 +18,7 @@
 void DynamicRenderingTest::InitBasicDynamicRendering(void* pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(dynamic_rendering_features);
@@ -32,13 +26,12 @@ void DynamicRenderingTest::InitBasicDynamicRendering(void* pNextFeatures) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
 TEST_F(PositiveDynamicRendering, BasicUsage) {
     TEST_DESCRIPTION("Most simple way to use dynamic rendering");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -57,8 +50,7 @@ TEST_F(PositiveDynamicRendering, BasicUsage) {
 
 TEST_F(PositiveDynamicRendering, Draw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -97,8 +89,7 @@ TEST_F(PositiveDynamicRendering, Draw) {
 
 TEST_F(PositiveDynamicRendering, DrawMultiBind) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering and multiple CmdBindPipeline calls.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -156,10 +147,9 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
     TEST_DESCRIPTION("Test calling vkCmdBeginQuery with a dynamic render pass.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&sync2_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&sync2_features))
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -184,8 +174,7 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
 
 TEST_F(PositiveDynamicRendering, PipeWithDiscard) {
     TEST_DESCRIPTION("Create dynamic rendering pipeline with rasterizer discard.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     ds_ci.depthTestEnable = VK_TRUE;
@@ -212,9 +201,8 @@ TEST_F(PositiveDynamicRendering, PipeWithDiscard) {
 TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
     TEST_DESCRIPTION("Use stencil attachment with integer format and depth stencil resolve extension");
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     if (!ImageFormatIsSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
         GTEST_SKIP() << "VK_FORMAT_S8_UINT format not supported";
@@ -265,9 +253,7 @@ TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthSt
 TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     TEST_DESCRIPTION("Test creating an image with subsampled bit.");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
@@ -316,8 +302,7 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
 
 TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     TEST_DESCRIPTION("Resume and suspend at vkCmdBeginRendering time");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -384,8 +369,7 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     char const* fsSource = R"glsl(
         #version 450
@@ -439,9 +423,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
     char const* fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
@@ -492,8 +474,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&shader_tile_image_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&shader_tile_image_features))
 
     // shader tile image read features not supported skip the test.
     if (!shader_tile_image_features.shaderTileImageDepthReadAccess &&
@@ -597,8 +578,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
 
 TEST_F(PositiveDynamicRendering, DualSourceBlending) {
     TEST_DESCRIPTION("Test drawing with dynamic rendering and dual source blending.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     if (!m_device->phy().features().dualSrcBlend) {
         GTEST_SKIP() << "Test requires (unsupported) dualSrcBlend";
@@ -659,8 +639,7 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsWithNullImageView) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands with an inherited image format of VK_FORMAT_UNDEFINED inside a render pass begun with "
         "CmdBeginRendering where the same image is specified as null");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -703,8 +682,7 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsWithNullImageView) {
 
 TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     TEST_DESCRIPTION("Suspend in primary and resume in secondary");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -767,8 +745,7 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
 
 TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     TEST_DESCRIPTION("Suspend in secondary and resume in primary");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     char const* fsSource = R"glsl(
         #version 450
@@ -853,14 +830,13 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper(&sync2_features);
-    InitBasicDynamicRendering(&shader_tile_image_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&shader_tile_image_features))
     if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
         !shader_tile_image_features.shaderTileImageStencilReadAccess) {
         GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_commandBuffer->begin();
 
@@ -903,8 +879,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     TEST_DESCRIPTION(
         "Draw with Dynamic Rendering with attachment specified as VK_NULL_HANDLE in VkRenderingInfoKHR, and with corresponding "
         "format in VkPipelineRenderingCreateInfoKHR set to VK_FORMAT_UNDEFINED");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -1011,8 +986,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
     AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
     VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT dynamic_rendering_unused_attachments_features =
         vku::InitStructHelper();
-    InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features))
 
     if (!dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRenderingUnusedAttachments , skipping.";
@@ -1145,8 +1119,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
 TEST_F(PositiveDynamicRendering, ExecuteCommandsFlags) {
     TEST_DESCRIPTION("Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has same flags");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     constexpr VkFormat color_formats = {VK_FORMAT_UNDEFINED};  // undefined because no image view will be used
 
@@ -1193,9 +1166,8 @@ TEST_F(PositiveDynamicRendering, ColorAttachmentMismatch) {
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
         vku::InitStructHelper(&extended_dynamic_state2_features);
-    InitBasicDynamicRendering(&extended_dynamic_state3_features);
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&extended_dynamic_state3_features))
+    InitRenderTarget();
 
     if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
         GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";

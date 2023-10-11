@@ -27,7 +27,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
     VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
@@ -186,7 +186,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
 
@@ -681,7 +681,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
@@ -813,10 +813,8 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -886,12 +884,9 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "vkGetDeferredOperationResultKHR not supported by MockICD";
     }
-    // Needed for Ray Tracing
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    if (::testing::Test::IsSkipped()) return;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
@@ -983,16 +978,13 @@ TEST_F(NegativeRayTracingPipeline, BindPoint) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-02392");
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1009,13 +1001,7 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -1035,7 +1021,7 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
     props.limits.maxPerStageResources = maxPerStageResources;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->phy().limits_.maxPerStageResources, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
@@ -1076,19 +1062,13 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     if (!ray_tracing_features.rayTraversalPrimitiveCulling) {
         GTEST_SKIP() << "Feature rayTraversalPrimitiveCulling is not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kMinimalShaderGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
@@ -1124,15 +1104,9 @@ TEST_F(NegativeRayTracingPipeline, PipelineType) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1151,9 +1125,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     if (!InitFrameworkForRayTracingTest(this, true)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    if (::testing::Test::IsSkipped()) return;
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles_features =
         vku::InitStructHelper(&ray_tracing_features);
@@ -1162,7 +1134,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
         GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
     }
     pipeline_library_group_handles_features.pipelineLibraryGroupHandles = false;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pipeline_library_group_handles_features));
+    RETURN_IF_SKIP(InitState(nullptr, &pipeline_library_group_handles_features));
     const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
     VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
@@ -1226,7 +1198,7 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     auto features2 = GetPhysicalDeviceFeatures2(pipleline_features);
     // Set this to true as it is a required feature
     pipleline_features.pipelineCreationCacheControl = VK_TRUE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
@@ -1355,7 +1327,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
 
@@ -1835,7 +1807,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
         GTEST_SKIP() << "maxDescriptorSetAccelerationStructures < 1";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
     VkPipelineCreationFeedbackEXT feedbacks[4] = {};
@@ -1860,10 +1832,8 @@ TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitState())
 
     char const missShaderText[] = R"glsl(
         #version 460 core

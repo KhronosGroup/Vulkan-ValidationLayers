@@ -17,7 +17,7 @@
 TEST_F(PositiveInstance, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
@@ -45,12 +45,9 @@ TEST_F(PositiveInstance, NullFunctionPointer) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     auto fpGetBufferMemoryRequirements =
         (PFN_vkGetBufferMemoryRequirements2)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferMemoryRequirements2");
@@ -60,7 +57,7 @@ TEST_F(PositiveInstance, NullFunctionPointer) {
 }
 
 TEST_F(PositiveInstance, ValidationInstanceExtensions) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     std::string layer_name = "VK_LAYER_KHRONOS_validation";
     std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
@@ -86,11 +83,8 @@ TEST_F(PositiveInstance, ValidationInstanceExtensions) {
 TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     TEST_DESCRIPTION("Call a VkPhysicalDevice query API that uses an enum that is only valid with a promoted extension");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Vulkan >= 1.1 required";
-    }
-    // ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    // RETURN_IF_SKIP(InitState())
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;

@@ -20,8 +20,8 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
         "Create a graphics pipeline in which a push constant range containing a push constant block member is not declared in the "
         "layout.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     char const *vsSource = R"glsl(
         #version 450
@@ -54,7 +54,7 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
 TEST_F(NegativeShaderPushConstants, PipelineRange) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange structs.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
@@ -126,8 +126,8 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming push constants which are not provided in the pipeline layout");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     char const *vsSource = R"glsl(
         #version 450
@@ -152,7 +152,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
 TEST_F(NegativeShaderPushConstants, Range) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange values in vkCmdPushConstants.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    RETURN_IF_SKIP(InitFramework())
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -167,8 +167,8 @@ TEST_F(NegativeShaderPushConstants, Range) {
     props.limits.maxPushConstantsSize = maxPushConstantsSize;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     char const *const vsSource = R"glsl(
         #version 450
@@ -233,8 +233,8 @@ TEST_F(NegativeShaderPushConstants, Range) {
 TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     TEST_DESCRIPTION("Not every bytes in used push constant ranges has been set before Draw ");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // push constant range: 0-99
     char const *const vsSource = R"glsl(
@@ -350,8 +350,8 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
 TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     TEST_DESCRIPTION("Test push-constant detect the write entrypoint with the push constants.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // #version 460
     // layout(push_constant) uniform Material {
@@ -449,7 +449,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
 TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     const char *cs_source = R"glsl(
         #version 460

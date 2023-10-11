@@ -21,8 +21,8 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
         "Attempt to use a stageMask w/ geometry shader and tesselation shader bits enabled when those features are disabled on the "
         "device.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
@@ -72,8 +72,8 @@ TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
     VkPhysicalDeviceFeatures deviceFeatures = {};
     deviceFeatures.geometryShader = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&deviceFeatures));
+    InitRenderTarget();
 
     if (m_device->phy().limits_.maxGeometryOutputVertices == 0) {
         GTEST_SKIP() << "Device doesn't support geometry shaders";
@@ -98,8 +98,8 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
     VkPhysicalDeviceFeatures deviceFeatures = {};
     deviceFeatures.tessellationShader = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init(&deviceFeatures));
+    InitRenderTarget();
 
     if (m_device->phy().limits_.maxTessellationPatchSize == 0) {
         GTEST_SKIP() << "patchControlPoints not supported";
@@ -150,12 +150,12 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderDontWrite) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // Create GS declaring PointSize and writing to it
     static char const *gsSource = R"glsl(
@@ -185,15 +185,15 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceFeatures features{};
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
     if (features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported";
     }
     features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(&features));
+    InitRenderTarget();
 
     // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
     // #version 450
@@ -262,12 +262,12 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {
 TEST_F(NegativeGeometryTessellation, BuiltinBlockOrderMismatchVsGs) {
     TEST_DESCRIPTION("Use different order of gl_Position and gl_PointSize in builtin block interface between VS and GS.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().geometryShader || !m_device->phy().features().shaderTessellationAndGeometryPointSize) {
         GTEST_SKIP() << "Device does not support geometry shaders";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
     // #version 450
@@ -352,13 +352,13 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockOrderMismatchVsGs) {
 TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGs) {
     TEST_DESCRIPTION("Use different number of elements in builtin block interface between VS and GS.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
 
     if (!m_device->phy().features().geometryShader || !m_device->phy().features().shaderTessellationAndGeometryPointSize) {
         GTEST_SKIP() << "Device does not support geometry shaders";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     static const char *gsSource = R"glsl(
         #version 450
@@ -394,8 +394,8 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
         "Test that errors are produced when the number of per-vertex input and/or output components to the tessellation control "
         "stage exceeds the device limit");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
@@ -511,8 +511,8 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
         "Test that errors are produced when the number of input and/or output components to the tessellation evaluation stage "
         "exceeds the device limit");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
@@ -630,8 +630,8 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
         "Test that errors are produced when the number of input and/or output components to the geometry stage exceeds the device "
         "limit");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
@@ -739,8 +739,8 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
         "Test that errors are produced when the number of output vertices/instances in the geometry stage exceeds the device "
         "limit");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     for (int overflow = 0; overflow < 2; ++overflow) {
         m_errorMonitor->Reset();
@@ -799,8 +799,8 @@ TEST_F(NegativeGeometryTessellation, TessellationPatchDecorationMismatch) {
         "Test that an error is produced for a variable output from the TCS without the patch decoration, but consumed in the TES "
         "with the decoration.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -845,8 +845,8 @@ TEST_F(NegativeGeometryTessellation, TessellationPatchDecorationMismatch) {
 TEST_F(NegativeGeometryTessellation, Tessellation) {
     TEST_DESCRIPTION("Test various errors when creating a graphics pipeline with tessellation stages active.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -930,8 +930,8 @@ TEST_F(NegativeGeometryTessellation, PatchListTopology) {
     TEST_DESCRIPTION("Need to have VK_PRIMITIVE_TOPOLOGY_PATCH_LIST.");
 
     AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -960,8 +960,8 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid Pipeline CreateInfo State: VK_PRIMITIVE_TOPOLOGY_PATCH primitive ");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
 
     VkDescriptorPoolSize ds_type_count = {};
         ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1059,11 +1059,11 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
 TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
     TEST_DESCRIPTION("Create pipeline with primitive topology incompatible with shaders.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     static const char *gsSource = R"glsl(
         #version 450
@@ -1097,14 +1097,14 @@ TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
 TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
     TEST_DESCRIPTION("Create pipeline with incompatible topology between tess and geom shaders.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init())
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
     }
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support the required tessellation shader";
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     char const *tcsSource = R"glsl(
         #version 450
@@ -1164,10 +1164,7 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
     TEST_DESCRIPTION("Create pipeline with tessellation shader with missing point size");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
         VkPhysicalDeviceFeatures2 features2;
@@ -1178,16 +1175,16 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
         if (!portability_subset_features.tessellationPointMode) {
             GTEST_SKIP() << "tessellationPointMode not supported";
         }
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+        RETURN_IF_SKIP(InitState(nullptr, &features2))
     } else {
         VkPhysicalDeviceFeatures features;
         GetPhysicalDeviceFeatures(&features);
         if (!features.tessellationShader || !features.shaderTessellationAndGeometryPointSize) {
             GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
         }
-        ASSERT_NO_FATAL_FAILURE(InitState(&features));
+        RETURN_IF_SKIP(InitState(&features));
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     static const char tess_src[] = R"glsl(
         #version 460
@@ -1216,10 +1213,7 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
     TEST_DESCRIPTION("Create pipeline with tessellation shader with missing point size");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
         VkPhysicalDeviceFeatures2 features2;
@@ -1231,7 +1225,7 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
             GTEST_SKIP() << "tessellationPointMode not supported";
         }
         features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+        RETURN_IF_SKIP(InitState(nullptr, &features2))
     } else {
         VkPhysicalDeviceFeatures features;
         GetPhysicalDeviceFeatures(&features);
@@ -1239,9 +1233,9 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
             GTEST_SKIP() << "tessellationShader not supported";
         }
         features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-        ASSERT_NO_FATAL_FAILURE(InitState(&features));
+        RETURN_IF_SKIP(InitState(&features));
     }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     static const char tess_src[] = R"glsl(
         #version 460

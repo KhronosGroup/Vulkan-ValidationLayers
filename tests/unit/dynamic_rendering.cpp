@@ -30,15 +30,7 @@ void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const 
     if (useLinearColorAttachment) {
         AddRequiredExtensions(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceLinearColorAttachmentFeaturesNV linear_color_attachment = vku::InitStructHelper();
@@ -55,7 +47,7 @@ void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const 
 
     features2.features.variableMultisampleRate = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_props);
@@ -120,8 +112,7 @@ TEST_F(DynamicRenderingCommandBufferInheritanceRenderingInfoTest, LinearColorAtt
 
 TEST_F(NegativeDynamicRendering, CommandDraw) {
     TEST_DESCRIPTION("vkCmdDraw* Dynamic Rendering Tests.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
@@ -183,8 +174,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&shader_tile_image_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&shader_tile_image_features))
 
     if (!shader_tile_image_features.shaderTileImageDepthReadAccess &&
         !shader_tile_image_features.shaderTileImageStencilReadAccess) {
@@ -289,9 +279,8 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
 
 TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments with Dynamic Rendering");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageFormatProperties image_format_properties{};
     vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), m_renderTargets[0]->format(), VK_IMAGE_TYPE_2D,
@@ -419,8 +408,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
 
 TEST_F(NegativeDynamicRendering, ClearAttachments) {
     TEST_DESCRIPTION("Call CmdClearAttachments with invalid aspect masks.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     // Create color image
     const VkFormat color_format = VK_FORMAT_R32_SFLOAT;
@@ -805,8 +793,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
 
 TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     if (m_device->phy().limits_.maxGeometryOutputVertices == 0) {
         GTEST_SKIP() << "Device doesn't support required maxGeometryOutputVertices";
@@ -874,9 +861,8 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
 
 TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
     TEST_DESCRIPTION("colorAttachmentCount and attachmentCount don't match");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = vku::InitStructHelper();
     color_blend_state_create_info.attachmentCount = 0;
@@ -913,8 +899,7 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
 TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering and a mismatching viewMask");
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multview";
@@ -969,8 +954,7 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
 
 TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -1110,8 +1094,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats2) {
         "Draw with Dynamic Rendering with attachment specified as VK_NULL_HANDLE in VkRenderingInfoKHR, but with corresponding "
         "format in VkPipelineRenderingCreateInfoKHR not set to VK_FORMAT_UNDEFINED");
 
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -1226,9 +1209,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3Color) {
     AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
     VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT dynamic_rendering_unused_attachments_features =
         vku::InitStructHelper();
-    InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features);
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features))
+    InitRenderTarget();
 
     if (!dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRenderingUnusedAttachments , skipping.";
@@ -1287,8 +1269,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
     AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
     VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT dynamic_rendering_unused_attachments_features =
         vku::InitStructHelper();
-    InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features))
 
     if (!dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRenderingUnusedAttachments , skipping.";
@@ -1394,9 +1375,8 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
 
 TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color sample counts");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1454,8 +1434,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
 
 TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesDepthStencil) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching depth/stencil sample counts");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1545,9 +1524,8 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesColor) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching mixed color sample counts");
     AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     const bool amd_samples = IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     const bool nv_samples = IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
@@ -1625,8 +1603,7 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching mixed depth/stencil sample counts");
     AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     const bool amd_samples = IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     const bool nv_samples = IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
@@ -1728,8 +1705,7 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     TEST_DESCRIPTION("AttachmentInfo Dynamic Rendering Tests.");
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&fdm_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&fdm_features))
 
     if (!fdm_features.fragmentDensityMapNonSubsampledImages) {
         GTEST_SKIP() << "fragmentDensityMapNonSubsampledImages not supported.";
@@ -1812,18 +1788,8 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
     TEST_DESCRIPTION("VkCommandBufferBeginInfo Dynamic Rendering Tests.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT))
 
     VkCommandBufferInheritanceRenderingInfoKHR cmd_buffer_inheritance_rendering_info = vku::InitStructHelper();
     cmd_buffer_inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -1872,10 +1838,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
 TEST_F(NegativeDynamicRendering, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("VkCommandBufferBeginInfo Dynamic Rendering Tests.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(Init())
 
     vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -1920,8 +1883,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
     AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     bool fragment_density = IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     bool shading_rate = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -1929,7 +1891,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
 
@@ -2064,8 +2026,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
 TEST_F(NegativeDynamicRendering, LayerCount) {
     TEST_DESCRIPTION("Test dynamic rendering with viewMask 0 and invalid layer count.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
@@ -2079,8 +2040,7 @@ TEST_F(NegativeDynamicRendering, LayerCount) {
 
 TEST_F(NegativeDynamicRendering, InfoMismatchedSamples) {
     TEST_DESCRIPTION("Test beginning rendering with mismatched sample counts.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -2152,8 +2112,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
     TEST_DESCRIPTION("Test BeginRenderingInfo with FragmentShadingRateAttachment.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
@@ -2162,7 +2121,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
@@ -2229,8 +2188,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
 
 TEST_F(NegativeDynamicRendering, DeviceGroupRenderPassBeginInfo) {
     TEST_DESCRIPTION("Test render area of DeviceGroupRenderPassBeginInfo.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRect2D render_area = {};
     render_area.offset.x = 0;
@@ -2277,8 +2235,7 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderPassBeginInfo) {
 TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImage) {
     TEST_DESCRIPTION("Test BeginRendering with FragmentShadingRateAttachmentInfo with missing image usage bit.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
@@ -2366,8 +2323,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImage) {
 
 TEST_F(NegativeDynamicRendering, BeginRenderingDepthAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a depth attachment that has an invalid format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkFormat stencil_format = FindSupportedStencilOnlyFormat(gpu());
     if (stencil_format == VK_FORMAT_UNDEFINED) {
@@ -2397,8 +2353,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingDepthAttachmentFormat) {
 TEST_F(NegativeDynamicRendering, TestFragmentDensityMapRenderArea) {
     TEST_DESCRIPTION("Validate VkRenderingFragmentDensityMapAttachmentInfo attachment image view extent.");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
@@ -2495,7 +2450,7 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapRenderAreaWithoutDeviceGroupE
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
@@ -2506,17 +2461,13 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapRenderAreaWithoutDeviceGroupE
         GTEST_SKIP() << "Tests for 1.0 only";
     }
 
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkPhysicalDeviceFragmentDensityMapPropertiesEXT fdm_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fdm_props);
@@ -2555,9 +2506,8 @@ TEST_F(NegativeDynamicRendering, BarrierShaderTileFeaturesNotEnabled) {
     TEST_DESCRIPTION("Test setting memory barrier without shader tile features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&sync2_features);
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&sync2_features))
+    InitRenderTarget();
 
     m_commandBuffer->begin();
 
@@ -2602,11 +2552,7 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceVulkan13Features vk13features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
@@ -2626,8 +2572,8 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
     shader_tile_image_features.shaderTileImageDepthReadAccess = false;
     shader_tile_image_features.shaderTileImageStencilReadAccess = false;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     m_commandBuffer->begin();
 
@@ -2677,11 +2623,7 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceVulkan13Features vk13features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
@@ -2697,8 +2639,8 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
         GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     m_commandBuffer->begin();
 
@@ -2836,8 +2778,7 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
 
 TEST_F(NegativeDynamicRendering, BeginRenderingStencilAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a stencil attachment that has an invalid format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
 
@@ -2863,8 +2804,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingStencilAttachmentFormat) {
 
 TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoStencilAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a stencil attachment that has an invalid format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
 
@@ -2901,8 +2841,7 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoStencilAttachmentFormat
 TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineWithAttachmentSampleCount) {
     TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -2931,17 +2870,9 @@ TEST_F(NegativeDynamicRendering, CreatePipelineWithoutFeature) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -2959,13 +2890,10 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
         GTEST_SKIP() << "Tests for 1.0 only";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
@@ -2974,7 +2902,7 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkImageObj colorImage(m_device);
     colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -3059,8 +2987,7 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
 TEST_F(NegativeDynamicRendering, DeviceGroupAreaGreaterThanAttachmentExtent) {
     TEST_DESCRIPTION("Begin dynamic rendering with device group with render area greater than extent of attachments");
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkImageObj colorImage(m_device);
     colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -3146,14 +3073,10 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     TEST_DESCRIPTION("Execute secondary command buffers within render pass instance with incompatible render pass");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkSubpassDescription subpass = {};
     VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
@@ -3189,13 +3112,9 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     TEST_DESCRIPTION("Execute secondary command buffers with different subpass");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     VkSubpassDescription subpasses[2] = {};
 
@@ -3246,14 +3165,10 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferContents) {
     TEST_DESCRIPTION("Execute secondary command buffers within active render pass that was not begun with VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();
@@ -3283,14 +3198,7 @@ TEST_F(NegativeDynamicRendering, ShaderLayerBuiltIn) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper(&dynamic_rendering_features);
@@ -3305,8 +3213,8 @@ TEST_F(NegativeDynamicRendering, ShaderLayerBuiltIn) {
         GTEST_SKIP() << "Test requires (unsupported) multiviewGeometryShader";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     static char const *gsSource = R"glsl(
         #version 450
@@ -3342,10 +3250,9 @@ TEST_F(NegativeDynamicRendering, ShaderLayerBuiltIn) {
 
 TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
     TEST_DESCRIPTION("Create invalid pipeline that uses InputAttachment capability");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     const char *fsSource = R"(
                OpCapability Shader
@@ -3390,9 +3297,8 @@ TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
 
 TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentFormat) {
     TEST_DESCRIPTION("Create pipeline with invalid color attachment format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkFormat color_format = VK_FORMAT_MAX_ENUM;
 
@@ -3415,8 +3321,7 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT library_features = vku::InitStructHelper(&multiview_features);
-    InitBasicDynamicRendering(&library_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&library_features))
 
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
@@ -3425,7 +3330,7 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -3466,9 +3371,8 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
 
 TEST_F(NegativeDynamicRendering, AttachmentSampleCount) {
     TEST_DESCRIPTION("Create pipeline with invalid color attachment samples");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkSampleCountFlagBits color_attachment_samples = VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
 
@@ -3495,8 +3399,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT library_features = vku::InitStructHelper(&multiview_features);
-    InitBasicDynamicRendering(&library_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&library_features))
 
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
@@ -3505,7 +3408,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -3556,14 +3459,13 @@ TEST_F(NegativeDynamicRendering, LibraryRenderPass) {
     TEST_DESCRIPTION("Create pipeline with invalid library render pass");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT library_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&library_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&library_features))
 
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -3611,14 +3513,13 @@ TEST_F(NegativeDynamicRendering, PipelineMissingMultisampleState) {
     TEST_DESCRIPTION("Create pipeline with missing multisample state");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT library_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&library_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&library_features))
 
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     {
         CreatePipelineHelper pipe(*this);
@@ -3647,8 +3548,7 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     TEST_DESCRIPTION("Use invalid VkRenderingFragmentDensityMapAttachmentInfoEXT");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
@@ -3658,7 +3558,7 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -3711,9 +3611,8 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
 TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachmentUsage) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid imageLayout");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR, 0);
@@ -3736,9 +3635,8 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachmentUsage) {
 TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentCreateFlags) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid image create flags");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
@@ -3778,8 +3676,7 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid layer count");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
@@ -3789,7 +3686,7 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3829,8 +3726,7 @@ TEST_F(NegativeDynamicRendering, PNextImageView) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
@@ -3840,7 +3736,7 @@ TEST_F(NegativeDynamicRendering, PNextImageView) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
@@ -3876,13 +3772,10 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
         GTEST_SKIP() << "Tests for 1.0 only";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
@@ -3891,8 +3784,8 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -3956,14 +3849,13 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
 TEST_F(NegativeDynamicRendering, InfoViewMask) {
     TEST_DESCRIPTION("Use negative offset in RenderingInfo render area");
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_props);
@@ -3990,9 +3882,8 @@ TEST_F(NegativeDynamicRendering, InfoViewMask) {
 TEST_F(NegativeDynamicRendering, ColorAttachmentFormat) {
     TEST_DESCRIPTION("Use format with missing potential format features in rendering color attachment");
     AddRequiredExtensions(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkFormat format = FindSupportedDepthStencilFormat(gpu());
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -4011,9 +3902,8 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentFormat) {
 
 TEST_F(NegativeDynamicRendering, ResolveModeWithNonIntegerColorFormat) {
     TEST_DESCRIPTION("Use invalid resolve mode with non integer color format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4057,9 +3947,8 @@ TEST_F(NegativeDynamicRendering, ResolveModeWithNonIntegerColorFormat) {
 
 TEST_F(NegativeDynamicRendering, ResolveModeWithIntegerColorFormat) {
     TEST_DESCRIPTION("Use invalid resolve mode with integer color format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4104,9 +3993,8 @@ TEST_F(NegativeDynamicRendering, ResolveModeWithIntegerColorFormat) {
 
 TEST_F(NegativeDynamicRendering, ResolveModeSamples) {
     TEST_DESCRIPTION("Use invalid sample count with resolve mode that is not none");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -4136,9 +4024,8 @@ TEST_F(NegativeDynamicRendering, ResolveModeSamples) {
 
 TEST_F(NegativeDynamicRendering, ResolveImageViewSamples) {
     TEST_DESCRIPTION("Use resolve image view with invalid sample count");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4187,9 +4074,8 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewSamples) {
 
 TEST_F(NegativeDynamicRendering, ResolveImageViewFormatMatch) {
     TEST_DESCRIPTION("Use resolve image view with different format from image view");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4233,9 +4119,8 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewFormatMatch) {
 
 TEST_F(NegativeDynamicRendering, AttachmentImageViewLayout) {
     TEST_DESCRIPTION("Use rendering attachment image view with invalid layout");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -4262,9 +4147,8 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewLayout) {
 
 TEST_F(NegativeDynamicRendering, ResolveImageViewLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid layout");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4309,9 +4193,8 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewLayout) {
 TEST_F(NegativeDynamicRendering, ResolveImageViewLayoutSeparateDepthStencil) {
     TEST_DESCRIPTION("Use resolve image view with invalid layout");
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4357,8 +4240,7 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewShadingRateLayout) {
     TEST_DESCRIPTION("Use image view with invalid layout");
     AddOptionalExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     const bool nv_shading_rate = IsExtensionsEnabled(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     const bool khr_fragment_shading = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -4366,7 +4248,7 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewShadingRateLayout) {
         GTEST_SKIP() << "shading rate / fragment shading not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -4398,8 +4280,7 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewShadingRateLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid shading ratelayout");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     const bool nv_shading_rate = IsExtensionsEnabled(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     const bool khr_fragment_shading = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -4407,7 +4288,7 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewShadingRateLayout) {
         GTEST_SKIP() << "shading rate / fragment shading not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4455,9 +4336,8 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewShadingRateLayout) {
 TEST_F(NegativeDynamicRendering, AttachmentImageViewFragmentDensityLayout) {
     TEST_DESCRIPTION("Use image view with invalid layout");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -4485,9 +4365,8 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewFragmentDensityLayout) {
 TEST_F(NegativeDynamicRendering, ResolveImageViewFragmentDensityLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid fragment density layout");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4532,9 +4411,8 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewFragmentDensityLayout) {
 TEST_F(NegativeDynamicRendering, ResolveImageViewReadOnlyOptimalLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid read only optimal layout");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4579,8 +4457,7 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewReadOnlyOptimalLayout) {
 TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
     TEST_DESCRIPTION("Test BeginRenderingInfo image view with FragmentShadingRateAttachment.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
@@ -4590,7 +4467,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -4619,9 +4496,8 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
 TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
     TEST_DESCRIPTION("Test RenderingInfo color attachment.");
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkImageObj invalid_image(m_device);
     invalid_image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR, 0);
@@ -4721,10 +4597,9 @@ TEST_F(NegativeDynamicRendering, RenderingInfoDepthAttachment) {
     TEST_DESCRIPTION("Test RenderingInfo depth attachment.");
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     const bool separate_ds_layouts = IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
 
@@ -4926,9 +4801,8 @@ TEST_F(NegativeDynamicRendering, RenderingInfoDepthAttachment) {
 
 TEST_F(NegativeDynamicRendering, RenderAreaNegativeOffset) {
     TEST_DESCRIPTION("Use negative offset in RenderingInfo render area");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -4954,8 +4828,7 @@ TEST_F(NegativeDynamicRendering, RenderAreaNegativeOffset) {
 
 TEST_F(NegativeDynamicRendering, ZeroRenderArea) {
     TEST_DESCRIPTION("renderArea set to zero");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -4983,9 +4856,8 @@ TEST_F(NegativeDynamicRendering, ZeroRenderArea) {
 
 TEST_F(NegativeDynamicRendering, Pipeline) {
     TEST_DESCRIPTION("Use pipeline created with render pass in dynamic render pass.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -5015,7 +4887,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
@@ -5024,10 +4896,6 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
         GTEST_SKIP() << "Tests for 1.0 only";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
@@ -5043,7 +4911,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -5083,19 +4951,11 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
@@ -5112,7 +4972,7 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -5192,8 +5052,7 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
 
 TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     TEST_DESCRIPTION("Test suspending render pass instance.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
     vkt::CommandBuffer cmd_buffer1(m_device, &command_pool);
@@ -5271,8 +5130,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     TEST_DESCRIPTION("Test suspending render pass instance with QueueSubmit2.");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2Features synchronization2 = vku::InitStructHelper();
-    InitBasicDynamicRendering(&synchronization2);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&synchronization2))
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
     vkt::CommandBuffer cmd_buffer1(m_device, &command_pool);
@@ -5356,8 +5214,7 @@ TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
     TEST_DESCRIPTION(
         "Test for NULL depth stencil attachments in dynamic rendering with secondary command buffer with depth stencil format "
         "inheritance info");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     // Create secondary command buffer
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -5445,8 +5302,7 @@ TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
 
 TEST_F(NegativeDynamicRendering, BeginRenderingWithSecondaryContents) {
     TEST_DESCRIPTION("Test that an error is produced when a secondary command buffer calls BeginRendering with secondary contents");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -5473,8 +5329,7 @@ TEST_F(NegativeDynamicRendering, BadRenderPassContentsWhenCallingCmdExecuteComma
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that hasn't set "
         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     constexpr VkFormat color_formats = {VK_FORMAT_UNDEFINED};  // undefined because no image view will be used
 
@@ -5526,8 +5381,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNonNullRenderPass) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that hasn't set "
         "renderPass to VK_NULL_HANDLE in pInheritanceInfo");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -5592,8 +5446,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNonNullRenderPass) {
 
 TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingFlags) {
     TEST_DESCRIPTION("Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching flags");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     constexpr VkFormat color_formats = {VK_FORMAT_UNDEFINED};  // undefined because no image view will be used
 
@@ -5646,8 +5499,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingFlags) {
 TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorAttachmentCount) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching colorAttachmentCount");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
@@ -5699,8 +5551,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorAttachmentCo
 TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorImageViewFormat) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching color image view format");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -5751,8 +5602,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNullImageView) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands with an inherited image format that is not VK_FORMAT_UNDEFINED inside a render pass begun with "
         "CmdBeginRendering where the same image is specified as null");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -5800,8 +5650,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingDepthStencilImage
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching depth/stencil image view "
         "format");
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkImageObj image(m_device);
     auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
@@ -5861,8 +5710,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingViewMask) {
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching viewMask format");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&mv_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&mv_features))
 
     if (!mv_features.multiview) {
         GTEST_SKIP() << "multiview feature not supported.";
@@ -5916,8 +5764,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingViewMask) {
 TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewRasterizationSamples) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching rasterization samples");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -6020,8 +5867,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewAttachme
         "attachment samples");
     AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     bool amd_samples = IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     bool nv_samples = IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
@@ -6133,8 +5979,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewAttachme
 
 TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Test drawing in secondary command buffers with dynamic rendering");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
 
@@ -6171,8 +6016,7 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
 TEST_F(NegativeDynamicRendering, CommandBufferInheritanceDepthFormat) {
     TEST_DESCRIPTION(
         "Test VkCommandBufferInheritanceRenderingInfoKHR with depthAttachmentFormat that does not include depth aspect");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     if (!m_device->phy().features().variableMultisampleRate) {
         GTEST_SKIP() << "Test requires (unsupported) variableMultisampleRate";
@@ -6201,8 +6045,7 @@ TEST_F(NegativeDynamicRendering, CommandBufferInheritanceDepthFormat) {
 
 TEST_F(NegativeDynamicRendering, DeviceGroupRenderArea) {
     TEST_DESCRIPTION("Begin rendering with invaid device group render area.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRect2D renderArea = {{-1, 0}, {64, 64}};
 
@@ -6256,8 +6099,7 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderArea) {
 
 TEST_F(NegativeDynamicRendering, MaxFramebufferLayers) {
     TEST_DESCRIPTION("Go over maxFramebufferLayers");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -6278,8 +6120,7 @@ TEST_F(NegativeDynamicRendering, MaxFramebufferLayers) {
 TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassInstance) {
     TEST_DESCRIPTION(
         "Test EndRendering without starting the instance with BeginRendering, in the same command buffer or in a different once");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -6343,8 +6184,7 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
 TEST_F(NegativeDynamicRendering, EndRenderpassWithBeginRenderingRenderpassInstance) {
     TEST_DESCRIPTION("Test EndRenderpass(2) starting the renderpass instance with BeginRendering");
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -6384,18 +6224,10 @@ TEST_F(NegativeDynamicRendering, BeginRenderingDisabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    RETURN_IF_SKIP(InitFramework())
 
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
@@ -6424,8 +6256,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingDisabled) {
 
 TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
     TEST_DESCRIPTION("Test pipeline rendering formats and viewmask");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     char const *fsSource = R"glsl(
         #version 450
@@ -6518,8 +6349,7 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
 TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
     TEST_DESCRIPTION("Test pipeline rendering viewmask maximum index");
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&multiview_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&multiview_features))
 
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
@@ -6565,8 +6395,7 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
 
 TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     char const *fsSource = R"glsl(
         #version 450
@@ -6599,8 +6428,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
 
 TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     char const *fsSource = R"glsl(
         #version 450
@@ -6629,8 +6457,7 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
     TEST_DESCRIPTION("Test all color blend attachments are dynamically set at draw time with Dynamic Rendering.");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    InitBasicDynamicRendering(&extended_dynamic_state3_features);
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering(&extended_dynamic_state3_features))
 
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
         GTEST_SKIP() << "DynamicState3 features not supported";
@@ -6676,8 +6503,7 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
 
 TEST_F(NegativeDynamicRendering, BeginTwice) {
     TEST_DESCRIPTION("Call vkCmdBeginRendering twice in a row");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -6699,8 +6525,7 @@ TEST_F(NegativeDynamicRendering, BeginTwice) {
 
 TEST_F(NegativeDynamicRendering, EndTwice) {
     TEST_DESCRIPTION("Call vkCmdEndRendering twice in a row");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -6722,8 +6547,7 @@ TEST_F(NegativeDynamicRendering, EndTwice) {
 
 TEST_F(NegativeDynamicRendering, MissingMultisampleState) {
     TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -6737,8 +6561,7 @@ TEST_F(NegativeDynamicRendering, MissingMultisampleState) {
 
 TEST_F(NegativeDynamicRendering, MismatchingDepthAttachmentFormatInSecondaryCmdBuffer) {
     TEST_DESCRIPTION("Use a pipeline with a depth attachment format that doesn't match that of the dynamic render pass");
-    InitBasicDynamicRendering();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicDynamicRendering())
 
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,   VK_FORMAT_D32_SFLOAT_S8_UINT,
                                    VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};

@@ -148,6 +148,10 @@ class VkRenderFramework : public VkTestFramework {
     }
 
   protected:
+    APIVersion m_instance_api_version = 0;
+    APIVersion m_target_api_version = 0;
+    APIVersion m_attempted_api_version = 0;
+
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
 

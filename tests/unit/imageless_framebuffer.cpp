@@ -21,15 +21,12 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -355,14 +352,11 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     TEST_DESCRIPTION("Use imageless framebuffer functionality without enabling the feature");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -417,10 +411,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
@@ -428,8 +419,8 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
         imageless_features.pNext = &mv_features;
     }
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -531,16 +522,13 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -676,17 +664,14 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper(&mv_features);
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -828,17 +813,14 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper(&mv_features);
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -939,10 +921,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
     // Enable KHR_fragment_shading_rate and all of its required extensions
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
@@ -955,7 +934,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
         GTEST_SKIP() << "requires attachmentFragmentShadingRate feature";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkAttachmentReference2 attach = vku::InitStructHelper();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1017,10 +996,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
@@ -1037,7 +1013,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
         GTEST_SKIP() << "attachmentFragmentShadingRate feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkAttachmentReference2 attach = vku::InitStructHelper();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1131,15 +1107,12 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
     VkFormat attachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};
@@ -1244,12 +1217,9 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     // random invalid struct for a framebuffer pNext change
     VkCommandPoolCreateInfo invalid_struct = vku::InitStructHelper();

@@ -25,11 +25,8 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     // attachment inside a render pass can create hazards with the copy operations outside render pass.
     AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const uint32_t width = 256;
     const uint32_t height = 128;
@@ -127,8 +124,8 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
 // the writes performed by the transition.
 TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     TEST_DESCRIPTION("Perform image transition then copy to image from buffer");
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState())
 
     constexpr uint32_t width = 256;
     constexpr uint32_t height = 128;
@@ -169,17 +166,14 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
 TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     TEST_DESCRIPTION("Signal semaphore on the host and wait on the host");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    RETURN_IF_SKIP(InitSyncValFramework());
     if (IsPlatformMockICD()) {
         // Mock does not support proper ordering of events, e.g. wait can return before signal
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 10'000;
 
@@ -227,17 +221,14 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
 TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     TEST_DESCRIPTION("Singal semaphore on the host and regularly read semaphore payload value");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    RETURN_IF_SKIP(InitSyncValFramework());
     if (IsPlatformMockICD()) {
         // Mock does not support precise semaphore counter reporting
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 1'000;
 
@@ -276,17 +267,14 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
 TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     TEST_DESCRIPTION("Read semaphore counter value from multiple threads");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    RETURN_IF_SKIP(InitSyncValFramework());
     if (IsPlatformMockICD()) {
         // Mock does not support precise semaphore counter reporting
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 15'000;
 
@@ -356,9 +344,9 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
 
 TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     TEST_DESCRIPTION("Shader references a descriptor set that was not bound. SyncVal should not crash if core checks are disabled");
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     const char vs_source[] = R"glsl(
         #version 460
@@ -400,16 +388,10 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.3";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitSyncValFramework(true));
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -487,11 +469,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
 TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
     AddSurfaceExtension();
-    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitSyncValFramework(true));
+    RETURN_IF_SKIP(InitState())
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }

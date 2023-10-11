@@ -15,15 +15,12 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     TEST_DESCRIPTION("Create an imageless framebuffer");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    InitRenderTarget();
 
     uint32_t attachment_width = 512;
     uint32_t attachment_height = 512;
@@ -80,13 +77,10 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_framebuffer);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_framebuffer));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_framebuffer));
 
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled - requires imageView2DOn3DImage to be VK_TRUE.\n";

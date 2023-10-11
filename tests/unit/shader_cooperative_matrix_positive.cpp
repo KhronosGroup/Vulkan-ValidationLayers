@@ -53,16 +53,13 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features = vku::InitStructHelper(&float16_features);
     VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
     GetPhysicalDeviceFeatures2(memory_model_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
+    RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
@@ -124,17 +121,14 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
     VkPhysicalDevice16BitStorageFeatures storage16_features = vku::InitStructHelper(&float16_features);
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperative_matrix_features = vku::InitStructHelper(&storage16_features);
     VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
     GetPhysicalDeviceFeatures2(memory_model_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
+    RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
 
     std::vector<VkCooperativeMatrixPropertiesKHR> props;
     uint32_t props_count = 0;

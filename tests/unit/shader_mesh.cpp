@@ -17,21 +17,15 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
@@ -67,10 +61,7 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR explicit_layout_features = vku::InitStructHelper();
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&explicit_layout_features);
     GetPhysicalDeviceFeatures2(mesh_shader_features);
@@ -80,11 +71,8 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
@@ -130,21 +118,15 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantDefault) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
@@ -181,21 +163,15 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
@@ -245,21 +221,15 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate Task shader shared memory does not exceed maxTaskSharedMemorySize");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
         GTEST_SKIP() << "Mesh and Task shader not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
-    }
+    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);

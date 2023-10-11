@@ -25,15 +25,12 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
     vk::GetPhysicalDeviceProperties(gpu(), &properties);
@@ -127,15 +124,12 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
     vk::GetPhysicalDeviceProperties(gpu(), &properties);
@@ -228,15 +222,10 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
+
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
         GTEST_SKIP() << "This test should not be run on the RADV driver.";
@@ -252,8 +241,8 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     features2.features.robustBufferAccess = VK_FALSE;
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     uint32_t qfi = 0;
@@ -350,17 +339,14 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     TEST_DESCRIPTION("Get counter value from the semaphore signaled by queue submit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper(&sync2_features);
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -386,17 +372,14 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
     vk::GetPhysicalDeviceProperties(gpu(), &properties);
@@ -516,17 +499,11 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
     TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     auto validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     auto desc_indexing_props = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
     auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&desc_indexing_props);
@@ -540,17 +517,11 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
     TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     auto validation_features = GetValidationFeatures();
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required, skipping test.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     auto vk12_props = vku::InitStruct<VkPhysicalDeviceVulkan12Properties>();
     auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&vk12_props);

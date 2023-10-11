@@ -32,11 +32,8 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     validation_features.pEnabledValidationFeatures = validation_feature_enables;
     validation_features.disabledValidationFeatureCount = 4;
     validation_features.pDisabledValidationFeatures = validation_feature_disables;
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, gpu_assisted ? &validation_features : nullptr));
+    RETURN_IF_SKIP(InitFramework(m_errorMonitor, gpu_assisted ? &validation_features : nullptr));
     bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
     if (gpu_assisted && IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-AV can't run on MockICD";
@@ -55,7 +52,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
 
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
@@ -1012,16 +1009,10 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -1066,16 +1057,10 @@ TEST_F(NegativeRayTracing, BarrierSync2AccessAccelerationStructureRayQueryDisabl
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -1141,14 +1126,8 @@ TEST_F(NegativeRayTracing, BarrierSync1AccessAccelerationStructureRayQueryDisabl
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     VkMemoryBarrier memory_barrier = vku::InitStructHelper();
     memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
@@ -1196,14 +1175,8 @@ TEST_F(NegativeRayTracing, EventSync1AccessAccelerationStructureRayQueryDisabled
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState())
 
     const vkt::Event event(*m_device);
 
@@ -1256,10 +1229,7 @@ TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStruc
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     VkDescriptorSetLayoutBinding binding = {};
     binding.binding = 0;
@@ -1292,10 +1262,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper();
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features = vku::InitStructHelper(&accel_struct_features);
@@ -1304,7 +1271,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accel_struct_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(accel_struct_props);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_pipeline_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_pipeline_features));
 
     // Create one descriptor set layout holding (maxPerStageDescriptorAccelerationStructures + 1) bindings
     // for the same shader stage
@@ -1497,10 +1464,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
     AddOptionalExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     const bool khr_acceleration_structure = IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     const bool nv_ray_tracing = IsExtensionsEnabled(VK_NV_RAY_TRACING_EXTENSION_NAME);
@@ -1511,7 +1475,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
         GTEST_SKIP() << "Extensions " << VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME << " and " << VK_NV_RAY_TRACING_EXTENSION_NAME
                      << " are not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (khr_acceleration_structure) {
         auto cmd_begin_query = [this, ext_transform_feedback](VkQueryType query_type, auto vuid_begin_query,
@@ -1582,7 +1546,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper();
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&as_features);
     GetPhysicalDeviceFeatures2(bda_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
+    RETURN_IF_SKIP(InitState(nullptr, &bda_features));
 
     auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
     blas_no_mem->SetDeviceBufferInitNoMem(true);
@@ -1618,10 +1582,7 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = vku::InitStructHelper();
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&bda_features);
     auto features2 = GetPhysicalDeviceFeatures2(accel_features);
@@ -1630,7 +1591,7 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Init a non host visible buffer
     vkt::Buffer buffer;
@@ -1707,14 +1668,12 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    if (::testing::Test::IsSkipped()) return;
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -1749,13 +1708,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
@@ -1768,7 +1721,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     // Init a non host visible buffer
     vkt::Buffer non_host_visible_buffer;
@@ -1813,14 +1766,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper();
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper(&ray_query_features);
@@ -1830,7 +1776,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &as_features));
+    RETURN_IF_SKIP(InitState(nullptr, &as_features));
 
     // Init a non host visible buffer
     vkt::Buffer non_host_visible_buffer;
@@ -1870,20 +1816,14 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(accel_features);
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     // Init a non host visible buffer
     vkt::Buffer non_host_visible_buffer;
@@ -1939,7 +1879,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
@@ -2029,7 +1969,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     }
 
     acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -2071,12 +2011,9 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    // Needed for Ray Tracing
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    if (::testing::Test::IsSkipped()) return;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     // Create ray tracing pipeline
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
@@ -2271,7 +2208,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     if (ray_tracing_features.rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
         GTEST_SKIP() << "rayTracingIndirectTraceRays not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2363,13 +2300,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << "not supported, skipping test";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2404,17 +2335,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << "not supported, skipping test";
-    }
     if (maintenance1_features.rayTracingPipelineTraceRaysIndirect2 == VK_FALSE) {
         GTEST_SKIP() << "rayTracingPipelineTraceRaysIndirect2 not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2450,7 +2375,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
     if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
         GTEST_SKIP() << "rayTracing not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     VkAccelerationStructureVersionInfoKHR valid_version = vku::InitStructHelper();
     VkAccelerationStructureCompatibilityKHR compatablity;
@@ -2490,7 +2415,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const bool index_type_uint8 = IsExtensionsEnabled(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
 
@@ -2590,7 +2515,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     // must be called outside renderpass
     {
-        ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+        InitRenderTarget();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-renderpass");
@@ -2799,7 +2724,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     constexpr size_t build_info_count = 3;
 
@@ -3049,10 +2974,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     vkt::as::BuildGeometryInfoKHR build_geometry_info =
         vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
@@ -3089,7 +3011,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&ray_tracing_features);
     VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_struct_features = vku::InitStructHelper(&ray_query_features);
     GetPhysicalDeviceFeatures2(acc_struct_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
+    RETURN_IF_SKIP(InitState(nullptr, &acc_struct_features));
 
     constexpr VkDeviceSize buffer_size = 4096;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -3143,7 +3065,7 @@ TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_address_features = vku::InitStructHelper(&ray_tracing_features);
     VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_structure_features = vku::InitStructHelper(&buffer_address_features);
     GetPhysicalDeviceFeatures2(acc_structure_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_structure_features));
+    RETURN_IF_SKIP(InitState(nullptr, &acc_structure_features));
 
     m_commandBuffer->begin();
 
@@ -3180,10 +3102,7 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -3272,16 +3191,10 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     GetPhysicalDeviceFeatures2(ray_query_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_query_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_query_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     const bool rt_maintenance_1 = IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
@@ -3367,16 +3280,10 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
     VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR ray_tracing_maintenance1 = vku::InitStructHelper(&ray_query_features);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     GetPhysicalDeviceFeatures2(ray_tracing_maintenance1);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_maintenance1, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_maintenance1, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
@@ -3505,14 +3412,10 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
     VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_props);
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     uint32_t maxBlocks = ray_tracing_props.maxDescriptorSetAccelerationStructures;
     if (maxBlocks > 4096) {
@@ -3555,7 +3458,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::Buffer vbo;
     vbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
@@ -3809,7 +3712,7 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -3918,7 +3821,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -4068,7 +3971,7 @@ TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     OneOffDescriptorSet ds(m_device,
                            {
@@ -4102,7 +4005,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -4211,7 +4114,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     // must be called outside renderpass
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructureNV-renderpass");
     vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
@@ -4226,7 +4129,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -4279,7 +4182,7 @@ TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitState())
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -4320,7 +4223,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -4399,7 +4302,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     // This command must only be called outside of a render pass instance
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-renderpass");
     vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as.handle(), src_as.handle(),

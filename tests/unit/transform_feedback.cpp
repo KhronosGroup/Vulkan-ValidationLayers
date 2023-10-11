@@ -53,13 +53,7 @@ static const char *kXfbVsSource = R"asm(
 
 void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT tf_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(tf_features);
@@ -67,7 +61,7 @@ void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) 
         GTEST_SKIP() << "transformFeedback not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &tf_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &tf_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
 TEST_F(NegativeTransformFeedback, FeatureEnabled) {
@@ -75,15 +69,11 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // transformFeedback not enabled
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState())
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -123,10 +113,9 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
 TEST_F(NegativeTransformFeedback, NoBoundPipeline) {
     TEST_DESCRIPTION("Call vkCmdBeginTransformFeedbackEXT without a bound pipeline");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
@@ -139,10 +128,9 @@ TEST_F(NegativeTransformFeedback, NoBoundPipeline) {
 
 TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdBindTransformFeedbackBuffersEXT");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -291,10 +279,9 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
 
 TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdBeginTransformFeedbackEXT");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -379,10 +366,9 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
 
 TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdEndTransformFeedbackEXT");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -473,10 +459,9 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
 TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Call CmdExecuteCommandBuffers when transform feedback is active");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // A pool we can reset in.
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -514,10 +499,9 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
 
 TEST_F(NegativeTransformFeedback, BindPipeline) {
     TEST_DESCRIPTION("Call CmdBindPipeline when transform feedback is active");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     CreatePipelineHelper pipe_one(*this);
     pipe_one.InitState();
@@ -544,10 +528,9 @@ TEST_F(NegativeTransformFeedback, BindPipeline) {
 TEST_F(NegativeTransformFeedback, EndRenderPass) {
     TEST_DESCRIPTION("Call CmdEndRenderPass when transform feedback is active");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -569,10 +552,9 @@ TEST_F(NegativeTransformFeedback, EndRenderPass) {
 
 TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectByteCountEXT");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(tf_properties);
@@ -664,19 +646,15 @@ TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT but it doesn't enable geometryStreams.");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     transform_feedback_features.geometryStreams = VK_FALSE;  // Invalid
 
     // Extension enabled via VK_EXT_transform_feedback dependency
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&transform_feedback_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     VkPipelineRasterizationStateStreamCreateInfoEXT rasterization_state_stream_ci = vku::InitStructHelper();
@@ -694,13 +672,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     // Test currently crashes with valid SPIR-V
     // Using EmitStreamVertex() with transfer_feedback_props.maxTransformFeedbackStreams
@@ -722,8 +694,8 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
         GTEST_SKIP() << "transformFeedback or geometryStreams feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    InitRenderTarget();
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
@@ -1082,11 +1054,7 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
+    RETURN_IF_SKIP(InitFramework())
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(transform_feedback_features);
@@ -1094,8 +1062,8 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
         GTEST_SKIP() << "geometryStreams not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &transform_feedback_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitState(nullptr, &transform_feedback_features));
+    InitRenderTarget();
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transfer_feedback_props);
@@ -1125,8 +1093,7 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
 TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     TEST_DESCRIPTION("Call CmdNextSubpass while transform feeback is active");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
@@ -1196,9 +1163,8 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
 
 TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
     TEST_DESCRIPTION("call vkCmdBeginTransformFeedbackEXT without renderpass");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1220,10 +1186,9 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
 
 TEST_F(NegativeTransformFeedback, XfbExecutionModeCommand) {
     TEST_DESCRIPTION("missing Xfb execution mode");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     // default Vertex shader will not have Xfb
     CreatePipelineHelper pipe(*this);
@@ -1242,10 +1207,9 @@ TEST_F(NegativeTransformFeedback, XfbExecutionModeCommand) {
 
 TEST_F(NegativeTransformFeedback, XfbExecutionModePipeline) {
     TEST_DESCRIPTION("missing Xfb execution mode");
-    InitBasicTransformFeedback();
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitBasicTransformFeedback())
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
