@@ -66,7 +66,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
-    from generators.gpuav_inst_shader_hash_generator import GpuAvInstShaderHashOutputGenerator
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
 
@@ -248,10 +247,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'genCombined': False,
             'generator' : SpirvToolCommitIdOutputGenerator,
         },
-        'gpu_inst_shader_hash.h' : {
-            'genCombined': False,
-            'generator' : GpuAvInstShaderHashOutputGenerator,
-        },
         'command_validation.cpp' : {
             'generator' : CommandValidationOutputGenerator,
             'genCombined': True,
@@ -331,7 +326,14 @@ def repo_relative(path):
 def main(argv):
     # files to exclude from --verify check
     # The shaders requires glslangvalidator, so they are updated manually with generate_spirv when needed
-    verify_exclude = ['.clang-format', 'gpu_as_inspection_comp.h', 'gpu_pre_dispatch_comp.h', 'gpu_pre_draw_vert.h', 'inst_functions_comp.h']
+    verify_exclude = [
+        '.clang-format',
+        'gpu_as_inspection_comp.h',
+        'gpu_pre_dispatch_comp.h',
+        'gpu_pre_draw_vert.h',
+        'inst_functions_comp.h',
+        'gpu_inst_shader_hash.h'
+    ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('--api',
