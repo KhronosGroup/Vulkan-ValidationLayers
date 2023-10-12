@@ -8975,6 +8975,11 @@ bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipeline
             return !WriteInChain(src_exec_scope);
         }
     }
+    // In dep chain means that the write is *available*.
+    // Available writes are automatically made visible and can't cause hazards during transition.
+    if (WriteInChain(src_exec_scope)) {
+        return false;
+    }
     // Otherwise treat as an ordinary write hazard check with ordering rules.
     return IsOrderedWriteHazard(src_exec_scope, src_access_scope);
 }
