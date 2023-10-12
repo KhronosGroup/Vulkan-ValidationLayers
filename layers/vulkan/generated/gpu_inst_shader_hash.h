@@ -1,5 +1,6 @@
+
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See gpuav_inst_shader_hash_generator.py for modifications
+// See generate_spirv.py for modifications
 
 /***************************************************************************
  *
