@@ -194,7 +194,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
                                        static_cast<uint32_t>(std::size(id)), &id};
     VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_setting_create_info));
+    RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
     RETURN_IF_SKIP(InitState())
 
     uint32_t queue_family_index = 0;
@@ -248,7 +248,7 @@ TEST_F(VkLayerTest, CustomStypeStructStringArray) {
     VkLayerSettingsCreateInfoEXT layer_setting_create_info = {
         VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_setting_create_info));
+    RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
     RETURN_IF_SKIP(InitState())
 
     uint32_t queue_family_index = 0;
@@ -300,7 +300,7 @@ TEST_F(VkLayerTest, CustomStypeStructIntegerArray) {
     };
     VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_setting_create_info));
+    RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
     RETURN_IF_SKIP(InitState())
 
     uint32_t queue_family_index = 0;
@@ -325,7 +325,7 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &create_info));
+    RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState())
 
     // Create an invalid pNext structure to trigger the stateless validation warning
@@ -384,7 +384,7 @@ TEST_F(VkLayerTest, VuidIdFilterString) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_settings_create_info));
+    RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
 
     RETURN_IF_SKIP(InitState())
     VkAttachmentDescription attach = {0,
@@ -417,7 +417,7 @@ TEST_F(VkLayerTest, VuidFilterHexInt) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_settings_create_info));
+    RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
 
     RETURN_IF_SKIP(InitState())
     VkAttachmentDescription attach = {0,
@@ -450,7 +450,7 @@ TEST_F(VkLayerTest, VuidFilterInt) {
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &layer_settings_create_info));
+    RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState())
     VkAttachmentDescription attach = {0,
                                       VK_FORMAT_R8G8B8A8_UNORM,

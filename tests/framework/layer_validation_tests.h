@@ -251,6 +251,8 @@ class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
 class VkGpuAssistedLayerTest : public virtual VkLayerTest {
   public:
+    void InitGpuAvFramework();
+
     VkValidationFeaturesEXT GetValidationFeatures();
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                               VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error, bool shader_objects = false);
@@ -446,7 +448,7 @@ class PositiveQuery : public QueryTest {};
 
 class RayTracingTest : public virtual VkLayerTest {
   public:
-    bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr,
+    void InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr,
                                         VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
                                         VkValidationFeaturesEXT *enabled_features = nullptr);
 

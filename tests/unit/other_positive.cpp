@@ -572,7 +572,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         metal_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT;
         metal_info.pNext = &queue_info;
 
-        RETURN_IF_SKIP(InitFramework(nullptr, &metal_info));
+        RETURN_IF_SKIP(InitFramework(&metal_info));
 
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_features = vku::InitStructHelper();
         auto features2 = GetPhysicalDeviceFeatures2(portability_features);

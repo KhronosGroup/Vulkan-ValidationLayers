@@ -38,7 +38,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_che
 
     features_.pNext = &layer_settings_create_info;
 
-    InitFramework(m_errorMonitor, &features_);
+    InitFramework(&features_);
 }
 
 TEST_F(VkBestPracticesLayerTest, ReturnCodes) {

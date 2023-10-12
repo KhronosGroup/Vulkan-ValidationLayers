@@ -948,14 +948,8 @@ TEST_F(NegativeQuery, HostResetFirstQuery) {
 TEST_F(NegativeQuery, HostResetBadRange) {
     TEST_DESCRIPTION("Bad range in vkResetQueryPoolEXT");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework())
-    if (!AreRequiredExtensionsEnabled() || (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
-                                            DeviceValidationVersion() < VK_API_VERSION_1_1)) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(host_query_reset_features);
@@ -967,21 +961,15 @@ TEST_F(NegativeQuery, HostResetBadRange) {
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-02667");
-    vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 2);
+    vk::ResetQueryPool(m_device->device(), query_pool.handle(), 0, 2);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeQuery, HostResetQueryPool) {
     TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework())
-    if (!AreRequiredExtensionsEnabled() || (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
-                                            DeviceValidationVersion() < VK_API_VERSION_1_1)) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(host_query_reset_features);
@@ -997,21 +985,15 @@ TEST_F(NegativeQuery, HostResetQueryPool) {
 
     // Attempt to reuse the query pool handle.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-queryPool-parameter");
-    vk::ResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
+    vk::ResetQueryPool(m_device->device(), query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeQuery, HostResetDevice) {
     TEST_DESCRIPTION("Device not matching queryPool in vkResetQueryPoolEXT");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework())
-    if (!AreRequiredExtensionsEnabled() || (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
-                                            DeviceValidationVersion() < VK_API_VERSION_1_1)) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(host_query_reset_features);
@@ -1038,7 +1020,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-queryPool-parent");
     // Run vk::ResetQueryPoolExt on the wrong device.
-    vk::ResetQueryPoolEXT(second_device, query_pool.handle(), 0, 1);
+    vk::ResetQueryPool(second_device, query_pool.handle(), 0, 1);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyDevice(second_device, nullptr);

@@ -2786,6 +2786,9 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
     VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_features = vku::InitStructHelper();
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&timeline_features);
     GetPhysicalDeviceFeatures2(sync2_features);
+    if (!sync2_features.synchronization2) {
+        GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 not supported";
+    }
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();

@@ -78,7 +78,7 @@ class VkRenderFramework : public VkTestFramework {
     bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
 
     VkInstanceCreateInfo GetInstanceCreateInfo() const;
-    void InitFramework(void * /*unused compatibility parameter*/ = NULL, void *instance_pnext = NULL);
+    void InitFramework(void *instance_pnext = NULL);
     void ShutdownFramework();
 
      // Functions to modify the VkRenderFramework surface & swapchain variables
@@ -121,16 +121,13 @@ class VkRenderFramework : public VkTestFramework {
     }
 
     // Tracks ext_name to be enabled at device creation time and attempts to enable any required instance extensions.
-    // Does not return anything as the caller should use AreRequiredExtensionsEnabled or AddOptionalExtensions then
+    // Does not return anything as will be checked when creating the framework
     // `ext_name` can refer to a device or instance extension.
     void AddRequiredExtensions(const char *ext_name);
     // Ensures at least 1 WSI instance extension is enabled
     void AddWsiExtensions(const char *ext_name);
-    // Same as AddRequiredExtensions but won't fail a check to AreRequiredExtensionsEnabled
+    // Same as AddRequiredExtensions but won't skip test if not found
     void AddOptionalExtensions(const char *ext_name);
-    // After instance and physical device creation (e.g., after InitFramework), returns true if all required extensions are
-    // available, false otherwise
-    bool AreRequiredExtensionsEnabled() const;
     // After instance and physical device creation (e.g., after InitFramework), returns if extension was enabled
     bool IsExtensionsEnabled(const char *ext_name) const;
     // if requested extensions are not supported, helper function to get string to print out

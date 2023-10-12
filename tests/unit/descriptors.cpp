@@ -5184,17 +5184,14 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(indexing_features);
     if (indexing_features.descriptorBindingVariableDescriptorCount == VK_FALSE) {
         GTEST_SKIP() << "descriptorBindingVariableDescriptorCount feature not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &indexing_features));
+    RETURN_IF_SKIP(InitState(nullptr, &indexing_features));
 
     VkDescriptorSetLayoutBinding bindings[2];
     bindings[0].binding = 0u;

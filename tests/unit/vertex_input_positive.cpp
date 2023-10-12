@@ -315,6 +315,9 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (!m_device->phy().features().independentBlend) {
+        GTEST_SKIP() << "independentBlend not supported";
+    }
 
     VkVertexInputBindingDescription input_binding;
     memset(&input_binding, 0, sizeof(input_binding));

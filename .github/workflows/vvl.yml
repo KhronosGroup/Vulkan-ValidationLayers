@@ -105,10 +105,14 @@ jobs:
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
-      - name: Test Pixel 6 Adreno profile
+      - name: Test Max Core
         run: python scripts/tests.py --test
         env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_adreno.json
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_core.json
+      - name: Test Min Core
+        run: python scripts/tests.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
 
   androidOnLinux:
     env:
