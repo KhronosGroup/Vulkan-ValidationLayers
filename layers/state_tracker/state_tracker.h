@@ -216,14 +216,17 @@ static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkForma
 
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
 template <typename RegionType>
-static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format) {
+static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format, uint32_t image_layout_count) {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
     VkDeviceSize buffer_height = (0 == region.bufferImageHeight ? copy_extent.height : region.bufferImageHeight);
+    uint32_t layer_count = region.imageSubresource.layerCount != VK_REMAINING_ARRAY_LAYERS
+                               ? region.imageSubresource.layerCount
+                               : image_layout_count - region.imageSubresource.baseArrayLayer;
     // VUID-VkImageCreateInfo-imageType-00961 prevents having both depth and layerCount ever both be greater than 1 together. Take
     // max to logic simple. This is the number of 'slices' to copy.
-    const uint32_t z_copies = std::max(copy_extent.depth, region.imageSubresource.layerCount);
+    const uint32_t z_copies = std::max(copy_extent.depth, layer_count);
 
     // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
     // to ignore.
