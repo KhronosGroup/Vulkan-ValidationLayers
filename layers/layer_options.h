@@ -18,6 +18,7 @@
 
 #pragma once
 #include "generated/chassis.h"
+#include "gpu_validation/gpu_settings.h"
 
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
@@ -33,6 +34,7 @@ typedef struct {
     std::unordered_set<uint32_t> &message_filter_list;
     uint32_t *duplicate_message_limit;
     bool *fine_grained_locking;
+    GpuAVSettings *gpuav_settings;
 } ConfigAndEnvSettings;
 
 static const vvl::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {

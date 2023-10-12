@@ -175,11 +175,6 @@ class GpuAssistedBase : public ValidationStateTracker {
         }
         LogError(object, setup_vuid, "Setup Error. Detail: (%s)", logit.c_str());
     }
-    bool GpuGetOption(const char *option, bool default_value) {
-        std::string option_string = getLayerOption(option);
-        vvl::ToLower(option_string);
-        return !option_string.empty() ? !option_string.compare("true") : default_value;
-    }
     bool CheckForGpuAvEnabled(const void *pNext);
 
   protected:
@@ -215,8 +210,6 @@ class GpuAssistedBase : public ValidationStateTracker {
   public:
     bool aborted = false;
     bool force_buffer_device_address;
-    bool cache_instrumented_shaders;
-    bool select_instrumented_shaders;
     vvl::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     const char *setup_vuid;

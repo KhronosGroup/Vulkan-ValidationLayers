@@ -127,7 +127,7 @@ void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
         }
 
         // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
-        if ((validate_draw_indirect || validate_dispatch_indirect) &&
+        if ((gpuav_settings.validate_draw_indirect || gpuav_settings.validate_dispatch_indirect) &&
             cb_state->modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
             cb_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         }
@@ -154,12 +154,6 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     GpuAssistedBase::CreateDevice(pCreateInfo);
     Location loc(vvl::Func::vkCreateDevice);
 
-    validate_descriptors = GpuGetOption("khronos_validation.gpuav_descriptor_checks", true);
-    validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
-    validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
-    warn_on_robust_oob = GpuGetOption("khronos_validation.warn_on_robust_oob", true);
-    cache_instrumented_shaders = GpuGetOption("khronos_validation.use_instrumented_shader_cache", true);
-    select_instrumented_shaders = GpuGetOption("khronos_validation.select_instrumented_shaders", false);
     validate_instrumented_shaders = (GetEnvironment("VK_LAYER_GPUAV_VALIDATE_INSTRUMENTED_SHADERS").size() > 0);
 
     if (api_version < VK_API_VERSION_1_1) {
@@ -189,14 +183,14 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
                              shaderInt64 && enabled_features.core12.bufferDeviceAddress);
 
     if (buffer_device_address) {
-        const char *size_string = getLayerOption("khronos_validation.gpuav_max_buffer_device_addresses");
-        app_bda_max_addresses = *size_string ? atoi(size_string) : 10000;
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         // We need 2 words per address (address and size), 1 word for the start of sizes index, 2 words for the address section
         // bounds, and 2 more words for the size section bounds
-        app_bda_buffer_size = (1 + (app_bda_max_addresses + 2) + (app_bda_max_addresses + 2)) * 8;  // 64 bit words
+        app_bda_buffer_size =
+            (1 + (gpuav_settings.gpuav_max_buffer_device_addresses + 2) + (gpuav_settings.gpuav_max_buffer_device_addresses + 2)) *
+            8;  // 64 bit words
         buffer_info.size = app_bda_buffer_size;
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
         // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
@@ -219,12 +213,12 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     output_buffer_size = sizeof(uint32_t) * (gpuav_glsl::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
 
-    if (validate_descriptors && !force_buffer_device_address) {
-        validate_descriptors = false;
+    if (gpuav_settings.validate_descriptors && !force_buffer_device_address) {
+        gpuav_settings.validate_descriptors = false;
         LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
                    "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
     }
-    if (validate_descriptors) {
+    if (gpuav_settings.validate_descriptors) {
         auto desc_indexing_props = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
         auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&desc_indexing_props);
         DispatchGetPhysicalDeviceProperties2(physical_device, &props2);
@@ -237,8 +231,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         desc_heap.emplace(*this, num_descs);
     }
 
-    const bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
-    if (use_linear_output_pool) {
+    if (gpuav_settings.vma_linear_output) {
         VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
         output_buffer_create_info.size = output_buffer_size;
         output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -257,7 +250,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         }
     }
 
-    if (cache_instrumented_shaders) {
+    if (gpuav_settings.cache_instrumented_shaders) {
         auto tmp_path = GetTempFilePath();
         instrumented_shader_cache_path = tmp_path + "/instrumented_shader_cache";
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -348,7 +341,7 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     if (app_buffer_device_addresses.buffer) {
         vmaDestroyBuffer(vmaAllocator, app_buffer_device_addresses.buffer, app_buffer_device_addresses.allocation);
     }
-    if (cache_instrumented_shaders && !instrumented_shaders.empty()) {
+    if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders.empty()) {
         std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
             file_stream.write(INST_SHADER_GIT_HASH, sizeof(INST_SHADER_GIT_HASH));
@@ -1138,7 +1131,7 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
         opt_options.set_validator_options(val_options);
         Optimizer inst_passes(target_env);
         inst_passes.SetMessageConsumer(gpu_console_message_consumer);
-        if (validate_descriptors) {
+        if (gpuav_settings.validate_descriptors) {
             inst_passes.RegisterPass(CreateInstBindlessCheckPass(unique_shader_id));
         }
 
@@ -1248,15 +1241,15 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   void *csm_state_data) {
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
-    if (select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
+    if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
     uint32_t shader_id;
-    if (cache_instrumented_shaders) {
+    if (gpuav_settings.cache_instrumented_shaders) {
         const uint32_t shader_hash = ValidationCache::MakeShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-        if (cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, csm_state)) {
+        if (gpuav_settings.cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, csm_state)) {
             return;
         }
         shader_id = shader_hash;
-    } else{
+    } else {
         shader_id = unique_shader_module_id++;
     }
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
@@ -1265,7 +1258,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
         csm_state->unique_shader_id = shader_id;
-        if (cache_instrumented_shaders) {
+        if (gpuav_settings.cache_instrumented_shaders) {
             instrumented_shaders.emplace(shader_id,
                                          std::make_pair(csm_state->instrumented_spirv.size(), csm_state->instrumented_spirv));
         }
@@ -1280,8 +1273,8 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
     GpuAssistedBase::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, csm_state_data);
     create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
-        if (cache_instrumented_shaders) {
+        if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
+        if (gpuav_settings.cache_instrumented_shaders) {
             const uint32_t shader_hash = ValidationCache::MakeShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
             if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) continue;
             csm_state->unique_shader_ids[i] = shader_hash;
@@ -1294,7 +1287,7 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
         if (pass) {
             csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
             csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
-            if (cache_instrumented_shaders) {
+            if (gpuav_settings.cache_instrumented_shaders) {
                 instrumented_shaders.emplace(
                     csm_state->unique_shader_ids[i],
                     std::make_pair(csm_state->instrumented_spirv[i].size(), csm_state->instrumented_spirv[i]));
@@ -1500,7 +1493,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
                                   shader_object_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
         if (buffer_info.uses_robustness && oob_access) {
-            if (warn_on_robust_oob) {
+            if (gpuav_settings.warn_on_robust_oob) {
                 LogWarning(vuid_msg.c_str(), queue, loc, "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
                            stage_message.c_str(), filename_message.c_str(), source_message.c_str());
             }
@@ -1611,14 +1604,16 @@ void GpuAssisted::UpdateBDABuffer(gpuav_state::DeviceMemoryBlock device_address_
     bda_data[0] = size_index;       // Start of buffer sizes
     bda_data[address_index++] = 0;  // NULL address
     bda_data[size_index++] = 0;
-    if (address_ranges_num_addresses > app_bda_max_addresses) {
+    if (address_ranges_num_addresses > gpuav_settings.gpuav_max_buffer_device_addresses) {
         std::ostringstream problem_string;
         problem_string << "Number of buffer device addresses in use (" << address_ranges_num_addresses
-                       << ") is greapter than khronos_validation.max_buffer_device_addresses (" << app_bda_max_addresses
+                       << ") is greapter than khronos_validation.max_buffer_device_addresses ("
+                       << gpuav_settings.gpuav_max_buffer_device_addresses
                        << "). Truncating BDA table which could result in invalid validation";
         ReportSetupProblem(device, problem_string.str().c_str());
     }
-    size_t num_addresses = std::min(address_ranges_num_addresses, app_bda_max_addresses);
+    size_t num_addresses =
+        std::min(static_cast<uint32_t>(address_ranges_num_addresses), gpuav_settings.gpuav_max_buffer_device_addresses);
     for (size_t i = 0; i < num_addresses; i++) {
         bda_data[address_index++] = address_ranges[i].begin;
         bda_data[size_index++] = address_ranges[i].end - address_ranges[i].begin;
@@ -1647,7 +1642,7 @@ void GpuAssisted::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeli
     uint32_t number_of_sets = static_cast<uint32_t>(last_bound.per_set.size());
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
-    if (number_of_sets > 0 && validate_descriptors && force_buffer_device_address) {
+    if (number_of_sets > 0 && gpuav_settings.validate_descriptors && force_buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         assert(number_of_sets <= gpuav_glsl::kDebugInputBindlessMaxDescSets);
         buffer_info.size = sizeof(gpuav_glsl::BindlessStateBuffer);
@@ -1683,7 +1678,7 @@ void GpuAssisted::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeli
             if (!set) {
                 continue;
             }
-            if (validate_descriptors) {
+            if (gpuav_settings.validate_descriptors) {
                 gpuav_state::DescSetState desc_set_state;
                 desc_set_state.set_state = std::static_pointer_cast<gpuav_state::DescriptorSet>(set);
                 bindless_state->desc_sets[i].layout_data = desc_set_state.set_state->GetLayoutState();
@@ -1763,14 +1758,14 @@ void GpuAssisted::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
 void GpuAssisted::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                            const VkDescriptorBufferBindingInfoEXT *pBindingInfos) {
     ValidationStateTracker::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
-    validate_descriptors = false;
+    gpuav_settings.validate_descriptors = false;
 }
 
 void GpuAssisted::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
                                                                           VkPipelineBindPoint pipelineBindPoint,
                                                                           VkPipelineLayout layout, uint32_t set) {
     ValidationStateTracker::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
-    validate_descriptors = false;
+    gpuav_settings.validate_descriptors = false;
 }
 
 void GpuAssisted::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
@@ -2310,7 +2305,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     result = vmaMapMemory(vmaAllocator, output_block.allocation, reinterpret_cast<void **>(&data_ptr));
     if (result == VK_SUCCESS) {
         memset(data_ptr, 0, output_buffer_size);
-        if (validate_descriptors) {
+        if (gpuav_settings.validate_descriptors) {
             uses_robustness =
                 (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2 ||
                  (pipeline_state && pipeline_state->uses_pipeline_robustness));
@@ -2326,7 +2321,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     gpuav_state::PreDispatchResources pre_dispatch_resources = {};
     uint32_t desc_count = 1;
 
-    if (validate_draw_indirect &&
+    if (gpuav_settings.validate_draw_indirect &&
         ((command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
           command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR) ||
          ((command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) &&
@@ -2416,7 +2411,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
         // Restore the previous graphics pipeline state.
         restorable_state.Restore(cmd_buffer);
-    } else if (validate_dispatch_indirect && command == Func::vkCmdDispatchIndirect) {
+    } else if (gpuav_settings.validate_dispatch_indirect && command == Func::vkCmdDispatchIndirect) {
         // Insert a dispatch that can examine some device memory right before the dispatch we're validating
         //
         // NOTE that this validation does not attempt to abort invalid api calls as most other validation does.  A crash
