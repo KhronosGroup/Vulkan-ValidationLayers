@@ -1167,3 +1167,42 @@ TEST_F(PositiveCommand, CopyImageLayerCount) {
                      &copyRegion);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveCommand, CopyBufferToRemaingImageLayers) {
+    TEST_DESCRIPTION("Test vkCmdCopyBufferToImage2 with VK_REMAINING_ARRAY_LAYERS");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance_5_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(maintenance_5_features);
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance_5_features));
+
+    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkBufferImageCopy2 region = vku::InitStructHelper();
+    region.bufferOffset = 0u;
+    region.bufferRowLength = 0u;
+    region.bufferImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, VK_REMAINING_ARRAY_LAYERS};
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32u, 32u, 1u};
+
+    VkCopyBufferToImageInfo2 copy_buffer_to_image = vku::InitStructHelper();
+    copy_buffer_to_image.srcBuffer = buffer.handle();
+    copy_buffer_to_image.dstImage = image.handle();
+    copy_buffer_to_image.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    copy_buffer_to_image.regionCount = 1u;
+    copy_buffer_to_image.pRegions = &region;
+
+    m_commandBuffer->begin();
+    vk::CmdCopyBufferToImage2KHR(m_commandBuffer->handle(), &copy_buffer_to_image);
+    m_commandBuffer->end();
+}
