@@ -376,13 +376,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     CHECK_ENABLED local_enables{};
     CHECK_DISABLED local_disables{};
     bool lock_setting;
+    // select_instrumented_shaders is the only gpu-av setting that is off by default
+    GpuAVSettings local_gpuav_settings = {true, true, true, true, true, true, false, 10000};
     ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
                                                       pCreateInfo,
                                                       local_enables,
                                                       local_disables,
                                                       report_data->filter_message_ids,
                                                       &report_data->duplicate_message_limit,
-                                                      &lock_setting};
+                                                      &lock_setting,
+                                                      &local_gpuav_settings};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
     layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
 
@@ -438,6 +441,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     framework->disabled = local_disables;
     framework->enabled = local_enables;
     framework->fine_grained_locking = lock_setting;
+    framework->gpuav_settings = local_gpuav_settings;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -456,6 +460,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
         intercept->enabled = framework->enabled;
         intercept->disabled = framework->disabled;
         intercept->fine_grained_locking = framework->fine_grained_locking;
+        intercept->gpuav_settings = framework->gpuav_settings;
         intercept->instance = *pInstance;
     }
 
@@ -581,6 +586,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->disabled = instance_interceptor->disabled;
         object->enabled = instance_interceptor->enabled;
         object->fine_grained_locking = instance_interceptor->fine_grained_locking;
+        object->gpuav_settings = instance_interceptor->gpuav_settings;
         object->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
         object->instance_extensions = instance_interceptor->instance_extensions;
         object->device_extensions = device_interceptor->device_extensions;

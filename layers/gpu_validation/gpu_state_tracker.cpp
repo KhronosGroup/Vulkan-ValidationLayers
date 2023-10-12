@@ -993,11 +993,11 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         auto sm_ci =
                             const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
                                 vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
-                        if (select_instrumented_shaders && sm_ci && !CheckForGpuAvEnabled(sm_ci->pNext)) continue;
+                        if (gpuav_settings.select_instrumented_shaders && sm_ci && !CheckForGpuAvEnabled(sm_ci->pNext)) continue;
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         bool cached = false;
                         bool pass = false;
-                        if (cache_instrumented_shaders) {
+                        if (gpuav_settings.cache_instrumented_shaders) {
                             csm_state.unique_shader_id = ValidationCache::MakeShaderHash(module_state->spirv->words_.data(),
                                                                                          module_state->spirv->words_.size());
                             auto it = instrumented_shaders.find(csm_state.unique_shader_id);
@@ -1019,7 +1019,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                             if (sm_ci) {
                                 sm_ci->SetCode(csm_state.instrumented_spirv);
                             }
-                            if (cache_instrumented_shaders && !cached) {
+                            if (gpuav_settings.cache_instrumented_shaders && !cached) {
                                 instrumented_shaders.emplace(
                                     csm_state.unique_shader_id,
                                     std::make_pair(csm_state.instrumented_spirv.size(), csm_state.instrumented_spirv));

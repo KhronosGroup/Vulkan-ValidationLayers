@@ -272,10 +272,6 @@ class GpuAssisted : public GpuAssistedBase {
     VkPipeline GetValidationPipeline(VkRenderPass render_pass);
 
     VkBool32 shaderInt64;
-    bool validate_descriptors;
-    bool validate_draw_indirect;
-    bool validate_dispatch_indirect;
-    bool warn_on_robust_oob;
     bool validate_instrumented_shaders;
     std::string instrumented_shader_cache_path;
     gpuav_state::AccelerationStructureBuildValidationState acceleration_structure_validation_state;
@@ -283,7 +279,6 @@ class GpuAssisted : public GpuAssistedBase {
     gpuav_state::PreDispatchValidationState pre_dispatch_validation_state;
     gpuav_state::DeviceMemoryBlock app_buffer_device_addresses{};
     size_t app_bda_buffer_size{};
-    size_t app_bda_max_addresses{};
     uint32_t gpuav_bda_buffer_version = 0;
 
     bool buffer_device_address;
