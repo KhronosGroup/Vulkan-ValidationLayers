@@ -398,6 +398,8 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     GetPhysicalDeviceFeatures2(protect_features);
 
     if (protect_features.protectedMemory == VK_TRUE) {
+        // Might not have protected queue support
+        m_errorMonitor->SetUnexpectedError("VUID-VkDeviceQueueCreateInfo-flags-06449");
         result = vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
         if (result != VK_SUCCESS) {
             GTEST_SKIP() << "CreateDevice returned back not VK_SUCCESS";

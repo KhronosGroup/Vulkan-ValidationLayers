@@ -195,7 +195,7 @@ void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
     return first_pnext;
 }
 
-void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
+void VkRenderFramework::InitFramework(void *instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
     const auto LayerNotSupportedWithReporting = [this](const char *layer) {
@@ -323,8 +323,18 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     for (const auto &ext : m_required_extensions) {
         AddRequestedDeviceExtensions(ext);
     }
-    if (!AreRequiredExtensionsEnabled()) {
+
+    if (!std::all_of(m_required_extensions.begin(), m_required_extensions.end(),
+                     [&](const char *ext) -> bool { return IsExtensionsEnabled(ext); })) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // If the user requested wsi extension(s), only 1 needs to be enabled.
+    if (!m_wsi_extensions.empty()) {
+        if (!std::any_of(m_wsi_extensions.begin(), m_wsi_extensions.end(),
+                         [&](const char *ext) -> bool { return CanEnableInstanceExtension(ext); })) {
+            GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+        }
     }
 
     for (const auto &ext : m_optional_extensions) {
@@ -349,21 +359,6 @@ void VkRenderFramework::AddWsiExtensions(const char *ext_name) {
 
 bool VkRenderFramework::IsExtensionsEnabled(const char *ext_name) const {
     return (CanEnableDeviceExtension(ext_name) || CanEnableInstanceExtension(ext_name));
-}
-
-bool VkRenderFramework::AreRequiredExtensionsEnabled() const {
-    if (!std::all_of(m_required_extensions.begin(), m_required_extensions.end(),
-                     [&](const char *ext) -> bool { return IsExtensionsEnabled(ext); })) {
-        return false;
-    }
-
-    // If the user requested wsi extension(s), only 1 needs to be enabled.
-    if (!m_wsi_extensions.empty()) {
-        return std::any_of(m_wsi_extensions.begin(), m_wsi_extensions.end(),
-                           [&](const char *ext) -> bool { return CanEnableInstanceExtension(ext); });
-    }
-
-    return true;
 }
 
 std::string VkRenderFramework::RequiredExtensionsNotSupported() const {

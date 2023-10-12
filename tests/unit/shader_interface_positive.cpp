@@ -1045,6 +1045,9 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1245,6 +1248,9 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1273,6 +1279,9 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1301,6 +1310,9 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450

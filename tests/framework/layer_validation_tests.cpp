@@ -518,7 +518,7 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
                        const VkCommandPoolCreateFlags flags, void *instance_pnext) {
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, instance_pnext));
+    RETURN_IF_SKIP(InitFramework(instance_pnext));
     RETURN_IF_SKIP(InitState(features, features2, flags));
 }
 
@@ -1249,7 +1249,7 @@ void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     if (enable_queue_submit_validation) {
         features_.pNext = &qs_settings;
     }
-    InitFramework(m_errorMonitor, &features_);
+    InitFramework(&features_);
 }
 
 void print_android(const char *c) {

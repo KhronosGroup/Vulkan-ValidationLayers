@@ -675,6 +675,9 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructInnerArraySize) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -732,6 +735,9 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuterArraySize) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -788,6 +794,9 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructArraySizeVertex) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -845,6 +854,9 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1417,6 +1429,9 @@ TEST_F(NegativeShaderInterface, MultidimensionalArray) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1445,6 +1460,9 @@ TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
+    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450

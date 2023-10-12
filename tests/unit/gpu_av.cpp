@@ -33,6 +33,21 @@ VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
 }
 
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
+void VkGpuAssistedLayerTest::InitGpuAvFramework() {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    RETURN_IF_SKIP(InitFramework(&validation_features));
+
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features2);
+    if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
+        GTEST_SKIP() << "fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV";
+    } else if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
+}
+
+// This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
 bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
     // Check version first before trying to call GetPhysicalDeviceFeatures2
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -55,15 +70,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
+    RETURN_IF_SKIP(InitGpuAvFramework())
     bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
 
     VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
     maintenance4_features.maintenance4 = true;
@@ -518,15 +528,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection descriptors where resources have been deleted while in use.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
@@ -716,15 +721,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection descriptors where resources have been deleted while in use.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
@@ -913,15 +913,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
 TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
     VkPhysicalDevicePipelineRobustnessFeaturesEXT pipeline_robustness_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
     features2.features.robustBufferAccess = VK_FALSE;
@@ -993,16 +988,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     const bool multi_draw = IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -1175,17 +1164,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                                                   VkDescriptorType descriptor_type, const char *fragment_shader,
                                                   const char *expected_error, bool shader_objects) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     if (shader_objects) {
         AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     }
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     dynamic_rendering_features.dynamicRendering = VK_TRUE;
@@ -1385,12 +1368,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
     if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
         GTEST_SKIP() << "This test should not be run on the RADV driver.";
     }
@@ -1652,12 +1631,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);  // instead of enabling feature
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
@@ -1741,11 +1715,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit using vkQueueSubmit2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -1818,13 +1788,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     TEST_DESCRIPTION("GPU validation: Validate Draw*IndirectCount countBuffer contents");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     RETURN_IF_SKIP(InitState(nullptr, nullptr, pool_flags));
@@ -1940,13 +1905,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
+
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
     features2.features.drawIndirectFirstInstance = VK_FALSE;
@@ -2036,7 +1997,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
     validation_features.pEnabledValidationFeatures = enables;
     validation_features.enabledValidationFeatureCount = 2;
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
+    RETURN_IF_SKIP(InitFramework(&validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2266,13 +2227,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
 
     PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT = nullptr;
@@ -2321,17 +2276,9 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     TEST_DESCRIPTION(
         "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
         "unbound.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-    if (!CanEnableGpuAV()) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework())
+
     RETURN_IF_SKIP(InitState())
     InitRenderTarget();
     if (DeviceValidationVersion() != VK_API_VERSION_1_1) {
@@ -2394,7 +2341,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
+    RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
     }
@@ -2500,7 +2447,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
 
     auto validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(nullptr, &validation_features));
+    RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
@@ -2675,7 +2622,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
 
     auto validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(nullptr, &validation_features));
+    RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
@@ -2885,7 +2832,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(m_errorMonitor, &validation_features));
+    RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
     }

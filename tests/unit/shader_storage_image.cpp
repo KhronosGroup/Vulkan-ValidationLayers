@@ -783,6 +783,13 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
 
+    VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+    VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmt_props);
+    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
+        GTEST_SKIP() << "Format doesn't support storage write without format";
+    }
+
     VkImageObj image(m_device);
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
 

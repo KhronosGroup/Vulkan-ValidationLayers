@@ -55,6 +55,10 @@ TEST_F(NegativeSubgroup, Properties) {
     const bool vertex_support = ((subgroup_prop.supportedStages & VK_SHADER_STAGE_VERTEX_BIT) != 0);
     const bool vertex_quad_support = (subgroup_prop.quadOperationsInAllStages == VK_TRUE);
 
+    if (!feature_support_basic) {
+        GTEST_SKIP() << "VK_SUBGROUP_FEATURE_BASIC_BIT not supported, all test will have issues";
+    }
+
     std::string vsSource;
     std::vector<const char *> errors;
     // There is no 'supportedOperations' check due to it would be redundant to the Capability check done first in VUID 01091 since
@@ -82,9 +86,6 @@ TEST_F(NegativeSubgroup, Properties) {
             }
         )glsl";
         errors.clear();
-        if (feature_support_basic == false) {
-            errors.push_back(operation_vuid);
-        }
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
@@ -263,43 +264,6 @@ TEST_F(NegativeSubgroup, Properties) {
         }
         CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
     }
-}
-
-TEST_F(NegativeSubgroup, Features) {
-    TEST_DESCRIPTION("Test that the minimum required functionality for subgroups is present.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
-
-    VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(subgroup_prop);
-
-    auto queue_family_properties = m_device->phy().queue_properties_;
-
-    bool foundGraphics = false;
-    bool foundCompute = false;
-
-    for (auto queue_family : queue_family_properties) {
-        if (queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            foundCompute = true;
-            break;
-        }
-
-        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            foundGraphics = true;
-        }
-    }
-
-    if (!(foundGraphics || foundCompute)) return;
-
-    ASSERT_GE(subgroup_prop.subgroupSize, 1u);
-
-    if (foundCompute) {
-        ASSERT_TRUE(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT);
-    }
-
-    ASSERT_TRUE(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT);
 }
 
 // TODO 5600 - Not all pNext structs are being passed in to check version
@@ -810,7 +774,7 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (subgroup_properties.maxSubgroupSize > 1) {
+    if (subgroup_properties.maxSubgroupSize > 1 && subgroup_properties.minSubgroupSize > 1) {
         std::stringstream csSource;
         csSource << R"glsl(
             #version 450

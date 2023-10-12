@@ -25,7 +25,7 @@ void NegativeDebugPrintf::InitDebugPrintfFramework() {
     features.pEnabledValidationFeatures = enables;
     features.pDisabledValidationFeatures = disables;
 
-    InitFramework(m_errorMonitor, &features);
+    InitFramework(&features);
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";

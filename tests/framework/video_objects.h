@@ -1070,15 +1070,7 @@ class VkVideoLayerTest : public VkLayerTest {
         AddOptionalExtensions(VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME);
         AddOptionalExtensions(VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME);
 
-        ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, instance_pnext_));
-
-        if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-            GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-        }
-
-        if (!AreRequiredExtensionsEnabled()) {
-            GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-        }
+        RETURN_IF_SKIP(InitFramework(instance_pnext_));
 
         VkPhysicalDeviceProtectedMemoryFeatures prot_mem_features = vku::InitStructHelper();
         VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&prot_mem_features);
@@ -1100,7 +1092,7 @@ class VkVideoLayerTest : public VkLayerTest {
         protected_memory_enabled_ = (prot_mem_features.protectedMemory == VK_TRUE);
         protected_no_fault_supported_ = (prot_mem_props.protectedNoFault == VK_TRUE);
 
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features));
+        RETURN_IF_SKIP(InitState(nullptr, &features));
 
         vk.GetPhysicalDeviceVideoCapabilitiesKHR = (PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR)vk::GetInstanceProcAddr(
             instance(), "vkGetPhysicalDeviceVideoCapabilitiesKHR");

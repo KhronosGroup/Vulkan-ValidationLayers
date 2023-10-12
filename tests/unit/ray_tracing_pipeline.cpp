@@ -20,10 +20,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    if (!InitFrameworkForRayTracingTest(this, true)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true))
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -179,10 +176,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
 TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    if (!InitFrameworkForRayTracingTest(this, true)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true))
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -674,10 +668,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    if (!InitFrameworkForRayTracingTest(this, true)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true))
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -810,10 +801,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper();
     rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&rt_pipeline_features);
-    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true, &features2))
     RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
@@ -878,14 +866,11 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_tracing_features);
-    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true, &features2))
+
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "vkGetDeferredOperationResultKHR not supported by MockICD";
     }
-    if (::testing::Test::IsSkipped()) return;
-
     RETURN_IF_SKIP(InitState(nullptr, &features2))
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
@@ -1122,10 +1107,8 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, true)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true))
+
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles_features =
         vku::InitStructHelper(&ray_tracing_features);
@@ -1189,10 +1172,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
 
 TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
-
-    if (!InitFrameworkForRayTracingTest(this, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, false))
 
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipleline_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipleline_features);
@@ -1322,11 +1302,7 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
 
 TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
-
-    if (!InitFrameworkForRayTracingTest(this, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, false))
     RETURN_IF_SKIP(InitState())
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
@@ -1796,9 +1772,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, false))
 
     VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rtnv_props);
@@ -1829,10 +1803,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
 TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline with missing entrypoint.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (!InitFrameworkForRayTracingTest(this, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-    if (::testing::Test::IsSkipped()) return;
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, false))
     RETURN_IF_SKIP(InitState())
 
     char const missShaderText[] = R"glsl(
