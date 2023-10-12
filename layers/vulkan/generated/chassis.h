@@ -52,6 +52,7 @@
 #include "vk_dispatch_table_helper.h"
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
+#include "gpu_validation/gpu_settings.h"
 
 extern std::atomic<uint64_t> global_unique_id;
 
@@ -2274,6 +2275,7 @@ class ValidationObject {
     CHECK_DISABLED disabled = {};
     CHECK_ENABLED enabled = {};
     bool fine_grained_locking{true};
+    GpuAVSettings gpuav_settings = {};
 
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
