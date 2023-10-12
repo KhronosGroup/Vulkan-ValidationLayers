@@ -78,8 +78,8 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                              "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
                              local_api_version, api_version.Major(), api_version.Minor());
         } else {
-            skip |= LogWarning(instance, kVUIDUndefined,
-                               "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
+            skip |= LogWarning(kVUIDUndefined, instance, create_info_loc.dot(Field::pApplicationInfo).dot(Field::apiVersion),
+                               "is (0x%08x). "
                                "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
                                local_api_version, api_version.Major(), api_version.Minor());
         }

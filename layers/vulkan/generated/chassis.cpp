@@ -187,11 +187,12 @@ static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkIns
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized instance extensions
         if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
-            layer_data->LogWarning(
-                layer_data->instance, kVUIDUndefined,
-                "Instance Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
-                "results and/or produce undefined behavior.",
-                pCreateInfo->ppEnabledExtensionNames[i]);
+            Location loc(vvl::Func::vkCreateInstance);
+            layer_data->LogWarning(kVUIDUndefined, layer_data->instance,
+                                   loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
+                                   "%s is not supported by this layer.  Using this extension may adversely affect validation "
+                                   "results and/or produce undefined behavior.",
+                                   pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
@@ -201,11 +202,12 @@ static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDevic
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized device extensions
         if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
-            layer_data->LogWarning(
-                layer_data->device, kVUIDUndefined,
-                "Device Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
-                "results and/or produce undefined behavior.",
-                pCreateInfo->ppEnabledExtensionNames[i]);
+            Location loc(vvl::Func::vkCreateDevice);
+            layer_data->LogWarning(kVUIDUndefined, layer_data->device,
+                                   loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
+                                   "%s is not supported by this layer.  Using this extension may adversely affect validation "
+                                   "results and/or produce undefined behavior.",
+                                   pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
@@ -256,21 +258,22 @@ void OutputLayerStatusInfo(ValidationObject* context) {
         }
     }
 
+    Location loc(vvl::Func::vkCreateInstance);
     // Output layer status information message
     context->LogInfo(
-        context->instance, "UNASSIGNED-CreateInstance-status-message",
+        "UNASSIGNED-CreateInstance-status-message", context->instance, loc,
         "Khronos Validation Layer Active:\n    Settings File: %s\n    Current Enables: %s.\n    Current Disables: %s.\n",
         settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
 
     // Create warning message if user is running debug layers.
 #ifndef NDEBUG
     context->LogPerformanceWarning(
-        context->instance, "UNASSIGNED-CreateInstance-debug-warning",
+        "UNASSIGNED-CreateInstance-debug-warning", context->instance, loc,
         "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
     if (!context->fine_grained_locking) {
         context->LogPerformanceWarning(
-            context->instance, "UNASSIGNED-CreateInstance-locking-warning",
+            "UNASSIGNED-CreateInstance-locking-warning", context->instance, loc,
             "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
 }

@@ -193,10 +193,9 @@ bool CoreChecks::VerifyImageLayoutSubresource(const CMD_BUFFER_STATE &cb_state, 
             if (image_state.createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
                 // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
                 const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                skip |= LogPerformanceWarning(objlist, kVUID_Core_DrawState_InvalidImageLayout,
-                                              "%s: For optimal performance %s layout should be %s instead of GENERAL.",
-                                              loc.StringFunc(), FormatHandle(image_state).c_str(),
-                                              string_VkImageLayout(optimal_layout));
+                skip |= LogPerformanceWarning(kVUID_Core_DrawState_InvalidImageLayout, objlist, loc,
+                                              "For optimal performance %s layout should be %s instead of GENERAL.",
+                                              FormatHandle(image_state).c_str(), string_VkImageLayout(optimal_layout));
             }
         } else if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (image_state.shared_presentable) {

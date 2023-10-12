@@ -21,45 +21,44 @@
 #include "best_practices/best_practices_error_enums.h"
 #include "sync/sync_utils.h"
 
-bool BestPractices::CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags flags) const {
+bool BestPractices::CheckPipelineStageFlags(const Location& loc, VkPipelineStageFlags flags) const {
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
-        skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
-                           "You are using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT when %s is called\n", api_name.c_str());
+        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, device, loc, "You are using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT");
     } else if (flags & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
-        skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
-                           "You are using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT when %s is called\n", api_name.c_str());
+        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, device, loc, "You are using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT");
     }
 
     return skip;
 }
 
-bool BestPractices::CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags2KHR flags) const {
+bool BestPractices::CheckPipelineStageFlags(const Location& loc, VkPipelineStageFlags2KHR flags) const {
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR) {
-        skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
-                           "You are using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR when %s is called\n", api_name.c_str());
+        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, device, loc,
+                           "You are using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR");
     } else if (flags & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR) {
-        skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
-                           "You are using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR when %s is called\n", api_name.c_str());
+        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, device, loc,
+                           "You are using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR");
     }
 
     return skip;
 }
 
-bool BestPractices::CheckDependencyInfo(const std::string& api_name, const VkDependencyInfoKHR& dep_info) const {
+bool BestPractices::CheckDependencyInfo(const Location& dep_loc, const VkDependencyInfoKHR& dep_info) const {
     bool skip = false;
     auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
 
-    skip |= CheckPipelineStageFlags(api_name, stage_masks.src);
-    skip |= CheckPipelineStageFlags(api_name, stage_masks.dst);
+    skip |= CheckPipelineStageFlags(dep_loc, stage_masks.src);
+    skip |= CheckPipelineStageFlags(dep_loc, stage_masks.dst);
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
-        skip |= ValidateImageMemoryBarrier(
-            api_name, dep_info.pImageMemoryBarriers[i].image, dep_info.pImageMemoryBarriers[i].oldLayout,
-            dep_info.pImageMemoryBarriers[i].newLayout, dep_info.pImageMemoryBarriers[i].srcAccessMask,
-            dep_info.pImageMemoryBarriers[i].dstAccessMask, dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
+        skip |= ValidateImageMemoryBarrier(dep_loc.dot(Field::pImageMemoryBarriers, i), dep_info.pImageMemoryBarriers[i].image,
+                                           dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
+                                           dep_info.pImageMemoryBarriers[i].srcAccessMask,
+                                           dep_info.pImageMemoryBarriers[i].dstAccessMask,
+                                           dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
     }
 
     return skip;
@@ -69,26 +68,26 @@ bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
                                                const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdSetEvent", stageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::stageMask), stageMask);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                    const VkDependencyInfoKHR* pDependencyInfo, const ErrorObject& error_obj) const {
-    return CheckDependencyInfo("vkCmdSetEvent2KHR", *pDependencyInfo);
+    return CheckDependencyInfo(error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo);
 }
 
 bool BestPractices::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                 const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
-    return CheckDependencyInfo("vkCmdSetEvent2", *pDependencyInfo);
+    return CheckDependencyInfo(error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo);
 }
 
 bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdResetEvent", stageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::stageMask), stageMask);
 
     return skip;
 }
@@ -97,7 +96,7 @@ bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
                                                      VkPipelineStageFlags2KHR stageMask, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdResetEvent2KHR", stageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::stageMask), stageMask);
 
     return skip;
 }
@@ -106,7 +105,7 @@ bool BestPractices::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer,
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdResetEvent2", stageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::stageMask), stageMask);
 
     return skip;
 }
@@ -120,8 +119,8 @@ bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdWaitEvents", srcStageMask);
-    skip |= CheckPipelineStageFlags("vkCmdWaitEvents", dstStageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::srcStageMask), srcStageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::dstStageMask), dstStageMask);
 
     return skip;
 }
@@ -131,7 +130,7 @@ bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuff
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < eventCount; i++) {
-        skip = CheckDependencyInfo("vkCmdWaitEvents2KHR", pDependencyInfos[i]);
+        skip = CheckDependencyInfo(error_obj.location.dot(Field::pDependencyInfos, i), pDependencyInfos[i]);
     }
 
     return skip;
@@ -141,14 +140,14 @@ bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
                                                   const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < eventCount; i++) {
-        skip = CheckDependencyInfo("vkCmdWaitEvents2", pDependencyInfos[i]);
+        skip = CheckDependencyInfo(error_obj.location.dot(Field::pDependencyInfos, i), pDependencyInfos[i]);
     }
 
     return skip;
 }
 
-bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name, VkImage image, VkAccessFlags2 access,
-                                                    VkImageLayout layout, VkImageAspectFlags aspect) const {
+bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage image, VkAccessFlags2 access, VkImageLayout layout,
+                                                    VkImageAspectFlags aspect) const {
     bool skip = false;
 
     const VkAccessFlags2 all = vvl::kU64Max;  // core validation is responsible for detecting undefined flags.
@@ -244,8 +243,8 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
     }
 
     if ((allowed | access) != allowed) {
-        skip |= LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
-                           "%s: image is %s and accessMask is %s, but for layout %s expected accessMask are %s.", api_name.c_str(),
+        skip |= LogWarning(kVUID_BestPractices_ImageBarrierAccessLayout, device, loc,
+                           "image is %s and accessMask is %s, but for layout %s expected accessMask are %s.",
                            FormatHandle(image).c_str(), string_VkAccessFlags2(access).c_str(), string_VkImageLayout(layout),
                            string_VkAccessFlags2(allowed).c_str());
     }
@@ -253,20 +252,20 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
     return skip;
 }
 
-bool BestPractices::ValidateImageMemoryBarrier(const std::string& api_name, VkImage image, VkImageLayout oldLayout,
-                                               VkImageLayout newLayout, VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
+bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+                                               VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
                                                VkImageAspectFlags aspectMask) const {
     bool skip = false;
 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && IsImageLayoutReadOnly(newLayout)) {
-        skip |= LogWarning(device, kVUID_BestPractices_TransitionUndefinedToReadOnly,
+        skip |= LogWarning(kVUID_BestPractices_TransitionUndefinedToReadOnly, device, loc,
                            "VkImageMemoryBarrier is being submitted with oldLayout VK_IMAGE_LAYOUT_UNDEFINED and the contents "
                            "may be discarded, but the newLayout is %s, which is read only.",
                            string_VkImageLayout(newLayout));
     }
 
-    skip |= ValidateAccessLayoutCombination(api_name, image, srcAccessMask, oldLayout, aspectMask);
-    skip |= ValidateAccessLayoutCombination(api_name, image, dstAccessMask, newLayout, aspectMask);
+    skip |= ValidateAccessLayoutCombination(loc, image, srcAccessMask, oldLayout, aspectMask);
+    skip |= ValidateAccessLayoutCombination(loc, image, dstAccessMask, newLayout, aspectMask);
 
     return skip;
 }
@@ -278,20 +277,20 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", srcStageMask);
-    skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", dstStageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::srcStageMask), srcStageMask);
+    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::dstStageMask), dstStageMask);
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        skip |=
-            ValidateImageMemoryBarrier("vkCmdPipelineBarrier", pImageMemoryBarriers[i].image, pImageMemoryBarriers[i].oldLayout,
-                                       pImageMemoryBarriers[i].newLayout, pImageMemoryBarriers[i].srcAccessMask,
-                                       pImageMemoryBarriers[i].dstAccessMask, pImageMemoryBarriers[i].subresourceRange.aspectMask);
+        skip |= ValidateImageMemoryBarrier(error_obj.location.dot(Field::pImageMemoryBarriers, i), pImageMemoryBarriers[i].image,
+                                           pImageMemoryBarriers[i].oldLayout, pImageMemoryBarriers[i].newLayout,
+                                           pImageMemoryBarriers[i].srcAccessMask, pImageMemoryBarriers[i].dstAccessMask,
+                                           pImageMemoryBarriers[i].subresourceRange.aspectMask);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
         auto num = num_barriers_objects_.load();
         if (num + imageMemoryBarrierCount + bufferMemoryBarrierCount > kMaxRecommendedBarriersSizeAMD) {
-            skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdBuffer_highBarrierCount,
+            skip |= LogPerformanceWarning(kVUID_BestPractices_CmdBuffer_highBarrierCount, device, error_obj.location,
                                           "%s Performance warning: In this frame, %" PRIu32
                                           " barriers were already submitted. Barriers have a high cost and can "
                                           "stall the GPU. "
@@ -315,7 +314,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
                 std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
 
             if (old_is_read_layout && new_is_read_layout) {
-                skip |= LogPerformanceWarning(device, kVUID_BestPractices_PipelineBarrier_readToReadBarrier,
+                skip |= LogPerformanceWarning(kVUID_BestPractices_PipelineBarrier_readToReadBarrier, device, error_obj.location,
                                               "%s %s Performance warning: Don't issue read-to-read barriers. "
                                               "Get the resource in the right state the first time you use it.",
                                               VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
@@ -325,7 +324,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
             if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<IMAGE_STATE>(pImageMemoryBarriers[i].image);
                 if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
-                    skip |= LogPerformanceWarning(device, kVUID_BestPractices_vkImage_AvoidGeneral,
+                    skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidGeneral, device, error_obj.location,
                                                   "%s Performance warning: VK_IMAGE_LAYOUT_GENERAL should only be used with "
                                                   "VK_IMAGE_USAGE_STORAGE_BIT images.",
                                                   VendorSpecificTag(kBPVendorAMD));
@@ -335,7 +334,8 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     }
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i]);
+        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i],
+                                                       error_obj.location.dot(Field::pImageMemoryBarriers, i));
     }
 
     return skip;
@@ -345,10 +345,12 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer comman
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckDependencyInfo("vkCmdPipelineBarrier2KHR", *pDependencyInfo);
+    const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
+    skip |= CheckDependencyInfo(dep_info_loc, *pDependencyInfo);
 
     for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
-        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
+        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i],
+                                                       dep_info_loc.dot(Field::pImageMemoryBarriers, i));
     }
 
     return skip;
@@ -358,17 +360,20 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBu
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= CheckDependencyInfo("vkCmdPipelineBarrier2", *pDependencyInfo);
+    const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
+    skip |= CheckDependencyInfo(dep_info_loc, *pDependencyInfo);
 
     for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
-        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
+        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i],
+                                                       dep_info_loc.dot(Field::pImageMemoryBarriers, i));
     }
 
     return skip;
 }
 
 template <typename ImageMemoryBarrier>
-bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) const {
+bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier,
+                                                           const Location& loc) const {
     bool skip = false;
 
     const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
@@ -376,7 +381,7 @@ bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer comma
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && barrier.newLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
-            skip |= ValidateZcull(*cmd_state, barrier.image, barrier.subresourceRange);
+            skip |= ValidateZcull(*cmd_state, barrier.image, barrier.subresourceRange, loc);
         }
     }
 
@@ -464,7 +469,7 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (Count<SEMAPHORE_STATE>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
-            skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores,
+            skip |= LogPerformanceWarning(kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores, device, error_obj.location,
                                           "%s %s Performance warning: High number of vkSemaphore objects created. "
                                           "Minimize the amount of queue synchronization that is used. "
                                           "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",
@@ -481,7 +486,7 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (Count<FENCE_STATE>() > kMaxRecommendedFenceObjectsSizeAMD) {
-            skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfFences,
+            skip |= LogPerformanceWarning(kVUID_BestPractices_SyncObjects_HighNumberOfFences, device, error_obj.location,
                                           "%s %s Performance warning: High number of VkFence objects created."
                                           "Minimize the amount of CPU-GPU synchronization that is used. "
                                           "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",

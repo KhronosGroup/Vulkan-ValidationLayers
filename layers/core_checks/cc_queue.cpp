@@ -538,7 +538,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                      "Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.", FormatHandle(cb_state).c_str());
     } else {
         for (const auto *sub_cb : cb_state.linkedCommandBuffers) {
-            skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards);
+            skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards, loc);
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primaryCommandBuffer != cb_state.commandBuffer()) &&
                 !(sub_cb->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -568,7 +568,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     // If USAGE_SIMULTANEOUS_USE_BIT not set then CB cannot already be executing on device
     skip |= ValidateCommandBufferSimultaneousUse(loc, cb_state, current_submit_count);
 
-    skip |= ValidateQueuedQFOTransfers(cb_state, qfo_image_scoreboards, qfo_buffer_scoreboards);
+    skip |= ValidateQueuedQFOTransfers(cb_state, qfo_image_scoreboards, qfo_buffer_scoreboards, loc);
 
     const char *const vuid = (loc.function == Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pCommandBuffers-00070"
                                                                    : "VUID-vkQueueSubmit2-commandBuffer-03874";

@@ -6868,10 +6868,11 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
     for (size_t barrier_set_index = 0; barrier_set_index < barriers_.size(); barrier_set_index++) {
         const auto &barrier_set = barriers_[barrier_set_index];
         if (barrier_set.single_exec_scope) {
+            const Location loc(Cmd());
             if (barrier_set.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
                 const std::string vuid = std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
-                sync_state.LogInfo(command_buffer_handle, vuid,
-                                   "%s, srcStageMask includes %s, unsupported by synchronization validation.", CmdName(),
+                sync_state.LogInfo(vuid, command_buffer_handle, loc,
+                                   "srcStageMask includes %s, unsupported by synchronization validation.",
                                    string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
             } else {
                 const auto &barriers = barrier_set.memory_barriers;
@@ -6881,9 +6882,9 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                         const std::string vuid =
                             std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
 
-                        sync_state.LogInfo(command_buffer_handle, vuid,
-                                           "%s, srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
-                                           CmdName(), string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), "pDependencyInfo",
+                        sync_state.LogInfo(vuid, command_buffer_handle, loc,
+                                           "srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
+                                           string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), "pDependencyInfo",
                                            barrier_set_index, "pMemoryBarriers", barrier_index);
                     }
                 }
@@ -7027,14 +7028,15 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
         const char *const vuid = (vvl::Func::vkCmdWaitEvents == command_) ? "VUID-vkCmdWaitEvents-srcStageMask-01158"
                                                                           : "VUID-vkCmdWaitEvents2-pEvents-03838";
         const char *const message =
-            "%s: srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
+            "srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         const auto handle = exec_context.Handle();
+        const Location loc(Cmd());
         if (events_not_found) {
-            sync_state.LogInfo(handle, vuid, message, CmdName(), barrier_mask_params,
-                                       sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(),
-                                       " vkCmdSetEvent may be in previously submitted command buffer.");
+            sync_state.LogInfo(vuid, handle, loc, message, barrier_mask_params,
+                               sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(),
+                               " vkCmdSetEvent may be in previously submitted command buffer.");
         } else {
-            skip |= sync_state.LogError(handle, vuid, message, CmdName(), barrier_mask_params,
+            skip |= sync_state.LogError(vuid, handle, loc, message, barrier_mask_params,
                                         sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(), "");
         }
     }

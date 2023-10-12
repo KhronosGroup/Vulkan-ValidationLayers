@@ -26,30 +26,30 @@ bool BestPractices::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuff
                                                                    VkBool32 update, VkAccelerationStructureNV dst,
                                                                    VkAccelerationStructureNV src, VkBuffer scratch,
                                                                    VkDeviceSize scratchOffset, const ErrorObject& error_obj) const {
-    return ValidateBuildAccelerationStructure(commandBuffer);
+    return ValidateBuildAccelerationStructure(commandBuffer, error_obj.location);
 }
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts,
     const ErrorObject& error_obj) const {
-    return ValidateBuildAccelerationStructure(commandBuffer);
+    return ValidateBuildAccelerationStructure(commandBuffer, error_obj.location);
 }
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
-    return ValidateBuildAccelerationStructure(commandBuffer);
+    return ValidateBuildAccelerationStructure(commandBuffer, error_obj.location);
 }
 
-bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer) const {
+bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer, const Location& loc) const {
     bool skip = false;
     auto cb_node = GetRead<bp_state::CommandBuffer>(commandBuffer);
     assert(cb_node);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if ((cb_node->GetQueueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
-            skip |= LogPerformanceWarning(commandBuffer, kVUID_BestPractices_AccelerationStructure_NotAsync,
+            skip |= LogPerformanceWarning(kVUID_BestPractices_AccelerationStructure_NotAsync, commandBuffer, loc,
                                           "%s Performance warning: Prefer building acceleration structures on an asynchronous "
                                           "compute queue, instead of using the universal graphics queue.",
                                           VendorSpecificTag(kBPVendorNVIDIA));
@@ -71,8 +71,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice de
             // BindAccelerationStructureMemoryNV but it's implied in that memory being bound must conform with
             // VkAccelerationStructureMemoryRequirementsInfoNV from vkGetAccelerationStructureMemoryRequirementsNV
             skip |= LogWarning(
-                device, kVUID_BestPractices_BindAccelNV_NoMemReqQuery,
-                "vkBindAccelerationStructureMemoryNV(): "
+                kVUID_BestPractices_BindAccelNV_NoMemReqQuery, device, error_obj.location,
                 "Binding memory to %s but vkGetAccelerationStructureMemoryRequirementsNV() has not been called on that structure.",
                 FormatHandle(pBindInfos[i].accelerationStructure).c_str());
         }

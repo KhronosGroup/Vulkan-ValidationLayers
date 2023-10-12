@@ -376,11 +376,11 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
     if ((pCreateInfo->preTransform & current_transform) != pCreateInfo->preTransform) {
-        skip |= LogPerformanceWarning(physical_device, kVUID_Core_Swapchain_PreTransform,
-                                      "%s: pCreateInfo->preTransform (%s) doesn't match the currentTransform (%s) returned by "
+        skip |= LogPerformanceWarning(kVUID_Core_Swapchain_PreTransform, physical_device, create_info_loc.dot(Field::preTransform),
+                                      "(%s) doesn't match the currentTransform (%s) returned by "
                                       "vkGetPhysicalDeviceSurfaceCapabilitiesKHR, the presentation engine will transform the image "
                                       "content as part of the presentation operation.",
-                                      create_info_loc.StringFunc(), string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform),
+                                      string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform),
                                       string_VkSurfaceTransformFlagBitsKHR(current_transform));
     }
 

@@ -548,35 +548,34 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6) LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kWarningBit, objlist, nullptr, vuid_text, format, argptr);
+                    const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
 
-                bool DECORATE_PRINTF(4, 5)
-                    LogPerformanceWarning(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, nullptr, vuid_text, format, argptr);
+                    const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
 
-                bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6) LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kInformationBit, objlist, nullptr, vuid_text, format, argptr);
+                    const bool result = LogMsg(report_data, kInformationBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
 
-                bool DECORATE_PRINTF(4, 5) LogVerbose(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6) LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kVerboseBit, objlist, nullptr, vuid_text, format, argptr);
+                    const bool result = LogMsg(report_data, kVerboseBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -895,11 +894,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                     // Check for recognized instance extensions
                     if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
-                        layer_data->LogWarning(
-                            layer_data->instance, kVUIDUndefined,
-                            "Instance Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
-                            "results and/or produce undefined behavior.",
-                            pCreateInfo->ppEnabledExtensionNames[i]);
+                        Location loc(vvl::Func::vkCreateInstance);
+                        layer_data->LogWarning(kVUIDUndefined, layer_data->instance,
+                                            loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
+                                            "%s is not supported by this layer.  Using this extension may adversely affect validation "
+                                            "results and/or produce undefined behavior.",
+                                            pCreateInfo->ppEnabledExtensionNames[i]);
                     }
                 }
             }
@@ -909,11 +909,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                     // Check for recognized device extensions
                     if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
-                        layer_data->LogWarning(
-                            layer_data->device, kVUIDUndefined,
-                            "Device Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
-                            "results and/or produce undefined behavior.",
-                            pCreateInfo->ppEnabledExtensionNames[i]);
+                        Location loc(vvl::Func::vkCreateDevice);
+                        layer_data->LogWarning(kVUIDUndefined, layer_data->device,
+                                            loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
+                                            "%s is not supported by this layer.  Using this extension may adversely affect validation "
+                                            "results and/or produce undefined behavior.",
+                                            pCreateInfo->ppEnabledExtensionNames[i]);
                     }
                 }
             }
@@ -964,20 +965,21 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     }
                 }
 
+                Location loc(vvl::Func::vkCreateInstance);
                 // Output layer status information message
-                context->LogInfo(context->instance, "UNASSIGNED-CreateInstance-status-message",
+                context->LogInfo("UNASSIGNED-CreateInstance-status-message", context->instance, loc,
                     "Khronos Validation Layer Active:\\n    Settings File: %s\\n    Current Enables: %s.\\n    Current Disables: %s.\\n",
                     settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
 
                 // Create warning message if user is running debug layers.
             #ifndef NDEBUG
                 context->LogPerformanceWarning(
-                    context->instance, "UNASSIGNED-CreateInstance-debug-warning",
+                    "UNASSIGNED-CreateInstance-debug-warning", context->instance, loc,
                     "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
             #endif
                 if (!context->fine_grained_locking) {
                     context->LogPerformanceWarning(
-                        context->instance, "UNASSIGNED-CreateInstance-locking-warning",
+                        "UNASSIGNED-CreateInstance-locking-warning", context->instance, loc,
                         "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
                 }
             }

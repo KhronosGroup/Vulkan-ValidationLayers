@@ -2372,35 +2372,38 @@ class ValidationObject {
         return result;
     }
 
-    bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+    bool DECORATE_PRINTF(5, 6)
+        LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kWarningBit, objlist, nullptr, vuid_text, format, argptr);
+        const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
 
-    bool DECORATE_PRINTF(4, 5)
-        LogPerformanceWarning(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                     const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, nullptr, vuid_text, format, argptr);
+        const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
 
-    bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+    bool DECORATE_PRINTF(5, 6)
+        LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kInformationBit, objlist, nullptr, vuid_text, format, argptr);
+        const bool result = LogMsg(report_data, kInformationBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
 
-    bool DECORATE_PRINTF(4, 5) LogVerbose(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+    bool DECORATE_PRINTF(5, 6)
+        LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kVerboseBit, objlist, nullptr, vuid_text, format, argptr);
+        const bool result = LogMsg(report_data, kVerboseBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }

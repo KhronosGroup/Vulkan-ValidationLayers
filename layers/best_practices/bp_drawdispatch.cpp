@@ -25,7 +25,6 @@
 // Generic function to handle validation for all CmdDraw* type functions
 bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const {
     bool skip = false;
-    const char* caller = loc.StringFunc();
     const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
     if (cb_state) {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -36,7 +35,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
         if (pipeline_state && pipeline_state->vertex_input_state &&
             pipeline_state->vertex_input_state->binding_descriptions.size() <= 0) {
             if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
-                skip |= LogPerformanceWarning(cb_state->commandBuffer(), kVUID_BestPractices_DrawState_VtxIndexOutOfBounds,
+                skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->commandBuffer(), loc,
                                               "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
                                               FormatHandle(cb_state->commandBuffer()).c_str(),
                                               FormatHandle(pipeline_state->pipeline()).c_str());
@@ -55,8 +54,8 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
                     const auto* raster_state = pipe->RasterizationState();
                     if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && raster_state &&
                         raster_state->depthBiasEnable == VK_TRUE) {
-                        skip |= LogWarning(cb_state->commandBuffer(), kVUID_BestPractices_DepthBiasNoAttachment,
-                                           "%s: depthBiasEnable == VK_TRUE without a depth-stencil attachment.", caller);
+                        skip |= LogWarning(kVUID_BestPractices_DepthBiasNoAttachment, cb_state->commandBuffer(), loc,
+                                           "depthBiasEnable == VK_TRUE without a depth-stencil attachment.");
                     }
                 }
             }
@@ -113,8 +112,7 @@ bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
     bool skip = false;
 
     if (instanceCount == 0) {
-        skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_InstanceCountZero,
-                           "Warning: You are calling vkCmdDraw() with an instanceCount of Zero.");
+        skip |= LogWarning(kVUID_BestPractices_CmdDraw_InstanceCountZero, device, error_obj.location, "instanceCount is zero.");
     }
     skip |= ValidateCmdDrawType(commandBuffer, error_obj.location);
 
@@ -133,8 +131,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     bool skip = false;
 
     if (instanceCount == 0) {
-        skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_InstanceCountZero,
-                           "Warning: You are calling vkCmdDrawIndexed() with an instanceCount of Zero.");
+        skip |= LogWarning(kVUID_BestPractices_CmdDraw_InstanceCountZero, device, error_obj.location, "instanceCount is zero.");
     }
     skip |= ValidateCmdDrawType(commandBuffer, error_obj.location);
 
@@ -144,7 +141,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
         (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
-        skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
+        skip |= LogPerformanceWarning(kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls, device, error_obj.location,
                                       "%s %s: The command buffer contains many small indexed drawcalls "
                                       "(at least %u drawcalls with less than %u indices each). This may cause pipeline bubbles. "
                                       "You can try batching drawcalls or instancing when applicable.",
@@ -153,7 +150,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
-        ValidateIndexBufferArm(*cmd_state, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        ValidateIndexBufferArm(*cmd_state, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance, error_obj.location);
     }
 
     return skip;
@@ -185,7 +182,8 @@ bool BestPractices::PostTransformLRUCacheModel::query_cache(uint32_t value) {
 }
 
 bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_state, uint32_t indexCount, uint32_t instanceCount,
-                                           uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
+                                           uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
+                                           const Location& loc) const {
     bool skip = false;
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
@@ -266,7 +264,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
 
         if (max_index - min_index >= indexCount) {
             skip |=
-                LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer,
+                LogPerformanceWarning(kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer, device, loc,
                                       "%s The indices which were specified for the draw call only utilise approximately %.02f%% of "
                                       "index buffer value range. Arm Mali architectures before G71 do not have IDVS (Index-Driven "
                                       "Vertex Shading), meaning all vertices corresponding to indices between the minimum and "
@@ -317,7 +315,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
         float cache_hit_rate = static_cast<float>(vertex_reference_count) / static_cast<float>(vertex_shade_count);
 
         if (utilization < 0.5f) {
-            skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer,
+            skip |= LogPerformanceWarning(kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer, device, loc,
                                           "%s The indices which were specified for the draw call only utilise approximately "
                                           "%.02f%% of the bound vertex buffer.",
                                           VendorSpecificTag(kBPVendorArm), utilization);
@@ -325,7 +323,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
 
         if (cache_hit_rate <= 0.5f) {
             skip |=
-                LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_PostTransformCacheThrashing,
+                LogPerformanceWarning(kVUID_BestPractices_CmdDrawIndexed_PostTransformCacheThrashing, device, loc,
                                       "%s The indices which were specified for the draw call are estimated to cause thrashing of "
                                       "the post-transform vertex cache, with a hit-rate of %.02f%%. "
                                       "I.e. the ordering of the index buffer may not make optimal use of indices associated with "
@@ -363,8 +361,7 @@ bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     bool skip = false;
 
     if (drawCount == 0) {
-        skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_DrawCountZero,
-                           "Warning: You are calling vkCmdDrawIndirect() with a drawCount of Zero.");
+        skip |= LogWarning(kVUID_BestPractices_CmdDraw_DrawCountZero, device, error_obj.location, "drawCount is zero.");
     }
 
     skip |= ValidateCmdDrawType(commandBuffer, error_obj.location);
@@ -383,8 +380,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     bool skip = false;
 
     if (drawCount == 0) {
-        skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_DrawCountZero,
-                           "Warning: You are calling vkCmdDrawIndexedIndirect() with a drawCount of Zero.");
+        skip |= LogWarning(kVUID_BestPractices_CmdDraw_DrawCountZero, device, error_obj.location, "drawCount is zero.");
     }
 
     skip |= ValidateCmdDrawType(commandBuffer, error_obj.location);
@@ -680,9 +676,9 @@ bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
     bool skip = false;
 
     if ((groupCountX == 0) || (groupCountY == 0) || (groupCountZ == 0)) {
-        skip |= LogWarning(device, kVUID_BestPractices_CmdDispatch_GroupCountZero,
-                           "Warning: You are calling vkCmdDispatch() while one or more groupCounts are zero (groupCountX = %" PRIu32
-                           ", groupCountY = %" PRIu32 ", groupCountZ = %" PRIu32 ").",
+        skip |= LogWarning(kVUID_BestPractices_CmdDispatch_GroupCountZero, device, error_obj.location,
+                           "one or more groupCounts are zero (groupCountX = %" PRIu32 ", groupCountY = %" PRIu32
+                           ", groupCountZ = %" PRIu32 ").",
                            groupCountX, groupCountY, groupCountZ);
     }
 

@@ -800,14 +800,17 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename TransferBarrier>
     bool ValidateQueuedQFOTransferBarriers(const CMD_BUFFER_STATE& cb_state, QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
-                                           const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers) const;
+                                           const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers,
+                                           const Location& loc) const;
     bool ValidateQueuedQFOTransfers(const CMD_BUFFER_STATE& cb_state,
                                     QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
-                                    QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
+                                    QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards,
+                                    const Location& loc) const;
 
     template <typename Barrier, typename Scoreboard>
     bool ValidateAndUpdateQFOScoreboard(const debug_report_data* report_data, const CMD_BUFFER_STATE& cb_state,
-                                        const char* operation, const Barrier& barrier, Scoreboard* scoreboard) const;
+                                        const char* operation, const Barrier& barrier, Scoreboard* scoreboard,
+                                        const Location& loc) const;
     template <typename Barrier, typename TransferBarrier>
     void RecordBarrierValidationInfo(const Location& loc, CMD_BUFFER_STATE* cb_state, const Barrier& barrier,
                                      QFOTransferBarrierSets<TransferBarrier>& barrier_sets);

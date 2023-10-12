@@ -105,7 +105,7 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
 void BestPractices::LogPositiveSuccessCode(const RecordObject& record_obj) const {
     assert(record_obj.result > VK_SUCCESS);
 
-    LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", record_obj.location.StringFunc(),
+    LogVerbose(kVUID_BestPractices_Verbose_Success_Logging, instance, record_obj.location, "Returned %s.",
                string_VkResult(record_obj.result));
 }
 
@@ -119,11 +119,9 @@ void BestPractices::LogErrorCode(const RecordObject& record_obj) const {
     const auto result_string = string_VkResult(record_obj.result);
 
     if (IsValueIn(record_obj.result, common_failure_codes)) {
-        LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", record_obj.location.StringFunc(),
-                result_string);
+        LogInfo(kVUID_BestPractices_Failure_Result, instance, record_obj.location, "Returned error %s.", result_string);
     } else {
-        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", record_obj.location.StringFunc(),
-                   result_string);
+        LogWarning(kVUID_BestPractices_Error_Result, instance, record_obj.location, "Returned error %s.", result_string);
     }
 }
 
@@ -284,21 +282,21 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     });
 }
 
-bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cmd_state) const {
+bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cmd_state, const Location& loc) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     bool skip = false;
 
     if (cmd_state.nv.depth_test_enable) {
         auto& scope = cmd_state.nv.zcull_scope;
-        skip |= ValidateZcull(cmd_state, scope.image, scope.range);
+        skip |= ValidateZcull(cmd_state, scope.image, scope.range, loc);
     }
 
     return skip;
 }
 
 bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkImage image,
-                                  const VkImageSubresourceRange& subresource_range) const {
+                                  const VkImageSubresourceRange& subresource_range, const Location& loc) const {
     bool skip = false;
 
     const char* good_mode = nullptr;
@@ -344,7 +342,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
 
     if (is_balanced) {
         skip |= LogPerformanceWarning(
-            cmd_state.commandBuffer(), kVUID_BestPractices_Zcull_LessGreaterRatio,
+            kVUID_BestPractices_Zcull_LessGreaterRatio, cmd_state.commandBuffer(), loc,
             "%s Depth attachment %s is primarily rendered with depth compare op %s, but some draws use %s. "
             "Z-cull is disabled for the least used direction, which harms depth testing performance. "
             "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
@@ -423,7 +421,8 @@ void BestPractices::RecordClearColor(VkFormat format, const VkClearColorValue& c
     }
 }
 
-bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value) const {
+bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value,
+                                       const Location& loc) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     bool skip = false;
@@ -439,7 +438,7 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
         // The format is not compressible
         static const std::string format_list = MakeCompressedFormatListNVIDIA();
 
-        skip |= LogPerformanceWarning(commandBuffer, kVUID_BestPractices_ClearColor_NotCompressed,
+        skip |= LogPerformanceWarning(kVUID_BestPractices_ClearColor_NotCompressed, commandBuffer, loc,
                                       "%s Clearing image with format %s without a 1.0f or 0.0f clear color. "
                                       "The clear will not get compressed in the GPU, harming performance. "
                                       "This can be fixed using a clear color of VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}, or "
@@ -472,7 +471,7 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
             }
 
             skip |= LogPerformanceWarning(
-                commandBuffer, kVUID_BestPractices_ClearColor_NotCompressed,
+                kVUID_BestPractices_ClearColor_NotCompressed, commandBuffer, loc,
                 "%s Clearing image with unregistered VkClearColorValue{%s}. "
                 "This clear will not get compressed in the GPU, harming performance. "
                 "The clear color is not registered because too many unique colors have been used. "
@@ -533,23 +532,24 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                                IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
+    const Location loc(command);
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
         !image.IsSwapchainImage()) {
         LogPerformanceWarning(
-            device, kVUID_BestPractices_RenderPass_RedundantStore,
-            "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            kVUID_BestPractices_RenderPass_RedundantStore, device, loc,
+            "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with STORE_OP_STORE. "
             "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
             "architectures.",
-            String(command), VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
-            device, kVUID_BestPractices_RenderPass_RedundantClear,
-            "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            kVUID_BestPractices_RenderPass_RedundantClear, device, loc,
+            "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
             "tile-based architectures.",
-            String(command), VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
                (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
@@ -595,11 +595,10 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
         }
 
         LogPerformanceWarning(
-            device, vuid,
-            "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+            vuid, device, loc,
+            "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
             "time image was used, it was written to with %s. %s",
-            String(command), VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
-            suggestion);
+            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd, suggestion);
     }
 }
 
@@ -617,15 +616,15 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
             if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE || usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
+                Location loc(command);
                 LogWarning(
-                    state.image(), kVUID_BestPractices_ConcurrentUsageOfExclusiveImage,
-                    "%s : Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
-                    ") of image is used on queue family index %" PRIu32
+                    kVUID_BestPractices_ConcurrentUsageOfExclusiveImage, state.image(), loc,
+                    "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32 ") of image is used on queue family index %" PRIu32
                     " after being used on "
                     "queue family index %" PRIu32
                     ", "
                     "but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer operation",
-                    String(command), array_layer, mip_level, queue_family, last_usage.queue_family_index);
+                    array_layer, mip_level, queue_family, last_usage.queue_family_index);
             }
         }
     }
@@ -633,7 +632,8 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
     // When image was discarded with StoreOpDontCare but is now being read with LoadOpLoad
     if (last_usage.type == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
         usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE) {
-        LogWarning(device, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad,
+        Location loc(command);
+        LogWarning(kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad, device, loc,
                    "Trying to load an attachment with LOAD_OP_LOAD that was previously stored with STORE_OP_DONT_CARE. This may "
                    "result in undefined behaviour.");
     }

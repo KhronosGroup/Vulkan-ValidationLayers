@@ -446,7 +446,8 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
             std::copy(std::istreambuf_iterator<char>(read_file), {}, std::back_inserter(validation_cache_data));
             read_file.close();
         } else {
-            LogInfo(device, "UNASSIGNED-cache-file-error",
+            Location loc(Func::vkCreateDevice);
+            LogInfo("UNASSIGNED-cache-file-error", device, loc,
                     "Cannot open shader validation cache at %s for reading (it may not exist yet)", validation_cache_path.c_str());
         }
 
@@ -464,6 +465,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
     StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
 
     if (core_validation_cache) {
+        Location loc(Func::vkDestroyDevice);
         size_t validation_cache_size = 0;
         void *validation_cache_data = nullptr;
 
@@ -471,7 +473,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 
         validation_cache_data = (char *)malloc(sizeof(char) * validation_cache_size);
         if (!validation_cache_data) {
-            LogInfo(device, "UNASSIGNED-cache-memory-error", "Validation Cache Memory Error");
+            LogInfo("UNASSIGNED-cache-memory-error", device, loc, "Validation Cache Memory Error");
             return;
         }
 
@@ -479,7 +481,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
             CoreLayerGetValidationCacheDataEXT(device, core_validation_cache, &validation_cache_size, validation_cache_data);
 
         if (result != VK_SUCCESS) {
-            LogInfo(device, "UNASSIGNED-cache-retrieval-error", "Validation Cache Retrieval Error");
+            LogInfo("UNASSIGNED-cache-retrieval-error", device, loc, "Validation Cache Retrieval Error");
             free(validation_cache_data);
             return;
         }
@@ -490,7 +492,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
                 write_file.write(static_cast<char *>(validation_cache_data), validation_cache_size);
                 write_file.close();
             } else {
-                LogInfo(device, "UNASSIGNED-cache-write-error", "Cannot open shader validation cache at %s for writing",
+                LogInfo("UNASSIGNED-cache-write-error", device, loc, "Cannot open shader validation cache at %s for writing",
                         validation_cache_path.c_str());
             }
         }
