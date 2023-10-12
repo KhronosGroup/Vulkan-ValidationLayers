@@ -33,7 +33,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // resize to current size
         small_vector<int, 2, size_t> v1 = {1, 2, 3, 4};
-        v1.resize(v1.size(), true);
+        v1.resize(v1.size());
         std::array ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElements(v1, ref));
     }
@@ -41,7 +41,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // growing resize
         small_vector<int, 2, size_t> v2 = {1, 2, 3, 4};
-        v2.resize(5, true);
+        v2.resize(5);
         std::array ref = {1, 2, 3, 4, 0};
         ASSERT_TRUE(HaveSameElements(v2, ref));
     }
@@ -49,7 +49,11 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // shrinking resize
         small_vector<int, 2, size_t> v3 = {1, 2, 3, 4};
-        v3.resize(3, true);
+        const auto v3_cap = v3.capacity();
+        v3.resize(3);
+        ASSERT_TRUE(v3.capacity() == v3_cap);  // Resize doesn't shrink capacity
+        v3.shrink_to_fit();
+        ASSERT_TRUE(v3.capacity() == v3.size());
         std::array ref = {1, 2, 3};
         ASSERT_TRUE(HaveSameElements(v3, ref));
     }
@@ -57,7 +61,10 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // shrink to 0
         small_vector<int, 2, size_t> v4 = {1, 2, 3, 4};
-        v4.resize(0, true);
+        v4.resize(0);
+        ASSERT_TRUE(v4.capacity() == 4);  // Resize doesn't shrink capacity
+        v4.shrink_to_fit();
+        ASSERT_TRUE(v4.capacity() == 2);  // Small capacity is in the minimal
         std::array<int, 0> ref = {};
         ASSERT_TRUE(HaveSameElements(v4, ref));
     }
@@ -65,7 +72,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // resize to size limit
         small_vector<int, 2, uint8_t> v5 = {1, 2, 3, 4};
-        v5.resize(std::numeric_limits<uint8_t>::max(), false);
+        v5.resize(std::numeric_limits<uint8_t>::max());
         std::vector<int> vec = {1, 2, 3, 4};
         vec.resize(std::numeric_limits<uint8_t>::max());
         ASSERT_TRUE(HaveSameElements(v5, vec));
@@ -76,7 +83,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // resize to current size
         small_vector<int, 2, size_t> v6 = {1, 2, 3, 4};
-        v6.resize(v6.size(), false);
+        v6.resize(v6.size());
         std::array ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElements(v6, ref));
     }
@@ -84,7 +91,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // growing resize
         small_vector<int, 2, size_t> v7 = {1, 2, 3, 4};
-        v7.resize(5, false);
+        v7.resize(5);
         std::array ref = {1, 2, 3, 4, 0};
         ASSERT_TRUE(HaveSameElements(v7, ref));
     }
@@ -92,7 +99,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // shrinking resize
         small_vector<int, 2, size_t> v8 = {1, 2, 3, 4};
-        v8.resize(3, false);
+        v8.resize(3);
         std::array ref = {1, 2, 3};
         ASSERT_TRUE(HaveSameElements(v8, ref));
     }
@@ -100,7 +107,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // shrink to 0
         small_vector<int, 2, size_t> v9 = {1, 2, 3, 4};
-        v9.resize(0, false);
+        v9.resize(0);
         std::array<int, 0> ref = {};
         ASSERT_TRUE(HaveSameElements(v9, ref));
     }
@@ -108,7 +115,7 @@ TEST(CustomContainer, SmallVectorIntResize) {
     {
         // resize to size limit
         small_vector<int, 2, uint8_t> v10 = {1, 2, 3, 4};
-        v10.resize(std::numeric_limits<uint8_t>::max(), false);
+        v10.resize(std::numeric_limits<uint8_t>::max());
         std::vector<int> vec = {1, 2, 3, 4};
         vec.resize(std::numeric_limits<uint8_t>::max());
         ASSERT_TRUE(HaveSameElements(v10, vec));
@@ -128,7 +135,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // resize to current size
         small_vector<NoDefaultCons, 2, size_t> v1 = {1, 2, 3, 4};
-        v1.resize(v1.size(), true);
+        v1.resize(v1.size());
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElements(v1, ref));
     }
@@ -136,7 +143,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // growing resize
         small_vector<NoDefaultCons, 2, size_t> v2 = {1, 2, 3, 4};
-        v2.resize(5, true);
+        v2.resize(5);
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElementsUpTo(v2, ref, ref.size()));
     }
@@ -144,7 +151,12 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // shrinking resize
         small_vector<NoDefaultCons, 2, size_t> v3 = {1, 2, 3, 4};
-        v3.resize(3, true);
+        const auto v3_cap = v3.capacity();
+        v3.resize(3);
+        ASSERT_TRUE(v3.capacity() == v3_cap);  // Resize doesn't shrink capacity
+        v3.shrink_to_fit();
+        ASSERT_TRUE(v3.capacity() == v3.size());
+
         std::vector<NoDefaultCons> ref = {1, 2, 3};
         ASSERT_TRUE(HaveSameElements(v3, ref));
     }
@@ -152,7 +164,10 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // shrink to 0
         small_vector<NoDefaultCons, 2, size_t> v4 = {1, 2, 3, 4};
-        v4.resize(0, true);
+        v4.resize(0);
+        ASSERT_TRUE(v4.capacity() == 4);  // Resize doesn't shrink capacity
+        v4.shrink_to_fit();
+        ASSERT_TRUE(v4.capacity() == 2);  // Small capacity is in the minimal
         std::vector<NoDefaultCons> ref = {};
         ASSERT_TRUE(HaveSameElements(v4, ref));
     }
@@ -162,7 +177,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // resize to current size
         small_vector<NoDefaultCons, 2, size_t> v6 = {1, 2, 3, 4};
-        v6.resize(v6.size(), false);
+        v6.resize(v6.size());
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElements(v6, ref));
     }
@@ -170,7 +185,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // growing resize
         small_vector<NoDefaultCons, 2, size_t> v7 = {1, 2, 3, 4};
-        v7.resize(5, false);
+        v7.resize(5);
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElementsUpTo(v7, ref, ref.size()));
     }
@@ -178,7 +193,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // shrinking resize
         small_vector<NoDefaultCons, 2, size_t> v8 = {1, 2, 3, 4};
-        v8.resize(3, false);
+        v8.resize(3);
         std::vector<NoDefaultCons> ref = {1, 2, 3};
         ASSERT_TRUE(HaveSameElements(v8, ref));
     }
@@ -186,7 +201,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     {
         // shrink to 0
         small_vector<NoDefaultCons, 2, size_t> v9 = {1, 2, 3, 4};
-        v9.resize(0, false);
+        v9.resize(0);
         std::vector<NoDefaultCons> ref = {};
         ASSERT_TRUE(HaveSameElements(v9, ref));
     }
@@ -198,7 +213,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // resize to current size
         small_vector<NoDefaultCons, 2, size_t> v1 = {1, 2, 3, 4};
-        v1.resize(v1.size(), NoDefaultCons(0), true);
+        v1.resize(v1.size(), NoDefaultCons(0));
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElements(v1, ref));
     }
@@ -206,7 +221,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // growing resize
         small_vector<NoDefaultCons, 2, size_t> v2 = {1, 2, 3, 4};
-        v2.resize(5, NoDefaultCons(0), true);
+        v2.resize(5, NoDefaultCons(0));
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4, 0};
         ASSERT_TRUE(HaveSameElements(v2, ref));
     }
@@ -214,7 +229,9 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // shrinking resize
         small_vector<NoDefaultCons, 2, size_t> v3 = {1, 2, 3, 4};
-        v3.resize(3, NoDefaultCons(0), true);
+        v3.resize(3, NoDefaultCons(0));
+        v3.shrink_to_fit();
+        ASSERT_TRUE(v3.capacity() == v3.size());
         std::vector<NoDefaultCons> ref = {1, 2, 3};
         ASSERT_TRUE(HaveSameElements(v3, ref));
     }
@@ -222,7 +239,10 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // shrink to 0
         small_vector<NoDefaultCons, 2, size_t> v4 = {1, 2, 3, 4};
-        v4.resize(0, NoDefaultCons(0), true);
+        v4.resize(0, NoDefaultCons(0));
+        ASSERT_TRUE(v4.capacity() == 4);  // Resize doesn't shrink capacity
+        v4.shrink_to_fit();
+        ASSERT_TRUE(v4.capacity() == 2);  // Small capacity is in the minimal
         std::vector<NoDefaultCons> ref = {};
         ASSERT_TRUE(HaveSameElements(v4, ref));
     }
@@ -232,7 +252,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // resize to current size
         small_vector<NoDefaultCons, 2, size_t> v6 = {1, 2, 3, 4};
-        v6.resize(v6.size(), false);
+        v6.resize(v6.size());
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4};
         ASSERT_TRUE(HaveSameElements(v6, ref));
     }
@@ -240,7 +260,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // growing resize
         small_vector<NoDefaultCons, 2, size_t> v7 = {1, 2, 3, 4};
-        v7.resize(5, NoDefaultCons(0), false);
+        v7.resize(5, NoDefaultCons(0));
         std::vector<NoDefaultCons> ref = {1, 2, 3, 4, 0};
         ASSERT_TRUE(HaveSameElements(v7, ref));
     }
@@ -248,7 +268,8 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // shrinking resize
         small_vector<NoDefaultCons, 2, size_t> v8 = {1, 2, 3, 4};
-        v8.resize(3, NoDefaultCons(0), false);
+        v8.resize(3, NoDefaultCons(0));
+        ASSERT_TRUE(v8.capacity() == 4);  // Resize doesn't shrink capacity
         std::vector<NoDefaultCons> ref = {1, 2, 3};
         ASSERT_TRUE(HaveSameElements(v8, ref));
     }
@@ -256,7 +277,8 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     {
         // shrink to 0
         small_vector<NoDefaultCons, 2, size_t> v9 = {1, 2, 3, 4};
-        v9.resize(0, NoDefaultCons(0), false);
+        v9.resize(0, NoDefaultCons(0));
+        ASSERT_TRUE(v9.capacity() == 4);  // Resize doesn't shrink capacity
         std::vector<NoDefaultCons> ref = {};
         ASSERT_TRUE(HaveSameElements(v9, ref));
     }
@@ -327,7 +349,7 @@ TEST(CustomContainer, SmallVectorAssign) {
 
     // Copy from large store to small store
     v_dst = std::move(v_src);
-    ASSERT_TRUE(v_src.empty());
+    // Spec doesn't require src to be empty after move *assignment*
     ASSERT_TRUE(HaveSameElements(ref_large, v_dst));
 
     // Same store type copy/move
@@ -345,7 +367,7 @@ TEST(CustomContainer, SmallVectorAssign) {
     v_src = ref_xs;
     v_dst = ref_small;
     v_dst = std::move(v_src);
-    ASSERT_TRUE(v_src.empty());
+    // Small move operators don't empty source
     ASSERT_TRUE(HaveSameElements(ref_xs, v_dst));
 
     // Copy small to small increasing
@@ -359,7 +381,7 @@ TEST(CustomContainer, SmallVectorAssign) {
     v_src = ref_small;
     v_dst = ref_xs;
     v_dst = std::move(v_src);
-    ASSERT_TRUE(v_src.empty());
+    // Small move operators don't empty source
     ASSERT_TRUE(HaveSameElements(ref_small, v_dst));
 
     // Large
@@ -375,7 +397,7 @@ TEST(CustomContainer, SmallVectorAssign) {
     v_src = ref_large;
     v_dst = ref_xl;
     v_dst = std::move(v_src);
-    ASSERT_TRUE(v_src.empty());
+    ASSERT_TRUE(v_src.empty());  // Since large moves move the large store, the source is empty, but not required by spec of vector
     ASSERT_TRUE(HaveSameElements(ref_large, v_dst));
 
     // Copy large to large increasing
