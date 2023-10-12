@@ -152,6 +152,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         bindings_.push_back(binding);
     }
     GpuAssistedBase::CreateDevice(pCreateInfo);
+    Location loc(vvl::Func::vkCreateDevice);
 
     validate_descriptors = GpuGetOption("khronos_validation.gpuav_descriptor_checks", true);
     validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
@@ -179,7 +180,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
         !shaderInt64) {
-        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
                    "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
     }
     buffer_device_address = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
@@ -210,7 +211,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
-        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
                    "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
                    "Use of descriptor buffers will result in no descriptor checking");
     }
@@ -219,7 +220,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     if (validate_descriptors && !force_buffer_device_address) {
         validate_descriptors = false;
-        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
                    "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
     }
     if (validate_descriptors) {
@@ -380,6 +381,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
         return;
     }
+    Location loc(vvl::Func::vkCreateDevice);
 
     // Cannot use this validation without a queue that supports graphics
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physical_device);
@@ -394,7 +396,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
         }
     }
     if (!graphics_queue_exists) {
-        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning", "No queue that supports graphics, GPU-AV aborted.");
+        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc, "No queue that supports graphics, GPU-AV aborted.");
         aborted = true;
         return;
     }
@@ -698,7 +700,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDevice
 
     if (result == VK_SUCCESS) {
         as_validation_state.initialized = true;
-        LogInfo(device, "UNASSIGNED-GPU-Assisted Validation.", "Acceleration Structure Building GPU Validation Enabled.");
+        LogInfo("UNASSIGNED-GPU-Assisted Validation.", device, loc, "Acceleration Structure Building GPU Validation Enabled.");
     } else {
         aborted = true;
     }
@@ -1037,7 +1039,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
         if (device_props->limits.maxBoundDescriptorSets > 1) {
             device_props->limits.maxBoundDescriptorSets -= 1;
         } else {
-            LogWarning(physicalDevice, "UNASSIGNED-GPU-Assisted Validation Setup Error.",
+            LogWarning("UNASSIGNED-GPU-Assisted Validation Setup Error.", physicalDevice, record_obj.location,
                        "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
@@ -1053,7 +1055,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice ph
         if (device_props2->properties.limits.maxBoundDescriptorSets > 1) {
             device_props2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {
-            LogWarning(physicalDevice, "UNASSIGNED-GPU-Assisted Validation Setup Error.",
+            LogWarning("UNASSIGNED-GPU-Assisted Validation Setup Error.", physicalDevice, record_obj.location,
                        "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
@@ -1278,8 +1280,7 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (cache_instrumented_shaders) {
             const uint32_t shader_hash = ValidationCache::MakeShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
-            if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) 
-                continue;
+            if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) continue;
             csm_state->unique_shader_ids[i] = shader_hash;
         } else {
             csm_state->unique_shader_ids[i] = unique_shader_module_id++;
@@ -1450,6 +1451,8 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
                                              uint32_t operation_index, uint32_t *const debug_output_buffer,
                                              const std::vector<gpuav_state::DescSetState> &descriptor_sets) {
     const uint32_t total_words = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
+    // TODO - Pass in Location
+    Location loc(vvl::Func::vkQueueSubmit);
     bool oob_access;
     // A zero here means that the shader instrumentation didn't write anything.
     // If you have nothing to say, don't say it here.
@@ -1495,15 +1498,15 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
         if (buffer_info.uses_robustness && oob_access) {
             if (warn_on_robust_oob) {
-                LogWarning(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
+                LogWarning(vuid_msg.c_str(), queue, loc, "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
                            stage_message.c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
-            LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
+            LogError(vuid_msg.c_str(), queue, loc, "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
                      stage_message.c_str(), filename_message.c_str(), source_message.c_str());
         }
     } else {
-        LogError(queue, vuid_msg.c_str(), "%s", validation_message.c_str());
+        LogError(vuid_msg.c_str(), queue, loc, "%s", validation_message.c_str());
     }
 
     // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.

@@ -1787,18 +1787,18 @@ void CoreChecks::RecordBarriers(Func func_name, CMD_BUFFER_STATE *cb_state, cons
 
 template <typename TransferBarrier, typename Scoreboard>
 bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const CMD_BUFFER_STATE &cb_state,
-                                                const char *operation, const TransferBarrier &barrier,
-                                                Scoreboard *scoreboard) const {
+                                                const char *operation, const TransferBarrier &barrier, Scoreboard *scoreboard,
+                                                const Location &loc) const {
     // Record to the scoreboard or report that we have a duplication
     bool skip = false;
     auto inserted = scoreboard->emplace(barrier, &cb_state);
     if (!inserted.second && inserted.first->second != &cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
         const LogObjectList objlist(cb_state.commandBuffer(), barrier.handle, inserted.first->second->commandBuffer());
-        skip = LogWarning(objlist, TransferBarrier::ErrMsgDuplicateQFOInSubmit(),
-                          "%s: %s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
-                          " to dstQueueFamilyIndex %" PRIu32 " duplicates existing barrier submitted in this batch from %s.",
-                          "vkQueueSubmit()", TransferBarrier::BarrierName(), operation, TransferBarrier::HandleName(),
+        skip = LogWarning(TransferBarrier::ErrMsgDuplicateQFOInSubmit(), objlist, loc,
+                          "%s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
+                          " duplicates existing barrier submitted in this batch from %s.",
+                          TransferBarrier::BarrierName(), operation, TransferBarrier::HandleName(),
                           FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
                           FormatHandle(inserted.first->second->commandBuffer()).c_str());
     }
@@ -1806,9 +1806,10 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
 }
 
 template <typename TransferBarrier>
-bool CoreChecks::ValidateQueuedQFOTransferBarriers(
-    const CMD_BUFFER_STATE &cb_state, QFOTransferCBScoreboards<TransferBarrier> *scoreboards,
-    const GlobalQFOTransferBarrierMap<TransferBarrier> &global_release_barriers) const {
+bool CoreChecks::ValidateQueuedQFOTransferBarriers(const CMD_BUFFER_STATE &cb_state,
+                                                   QFOTransferCBScoreboards<TransferBarrier> *scoreboards,
+                                                   const GlobalQFOTransferBarrierMap<TransferBarrier> &global_release_barriers,
+                                                   const Location &loc) const {
     bool skip = false;
     const auto &cb_barriers = cb_state.GetQFOBarrierSets(TransferBarrier());
     const char *barrier_name = TransferBarrier::BarrierName();
@@ -1821,15 +1822,15 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(
             const QFOTransferBarrierSet<TransferBarrier> &set_for_handle = set_it->second;
             const auto found = set_for_handle.find(release);
             if (found != set_for_handle.cend()) {
-                skip |= LogWarning(cb_state.commandBuffer(), TransferBarrier::ErrMsgDuplicateQFOSubmitted(),
-                                   "%s: %s releasing queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
+                skip |= LogWarning(TransferBarrier::ErrMsgDuplicateQFOSubmitted(), cb_state.commandBuffer(), loc,
+                                   "%s releasing queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                                    " to dstQueueFamilyIndex %" PRIu32
                                    " duplicates existing barrier queued for execution, without intervening acquire operation.",
-                                   "vkQueueSubmit()", barrier_name, handle_name, FormatHandle(found->handle).c_str(),
-                                   found->srcQueueFamilyIndex, found->dstQueueFamilyIndex);
+                                   barrier_name, handle_name, FormatHandle(found->handle).c_str(), found->srcQueueFamilyIndex,
+                                   found->dstQueueFamilyIndex);
             }
         }
-        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "releasing", release, &scoreboards->release);
+        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "releasing", release, &scoreboards->release, loc);
     }
     // Each acquire must have a matching release (ERROR)
     for (const auto &acquire : cb_barriers.acquire) {
@@ -1840,25 +1841,26 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(
             matching_release_found = set_for_handle.find(acquire) != set_for_handle.cend();
         }
         if (!matching_release_found) {
-            skip |= LogError(cb_state.commandBuffer(), TransferBarrier::ErrMsgMissingQFOReleaseInSubmit(),
-                             "%s: in submitted command buffer %s acquiring ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
+            skip |= LogError(TransferBarrier::ErrMsgMissingQFOReleaseInSubmit(), cb_state.commandBuffer(), loc,
+                             "in submitted command buffer %s acquiring ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                              " to dstQueueFamilyIndex %" PRIu32 " has no matching release barrier queued for execution.",
-                             "vkQueueSubmit()", barrier_name, handle_name, FormatHandle(acquire.handle).c_str(),
-                             acquire.srcQueueFamilyIndex, acquire.dstQueueFamilyIndex);
+                             barrier_name, handle_name, FormatHandle(acquire.handle).c_str(), acquire.srcQueueFamilyIndex,
+                             acquire.dstQueueFamilyIndex);
         }
-        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "acquiring", acquire, &scoreboards->acquire);
+        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "acquiring", acquire, &scoreboards->acquire, loc);
     }
     return skip;
 }
 
 bool CoreChecks::ValidateQueuedQFOTransfers(const CMD_BUFFER_STATE &cb_state,
                                             QFOTransferCBScoreboards<QFOImageTransferBarrier> *qfo_image_scoreboards,
-                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards) const {
+                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards,
+                                            const Location &loc) const {
     bool skip = false;
-    skip |=
-        ValidateQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_state, qfo_image_scoreboards, qfo_release_image_barrier_map);
+    skip |= ValidateQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_state, qfo_image_scoreboards,
+                                                                       qfo_release_image_barrier_map, loc);
     skip |= ValidateQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_state, qfo_buffer_scoreboards,
-                                                                        qfo_release_buffer_barrier_map);
+                                                                        qfo_release_buffer_barrier_map, loc);
     return skip;
 }
 
@@ -1924,10 +1926,10 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &barrier_lo
         }
     }
     if (barrier_record != nullptr) {
-        skip |= LogWarning(cb_state->commandBuffer(), TransferBarrier::ErrMsgDuplicateQFOInCB(),
-                           "%s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
+        skip |= LogWarning(TransferBarrier::ErrMsgDuplicateQFOInCB(), cb_state->commandBuffer(), barrier_loc,
+                           "%s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
                            " duplicates existing barrier recorded in this command buffer.",
-                           barrier_loc.Message().c_str(), transfer_type, handle_name, FormatHandle(barrier_record->handle).c_str(),
+                           transfer_type, handle_name, FormatHandle(barrier_record->handle).c_str(),
                            barrier_record->srcQueueFamilyIndex, barrier_record->dstQueueFamilyIndex);
     }
     return skip;

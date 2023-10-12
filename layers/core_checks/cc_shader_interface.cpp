@@ -99,10 +99,8 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
         const auto shader_input = location_it.second.shader_input;
 
         if (attribute_input && !shader_input) {
-            skip |= LogPerformanceWarning(module_state.handle(), kVUID_Core_Shader_OutputNotConsumed,
-                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                          "] Vertex attribute at location %" PRIu32 " not consumed by vertex shader.",
-                                          pipeline.create_index, location);
+            skip |= LogPerformanceWarning(kVUID_Core_Shader_OutputNotConsumed, module_state.handle(), vi_loc,
+                                          "Vertex attribute at location %" PRIu32 " not consumed by vertex shader.", location);
         } else if (!attribute_input && shader_input) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-07904", module_state.handle(),
                              vi_loc.dot(Field::pVertexAttributeDescriptions),
@@ -548,11 +546,11 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                 // Don't give any warning if maintenance4 with vectors
                 if (!enabled_features.core13.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
-                    skip |= LogPerformanceWarning(objlist, kVUID_Core_Shader_OutputNotConsumed,
-                                                  "%s (SPIR-V Interface) %s declared to output location %" PRIu32
-                                                  " Component %" PRIu32 " but is not an Input declared by %s.",
-                                                  create_info_loc.Fields().c_str(), string_VkShaderStageFlagBits(producer_stage),
-                                                  location, component, string_VkShaderStageFlagBits(consumer_stage));
+                    skip |= LogPerformanceWarning(kVUID_Core_Shader_OutputNotConsumed, objlist, create_info_loc,
+                                                  "(SPIR-V Interface) %s declared to output location %" PRIu32 " Component %" PRIu32
+                                                  " but is not an Input declared by %s.",
+                                                  string_VkShaderStageFlagBits(producer_stage), location, component,
+                                                  string_VkShaderStageFlagBits(consumer_stage));
                 }
             } else if ((input_var != nullptr) && (output_var == nullptr)) {
                 // Missing output slot

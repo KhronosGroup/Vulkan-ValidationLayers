@@ -296,6 +296,9 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     uint32_t expect = debug_output_buffer[1];
     if (!expect) return;
 
+    // TODO - have Loc passed in correctly
+    Location loc(vvl::Func::vkQueueSubmit);
+
     uint32_t index = spvtools::kDebugOutputDataOffset;
     while (debug_output_buffer[index]) {
         std::stringstream shader_message;
@@ -392,7 +395,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
                 std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " " << stage_message.c_str() << " "
                           << shader_message.str().c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
             } else {
-                LogInfo(queue, "UNASSIGNED-DEBUG-PRINTF", "%s %s %s %s%s", common_message.c_str(), stage_message.c_str(),
+                LogInfo("UNASSIGNED-DEBUG-PRINTF", queue, loc, "%s %s %s %s%s", common_message.c_str(), stage_message.c_str(),
                         shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
@@ -400,13 +403,13 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
                 std::cout << shader_message.str();
             } else {
                 // Don't let LogInfo process any '%'s in the string
-                LogInfo(device, "UNASSIGNED-DEBUG-PRINTF", "%s", shader_message.str().c_str());
+                LogInfo("UNASSIGNED-DEBUG-PRINTF", device, loc, "%s", shader_message.str().c_str());
             }
         }
         index += debug_record->size;
     }
     if ((index - spvtools::kDebugOutputDataOffset) != expect) {
-        LogWarning(device, "UNASSIGNED-DEBUG-PRINTF",
+        LogWarning("UNASSIGNED-DEBUG-PRINTF", device, loc,
                    "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));

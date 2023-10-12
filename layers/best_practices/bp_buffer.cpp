@@ -30,7 +30,7 @@ bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         buffer_hex << "0x" << std::hex << HandleToUint64(pBuffer);
 
         skip |= LogWarning(
-            device, kVUID_BestPractices_SharingModeExclusive,
+            kVUID_BestPractices_SharingModeExclusive, device, error_obj.location,
             "Warning: Buffer (%s) specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues "
             "(queueFamilyIndexCount of %" PRIu32 ").",
             buffer_hex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
