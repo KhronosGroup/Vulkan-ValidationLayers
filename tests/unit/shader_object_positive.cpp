@@ -378,10 +378,6 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    auto vkCmdBeginRenderingKHR =
-        reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vk::GetDeviceProcAddr(device(), "vkCmdBeginRenderingKHR"));
-    auto vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vk::GetDeviceProcAddr(device(), "vkCmdEndRenderingKHR"));
-
     m_commandBuffer->begin();
 
     {
@@ -402,7 +398,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                                &imageMemoryBarrier);
     }
-    vkCmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 2u, shaderStages, shaders);
     for (const auto &unusedShader : unusedShaderStages) {
         VkShaderEXT null_shader = VK_NULL_HANDLE;
@@ -410,7 +406,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     }
     SetDefaultDynamicStates();
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    vkCmdEndRenderingKHR(m_commandBuffer->handle());
+    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
 
     {
         VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
@@ -584,10 +580,6 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    auto vkCmdBeginRenderingKHR =
-        reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vk::GetDeviceProcAddr(device(), "vkCmdBeginRenderingKHR"));
-    auto vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vk::GetDeviceProcAddr(device(), "vkCmdEndRenderingKHR"));
-
     m_commandBuffer->begin();
 
     {
@@ -608,11 +600,11 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                                &imageMemoryBarrier);
     }
-    vkCmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, shaderStages, shaders);
     SetDefaultDynamicStates();
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    vkCmdEndRenderingKHR(m_commandBuffer->handle());
+    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
 
     m_commandBuffer->end();
 
@@ -806,12 +798,6 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    auto vkCmdBeginRenderingKHR =
-        reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vk::GetDeviceProcAddr(device(), "vkCmdBeginRenderingKHR"));
-    auto vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vk::GetDeviceProcAddr(device(), "vkCmdEndRenderingKHR"));
-    auto vkCmdDrawMeshTasksEXT =
-        reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(vk::GetDeviceProcAddr(device(), "vkCmdDrawMeshTasksEXT"));
-
     m_commandBuffer->begin();
 
     {
@@ -832,7 +818,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                                &imageMemoryBarrier);
     }
-    vkCmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
     std::vector<VkShaderStageFlagBits> nullStages = {VK_SHADER_STAGE_VERTEX_BIT};
     if (features.tessellationShader) {
         nullStages.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
@@ -848,8 +834,8 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
 
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 3u, shaderStages, shaders);
     SetDefaultDynamicStates();
-    vkCmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
-    vkCmdEndRenderingKHR(m_commandBuffer->handle());
+    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
+    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
 
     m_commandBuffer->end();
 

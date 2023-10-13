@@ -24,8 +24,8 @@ TEST_F(PositiveTooling, BasicUsage) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    auto fpGetPhysicalDeviceToolPropertiesEXT =
-        (PFN_vkGetPhysicalDeviceToolPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceToolPropertiesEXT");
+    const auto fpGetPhysicalDeviceToolPropertiesEXT =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceToolPropertiesEXT>("vkGetPhysicalDeviceToolPropertiesEXT");
 
     uint32_t tool_count = 0;
     auto result = fpGetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, nullptr);
