@@ -456,8 +456,7 @@ class PositiveQuery : public QueryTest {};
 
 class RayTracingTest : public virtual VkLayerTest {
   public:
-    void InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr,
-                                        VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
+    void InitFrameworkForRayTracingTest(bool is_khr, VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
                                         VkValidationFeaturesEXT *enabled_features = nullptr);
 
     void OOBRayTracingShadersTestBody(bool gpu_assisted);

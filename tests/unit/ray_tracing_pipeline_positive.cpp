@@ -19,7 +19,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true))
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -113,7 +113,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true))
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&features13);
@@ -158,7 +158,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
 
 TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, false))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
 
     VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rtnv_props);
@@ -187,7 +187,7 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&pipeline_group_handle_features);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true, &features2))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
 
     features2 = GetPhysicalDeviceFeatures2(pipeline_group_handle_features);
     if (!gpl_features.graphicsPipelineLibrary) {
