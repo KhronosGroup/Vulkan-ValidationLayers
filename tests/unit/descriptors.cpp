@@ -2043,15 +2043,11 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    if (!buffer_test.GetBufferCurrent()) {
-        // Something prevented creation of buffer so abort
-        GTEST_SKIP() << "Buffer creation failed";
-    }
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Correctly update descriptor to avoid "NOT_UPDATED" error
     VkDescriptorBufferInfo buff_info = {};
-    buff_info.buffer = buffer_test.GetBuffer();
+    buff_info.buffer = buffer.handle();
     buff_info.offset = 0;
     buff_info.range = VK_WHOLE_SIZE;
 

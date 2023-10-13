@@ -588,39 +588,6 @@ class ThreadingTest : public VkLayerTest {};
 class NegativeThreading : public ThreadingTest {};
 class PositiveThreading : public ThreadingTest {};
 
-class VkBufferTest {
-  public:
-    enum eTestEnFlags {
-        eDoubleDelete,
-        eInvalidDeviceOffset,
-        eInvalidMemoryOffset,
-        eBindNullBuffer,
-        eBindFakeBuffer,
-        eFreeInvalidHandle,
-        eNone,
-    };
-
-    enum eTestConditions { eOffsetAlignment = 1 };
-
-    static bool GetTestConditionValid(vkt::Device *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage = 0);
-    // A constructor which performs validation tests within construction.
-    VkBufferTest(vkt::Device *aVulkanDevice, VkBufferUsageFlags aBufferUsage, eTestEnFlags aTestFlag = eNone);
-    ~VkBufferTest();
-    bool GetBufferCurrent();
-    const VkBuffer &GetBuffer();
-    void TestDoubleDestroy();
-
-  protected:
-    bool AllocateCurrent;
-    bool BoundCurrent;
-    bool CreateCurrent;
-    bool InvalidDeleteEn;
-
-    VkBuffer VulkanBuffer;
-    VkDevice VulkanDevice;
-    VkDeviceMemory VulkanMemory;
-};
-
 struct OneOffDescriptorSet {
     vkt::Device *device_;
     VkDescriptorPool pool_;
