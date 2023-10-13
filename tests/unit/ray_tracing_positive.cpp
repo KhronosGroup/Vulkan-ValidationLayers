@@ -38,10 +38,7 @@ void RayTracingTest::InitFrameworkForRayTracingTest(VkRenderFramework *framework
 
     if (features2) {
         // extension enabled as dependency of RT extension
-        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-            vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2KHR"));
-        assert(vkGetPhysicalDeviceFeatures2KHR);
-        vkGetPhysicalDeviceFeatures2KHR(framework->gpu(), features2);
+        vk::GetPhysicalDeviceFeatures2KHR(framework->gpu(), features2);
     }
 }
 

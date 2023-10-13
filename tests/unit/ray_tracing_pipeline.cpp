@@ -1140,8 +1140,6 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
 
-    const auto vkGetRayTracingShaderGroupHandlesKHR =
-        GetInstanceProcAddr<PFN_vkGetRayTracingShaderGroupHandlesKHR>("vkGetRayTracingShaderGroupHandlesKHR");
     RayTracingPipelineHelper rt_pipe(*this);
     rt_pipe.rp_ci_KHR_ = vku::InitStructHelper();
     rt_pipe.rp_ci_KHR_.flags =
@@ -1159,8 +1157,8 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     handle_buffer.resize(ray_tracing_properties.shaderGroupHandleSize);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828");
-    vkGetRayTracingShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 0, 1, ray_tracing_properties.shaderGroupHandleSize,
-                                         handle_buffer.data());
+    vk::GetRayTracingShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 0, 1,
+                                           ray_tracing_properties.shaderGroupHandleSize, handle_buffer.data());
     m_errorMonitor->VerifyFound();
     handle_buffer.resize(ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829");

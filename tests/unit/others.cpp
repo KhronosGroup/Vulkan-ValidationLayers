@@ -47,8 +47,8 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 =
-        (PFN_vkGetPhysicalDeviceProperties2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2");
+    const auto vkGetPhysicalDeviceProperties2 =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2>("vkGetPhysicalDeviceProperties2");
 
     VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper();
 
