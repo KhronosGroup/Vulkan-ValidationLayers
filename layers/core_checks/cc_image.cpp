@@ -1171,7 +1171,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                     const auto &render_area = prim_cb->active_render_pass_begin_info.renderArea;
                     bool skip = false;
 
-                    if (fb) {
+                    if (fb && prim_cb->IsPrimary()) {
                         const Location loc(Func::vkCmdClearAttachments);
                         skip = ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
                                                              clear_rect_copy->data(), loc);

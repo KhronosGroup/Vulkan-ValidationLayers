@@ -3022,7 +3022,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     }
 
     if ((cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) &&
-        ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0)) {
+        ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0) &&
+        !enabled_features.nested_command_buffer_features.nestedCommandBuffer) {
         skip |= LogError("VUID-vkCmdBeginRendering-commandBuffer-06068", commandBuffer, rendering_info.dot(Field::flags),
                          "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR in a secondary command buffer.");
     }
