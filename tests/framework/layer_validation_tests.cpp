@@ -750,93 +750,6 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &
     return true;
 }
 
-bool VkBufferTest::GetTestConditionValid(vkt::Device *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
-    if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {
-        return true;
-    }
-    VkDeviceSize offset_limit = 0;
-    if (eInvalidMemoryOffset == aTestFlag) {
-        VkBuffer vulkanBuffer;
-        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-        buffer_create_info.size = 32;
-        buffer_create_info.usage = aBufferUsage;
-
-        vk::CreateBuffer(aVulkanDevice->device(), &buffer_create_info, nullptr, &vulkanBuffer);
-        VkMemoryRequirements memory_reqs = {};
-
-        vk::GetBufferMemoryRequirements(aVulkanDevice->device(), vulkanBuffer, &memory_reqs);
-        vk::DestroyBuffer(aVulkanDevice->device(), vulkanBuffer, nullptr);
-        offset_limit = memory_reqs.alignment;
-    } else if ((VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) & aBufferUsage) {
-        offset_limit = aVulkanDevice->phy().limits_.minTexelBufferOffsetAlignment;
-    } else if (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT & aBufferUsage) {
-        offset_limit = aVulkanDevice->phy().limits_.minUniformBufferOffsetAlignment;
-    } else if (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT & aBufferUsage) {
-        offset_limit = aVulkanDevice->phy().limits_.minStorageBufferOffsetAlignment;
-    }
-    return eOffsetAlignment < offset_limit;
-}
-
-VkBufferTest::VkBufferTest(vkt::Device *aVulkanDevice, VkBufferUsageFlags aBufferUsage, eTestEnFlags aTestFlag)
-    : AllocateCurrent(true),
-      BoundCurrent(false),
-      CreateCurrent(false),
-      InvalidDeleteEn(false),
-      VulkanDevice(aVulkanDevice->device()) {
-    if (eBindNullBuffer == aTestFlag || eBindFakeBuffer == aTestFlag) {
-        VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
-        memory_allocate_info.allocationSize = 1;   // fake size -- shouldn't matter for the test
-        memory_allocate_info.memoryTypeIndex = 0;  // fake type -- shouldn't matter for the test
-        vk::AllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
-
-        VulkanBuffer = (aTestFlag == eBindNullBuffer) ? VK_NULL_HANDLE : (VkBuffer)0xCDCDCDCDCDCDCDCD;
-
-        vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, 0);
-    } else {
-        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-        buffer_create_info.size = 32;
-        buffer_create_info.usage = aBufferUsage;
-
-        vk::CreateBuffer(VulkanDevice, &buffer_create_info, nullptr, &VulkanBuffer);
-
-        CreateCurrent = true;
-
-        VkMemoryRequirements memory_requirements;
-        vk::GetBufferMemoryRequirements(VulkanDevice, VulkanBuffer, &memory_requirements);
-
-        VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
-        memory_allocate_info.allocationSize = memory_requirements.size + eOffsetAlignment;
-        bool pass = aVulkanDevice->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info,
-                                                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        if (!pass) {
-            CreateCurrent = false;
-            vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
-            return;
-        }
-
-        vk::AllocateMemory(VulkanDevice, &memory_allocate_info, NULL, &VulkanMemory);
-        // NB: 1 is intentionally an invalid offset value
-        const bool offset_en = eInvalidDeviceOffset == aTestFlag || eInvalidMemoryOffset == aTestFlag;
-        vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, offset_en ? eOffsetAlignment : 0);
-        BoundCurrent = true;
-
-        InvalidDeleteEn = (eFreeInvalidHandle == aTestFlag);
-    }
-}
-
-VkBufferTest::~VkBufferTest() {
-    if (CreateCurrent) {
-        vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
-    }
-    if (AllocateCurrent) {
-        if (InvalidDeleteEn) {
-            auto bad_memory = CastFromUint64<VkDeviceMemory>(CastToUint64(VulkanMemory) + 1);
-            vk::FreeMemory(VulkanDevice, bad_memory, nullptr);
-        }
-        vk::FreeMemory(VulkanDevice, VulkanMemory, nullptr);
-    }
-}
-
 void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
     vkt::CommandPool pool(*device, device->graphics_queue_node_index_);
     vkt::CommandBuffer cmd_buf(device, &pool);
@@ -942,16 +855,6 @@ VkSampler VkArmBestPracticesLayerTest::CreateDefaultSampler() {
     (void)result;
 
     return sampler;
-}
-
-bool VkBufferTest::GetBufferCurrent() { return AllocateCurrent && BoundCurrent && CreateCurrent; }
-
-const VkBuffer &VkBufferTest::GetBuffer() { return VulkanBuffer; }
-
-void VkBufferTest::TestDoubleDestroy() {
-    // Destroy the buffer but leave the flag set, which will cause
-    // the buffer to be destroyed again in the destructor.
-    vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
 }
 
 OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings,

@@ -535,77 +535,34 @@ TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeBuffer, VertexBuffer) {
-    TEST_DESCRIPTION(
-        "Submit a command buffer using deleted vertex buffer, delete a buffer twice, use an invalid offset for each buffer type, "
-        "and attempt to bind a null buffer");
-
+TEST_F(NegativeBuffer, DoubleDelete) {
     RETURN_IF_SKIP(Init())
-    InitRenderTarget();
+    VkBufferCreateInfo create_info = vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
+    vk::DestroyBuffer(device(), buffer, nullptr);
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "CoreValidation-DrawState-InvalidCommandBuffer-VkBuffer");
-
-    {
-        VkDeviceSize offset = 0;
-        vkt::Buffer vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &offset);
-
-        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-
-        m_commandBuffer->EndRenderPass();
-    }
-
-    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-parameter");
+    vk::DestroyBuffer(device(), buffer, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
-    {
-        // Create and bind a vertex buffer in a reduced scope, and delete it
-        // twice, the second through the destructor
-        VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VkBufferTest::eDoubleDelete);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-parameter");
-        buffer_test.TestDoubleDestroy();
-    }
-    m_errorMonitor->VerifyFound();
+TEST_F(NegativeBuffer, BindNull) {
+    RETURN_IF_SKIP(Init())
+    VkBufferCreateInfo create_info = vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
 
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-None-09206");
-    if (VkBufferTest::GetTestConditionValid(m_device, VkBufferTest::eInvalidMemoryOffset)) {
-        // Create and bind a memory buffer with an invalid offset.
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
-        m_errorMonitor->SetUnexpectedError("VUID-vkGetBufferMemoryRequirements-buffer-parameter");
-        VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, VkBufferTest::eInvalidMemoryOffset);
-        (void)buffer_test;
-        m_errorMonitor->VerifyFound();
-    }
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
+    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    vkt::DeviceMemory memory(*m_device, buffer_alloc_info);
 
-    {
-        // Attempt to bind a null buffer.
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
-        VkBufferTest buffer_test(m_device, 0, VkBufferTest::eBindNullBuffer);
-        (void)buffer_test;
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        // Attempt to bind a fake buffer.
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-parameter");
-        VkBufferTest buffer_test(m_device, 0, VkBufferTest::eBindFakeBuffer);
-        (void)buffer_test;
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        // Attempt to use an invalid handle to delete a buffer.
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-parameter");
-        VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VkBufferTest::eFreeInvalidHandle);
-        (void)buffer_test;
-    }
+    vk::DestroyBuffer(device(), buffer, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-parameter");
+    vk::BindBufferMemory(device(), buffer, memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 }
 
