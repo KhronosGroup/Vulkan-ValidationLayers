@@ -1445,6 +1445,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                 vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV>(pCreateInfo->pNext)) {
             enabled_features.device_generated_commands_compute_features_nv = *device_generated_commands_compute_features_nv;
         }
+
+        if (const auto nested_command_buffer_features =
+                vku::FindStructInPNextChain<VkPhysicalDeviceNestedCommandBufferFeaturesEXT>(pCreateInfo->pNext)) {
+            enabled_features.nested_command_buffer_features = *nested_command_buffer_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

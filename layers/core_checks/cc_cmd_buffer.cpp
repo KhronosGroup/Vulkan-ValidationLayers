@@ -817,18 +817,24 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     if (cb_state.activeRenderPass) {
-        if (!cb_state.activeRenderPass->UsesDynamicRendering() &&
-            (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS)) {
+        if (!cb_state.activeRenderPass->UsesDynamicRendering() && cb_state.IsPrimary() &&
+            (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
+             cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT)) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass());
             skip |= LogError("VUID-vkCmdExecuteCommands-contents-06018", objlist, error_obj.location,
-                             "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS "
+                             "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
+                             "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT "
                              "when calling vkCmdExecuteCommands() within a render pass instance begun with "
                              "vkCmdBeginRenderPass().");
         }
 
         if (cb_state.activeRenderPass->UsesDynamicRendering() &&
-            !(cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
-              VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
+            !((cb_state.activeRenderPass->use_dynamic_rendering &&
+               (cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
+                VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) ||
+              (cb_state.activeRenderPass->use_dynamic_rendering_inherited &&
+               (cb_state.activeRenderPass->inheritance_rendering_info.flags &
+                VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)))) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass());
             skip |= LogError("VUID-vkCmdExecuteCommands-flags-06024", objlist, error_obj.location,
                              "VkRenderingInfo::flags must include "
@@ -914,18 +920,22 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                          FormatHandle(pCommandBuffers[i]).c_str());
                     }
 
-                    if (sub_cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+                    if (cb_state.activeRenderPass->use_dynamic_rendering && sub_cb_state.activeRenderPass &&
+                        sub_cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
                         const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
                         const auto inheritance_rendering_info = sub_cb_state.activeRenderPass->inheritance_rendering_info;
-                        if ((inheritance_rendering_info.flags & ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) !=
-                            (rendering_info.flags & ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
+                        if ((inheritance_rendering_info.flags &
+                             ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR | VK_RENDERING_CONTENTS_INLINE_BIT_EXT)) !=
+                            (rendering_info.flags &
+                             ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR | VK_RENDERING_CONTENTS_INLINE_BIT_EXT))) {
                             const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
                             skip |=
                                 LogError("VUID-vkCmdExecuteCommands-flags-06026", objlist, cb_loc,
                                          "(%s) is executed within a dynamic renderpass instance scope begun "
                                          "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%s) does "
                                          "not match VkRenderingInfo::flags (%s) (excluding "
-                                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR).",
+                                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR or "
+                                         "VK_RENDERING_CONTENTS_INLINE_BIT_EXT).",
                                          FormatHandle(pCommandBuffers[i]).c_str(),
                                          string_VkRenderingFlags(inheritance_rendering_info.flags).c_str(),
                                          string_VkRenderingFlags(rendering_info.flags).c_str());
@@ -1744,7 +1754,7 @@ bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer command
     assert(cb_state);
     bool skip = false;
 
-    if (cb_state->IsPrimary()) {
+    if (cb_state->IsPrimary() || enabled_features.nested_command_buffer_features.nestedCommandBuffer) {
         return skip;
     }
 
