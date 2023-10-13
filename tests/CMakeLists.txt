@@ -47,6 +47,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/descriptor_helper.cpp
     framework/thread_timeout_helper.h
     framework/thread_timeout_helper.cpp
+    framework/feature_requirements.h
     unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
@@ -199,6 +200,8 @@ elseif(MSVC)
     target_compile_options(vk_layer_validation_tests PRIVATE
         /wd4389 # signed/unsigned mismatch
         /wd4267 # Disable some signed/unsigned mismatch warnings.
+            # To enable better MSVC support of variadic macros (still not conformant to standard witout /std:c++20)
+        /Zc:preprocessor
     )
 
     set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:vvl>")

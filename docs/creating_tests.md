@@ -96,6 +96,26 @@ if (copy_commands2) {
 }
 ```
 
+### Pattern for feature requirements
+
+A set of helper functions and macro are available to help defining feature requirements. Use them to specify that you want some feature to be enabled or disabled. Test will be skipped if the required features are not supported by the device. Typical flow looks like this:
+
+```cpp
+AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+RETURN_IF_SKIP(InitFramework())
+
+auto feature_requirements = MakeFeatureRequirementsCollection(
+    FEATURE_REQUIREMENTS(VkPhysicalDeviceFeatures2,
+       FEATURE_MANDATORY(features.logicOp), FEATURE_DISABLED(features.fillModeNonSolid)),
+    FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT, FEATURE_MANDATORY(extendedDynamicState3PolygonMode)));
+
+RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+```
+`MakeFeatureRequirementsCollection` is a variadic function taking a collection of feature requirements as an input.
+`FEATURE_REQUIREMENTS` is a variadic macro. Start by specifying the name of your Vulkan physical device features struct, then use either `FEATURE_MANDATORY` to specify that you want a feature to be enabled, or `FEATURE_DISABLED` to specify that you want a feature to be disabled.
+
+Note: Every Vulkan physical device features must appear at most once in the collection. 
+
 ### Vulkan Version
 
 As [raised in a previous issue](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1553), when a Vulkan version is enabled, all extensions that are required are exposed. (For example, if the test is created as a Vulkan 1.1 application, then the `VK_KHR_16bit_storage` extension would be supported regardless as it was promoted to Vulkan 1.1 core)

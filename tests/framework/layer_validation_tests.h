@@ -32,6 +32,7 @@
 #include "render.h"
 #include "utils/convert_utils.h"
 #include "shader_templates.h"
+#include "feature_requirements.h"
 
 #include <algorithm>
 #include <cmath>
@@ -42,6 +43,8 @@
 #include <unordered_set>
 #include <vector>
 #include <condition_variable>
+#include <tuple>
+#include <utility>
 
 using std::string;
 using std::vector;
@@ -153,6 +156,13 @@ class VkLayerTest : public VkLayerTestBase {
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
     const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
 
+    template <typename... T>
+    void InitStateWithRequirements(FeatureRequirementsCollection<T...> &feature_requirements) {
+        GetPhysicalDeviceFeatures2(feature_requirements.GetFirstFeatureStruct());
+        feature_requirements.SkipIfMandatoryFeatureDisabled();
+        feature_requirements.EnforceDisabledFeatures();
+        InitState(nullptr, &feature_requirements.GetFirstFeatureStruct(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    }
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
     void AddSurfaceExtension();
