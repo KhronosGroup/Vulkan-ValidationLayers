@@ -351,10 +351,7 @@ bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
 bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                        const VkResolveImageInfo2KHR* pResolveImageInfo,
                                                        const ErrorObject& error_obj) const {
-    bool skip = false;
-    skip |= ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage,
-                                    error_obj.location.dot(Field::pResolveImageInfo));
-    return skip;
+    return PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
@@ -383,18 +380,7 @@ void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
 
 void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                      const VkResolveImageInfo2KHR* pResolveImageInfo) {
-    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    auto& funcs = cb->queue_submit_functions;
-    auto src = Get<bp_state::Image>(pResolveImageInfo->srcImage);
-    auto dst = Get<bp_state::Image>(pResolveImageInfo->dstImage);
-    uint32_t regionCount = pResolveImageInfo->regionCount;
-
-    for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdResolveImage2KHR, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
-                           pResolveImageInfo->pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, Func::vkCmdResolveImage2KHR, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
-                           pResolveImageInfo->pRegions[i].dstSubresource);
-    }
+    PreCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo);
 }
 
 void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
@@ -532,8 +518,7 @@ bool BestPractices::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
 
 bool BestPractices::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
                                                     const ErrorObject& error_obj) const {
-    return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                error_obj.location.dot(Field::pBlitImageInfo));
+    return PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
