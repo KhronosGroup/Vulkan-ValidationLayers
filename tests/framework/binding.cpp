@@ -659,16 +659,14 @@ void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
-VkDeviceAddress Buffer::address(APIVersion vk_api_version /*= VK_API_VERSION_1_2*/) const {
+VkDeviceAddress Buffer::address() const {
     VkBufferDeviceAddressInfo bdai = vku::InitStructHelper();
     bdai.buffer = handle();
-    if (vk_api_version < VK_API_VERSION_1_2) {
-        const auto vkGetBufferDeviceAddressKHR =
-            reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
-        assert(vkGetBufferDeviceAddressKHR);
-        return vkGetBufferDeviceAddressKHR(device(), &bdai);
+    if (vk::GetBufferDeviceAddressKHR) {
+        return vk::GetBufferDeviceAddressKHR(device(), &bdai);
+    } else {
+        return vk::GetBufferDeviceAddress(device(), &bdai);
     }
-    return vk::GetBufferDeviceAddress(device(), &bdai);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)

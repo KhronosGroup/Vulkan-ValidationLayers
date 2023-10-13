@@ -1544,11 +1544,11 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
     GetPhysicalDeviceFeatures2(bda_features);
     RETURN_IF_SKIP(InitState(nullptr, &bda_features));
 
-    auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096);
     blas_no_mem->SetDeviceBufferInitNoMem(true);
     blas_no_mem->Build(*m_device);
 
-    auto valid_blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    auto valid_blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096);
     valid_blas->Build(*m_device);
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
@@ -1604,15 +1604,15 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
-    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096);
     blas->SetDeviceBuffer(std::move(buffer));
     blas->Build(*m_device);
 
-    auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096);
     blas_no_mem->SetDeviceBufferInitNoMem(true);
     blas_no_mem->Build(*m_device);
 
-    auto blas_host_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    auto blas_host_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096);
     blas_host_mem->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     blas_host_mem->Build(*m_device);
 
@@ -1679,7 +1679,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     vkt::Buffer dst_buffer;
     dst_buffer.init_no_mem(*m_device, buffer_ci);
 
-    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(VK_API_VERSION_1_2, 0);
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(0);
     blas->SetDeviceBuffer(std::move(dst_buffer));
     blas->Build(*m_device);
 
@@ -1734,7 +1734,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     vkt::Buffer host_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-    auto bot_level_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
+    auto bot_level_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
     bot_level_as.GetDstAS()->SetDeviceBuffer(std::move(non_host_visible_buffer));
 
     // .dstAccelerationStructure buffer is not bound to host visible memory
@@ -1742,10 +1742,10 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     bot_level_as.BuildHost(instance(), *m_device);
     m_errorMonitor->VerifyFound();
 
-    auto host_cached_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
+    auto host_cached_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
 
     host_cached_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-    host_cached_blas.SetSrcAS(vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(DeviceValidationVersion(), 4096));
+    host_cached_blas.SetSrcAS(vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(4096));
     host_cached_blas.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     // .mode is UPDATE and .srcAccelerationStructure buffer is not bound to host visible memory
@@ -1786,7 +1786,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
-    auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
+    auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
     build_geometry_info.GetDstAS()->SetDeviceBuffer(std::move(non_host_visible_buffer));
 
     // .dstAccelerationStructure buffer is not bound to host visible memory
@@ -1833,7 +1833,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
-    auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(DeviceValidationVersion(), buffer_ci.size);
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(buffer_ci.size);
     blas->SetDeviceBuffer(std::move(non_host_visible_buffer));
     blas->Build(*m_device);
 
@@ -2204,7 +2204,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
 
-    const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
+    const VkDeviceAddress device_address = buffer.address();
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
     stridebufregion.deviceAddress = device_address;
@@ -2291,7 +2291,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
 
-    const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
+    const VkDeviceAddress device_address = buffer.address();
 
     m_commandBuffer->begin();
     // No VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR was in the device create info pNext chain
@@ -2328,7 +2328,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
 
-    const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
+    const VkDeviceAddress device_address = buffer.address();
 
     m_commandBuffer->begin();
     // indirectDeviceAddress is not a multiple of 4
@@ -2399,7 +2399,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     // Command buffer not in recording mode
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
         m_errorMonitor->VerifyFound();
@@ -2409,9 +2409,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         // Command buffer build
         {
-            auto build_info_null_dst =
-                vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
-            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull(DeviceValidationVersion()));
+            auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
@@ -2421,9 +2420,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
         // Command buffer indirect build
         if (accel_features.accelerationStructureIndirectBuild == VK_TRUE) {
-            auto build_info_null_dst =
-                vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
-            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull(DeviceValidationVersion()));
+            auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03800");
             build_info_null_dst.BuildCmdBufferIndirect(*m_device, m_commandBuffer->handle());
@@ -2432,9 +2430,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
         // Host build
         if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-            auto build_info_null_dst =
-                vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
-            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull(DeviceValidationVersion()));
+            auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
             build_info_null_dst.BuildHost(instance(), *m_device);
             m_errorMonitor->VerifyFound();
@@ -2444,16 +2441,14 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Positive build tests
     {
         m_commandBuffer->begin();
-        auto build_info_ppGeometries =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info_ppGeometries = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info_ppGeometries.BuildCmdBuffer(*m_device, m_commandBuffer->handle(), true);
         m_commandBuffer->end();
     }
 
     {
         m_commandBuffer->begin();
-        auto build_info_pGeometries =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info_pGeometries = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info_pGeometries.BuildCmdBuffer(*m_device, m_commandBuffer->handle(), false);
         m_commandBuffer->end();
     }
@@ -2462,7 +2457,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     // Invalid info count
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetInfoCount(0);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-infoCount-arraylength");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-infoCount-arraylength");
@@ -2472,7 +2467,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     // Invalid pInfos
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetNullInfos(true);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-parameter");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -2481,7 +2476,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     // Invalid ppBuildRangeInfos
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetNullBuildRangeInfos(true);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-parameter");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -2492,7 +2487,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         InitRenderTarget();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-renderpass");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
         m_commandBuffer->EndRenderPass();
@@ -2500,7 +2495,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid flags
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_FLAG_BITS_MAX_ENUM_KHR);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-flags-parameter");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-flags-parameter");
@@ -2515,7 +2510,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
                                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
         vkt::Buffer invalid_buffer;
         invalid_buffer.init_no_mem(*m_device, buffer_ci);
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetDstAS()->SetDeviceBuffer(std::move(invalid_buffer));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03707");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -2523,7 +2518,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid sType
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetInfo().sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-sType-sType");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-sType-sType");
@@ -2532,7 +2527,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid Type
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03654");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03654");
@@ -2550,7 +2545,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         constexpr auto primitive_count = vvl::kU32Max;
         // Check that primitive count is indeed superior to limit
         if (primitive_count > acc_struct_properties.maxPrimitiveCount) {
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info.GetGeometries()[0].SetPrimitiveCount(primitive_count);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03795");
             build_info.GetSizeInfo(m_device->handle());
@@ -2562,8 +2557,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         constexpr auto primitive_count = vvl::kU32Max;
         // Check that primitive count is indeed superior to limit
         if (primitive_count > acc_struct_properties.maxPrimitiveCount) {
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device,
-                                                                                             vkt::as::GeometryKHR::Type::AABB);
+            auto build_info =
+                vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::AABB);
             build_info.GetGeometries()[0].SetPrimitiveCount(primitive_count);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03794");
             build_info.GetSizeInfo(m_device->handle());
@@ -2572,8 +2567,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid stride in pGeometry.geometry.aabbs (not a multiple of 8)
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device,
-                                                                                         vkt::as::GeometryKHR::Type::AABB);
+        auto build_info =
+            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::AABB);
         build_info.GetGeometries()[0].SetStride(1);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545");
         build_info.GetSizeInfo(m_device->handle(), false);
@@ -2581,8 +2576,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid stride in ppGeometry.geometry.aabbs (not a multiple of 8)
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device,
-                                                                                         vkt::as::GeometryKHR::Type::AABB);
+        auto build_info =
+            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::AABB);
         build_info.GetGeometries()[0].SetStride(1);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545");
         build_info.GetSizeInfo(m_device->handle(), true);
@@ -2590,8 +2585,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid stride in pGeometry.geometry.aabbs (superior to UINT32_MAX)
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device,
-                                                                                         vkt::as::GeometryKHR::Type::AABB);
+        auto build_info =
+            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::AABB);
         build_info.GetGeometries()[0].SetStride(8ull * vvl::kU32Max);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820");
         build_info.GetSizeInfo(m_device->handle(), false);
@@ -2599,8 +2594,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid stride in ppGeometry.geometry.aabbs (superior to UINT32_MAX)
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device,
-                                                                                         vkt::as::GeometryKHR::Type::AABB);
+        auto build_info =
+            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::AABB);
         build_info.GetGeometries()[0].SetStride(8ull * vvl::kU32Max);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820");
         build_info.GetSizeInfo(m_device->handle(), true);
@@ -2608,7 +2603,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid vertex stride
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetGeometries()[0].SetStride(VkDeviceSize(vvl::kU32Max) + 1);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819");
@@ -2617,7 +2612,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Invalid index type
     if (index_type_uint8) {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_UINT8_EXT);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
@@ -2626,7 +2621,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // ppGeometries and pGeometries both valid pointer
     {
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         std::vector<VkAccelerationStructureGeometryKHR> geometries;
         for (const auto &geometry : build_info.GetGeometries()) {
             geometries.emplace_back(geometry.GetVkObj());
@@ -2645,7 +2640,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         vkt::Buffer bad_usage_buffer(*m_device, 1024,
                                      VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetGeometries()[0].SetTrianglesDeviceVertexBuffer(std::move(bad_usage_buffer), 3);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -2658,7 +2653,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetScratchBuffer(std::move(bad_scratch));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -2671,7 +2666,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         // no VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT => scratch address will be set to 0
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
-        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetScratchBuffer(std::move(bad_scratch));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
         build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -2722,7 +2717,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
             vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
 
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info.SetScratchBuffer(std::move(scratch_buffer));
             build_infos.emplace_back(std::move(build_info));
         }
@@ -2752,7 +2747,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             dst_blas_buffer.init_no_mem(*m_device, dst_blas_buffer_ci);
             vk::BindBufferMemory(m_device->device(), dst_blas_buffer.handle(), buffer_memory.handle(), 0);
 
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffer));
             build_infos.emplace_back(std::move(build_info));
         }
@@ -2793,7 +2788,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
             vk::BindBufferMemory(m_device->device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
 
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffers[i]));
             build_info.GetDstAS()->SetSize(4096);
             build_info.SetScratchBuffer(std::move(scratch_buffers[i]));
@@ -2837,7 +2832,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             vk::BindBufferMemory(m_device->device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
 
             // 1st step: build destination acceleration struct
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info.GetDstAS()->SetDeviceBuffer(std::move(src_blas_buffers[i]));
             build_info.GetDstAS()->SetSize(4096);
             build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
@@ -2853,7 +2848,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             // 03701
             build_info.SetSrcAS(build_info.GetDstAS());
             build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-            build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096));
+            build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
             build_info.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffers[i]));
             build_infos.emplace_back(std::move(build_info));
         }
@@ -2897,7 +2892,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             vk::BindBufferMemory(m_device->device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
 
             // 1st step: build destination acceleration struct
-            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info.GetDstAS()->SetDeviceBuffer(std::move(src_blas_buffers[i]));
             build_info.GetDstAS()->SetSize(4096);  // Do this to ensure dst accel struct buffer and scratch do overlap
             build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
@@ -2913,7 +2908,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
             // 03705
             build_info.SetSrcAS(build_info.GetDstAS());
             build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-            build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096));
+            build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
             build_info.SetScratchBuffer(std::move(scratch_buffers[i]));
             build_infos.emplace_back(std::move(build_info));
         }
@@ -2946,8 +2941,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true, &features2))
     RETURN_IF_SKIP(InitState(nullptr, &features2))
 
-    vkt::as::BuildGeometryInfoKHR build_geometry_info =
-        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+    vkt::as::BuildGeometryInfoKHR build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     m_commandBuffer->begin();
     build_geometry_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
     m_commandBuffer->end();
@@ -3035,8 +3029,7 @@ TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
 
     m_commandBuffer->begin();
 
-    vkt::as::BuildGeometryInfoKHR build_geometry_info =
-        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+    vkt::as::BuildGeometryInfoKHR build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_geometry_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
     // computed scratch buffer size is empty, so scratch buffer address can be 0 and invalid
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
@@ -3103,15 +3096,15 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
 
         // Those calls to vkGetBufferDeviceAddressKHR will internally record vbo and ibo device addresses
         {
-            const VkDeviceAddress vbo_address = vbo.address(DeviceValidationVersion());
-            const VkDeviceAddress ibo_address = ibo.address(DeviceValidationVersion());
+            const VkDeviceAddress vbo_address = vbo.address();
+            const VkDeviceAddress ibo_address = ibo.address();
             if (vbo_address != ibo_address) {
                 GTEST_SKIP()
                     << "Bounding two buffers to the same memory location does not result in identical buffer device addresses";
             }
         }
         build_geometry_info_vec[i] = std::make_unique<vkt::as::BuildGeometryInfoKHR>(
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device));
+            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
         build_geometry_info_vec[i]->GetGeometries()[0].SetTrianglesDeviceVertexBuffer(std::move(vbo), 2);
         build_geometry_info_vec[i]->GetGeometries()[0].SetTrianglesDeviceIndexBuffer(std::move(ibo));
     }
@@ -3162,8 +3155,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
     const bool rt_maintenance_1 = IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-        vkt::as::BuildGeometryInfoKHR as_build_info =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        vkt::as::BuildGeometryInfoKHR as_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         as_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
@@ -3207,8 +3199,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
 
     // On device query with invalid query type
     {
-        vkt::as::BuildGeometryInfoKHR as_build_info =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        vkt::as::BuildGeometryInfoKHR as_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
         VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
@@ -3251,8 +3242,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
 
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-        vkt::as::BuildGeometryInfoKHR blas_build_info =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        vkt::as::BuildGeometryInfoKHR blas_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
@@ -3279,8 +3269,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
 
     // On host query type with missing BLAS flag
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-        vkt::as::BuildGeometryInfoKHR blas_build_info =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        vkt::as::BuildGeometryInfoKHR blas_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         // missing flag
         // blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
@@ -3310,8 +3299,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
 
     // On host query type with invalid stride
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-        vkt::as::BuildGeometryInfoKHR blas_build_info =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        vkt::as::BuildGeometryInfoKHR blas_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
@@ -3345,8 +3333,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
 
     // On device query with invalid query type
     {
-        vkt::as::BuildGeometryInfoKHR blas_build_info =
-            vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        vkt::as::BuildGeometryInfoKHR blas_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
         VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
