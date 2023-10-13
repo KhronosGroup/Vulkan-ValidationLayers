@@ -29,12 +29,9 @@ std::vector<VkPushConstantRange> const *StageCreateInfo::GetPushConstantRanges()
     return shader_object_const_ranges.get();
 }
 
-StageCreateInfo::StageCreateInfo(vvl::Func command, const PIPELINE_STATE *pipeline)
-    : command(command), create_index(pipeline->create_index), pipeline(pipeline) {}
-StageCreateInfo::StageCreateInfo(vvl::Func command, uint32_t create_index, const VkShaderCreateInfoEXT &create_info)
-    : command(command),
-      create_index(create_index),
-      pipeline(nullptr),
+StageCreateInfo::StageCreateInfo(const PIPELINE_STATE *pipeline) : pipeline(pipeline) {}
+StageCreateInfo::StageCreateInfo(const VkShaderCreateInfoEXT &create_info)
+    : pipeline(nullptr),
       shader_object_const_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)) {}
 
 // static
@@ -656,12 +653,11 @@ std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkS
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                               uint32_t create_index, std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
+                               std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(*pCreateInfo, rpstate, state_data),
-      create_index(create_index),
       rendering_create_info(vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(PNext())),
       library_create_info(vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(PNext())),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
@@ -712,11 +708,9 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                               uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
-                               CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
-      create_index(create_index),
       pipeline_type(VK_PIPELINE_BIND_POINT_COMPUTE),
       create_flags(create_info.compute.flags),
       shader_stages_ci(&create_info.compute.stage, 1),
@@ -736,11 +730,9 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                               uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
-                               CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
-      create_index(create_index),
       pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
       create_flags(create_info.raytracing.flags),
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
@@ -763,11 +755,9 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                               uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
-                               CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
-      create_index(create_index),
       pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV),
       create_flags(create_info.raytracing.flags),
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
