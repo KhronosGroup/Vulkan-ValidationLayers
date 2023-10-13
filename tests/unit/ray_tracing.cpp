@@ -3339,6 +3339,30 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
     }
 }
 
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidMode) {
+    TEST_DESCRIPTION("Build an acceleration structure with an invalid mode");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true, &features2));
+    RETURN_IF_SKIP(ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)));
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+    build_info.SetMode(static_cast<VkBuildAccelerationStructureModeKHR>(42));
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))

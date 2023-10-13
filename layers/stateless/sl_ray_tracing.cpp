@@ -1149,6 +1149,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                              pInfos[i].scratchData.deviceAddress,
                              phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
         }
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", pInfos[i].mode,
+                                   "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
         for (uint32_t k = 0; k < infoCount; ++k) {
             if (i == k) continue;
             if (pInfos[i].dstAccelerationStructure == pInfos[k].dstAccelerationStructure) {
