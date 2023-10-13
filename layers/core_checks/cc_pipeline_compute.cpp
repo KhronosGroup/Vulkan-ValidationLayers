@@ -23,7 +23,7 @@
 #include "core_validation.h"
 
 bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
-    StageCreateInfo stage_create_info(create_info_loc.function, &pipeline);
+    StageCreateInfo stage_create_info(&pipeline);
     return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0], create_info_loc.dot(Field::stage));
 }
 

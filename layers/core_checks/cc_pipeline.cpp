@@ -40,9 +40,11 @@ bool CoreChecks::ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELIN
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07986", device, loc,
                              "exactly one of base pipeline index and handle must be specified");
         } else if (base_index != -1) {
-            if (static_cast<uint32_t>(base_index) >= pipeline.create_index) {
+            if (static_cast<uint32_t>(base_index) >= pipe_index) {
                 skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00720", base_handle, loc,
-                                 "base pipeline must occur earlier in array than derivative pipeline.");
+                                 "base pipeline (index %" PRId32
+                                 ") must occur earlier in array than derivative pipeline (index %" PRIu32 ").",
+                                 base_index, pipe_index);
             } else {
                 base_pipeline = pipelines[base_index];
             }

@@ -54,16 +54,14 @@ class PIPELINE_CACHE_STATE : public BASE_NODE {
 };
 
 struct StageCreateInfo {
-    vvl::Func command;
-    uint32_t create_index;
     const PIPELINE_STATE *pipeline;
 
     const PushConstantRangesId shader_object_const_ranges;
 
     std::vector<VkPushConstantRange> const *GetPushConstantRanges() const;
 
-    StageCreateInfo(vvl::Func command, const PIPELINE_STATE *pipeline);
-    StageCreateInfo(vvl::Func command, uint32_t create_index, const VkShaderCreateInfoEXT &create_info);
+    StageCreateInfo(const PIPELINE_STATE *pipeline);
+    StageCreateInfo(const VkShaderCreateInfoEXT &create_info);
 };
 
 class PIPELINE_STATE : public BASE_NODE {
@@ -132,8 +130,6 @@ class PIPELINE_STATE : public BASE_NODE {
     const CreateInfo create_info;
 
   public:
-    const uint32_t create_index;  // which index in pCreateInfos, used for error messages
-
     // Create Info values saved for fast access later
     const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
     const VkPipelineLibraryCreateInfoKHR *library_create_info = nullptr;
@@ -183,21 +179,19 @@ class PIPELINE_STATE : public BASE_NODE {
     CreateShaderModuleStates *csm_states = nullptr;
 
     // Executable or legacy pipeline
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo, uint32_t create_index,
+    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
                    CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo, uint32_t create_index,
+    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                   uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
-                   CreateShaderModuleStates *csm_states = nullptr);
+                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
-                   CreateShaderModuleStates *csm_states = nullptr);
+                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
