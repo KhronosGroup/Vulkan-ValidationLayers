@@ -501,9 +501,6 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(VkDev
 }
 
 void BuildGeometryInfoKHR::BuildCommon(const vkt::Device &device, bool is_on_device_build, bool use_ppGeometries /*= true*/) {
-    assert(vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR ||
-           vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-
     // Build geometries
     for (auto &geometry : geometries_) {
         geometry.Build();
@@ -521,7 +518,7 @@ void BuildGeometryInfoKHR::BuildCommon(const vkt::Device &device, bool is_on_dev
 
     const VkAccelerationStructureBuildSizesInfoKHR size_info = GetSizeInfo(device.handle(), use_ppGeometries);
     const VkDeviceSize scratch_size =
-        vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR ? size_info.buildScratchSize : size_info.updateScratchSize;
+        vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR ? size_info.updateScratchSize : size_info.buildScratchSize;
     if (is_on_device_build) {
         // Allocate device local scratch buffer
 
