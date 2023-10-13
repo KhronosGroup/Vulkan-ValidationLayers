@@ -39,7 +39,7 @@ class APISpecific:
             case 'vulkan':
                 per_scope = {
                     'instance': 'VUID-vkDestroyInstance-instance-00629',
-                    'device': 'VUID-vkDestroyDevice-device-00378'
+                    'device': 'VUID-vkDestroyDevice-device-05137'
                 }
 
         return per_scope[scope]

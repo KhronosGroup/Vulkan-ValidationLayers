@@ -1637,7 +1637,7 @@ TEST_F(NegativeWsi, LeakASwapchain) {
 
     // Warn about the surface/swapchain not being destroyed
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00629");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-05137");
     ShutdownFramework();  // Destroy Instance/Device
     DestroySurfaceContext(surface_context);
     m_errorMonitor->VerifyFound();

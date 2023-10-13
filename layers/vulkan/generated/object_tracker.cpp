@@ -43,7 +43,7 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, cons
 
 bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Location& loc) const {
     bool skip = false;
-    const std::string error_code = "VUID-vkDestroyDevice-device-00378";
+    const std::string error_code = "VUID-vkDestroyDevice-device-05137";
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBuffer, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImage, error_code, loc);
