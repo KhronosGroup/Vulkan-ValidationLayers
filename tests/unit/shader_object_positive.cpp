@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/descriptor_helper.h"
 
 void ShaderObjectTest::InitBasicShaderObject(void *pNextFeatures, APIVersion targetApiVersion, bool coreFeatures) {
     SetTargetApiVersion(targetApiVersion);

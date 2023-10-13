@@ -245,7 +245,6 @@ class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
     VkRenderPass CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
                                   VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE);
     VkFramebuffer CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view, VkRenderPass renderpass);
-    VkSampler CreateDefaultSampler();
 };
 class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
@@ -588,124 +587,10 @@ class ThreadingTest : public VkLayerTest {};
 class NegativeThreading : public ThreadingTest {};
 class PositiveThreading : public ThreadingTest {};
 
-struct OneOffDescriptorSet {
-    vkt::Device *device_;
-    VkDescriptorPool pool_;
-    vkt::DescriptorSetLayout layout_;
-    VkDescriptorSet set_;
-    typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
-
-    // Only one member of ResourceInfo object contains a value.
-    // The pointers to Image/Buffer/BufferView info structures can't be stored in 'descriptor_writes'
-    // during WriteDescriptor call, because subsequent calls can reallocate which invalidates stored pointers.
-    // When UpdateDescriptorSets is called it's safe to initialize the pointers.
-    struct ResourceInfo {
-        std::optional<VkDescriptorImageInfo> image_info;
-        std::optional<VkDescriptorBufferInfo> buffer_info;
-        std::optional<VkBufferView> buffer_view;
-    };
-    std::vector<ResourceInfo> resource_infos;
-    std::vector<VkWriteDescriptorSet> descriptor_writes;
-
-    OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
-                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
-    ~OneOffDescriptorSet();
-    bool Initialized();
-    void Clear();
-    void WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uint32_t arrayElement = 0);
-    void WriteDescriptorBufferView(int binding, VkBufferView buffer_view,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                   uint32_t arrayElement = 0);
-    void WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
-                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t arrayElement = 0);
-    void UpdateDescriptorSets();
-
-private:
-    void AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type);
-};
-
 template <typename T>
 bool IsValidVkStruct(const T &s) {
     return vku::GetSType<T>() == s.sType;
 }
-
-class BarrierQueueFamilyBase {
-  public:
-    struct QueueFamilyObjs {
-        uint32_t index;
-        // We would use std::unique_ptr, but this triggers a compiler error on older compilers
-        vkt::Queue *queue = nullptr;
-        vkt::CommandPool *command_pool = nullptr;
-        vkt::CommandBuffer *command_buffer = nullptr;
-        vkt::CommandBuffer *command_buffer2 = nullptr;
-        ~QueueFamilyObjs();
-        void Init(vkt::Device *device, uint32_t qf_index, VkQueue qf_queue, VkCommandPoolCreateFlags cp_flags);
-    };
-
-    struct Context {
-        VkLayerTest *layer_test;
-        uint32_t default_index;
-        std::unordered_map<uint32_t, QueueFamilyObjs> queue_families;
-        Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices);
-        void Reset();
-    };
-
-    BarrierQueueFamilyBase(Context *context) : context_(context), image_(context->layer_test->DeviceObj()) {}
-
-    QueueFamilyObjs *GetQueueFamilyInfo(Context *context, uint32_t qfi);
-
-    enum Modifier {
-        NONE,
-        DOUBLE_RECORD,
-        DOUBLE_COMMAND_BUFFER,
-    };
-
-    static const uint32_t kInvalidQueueFamily = vvl::kU32Max;
-    Context *context_;
-    VkImageObj image_;
-    vkt::Buffer buffer_;
-};
-
-class BarrierQueueFamilyTestHelper : public BarrierQueueFamilyBase {
-  public:
-    BarrierQueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
-    // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
-
-    void operator()(const std::string &img_err, const std::string &buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,
-                    Modifier mod = Modifier::NONE);
-
-    void operator()(uint32_t src = VK_QUEUE_FAMILY_IGNORED, uint32_t dst = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
-        (*this)("", "", src, dst, queue_family_index, mod);
-    }
-
-    VkImageMemoryBarrier image_barrier_;
-    VkBufferMemoryBarrier buffer_barrier_;
-};
-
-// TODO - Only works with extensions enabled, not using Vulkan1.3 (uses KHR functions)
-class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
-  public:
-    Barrier2QueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
-    // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
-
-    void operator()(const std::string &img_err, const std::string &buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,
-                    Modifier mod = Modifier::NONE);
-
-    void operator()(uint32_t src = VK_QUEUE_FAMILY_IGNORED, uint32_t dst = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
-        (*this)("", "", src, dst, queue_family_index, mod);
-    }
-
-    VkImageMemoryBarrier2KHR image_barrier_;
-    VkBufferMemoryBarrier2KHR buffer_barrier_;
-};
 
 struct DebugUtilsLabelCheckData {
     std::function<void(const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *)> callback;
@@ -732,52 +617,6 @@ struct ThreadTestData {
 void AddToCommandBuffer(ThreadTestData *);
 void UpdateDescriptor(ThreadTestData *);
 #endif  // GTEST_IS_THREADSAFE
-
-// Helper class that fails the tests with a stuck worker thread.
-// Its purpose is similar to an assert. We assume the code is correct.
-// Then, in case of a bug or regression, the CI will continue to operate.
-// Usage Example:
-//  TEST_F(VkLayerTest, MyTrickyTestWithThreads) {
-//      // The constructor parameter is the number of the worker threads
-//      ThreadTimeoutHelper timeout_helper(2);
-//      auto worker = [&]() {
-//          auto timeout_guard = timeout_helper.ThreadGuard();
-//          // Some code here
-//      };
-//      std::thread t0(worker);
-//      std::thread t1(worker);
-//      if (!timeout_helper.WaitForThreads(60)) ADD_FAILURE() << "It's time to move on";
-//      t0.join();
-//      t1.join();
-//  }
-class ThreadTimeoutHelper {
-  public:
-    explicit ThreadTimeoutHelper(int thread_count = 1) : active_threads_(thread_count) {}
-    bool WaitForThreads(int timeout_in_seconds);
-
-    struct Guard {
-        Guard(ThreadTimeoutHelper &timeout_helper) : timeout_helper_(timeout_helper) {}
-        Guard(const Guard &) = delete;
-        Guard &operator=(const Guard &) = delete;
-
-        ~Guard() { timeout_helper_.OnThreadDone(); }
-
-        ThreadTimeoutHelper &timeout_helper_;
-    };
-    // Mandatory elision of copy/move operations guarantees the destructor is not called
-    // (even in the presence of copy/move constructor) and the object is constructed directly
-    // into the destination storage: https://en.cppreference.com/w/cpp/language/copy_elision
-    Guard ThreadGuard() { return Guard(*this); }
-
-  private:
-    void OnThreadDone();
-
-    std::mutex active_thread_mutex_;
-    int active_threads_;
-
-    std::condition_variable cv_;
-    std::mutex mutex_;
-};
 
 void ReleaseNullFence(ThreadTestData *);
 

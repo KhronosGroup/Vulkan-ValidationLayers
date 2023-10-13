@@ -13,6 +13,7 @@
 #pragma once
 
 #include "layer_validation_tests.h"
+#include "descriptor_helper.h"
 
 // Helper class for tersely creating create pipeline tests
 //

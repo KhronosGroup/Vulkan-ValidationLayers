@@ -16,6 +16,7 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/descriptor_helper.h"
 #include "utils/vk_layer_utils.h"
 
 TEST_F(NegativeBuffer, Extents) {

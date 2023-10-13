@@ -30,6 +30,69 @@ class VkConstantBufferObj : public vkt::Buffer {
     }
 };
 
+VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view,
+                                                             VkRenderPass renderpass) {
+    VkFramebuffer framebuffer{VK_NULL_HANDLE};
+
+    VkFramebufferCreateInfo framebuffer_create_info = vku::InitStructHelper();
+    framebuffer_create_info.renderPass = renderpass;
+    framebuffer_create_info.attachmentCount = 1;
+    framebuffer_create_info.pAttachments = &image_view;
+    framebuffer_create_info.width = width;
+    framebuffer_create_info.height = height;
+    framebuffer_create_info.layers = 1;
+
+    VkResult result = vk::CreateFramebuffer(m_device->handle(), &framebuffer_create_info, nullptr, &framebuffer);
+    assert(result == VK_SUCCESS);
+    (void)result;
+
+    return framebuffer;
+}
+
+std::unique_ptr<VkImageObj> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
+                                                                     VkImageUsageFlags attachment_usage) {
+    auto img = std::unique_ptr<VkImageObj>(new VkImageObj(m_device));
+    img->Init(width, height, 1, format,
+              VK_IMAGE_USAGE_SAMPLED_BIT | attachment_usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+              VK_IMAGE_TILING_OPTIMAL);
+    return img;
+}
+
+VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op,
+                                                           VkAttachmentStoreOp store_op) {
+    VkRenderPass renderpass{VK_NULL_HANDLE};
+
+    // Create renderpass
+    VkAttachmentDescription attachment = {};
+    attachment.format = format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = load_op;
+    attachment.storeOp = store_op;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_reference;
+
+    VkRenderPassCreateInfo rpinf = vku::InitStructHelper();
+    rpinf.attachmentCount = 1;
+    rpinf.pAttachments = &attachment;
+    rpinf.subpassCount = 1;
+    rpinf.pSubpasses = &subpass;
+    rpinf.dependencyCount = 0;
+    rpinf.pDependencies = nullptr;
+
+    VkResult result = vk::CreateRenderPass(m_device->handle(), &rpinf, nullptr, &renderpass);
+    assert(result == VK_SUCCESS);
+    (void)result;
+
+    return renderpass;
+}
 // Tests for Arm-specific best practices
 
 TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {

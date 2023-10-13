@@ -13,8 +13,26 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/descriptor_helper.h"
+#include "../framework/thread_timeout_helper.h"
 
 class PositiveSyncVal : public VkSyncValTest {};
+
+void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
+    // Enable synchronization validation
+
+    // Optional feature definition, add if requested (but they can't be defined at the conditional scope)
+    const char *kEnableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
+    const VkLayerSettingEXT settings[] = {
+        {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, kEnableQueuSubmitSyncValidation}};
+    const VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+                                                   static_cast<uint32_t>(std::size(settings)), settings};
+
+    if (enable_queue_submit_validation) {
+        features_.pNext = &qs_settings;
+    }
+    InitFramework(&features_);
+}
 
 TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     TEST_DESCRIPTION(
