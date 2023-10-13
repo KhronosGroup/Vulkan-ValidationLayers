@@ -15,6 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/ray_tracing_nv.h"
+#include "../framework/descriptor_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
 
 void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {

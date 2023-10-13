@@ -15,6 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/descriptor_helper.h"
 #include <utils/vk_layer_utils.h>
 
 class NegativeSyncVal : public VkSyncValTest {};

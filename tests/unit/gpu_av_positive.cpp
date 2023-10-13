@@ -17,6 +17,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/descriptor_helper.h"
 #include "../../layers/gpu_shaders/gpu_shaders_constants.h"
 
 class PositiveGpuAssistedLayer : public VkGpuAssistedLayerTest {};

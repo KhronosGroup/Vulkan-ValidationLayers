@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/descriptor_helper.h"
 
 TEST_F(NegativeShaderObject, SpirvCodeSize) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");

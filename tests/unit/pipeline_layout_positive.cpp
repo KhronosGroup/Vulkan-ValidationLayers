@@ -12,6 +12,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/descriptor_helper.h"
 
 TEST_F(PositivePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
     TEST_DESCRIPTION("HLSL will sometimes produce a SAMPLED_IMAGE / SAMPLER on the same slot that is same as COMBINED_IMAGE_SAMPLER");
