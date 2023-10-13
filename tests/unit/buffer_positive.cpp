@@ -121,7 +121,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
         buffer_ci.size = (i + 1) * 4096;
         buffer.init_no_mem(*m_device, buffer_ci);
         vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-        VkDeviceAddress addr = buffer.address(DeviceValidationVersion());
+        VkDeviceAddress addr = buffer.address();
         if (ref_address == 0) {
             ref_address = addr;
         }
@@ -164,7 +164,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
         buffer.init_no_mem(*m_device, buffer_ci);
         // Consecutive offsets
         vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), i * buffer_ci.size);
-        (void)buffer.address(DeviceValidationVersion());
+        (void)buffer.address();
     }
 }
 

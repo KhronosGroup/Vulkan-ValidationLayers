@@ -537,7 +537,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         return barrier;
     }
 
-    [[nodiscard]] VkDeviceAddress address(APIVersion vk_api_version = VK_API_VERSION_1_2) const;
+    [[nodiscard]] VkDeviceAddress address() const;
 
   private:
     VkBufferCreateInfo create_info_;
