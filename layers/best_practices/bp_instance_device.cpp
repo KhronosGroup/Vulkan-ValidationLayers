@@ -279,13 +279,8 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(Vk
                                                                               uint32_t* pQueueFamilyPropertyCount,
                                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                               const ErrorObject& error_obj) const {
-    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
-    if (pQueueFamilyProperties && bp_pd_state) {
-        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
-                                                                    bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
-                                                                    error_obj.location);
-    }
-    return false;
+    return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
+                                                                  error_obj);
 }
 
 void BestPractices::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer) {
@@ -328,13 +323,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkP
                                                                              uint32_t* pQueueFamilyPropertyCount,
                                                                              VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
-                                                                                     pQueueFamilyProperties, record_obj);
-    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
-    if (bp_pd_state) {
-        CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
-                                                                   nullptr == pQueueFamilyProperties);
-    }
+    PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
+                                                          record_obj);
 }
 
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
@@ -358,11 +348,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice ph
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
                                                                 VkPhysicalDeviceFeatures2* pFeatures,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
-    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
-    if (bp_pd_state) {
-        bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
-    }
+    PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
 }
 
 void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
@@ -408,18 +394,7 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 
 bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
                                                    VkFence fence, const ErrorObject& error_obj) const {
-    bool skip = false;
-
-    for (uint32_t submit = 0; submit < submitCount; submit++) {
-        const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
-        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
-            const Location semaphore_loc = submit_loc.dot(Field::pWaitSemaphoreInfos, semaphore);
-            skip |= CheckPipelineStageFlags(semaphore_loc.dot(Field::stageMask),
-                                            pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
-        }
-    }
-
-    return skip;
+    return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,

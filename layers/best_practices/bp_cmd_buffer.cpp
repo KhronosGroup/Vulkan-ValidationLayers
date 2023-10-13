@@ -109,11 +109,7 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
 bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
                                                          VkQueryPool queryPool, uint32_t query,
                                                          const ErrorObject& error_obj) const {
-    bool skip = false;
-
-    skip |= CheckPipelineStageFlags(error_obj.location.dot(Field::pipelineStage), pipelineStage);
-
-    return skip;
+    return PreCallValidateCmdWriteTimestamp2(commandBuffer, pipelineStage, queryPool, query, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
@@ -157,14 +153,7 @@ void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuf
 }
 
 void BestPractices::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
-    StateTracker::PreCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
-
-    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb);
-
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        RecordSetDepthTestState(*cb, depthCompareOp, cb->nv.depth_test_enable);
-    }
+    PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
 }
 
 void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
@@ -179,14 +168,7 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBu
 }
 
 void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
-    StateTracker::PreCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
-
-    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb);
-
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depthTestEnable != VK_FALSE);
-    }
+    PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
 }
 
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
