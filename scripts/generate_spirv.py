@@ -73,7 +73,7 @@ def compile(filename, glslang_validator):
 
     return words
 
-def write(words, filename, apiname, outfilename = None):
+def write(words, filename, apiname, outdir = None):
     name = identifierize(os.path.basename(filename))
 
     literals = []
@@ -112,15 +112,16 @@ static const uint32_t %s[%d] = {
 };
 """ % (name, len(words), "\n".join(literals))
 
-    if outfilename:
-      out_file = outfilename
+    if outdir:
+      out_file = os.path.join(outdir, f'layers/{apiname}/generated')
     else:
-      out_file = os.path.join(repo_relative(f'layers/{apiname}/generated'), name + '.h')
+      out_file = repo_relative(f'layers/{apiname}/generated')
+    out_file = os.path.join(out_file, name + '.h')
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
         print(header, end="", file=f)
 
-def write_inst_hash():
+def write_inst_hash(outdir=None):
     shader_file = repo_relative(f'layers/gpu_shaders/inst_functions.comp')
     result = subprocess.run(["git", "hash-object", shader_file], capture_output=True, text=True)
     git_hash = result.stdout.rstrip('\n')
@@ -162,7 +163,14 @@ def write_inst_hash():
 ''')
 
     out.append(f'#define INST_SHADER_GIT_HASH "{git_hash}"\n')
-    with open(repo_relative(f'layers/vulkan/generated/gpu_inst_shader_hash.h'), 'w') as outfile:
+    
+    if outdir:
+      out_file = os.path.join(outdir, f'layers/vulkan/generated')
+    else:
+      out_file = repo_relative(f'layers/vulkan/generated')
+    os.makedirs(out_file, exist_ok=True)
+    out_file = os.path.join(out_file, "gpu_inst_shader_hash.h")
+    with open(out_file, 'w') as outfile:
         outfile.write("".join(out))
 
 def main():
@@ -173,7 +181,7 @@ def main():
                         help='Specify API name to generate')
     parser.add_argument('--shader', action='store', type=str, help='Input Filename')
     parser.add_argument('--glslang', action='store', type=str, help='Path to glslangValidator to use')
-    parser.add_argument('--outfilename', action='store', type=str, help='Optional path to output file')
+    parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory')
     args = parser.parse_args()
 
     generate_shaders = []
@@ -198,8 +206,8 @@ def main():
 
     for shader in generate_shaders:
         words = compile(shader, glslang_validator)
-        write(words, shader, args.api, args.outfilename)
-    write_inst_hash()
+        write(words, shader, args.api, args.outdir)
+    write_inst_hash(args.outdir)
 
 if __name__ == '__main__':
   main()
