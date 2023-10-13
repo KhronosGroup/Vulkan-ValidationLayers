@@ -1198,13 +1198,13 @@ TEST_F(VkLayerTest, LeakAnObject) {
     VkFence leaked_fence;
     ASSERT_EQ(VK_SUCCESS, vk::CreateFence(leaky_device, &fence_ci, nullptr, &leaked_fence));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-05137");
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 
     // There's no way we can destroy the fence at this point. Even though DestroyDevice failed, the loader has already removed
     // references to the device
-    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
 }
 
@@ -1249,13 +1249,13 @@ TEST_F(VkLayerTest, LeakABuffer) {
     VkBuffer buffer{};
     ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(leaky_device, &buffer_create_info, nullptr, &buffer));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-05137");
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 
     // There's no way we can destroy the buffer at this point.
     // Even though DestroyDevice failed, the loader has already removed references to the device
-    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
 }
 
