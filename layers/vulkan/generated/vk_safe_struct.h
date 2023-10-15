@@ -50,7 +50,7 @@ struct safe_VkBufferMemoryBarrier {
     VkDeviceSize offset;
     VkDeviceSize size;
 
-    safe_VkBufferMemoryBarrier(const VkBufferMemoryBarrier* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferMemoryBarrier(const VkBufferMemoryBarrier* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferMemoryBarrier(const safe_VkBufferMemoryBarrier& copy_src);
     safe_VkBufferMemoryBarrier& operator=(const safe_VkBufferMemoryBarrier& copy_src);
     safe_VkBufferMemoryBarrier();
@@ -72,7 +72,7 @@ struct safe_VkImageMemoryBarrier {
     VkImage image;
     VkImageSubresourceRange subresourceRange;
 
-    safe_VkImageMemoryBarrier(const VkImageMemoryBarrier* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageMemoryBarrier(const VkImageMemoryBarrier* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageMemoryBarrier(const safe_VkImageMemoryBarrier& copy_src);
     safe_VkImageMemoryBarrier& operator=(const safe_VkImageMemoryBarrier& copy_src);
     safe_VkImageMemoryBarrier();
@@ -88,7 +88,7 @@ struct safe_VkMemoryBarrier {
     VkAccessFlags srcAccessMask;
     VkAccessFlags dstAccessMask;
 
-    safe_VkMemoryBarrier(const VkMemoryBarrier* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryBarrier(const VkMemoryBarrier* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryBarrier(const safe_VkMemoryBarrier& copy_src);
     safe_VkMemoryBarrier& operator=(const safe_VkMemoryBarrier& copy_src);
     safe_VkMemoryBarrier();
@@ -125,7 +125,7 @@ struct safe_VkApplicationInfo {
     uint32_t engineVersion;
     uint32_t apiVersion;
 
-    safe_VkApplicationInfo(const VkApplicationInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkApplicationInfo(const VkApplicationInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkApplicationInfo(const safe_VkApplicationInfo& copy_src);
     safe_VkApplicationInfo& operator=(const safe_VkApplicationInfo& copy_src);
     safe_VkApplicationInfo();
@@ -145,7 +145,7 @@ struct safe_VkInstanceCreateInfo {
     uint32_t enabledExtensionCount;
     const char* const* ppEnabledExtensionNames{};
 
-    safe_VkInstanceCreateInfo(const VkInstanceCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkInstanceCreateInfo(const VkInstanceCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkInstanceCreateInfo(const safe_VkInstanceCreateInfo& copy_src);
     safe_VkInstanceCreateInfo& operator=(const safe_VkInstanceCreateInfo& copy_src);
     safe_VkInstanceCreateInfo();
@@ -163,7 +163,7 @@ struct safe_VkDeviceQueueCreateInfo {
     uint32_t queueCount;
     const float* pQueuePriorities{};
 
-    safe_VkDeviceQueueCreateInfo(const VkDeviceQueueCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceQueueCreateInfo(const VkDeviceQueueCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceQueueCreateInfo(const safe_VkDeviceQueueCreateInfo& copy_src);
     safe_VkDeviceQueueCreateInfo& operator=(const safe_VkDeviceQueueCreateInfo& copy_src);
     safe_VkDeviceQueueCreateInfo();
@@ -185,7 +185,7 @@ struct safe_VkDeviceCreateInfo {
     const char* const* ppEnabledExtensionNames{};
     const VkPhysicalDeviceFeatures* pEnabledFeatures{};
 
-    safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceCreateInfo(const safe_VkDeviceCreateInfo& copy_src);
     safe_VkDeviceCreateInfo& operator=(const safe_VkDeviceCreateInfo& copy_src);
     safe_VkDeviceCreateInfo();
@@ -206,7 +206,7 @@ struct safe_VkSubmitInfo {
     uint32_t signalSemaphoreCount;
     VkSemaphore* pSignalSemaphores{};
 
-    safe_VkSubmitInfo(const VkSubmitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubmitInfo(const VkSubmitInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubmitInfo(const safe_VkSubmitInfo& copy_src);
     safe_VkSubmitInfo& operator=(const safe_VkSubmitInfo& copy_src);
     safe_VkSubmitInfo();
@@ -223,7 +223,7 @@ struct safe_VkMappedMemoryRange {
     VkDeviceSize offset;
     VkDeviceSize size;
 
-    safe_VkMappedMemoryRange(const VkMappedMemoryRange* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMappedMemoryRange(const VkMappedMemoryRange* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMappedMemoryRange(const safe_VkMappedMemoryRange& copy_src);
     safe_VkMappedMemoryRange& operator=(const safe_VkMappedMemoryRange& copy_src);
     safe_VkMappedMemoryRange();
@@ -239,7 +239,7 @@ struct safe_VkMemoryAllocateInfo {
     VkDeviceSize allocationSize;
     uint32_t memoryTypeIndex;
 
-    safe_VkMemoryAllocateInfo(const VkMemoryAllocateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryAllocateInfo(const VkMemoryAllocateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryAllocateInfo(const safe_VkMemoryAllocateInfo& copy_src);
     safe_VkMemoryAllocateInfo& operator=(const safe_VkMemoryAllocateInfo& copy_src);
     safe_VkMemoryAllocateInfo();
@@ -310,7 +310,7 @@ struct safe_VkBindSparseInfo {
     uint32_t signalSemaphoreCount;
     VkSemaphore* pSignalSemaphores{};
 
-    safe_VkBindSparseInfo(const VkBindSparseInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindSparseInfo(const VkBindSparseInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBindSparseInfo(const safe_VkBindSparseInfo& copy_src);
     safe_VkBindSparseInfo& operator=(const safe_VkBindSparseInfo& copy_src);
     safe_VkBindSparseInfo();
@@ -325,7 +325,7 @@ struct safe_VkFenceCreateInfo {
     const void* pNext{};
     VkFenceCreateFlags flags;
 
-    safe_VkFenceCreateInfo(const VkFenceCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFenceCreateInfo(const VkFenceCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFenceCreateInfo(const safe_VkFenceCreateInfo& copy_src);
     safe_VkFenceCreateInfo& operator=(const safe_VkFenceCreateInfo& copy_src);
     safe_VkFenceCreateInfo();
@@ -340,7 +340,7 @@ struct safe_VkSemaphoreCreateInfo {
     const void* pNext{};
     VkSemaphoreCreateFlags flags;
 
-    safe_VkSemaphoreCreateInfo(const VkSemaphoreCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreCreateInfo(const VkSemaphoreCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSemaphoreCreateInfo(const safe_VkSemaphoreCreateInfo& copy_src);
     safe_VkSemaphoreCreateInfo& operator=(const safe_VkSemaphoreCreateInfo& copy_src);
     safe_VkSemaphoreCreateInfo();
@@ -355,7 +355,7 @@ struct safe_VkEventCreateInfo {
     const void* pNext{};
     VkEventCreateFlags flags;
 
-    safe_VkEventCreateInfo(const VkEventCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkEventCreateInfo(const VkEventCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkEventCreateInfo(const safe_VkEventCreateInfo& copy_src);
     safe_VkEventCreateInfo& operator=(const safe_VkEventCreateInfo& copy_src);
     safe_VkEventCreateInfo();
@@ -373,7 +373,7 @@ struct safe_VkQueryPoolCreateInfo {
     uint32_t queryCount;
     VkQueryPipelineStatisticFlags pipelineStatistics;
 
-    safe_VkQueryPoolCreateInfo(const VkQueryPoolCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkQueryPoolCreateInfo(const VkQueryPoolCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkQueryPoolCreateInfo(const safe_VkQueryPoolCreateInfo& copy_src);
     safe_VkQueryPoolCreateInfo& operator=(const safe_VkQueryPoolCreateInfo& copy_src);
     safe_VkQueryPoolCreateInfo();
@@ -393,7 +393,7 @@ struct safe_VkBufferCreateInfo {
     uint32_t queueFamilyIndexCount;
     const uint32_t* pQueueFamilyIndices{};
 
-    safe_VkBufferCreateInfo(const VkBufferCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferCreateInfo(const VkBufferCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferCreateInfo(const safe_VkBufferCreateInfo& copy_src);
     safe_VkBufferCreateInfo& operator=(const safe_VkBufferCreateInfo& copy_src);
     safe_VkBufferCreateInfo();
@@ -412,7 +412,7 @@ struct safe_VkBufferViewCreateInfo {
     VkDeviceSize offset;
     VkDeviceSize range;
 
-    safe_VkBufferViewCreateInfo(const VkBufferViewCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferViewCreateInfo(const VkBufferViewCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferViewCreateInfo(const safe_VkBufferViewCreateInfo& copy_src);
     safe_VkBufferViewCreateInfo& operator=(const safe_VkBufferViewCreateInfo& copy_src);
     safe_VkBufferViewCreateInfo();
@@ -439,7 +439,7 @@ struct safe_VkImageCreateInfo {
     const uint32_t* pQueueFamilyIndices{};
     VkImageLayout initialLayout;
 
-    safe_VkImageCreateInfo(const VkImageCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageCreateInfo(const VkImageCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageCreateInfo(const safe_VkImageCreateInfo& copy_src);
     safe_VkImageCreateInfo& operator=(const safe_VkImageCreateInfo& copy_src);
     safe_VkImageCreateInfo();
@@ -459,7 +459,7 @@ struct safe_VkImageViewCreateInfo {
     VkComponentMapping components;
     VkImageSubresourceRange subresourceRange;
 
-    safe_VkImageViewCreateInfo(const VkImageViewCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewCreateInfo(const VkImageViewCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageViewCreateInfo(const safe_VkImageViewCreateInfo& copy_src);
     safe_VkImageViewCreateInfo& operator=(const safe_VkImageViewCreateInfo& copy_src);
     safe_VkImageViewCreateInfo();
@@ -476,7 +476,8 @@ struct safe_VkShaderModuleCreateInfo {
     size_t codeSize;
     const uint32_t* pCode{};
 
-    safe_VkShaderModuleCreateInfo(const VkShaderModuleCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkShaderModuleCreateInfo(const VkShaderModuleCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkShaderModuleCreateInfo(const safe_VkShaderModuleCreateInfo& copy_src);
     safe_VkShaderModuleCreateInfo& operator=(const safe_VkShaderModuleCreateInfo& copy_src);
     safe_VkShaderModuleCreateInfo();
@@ -502,7 +503,8 @@ struct safe_VkPipelineCacheCreateInfo {
     size_t initialDataSize;
     const void* pInitialData{};
 
-    safe_VkPipelineCacheCreateInfo(const VkPipelineCacheCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineCacheCreateInfo(const VkPipelineCacheCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkPipelineCacheCreateInfo(const safe_VkPipelineCacheCreateInfo& copy_src);
     safe_VkPipelineCacheCreateInfo& operator=(const safe_VkPipelineCacheCreateInfo& copy_src);
     safe_VkPipelineCacheCreateInfo();
@@ -537,7 +539,8 @@ struct safe_VkPipelineShaderStageCreateInfo {
     const char* pName{};
     safe_VkSpecializationInfo* pSpecializationInfo{};
 
-    safe_VkPipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkPipelineShaderStageCreateInfo(const safe_VkPipelineShaderStageCreateInfo& copy_src);
     safe_VkPipelineShaderStageCreateInfo& operator=(const safe_VkPipelineShaderStageCreateInfo& copy_src);
     safe_VkPipelineShaderStageCreateInfo();
@@ -556,7 +559,8 @@ struct safe_VkComputePipelineCreateInfo {
     VkPipeline basePipelineHandle;
     int32_t basePipelineIndex;
 
-    safe_VkComputePipelineCreateInfo(const VkComputePipelineCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkComputePipelineCreateInfo(const VkComputePipelineCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkComputePipelineCreateInfo(const safe_VkComputePipelineCreateInfo& copy_src);
     safe_VkComputePipelineCreateInfo& operator=(const safe_VkComputePipelineCreateInfo& copy_src);
     safe_VkComputePipelineCreateInfo();
@@ -576,7 +580,7 @@ struct safe_VkPipelineVertexInputStateCreateInfo {
     const VkVertexInputAttributeDescription* pVertexAttributeDescriptions{};
 
     safe_VkPipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineVertexInputStateCreateInfo(const safe_VkPipelineVertexInputStateCreateInfo& copy_src);
     safe_VkPipelineVertexInputStateCreateInfo& operator=(const safe_VkPipelineVertexInputStateCreateInfo& copy_src);
     safe_VkPipelineVertexInputStateCreateInfo();
@@ -596,7 +600,7 @@ struct safe_VkPipelineInputAssemblyStateCreateInfo {
     VkBool32 primitiveRestartEnable;
 
     safe_VkPipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineInputAssemblyStateCreateInfo(const safe_VkPipelineInputAssemblyStateCreateInfo& copy_src);
     safe_VkPipelineInputAssemblyStateCreateInfo& operator=(const safe_VkPipelineInputAssemblyStateCreateInfo& copy_src);
     safe_VkPipelineInputAssemblyStateCreateInfo();
@@ -615,7 +619,7 @@ struct safe_VkPipelineTessellationStateCreateInfo {
     uint32_t patchControlPoints;
 
     safe_VkPipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineTessellationStateCreateInfo(const safe_VkPipelineTessellationStateCreateInfo& copy_src);
     safe_VkPipelineTessellationStateCreateInfo& operator=(const safe_VkPipelineTessellationStateCreateInfo& copy_src);
     safe_VkPipelineTessellationStateCreateInfo();
@@ -637,7 +641,7 @@ struct safe_VkPipelineViewportStateCreateInfo {
     const VkRect2D* pScissors{};
 
     safe_VkPipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo* in_struct, const bool is_dynamic_viewports,
-                                           const bool is_dynamic_scissors, PNextCopyState* copy_state = {});
+                                           const bool is_dynamic_scissors, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportStateCreateInfo(const safe_VkPipelineViewportStateCreateInfo& copy_src);
     safe_VkPipelineViewportStateCreateInfo& operator=(const safe_VkPipelineViewportStateCreateInfo& copy_src);
     safe_VkPipelineViewportStateCreateInfo();
@@ -666,7 +670,7 @@ struct safe_VkPipelineRasterizationStateCreateInfo {
     float lineWidth;
 
     safe_VkPipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineRasterizationStateCreateInfo(const safe_VkPipelineRasterizationStateCreateInfo& copy_src);
     safe_VkPipelineRasterizationStateCreateInfo& operator=(const safe_VkPipelineRasterizationStateCreateInfo& copy_src);
     safe_VkPipelineRasterizationStateCreateInfo();
@@ -690,7 +694,7 @@ struct safe_VkPipelineMultisampleStateCreateInfo {
     VkBool32 alphaToOneEnable;
 
     safe_VkPipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineMultisampleStateCreateInfo(const safe_VkPipelineMultisampleStateCreateInfo& copy_src);
     safe_VkPipelineMultisampleStateCreateInfo& operator=(const safe_VkPipelineMultisampleStateCreateInfo& copy_src);
     safe_VkPipelineMultisampleStateCreateInfo();
@@ -717,7 +721,7 @@ struct safe_VkPipelineDepthStencilStateCreateInfo {
     float maxDepthBounds;
 
     safe_VkPipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineDepthStencilStateCreateInfo(const safe_VkPipelineDepthStencilStateCreateInfo& copy_src);
     safe_VkPipelineDepthStencilStateCreateInfo& operator=(const safe_VkPipelineDepthStencilStateCreateInfo& copy_src);
     safe_VkPipelineDepthStencilStateCreateInfo();
@@ -739,7 +743,8 @@ struct safe_VkPipelineColorBlendStateCreateInfo {
     const VkPipelineColorBlendAttachmentState* pAttachments{};
     float blendConstants[4];
 
-    safe_VkPipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkPipelineColorBlendStateCreateInfo(const safe_VkPipelineColorBlendStateCreateInfo& copy_src);
     safe_VkPipelineColorBlendStateCreateInfo& operator=(const safe_VkPipelineColorBlendStateCreateInfo& copy_src);
     safe_VkPipelineColorBlendStateCreateInfo();
@@ -758,7 +763,8 @@ struct safe_VkPipelineDynamicStateCreateInfo {
     uint32_t dynamicStateCount;
     const VkDynamicState* pDynamicStates{};
 
-    safe_VkPipelineDynamicStateCreateInfo(const VkPipelineDynamicStateCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineDynamicStateCreateInfo(const VkPipelineDynamicStateCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPipelineDynamicStateCreateInfo(const safe_VkPipelineDynamicStateCreateInfo& copy_src);
     safe_VkPipelineDynamicStateCreateInfo& operator=(const safe_VkPipelineDynamicStateCreateInfo& copy_src);
     safe_VkPipelineDynamicStateCreateInfo();
@@ -790,7 +796,8 @@ struct safe_VkGraphicsPipelineCreateInfo {
     int32_t basePipelineIndex;
 
     safe_VkGraphicsPipelineCreateInfo(const VkGraphicsPipelineCreateInfo* in_struct, const bool uses_color_attachment,
-                                      const bool uses_depthstencil_attachment, PNextCopyState* copy_state = {});
+                                      const bool uses_depthstencil_attachment, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkGraphicsPipelineCreateInfo(const safe_VkGraphicsPipelineCreateInfo& copy_src);
     safe_VkGraphicsPipelineCreateInfo& operator=(const safe_VkGraphicsPipelineCreateInfo& copy_src);
     safe_VkGraphicsPipelineCreateInfo();
@@ -810,7 +817,8 @@ struct safe_VkPipelineLayoutCreateInfo {
     uint32_t pushConstantRangeCount;
     const VkPushConstantRange* pPushConstantRanges{};
 
-    safe_VkPipelineLayoutCreateInfo(const VkPipelineLayoutCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineLayoutCreateInfo(const VkPipelineLayoutCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkPipelineLayoutCreateInfo(const safe_VkPipelineLayoutCreateInfo& copy_src);
     safe_VkPipelineLayoutCreateInfo& operator=(const safe_VkPipelineLayoutCreateInfo& copy_src);
     safe_VkPipelineLayoutCreateInfo();
@@ -840,7 +848,7 @@ struct safe_VkSamplerCreateInfo {
     VkBorderColor borderColor;
     VkBool32 unnormalizedCoordinates;
 
-    safe_VkSamplerCreateInfo(const VkSamplerCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSamplerCreateInfo(const VkSamplerCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerCreateInfo(const safe_VkSamplerCreateInfo& copy_src);
     safe_VkSamplerCreateInfo& operator=(const safe_VkSamplerCreateInfo& copy_src);
     safe_VkSamplerCreateInfo();
@@ -861,7 +869,7 @@ struct safe_VkCopyDescriptorSet {
     uint32_t dstArrayElement;
     uint32_t descriptorCount;
 
-    safe_VkCopyDescriptorSet(const VkCopyDescriptorSet* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyDescriptorSet(const VkCopyDescriptorSet* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCopyDescriptorSet(const safe_VkCopyDescriptorSet& copy_src);
     safe_VkCopyDescriptorSet& operator=(const safe_VkCopyDescriptorSet& copy_src);
     safe_VkCopyDescriptorSet();
@@ -879,7 +887,8 @@ struct safe_VkDescriptorPoolCreateInfo {
     uint32_t poolSizeCount;
     const VkDescriptorPoolSize* pPoolSizes{};
 
-    safe_VkDescriptorPoolCreateInfo(const VkDescriptorPoolCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorPoolCreateInfo(const VkDescriptorPoolCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkDescriptorPoolCreateInfo(const safe_VkDescriptorPoolCreateInfo& copy_src);
     safe_VkDescriptorPoolCreateInfo& operator=(const safe_VkDescriptorPoolCreateInfo& copy_src);
     safe_VkDescriptorPoolCreateInfo();
@@ -896,7 +905,8 @@ struct safe_VkDescriptorSetAllocateInfo {
     uint32_t descriptorSetCount;
     VkDescriptorSetLayout* pSetLayouts{};
 
-    safe_VkDescriptorSetAllocateInfo(const VkDescriptorSetAllocateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorSetAllocateInfo(const VkDescriptorSetAllocateInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkDescriptorSetAllocateInfo(const safe_VkDescriptorSetAllocateInfo& copy_src);
     safe_VkDescriptorSetAllocateInfo& operator=(const safe_VkDescriptorSetAllocateInfo& copy_src);
     safe_VkDescriptorSetAllocateInfo();
@@ -930,7 +940,8 @@ struct safe_VkDescriptorSetLayoutCreateInfo {
     uint32_t bindingCount;
     safe_VkDescriptorSetLayoutBinding* pBindings{};
 
-    safe_VkDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkDescriptorSetLayoutCreateInfo(const safe_VkDescriptorSetLayoutCreateInfo& copy_src);
     safe_VkDescriptorSetLayoutCreateInfo& operator=(const safe_VkDescriptorSetLayoutCreateInfo& copy_src);
     safe_VkDescriptorSetLayoutCreateInfo();
@@ -952,7 +963,7 @@ struct safe_VkWriteDescriptorSet {
     VkDescriptorBufferInfo* pBufferInfo{};
     VkBufferView* pTexelBufferView{};
 
-    safe_VkWriteDescriptorSet(const VkWriteDescriptorSet* in_struct, PNextCopyState* copy_state = {});
+    safe_VkWriteDescriptorSet(const VkWriteDescriptorSet* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkWriteDescriptorSet(const safe_VkWriteDescriptorSet& copy_src);
     safe_VkWriteDescriptorSet& operator=(const safe_VkWriteDescriptorSet& copy_src);
     safe_VkWriteDescriptorSet();
@@ -973,7 +984,7 @@ struct safe_VkFramebufferCreateInfo {
     uint32_t height;
     uint32_t layers;
 
-    safe_VkFramebufferCreateInfo(const VkFramebufferCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFramebufferCreateInfo(const VkFramebufferCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFramebufferCreateInfo(const safe_VkFramebufferCreateInfo& copy_src);
     safe_VkFramebufferCreateInfo& operator=(const safe_VkFramebufferCreateInfo& copy_src);
     safe_VkFramebufferCreateInfo();
@@ -1016,7 +1027,7 @@ struct safe_VkRenderPassCreateInfo {
     uint32_t dependencyCount;
     const VkSubpassDependency* pDependencies{};
 
-    safe_VkRenderPassCreateInfo(const VkRenderPassCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassCreateInfo(const VkRenderPassCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassCreateInfo(const safe_VkRenderPassCreateInfo& copy_src);
     safe_VkRenderPassCreateInfo& operator=(const safe_VkRenderPassCreateInfo& copy_src);
     safe_VkRenderPassCreateInfo();
@@ -1032,7 +1043,7 @@ struct safe_VkCommandPoolCreateInfo {
     VkCommandPoolCreateFlags flags;
     uint32_t queueFamilyIndex;
 
-    safe_VkCommandPoolCreateInfo(const VkCommandPoolCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCommandPoolCreateInfo(const VkCommandPoolCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCommandPoolCreateInfo(const safe_VkCommandPoolCreateInfo& copy_src);
     safe_VkCommandPoolCreateInfo& operator=(const safe_VkCommandPoolCreateInfo& copy_src);
     safe_VkCommandPoolCreateInfo();
@@ -1049,7 +1060,8 @@ struct safe_VkCommandBufferAllocateInfo {
     VkCommandBufferLevel level;
     uint32_t commandBufferCount;
 
-    safe_VkCommandBufferAllocateInfo(const VkCommandBufferAllocateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCommandBufferAllocateInfo(const VkCommandBufferAllocateInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkCommandBufferAllocateInfo(const safe_VkCommandBufferAllocateInfo& copy_src);
     safe_VkCommandBufferAllocateInfo& operator=(const safe_VkCommandBufferAllocateInfo& copy_src);
     safe_VkCommandBufferAllocateInfo();
@@ -1069,7 +1081,8 @@ struct safe_VkCommandBufferInheritanceInfo {
     VkQueryControlFlags queryFlags;
     VkQueryPipelineStatisticFlags pipelineStatistics;
 
-    safe_VkCommandBufferInheritanceInfo(const VkCommandBufferInheritanceInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCommandBufferInheritanceInfo(const VkCommandBufferInheritanceInfo* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkCommandBufferInheritanceInfo(const safe_VkCommandBufferInheritanceInfo& copy_src);
     safe_VkCommandBufferInheritanceInfo& operator=(const safe_VkCommandBufferInheritanceInfo& copy_src);
     safe_VkCommandBufferInheritanceInfo();
@@ -1085,7 +1098,8 @@ struct safe_VkCommandBufferBeginInfo {
     VkCommandBufferUsageFlags flags;
     safe_VkCommandBufferInheritanceInfo* pInheritanceInfo{};
 
-    safe_VkCommandBufferBeginInfo(const VkCommandBufferBeginInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCommandBufferBeginInfo(const VkCommandBufferBeginInfo* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkCommandBufferBeginInfo(const safe_VkCommandBufferBeginInfo& copy_src);
     safe_VkCommandBufferBeginInfo& operator=(const safe_VkCommandBufferBeginInfo& copy_src);
     safe_VkCommandBufferBeginInfo();
@@ -1104,7 +1118,7 @@ struct safe_VkRenderPassBeginInfo {
     uint32_t clearValueCount;
     const VkClearValue* pClearValues{};
 
-    safe_VkRenderPassBeginInfo(const VkRenderPassBeginInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassBeginInfo(const VkRenderPassBeginInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassBeginInfo(const safe_VkRenderPassBeginInfo& copy_src);
     safe_VkRenderPassBeginInfo& operator=(const safe_VkRenderPassBeginInfo& copy_src);
     safe_VkRenderPassBeginInfo();
@@ -1122,7 +1136,8 @@ struct safe_VkPhysicalDeviceSubgroupProperties {
     VkSubgroupFeatureFlags supportedOperations;
     VkBool32 quadOperationsInAllStages;
 
-    safe_VkPhysicalDeviceSubgroupProperties(const VkPhysicalDeviceSubgroupProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceSubgroupProperties(const VkPhysicalDeviceSubgroupProperties* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPhysicalDeviceSubgroupProperties(const safe_VkPhysicalDeviceSubgroupProperties& copy_src);
     safe_VkPhysicalDeviceSubgroupProperties& operator=(const safe_VkPhysicalDeviceSubgroupProperties& copy_src);
     safe_VkPhysicalDeviceSubgroupProperties();
@@ -1141,7 +1156,7 @@ struct safe_VkBindBufferMemoryInfo {
     VkDeviceMemory memory;
     VkDeviceSize memoryOffset;
 
-    safe_VkBindBufferMemoryInfo(const VkBindBufferMemoryInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindBufferMemoryInfo(const VkBindBufferMemoryInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBindBufferMemoryInfo(const safe_VkBindBufferMemoryInfo& copy_src);
     safe_VkBindBufferMemoryInfo& operator=(const safe_VkBindBufferMemoryInfo& copy_src);
     safe_VkBindBufferMemoryInfo();
@@ -1158,7 +1173,7 @@ struct safe_VkBindImageMemoryInfo {
     VkDeviceMemory memory;
     VkDeviceSize memoryOffset;
 
-    safe_VkBindImageMemoryInfo(const VkBindImageMemoryInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindImageMemoryInfo(const VkBindImageMemoryInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBindImageMemoryInfo(const safe_VkBindImageMemoryInfo& copy_src);
     safe_VkBindImageMemoryInfo& operator=(const safe_VkBindImageMemoryInfo& copy_src);
     safe_VkBindImageMemoryInfo();
@@ -1177,7 +1192,7 @@ struct safe_VkPhysicalDevice16BitStorageFeatures {
     VkBool32 storageInputOutput16;
 
     safe_VkPhysicalDevice16BitStorageFeatures(const VkPhysicalDevice16BitStorageFeatures* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevice16BitStorageFeatures(const safe_VkPhysicalDevice16BitStorageFeatures& copy_src);
     safe_VkPhysicalDevice16BitStorageFeatures& operator=(const safe_VkPhysicalDevice16BitStorageFeatures& copy_src);
     safe_VkPhysicalDevice16BitStorageFeatures();
@@ -1195,7 +1210,8 @@ struct safe_VkMemoryDedicatedRequirements {
     VkBool32 prefersDedicatedAllocation;
     VkBool32 requiresDedicatedAllocation;
 
-    safe_VkMemoryDedicatedRequirements(const VkMemoryDedicatedRequirements* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryDedicatedRequirements(const VkMemoryDedicatedRequirements* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkMemoryDedicatedRequirements(const safe_VkMemoryDedicatedRequirements& copy_src);
     safe_VkMemoryDedicatedRequirements& operator=(const safe_VkMemoryDedicatedRequirements& copy_src);
     safe_VkMemoryDedicatedRequirements();
@@ -1211,7 +1227,8 @@ struct safe_VkMemoryDedicatedAllocateInfo {
     VkImage image;
     VkBuffer buffer;
 
-    safe_VkMemoryDedicatedAllocateInfo(const VkMemoryDedicatedAllocateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryDedicatedAllocateInfo(const VkMemoryDedicatedAllocateInfo* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkMemoryDedicatedAllocateInfo(const safe_VkMemoryDedicatedAllocateInfo& copy_src);
     safe_VkMemoryDedicatedAllocateInfo& operator=(const safe_VkMemoryDedicatedAllocateInfo& copy_src);
     safe_VkMemoryDedicatedAllocateInfo();
@@ -1227,7 +1244,8 @@ struct safe_VkMemoryAllocateFlagsInfo {
     VkMemoryAllocateFlags flags;
     uint32_t deviceMask;
 
-    safe_VkMemoryAllocateFlagsInfo(const VkMemoryAllocateFlagsInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryAllocateFlagsInfo(const VkMemoryAllocateFlagsInfo* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkMemoryAllocateFlagsInfo(const safe_VkMemoryAllocateFlagsInfo& copy_src);
     safe_VkMemoryAllocateFlagsInfo& operator=(const safe_VkMemoryAllocateFlagsInfo& copy_src);
     safe_VkMemoryAllocateFlagsInfo();
@@ -1244,7 +1262,8 @@ struct safe_VkDeviceGroupRenderPassBeginInfo {
     uint32_t deviceRenderAreaCount;
     const VkRect2D* pDeviceRenderAreas{};
 
-    safe_VkDeviceGroupRenderPassBeginInfo(const VkDeviceGroupRenderPassBeginInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupRenderPassBeginInfo(const VkDeviceGroupRenderPassBeginInfo* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkDeviceGroupRenderPassBeginInfo(const safe_VkDeviceGroupRenderPassBeginInfo& copy_src);
     safe_VkDeviceGroupRenderPassBeginInfo& operator=(const safe_VkDeviceGroupRenderPassBeginInfo& copy_src);
     safe_VkDeviceGroupRenderPassBeginInfo();
@@ -1259,7 +1278,8 @@ struct safe_VkDeviceGroupCommandBufferBeginInfo {
     const void* pNext{};
     uint32_t deviceMask;
 
-    safe_VkDeviceGroupCommandBufferBeginInfo(const VkDeviceGroupCommandBufferBeginInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupCommandBufferBeginInfo(const VkDeviceGroupCommandBufferBeginInfo* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkDeviceGroupCommandBufferBeginInfo(const safe_VkDeviceGroupCommandBufferBeginInfo& copy_src);
     safe_VkDeviceGroupCommandBufferBeginInfo& operator=(const safe_VkDeviceGroupCommandBufferBeginInfo& copy_src);
     safe_VkDeviceGroupCommandBufferBeginInfo();
@@ -1281,7 +1301,7 @@ struct safe_VkDeviceGroupSubmitInfo {
     uint32_t signalSemaphoreCount;
     const uint32_t* pSignalSemaphoreDeviceIndices{};
 
-    safe_VkDeviceGroupSubmitInfo(const VkDeviceGroupSubmitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupSubmitInfo(const VkDeviceGroupSubmitInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceGroupSubmitInfo(const safe_VkDeviceGroupSubmitInfo& copy_src);
     safe_VkDeviceGroupSubmitInfo& operator=(const safe_VkDeviceGroupSubmitInfo& copy_src);
     safe_VkDeviceGroupSubmitInfo();
@@ -1297,7 +1317,8 @@ struct safe_VkDeviceGroupBindSparseInfo {
     uint32_t resourceDeviceIndex;
     uint32_t memoryDeviceIndex;
 
-    safe_VkDeviceGroupBindSparseInfo(const VkDeviceGroupBindSparseInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupBindSparseInfo(const VkDeviceGroupBindSparseInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkDeviceGroupBindSparseInfo(const safe_VkDeviceGroupBindSparseInfo& copy_src);
     safe_VkDeviceGroupBindSparseInfo& operator=(const safe_VkDeviceGroupBindSparseInfo& copy_src);
     safe_VkDeviceGroupBindSparseInfo();
@@ -1313,7 +1334,8 @@ struct safe_VkBindBufferMemoryDeviceGroupInfo {
     uint32_t deviceIndexCount;
     const uint32_t* pDeviceIndices{};
 
-    safe_VkBindBufferMemoryDeviceGroupInfo(const VkBindBufferMemoryDeviceGroupInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindBufferMemoryDeviceGroupInfo(const VkBindBufferMemoryDeviceGroupInfo* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkBindBufferMemoryDeviceGroupInfo(const safe_VkBindBufferMemoryDeviceGroupInfo& copy_src);
     safe_VkBindBufferMemoryDeviceGroupInfo& operator=(const safe_VkBindBufferMemoryDeviceGroupInfo& copy_src);
     safe_VkBindBufferMemoryDeviceGroupInfo();
@@ -1333,7 +1355,8 @@ struct safe_VkBindImageMemoryDeviceGroupInfo {
     uint32_t splitInstanceBindRegionCount;
     const VkRect2D* pSplitInstanceBindRegions{};
 
-    safe_VkBindImageMemoryDeviceGroupInfo(const VkBindImageMemoryDeviceGroupInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindImageMemoryDeviceGroupInfo(const VkBindImageMemoryDeviceGroupInfo* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkBindImageMemoryDeviceGroupInfo(const safe_VkBindImageMemoryDeviceGroupInfo& copy_src);
     safe_VkBindImageMemoryDeviceGroupInfo& operator=(const safe_VkBindImageMemoryDeviceGroupInfo& copy_src);
     safe_VkBindImageMemoryDeviceGroupInfo();
@@ -1350,7 +1373,8 @@ struct safe_VkPhysicalDeviceGroupProperties {
     VkPhysicalDevice physicalDevices[VK_MAX_DEVICE_GROUP_SIZE];
     VkBool32 subsetAllocation;
 
-    safe_VkPhysicalDeviceGroupProperties(const VkPhysicalDeviceGroupProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceGroupProperties(const VkPhysicalDeviceGroupProperties* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkPhysicalDeviceGroupProperties(const safe_VkPhysicalDeviceGroupProperties& copy_src);
     safe_VkPhysicalDeviceGroupProperties& operator=(const safe_VkPhysicalDeviceGroupProperties& copy_src);
     safe_VkPhysicalDeviceGroupProperties();
@@ -1366,7 +1390,8 @@ struct safe_VkDeviceGroupDeviceCreateInfo {
     uint32_t physicalDeviceCount;
     VkPhysicalDevice* pPhysicalDevices{};
 
-    safe_VkDeviceGroupDeviceCreateInfo(const VkDeviceGroupDeviceCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupDeviceCreateInfo(const VkDeviceGroupDeviceCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkDeviceGroupDeviceCreateInfo(const safe_VkDeviceGroupDeviceCreateInfo& copy_src);
     safe_VkDeviceGroupDeviceCreateInfo& operator=(const safe_VkDeviceGroupDeviceCreateInfo& copy_src);
     safe_VkDeviceGroupDeviceCreateInfo();
@@ -1381,7 +1406,8 @@ struct safe_VkBufferMemoryRequirementsInfo2 {
     const void* pNext{};
     VkBuffer buffer;
 
-    safe_VkBufferMemoryRequirementsInfo2(const VkBufferMemoryRequirementsInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferMemoryRequirementsInfo2(const VkBufferMemoryRequirementsInfo2* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkBufferMemoryRequirementsInfo2(const safe_VkBufferMemoryRequirementsInfo2& copy_src);
     safe_VkBufferMemoryRequirementsInfo2& operator=(const safe_VkBufferMemoryRequirementsInfo2& copy_src);
     safe_VkBufferMemoryRequirementsInfo2();
@@ -1396,7 +1422,8 @@ struct safe_VkImageMemoryRequirementsInfo2 {
     const void* pNext{};
     VkImage image;
 
-    safe_VkImageMemoryRequirementsInfo2(const VkImageMemoryRequirementsInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageMemoryRequirementsInfo2(const VkImageMemoryRequirementsInfo2* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkImageMemoryRequirementsInfo2(const safe_VkImageMemoryRequirementsInfo2& copy_src);
     safe_VkImageMemoryRequirementsInfo2& operator=(const safe_VkImageMemoryRequirementsInfo2& copy_src);
     safe_VkImageMemoryRequirementsInfo2();
@@ -1412,7 +1439,7 @@ struct safe_VkImageSparseMemoryRequirementsInfo2 {
     VkImage image;
 
     safe_VkImageSparseMemoryRequirementsInfo2(const VkImageSparseMemoryRequirementsInfo2* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageSparseMemoryRequirementsInfo2(const safe_VkImageSparseMemoryRequirementsInfo2& copy_src);
     safe_VkImageSparseMemoryRequirementsInfo2& operator=(const safe_VkImageSparseMemoryRequirementsInfo2& copy_src);
     safe_VkImageSparseMemoryRequirementsInfo2();
@@ -1429,7 +1456,7 @@ struct safe_VkMemoryRequirements2 {
     void* pNext{};
     VkMemoryRequirements memoryRequirements;
 
-    safe_VkMemoryRequirements2(const VkMemoryRequirements2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryRequirements2(const VkMemoryRequirements2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryRequirements2(const safe_VkMemoryRequirements2& copy_src);
     safe_VkMemoryRequirements2& operator=(const safe_VkMemoryRequirements2& copy_src);
     safe_VkMemoryRequirements2();
@@ -1444,7 +1471,8 @@ struct safe_VkSparseImageMemoryRequirements2 {
     void* pNext{};
     VkSparseImageMemoryRequirements memoryRequirements;
 
-    safe_VkSparseImageMemoryRequirements2(const VkSparseImageMemoryRequirements2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSparseImageMemoryRequirements2(const VkSparseImageMemoryRequirements2* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkSparseImageMemoryRequirements2(const safe_VkSparseImageMemoryRequirements2& copy_src);
     safe_VkSparseImageMemoryRequirements2& operator=(const safe_VkSparseImageMemoryRequirements2& copy_src);
     safe_VkSparseImageMemoryRequirements2();
@@ -1459,7 +1487,8 @@ struct safe_VkPhysicalDeviceFeatures2 {
     void* pNext{};
     VkPhysicalDeviceFeatures features;
 
-    safe_VkPhysicalDeviceFeatures2(const VkPhysicalDeviceFeatures2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceFeatures2(const VkPhysicalDeviceFeatures2* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkPhysicalDeviceFeatures2(const safe_VkPhysicalDeviceFeatures2& copy_src);
     safe_VkPhysicalDeviceFeatures2& operator=(const safe_VkPhysicalDeviceFeatures2& copy_src);
     safe_VkPhysicalDeviceFeatures2();
@@ -1474,7 +1503,8 @@ struct safe_VkPhysicalDeviceProperties2 {
     void* pNext{};
     VkPhysicalDeviceProperties properties;
 
-    safe_VkPhysicalDeviceProperties2(const VkPhysicalDeviceProperties2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceProperties2(const VkPhysicalDeviceProperties2* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkPhysicalDeviceProperties2(const safe_VkPhysicalDeviceProperties2& copy_src);
     safe_VkPhysicalDeviceProperties2& operator=(const safe_VkPhysicalDeviceProperties2& copy_src);
     safe_VkPhysicalDeviceProperties2();
@@ -1489,7 +1519,7 @@ struct safe_VkFormatProperties2 {
     void* pNext{};
     VkFormatProperties formatProperties;
 
-    safe_VkFormatProperties2(const VkFormatProperties2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFormatProperties2(const VkFormatProperties2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFormatProperties2(const safe_VkFormatProperties2& copy_src);
     safe_VkFormatProperties2& operator=(const safe_VkFormatProperties2& copy_src);
     safe_VkFormatProperties2();
@@ -1504,7 +1534,8 @@ struct safe_VkImageFormatProperties2 {
     void* pNext{};
     VkImageFormatProperties imageFormatProperties;
 
-    safe_VkImageFormatProperties2(const VkImageFormatProperties2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageFormatProperties2(const VkImageFormatProperties2* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkImageFormatProperties2(const safe_VkImageFormatProperties2& copy_src);
     safe_VkImageFormatProperties2& operator=(const safe_VkImageFormatProperties2& copy_src);
     safe_VkImageFormatProperties2();
@@ -1523,7 +1554,8 @@ struct safe_VkPhysicalDeviceImageFormatInfo2 {
     VkImageUsageFlags usage;
     VkImageCreateFlags flags;
 
-    safe_VkPhysicalDeviceImageFormatInfo2(const VkPhysicalDeviceImageFormatInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceImageFormatInfo2(const VkPhysicalDeviceImageFormatInfo2* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceImageFormatInfo2(const safe_VkPhysicalDeviceImageFormatInfo2& copy_src);
     safe_VkPhysicalDeviceImageFormatInfo2& operator=(const safe_VkPhysicalDeviceImageFormatInfo2& copy_src);
     safe_VkPhysicalDeviceImageFormatInfo2();
@@ -1538,7 +1570,8 @@ struct safe_VkQueueFamilyProperties2 {
     void* pNext{};
     VkQueueFamilyProperties queueFamilyProperties;
 
-    safe_VkQueueFamilyProperties2(const VkQueueFamilyProperties2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkQueueFamilyProperties2(const VkQueueFamilyProperties2* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkQueueFamilyProperties2(const safe_VkQueueFamilyProperties2& copy_src);
     safe_VkQueueFamilyProperties2& operator=(const safe_VkQueueFamilyProperties2& copy_src);
     safe_VkQueueFamilyProperties2();
@@ -1553,7 +1586,8 @@ struct safe_VkPhysicalDeviceMemoryProperties2 {
     void* pNext{};
     VkPhysicalDeviceMemoryProperties memoryProperties;
 
-    safe_VkPhysicalDeviceMemoryProperties2(const VkPhysicalDeviceMemoryProperties2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceMemoryProperties2(const VkPhysicalDeviceMemoryProperties2* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPhysicalDeviceMemoryProperties2(const safe_VkPhysicalDeviceMemoryProperties2& copy_src);
     safe_VkPhysicalDeviceMemoryProperties2& operator=(const safe_VkPhysicalDeviceMemoryProperties2& copy_src);
     safe_VkPhysicalDeviceMemoryProperties2();
@@ -1570,7 +1604,8 @@ struct safe_VkSparseImageFormatProperties2 {
     void* pNext{};
     VkSparseImageFormatProperties properties;
 
-    safe_VkSparseImageFormatProperties2(const VkSparseImageFormatProperties2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSparseImageFormatProperties2(const VkSparseImageFormatProperties2* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkSparseImageFormatProperties2(const safe_VkSparseImageFormatProperties2& copy_src);
     safe_VkSparseImageFormatProperties2& operator=(const safe_VkSparseImageFormatProperties2& copy_src);
     safe_VkSparseImageFormatProperties2();
@@ -1590,7 +1625,7 @@ struct safe_VkPhysicalDeviceSparseImageFormatInfo2 {
     VkImageTiling tiling;
 
     safe_VkPhysicalDeviceSparseImageFormatInfo2(const VkPhysicalDeviceSparseImageFormatInfo2* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSparseImageFormatInfo2(const safe_VkPhysicalDeviceSparseImageFormatInfo2& copy_src);
     safe_VkPhysicalDeviceSparseImageFormatInfo2& operator=(const safe_VkPhysicalDeviceSparseImageFormatInfo2& copy_src);
     safe_VkPhysicalDeviceSparseImageFormatInfo2();
@@ -1608,7 +1643,7 @@ struct safe_VkPhysicalDevicePointClippingProperties {
     VkPointClippingBehavior pointClippingBehavior;
 
     safe_VkPhysicalDevicePointClippingProperties(const VkPhysicalDevicePointClippingProperties* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePointClippingProperties(const safe_VkPhysicalDevicePointClippingProperties& copy_src);
     safe_VkPhysicalDevicePointClippingProperties& operator=(const safe_VkPhysicalDevicePointClippingProperties& copy_src);
     safe_VkPhysicalDevicePointClippingProperties();
@@ -1627,7 +1662,7 @@ struct safe_VkRenderPassInputAttachmentAspectCreateInfo {
     const VkInputAttachmentAspectReference* pAspectReferences{};
 
     safe_VkRenderPassInputAttachmentAspectCreateInfo(const VkRenderPassInputAttachmentAspectCreateInfo* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassInputAttachmentAspectCreateInfo(const safe_VkRenderPassInputAttachmentAspectCreateInfo& copy_src);
     safe_VkRenderPassInputAttachmentAspectCreateInfo& operator=(const safe_VkRenderPassInputAttachmentAspectCreateInfo& copy_src);
     safe_VkRenderPassInputAttachmentAspectCreateInfo();
@@ -1646,7 +1681,8 @@ struct safe_VkImageViewUsageCreateInfo {
     const void* pNext{};
     VkImageUsageFlags usage;
 
-    safe_VkImageViewUsageCreateInfo(const VkImageViewUsageCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewUsageCreateInfo(const VkImageViewUsageCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkImageViewUsageCreateInfo(const safe_VkImageViewUsageCreateInfo& copy_src);
     safe_VkImageViewUsageCreateInfo& operator=(const safe_VkImageViewUsageCreateInfo& copy_src);
     safe_VkImageViewUsageCreateInfo();
@@ -1662,7 +1698,7 @@ struct safe_VkPipelineTessellationDomainOriginStateCreateInfo {
     VkTessellationDomainOrigin domainOrigin;
 
     safe_VkPipelineTessellationDomainOriginStateCreateInfo(const VkPipelineTessellationDomainOriginStateCreateInfo* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineTessellationDomainOriginStateCreateInfo(const safe_VkPipelineTessellationDomainOriginStateCreateInfo& copy_src);
     safe_VkPipelineTessellationDomainOriginStateCreateInfo& operator=(
         const safe_VkPipelineTessellationDomainOriginStateCreateInfo& copy_src);
@@ -1687,7 +1723,8 @@ struct safe_VkRenderPassMultiviewCreateInfo {
     uint32_t correlationMaskCount;
     const uint32_t* pCorrelationMasks{};
 
-    safe_VkRenderPassMultiviewCreateInfo(const VkRenderPassMultiviewCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassMultiviewCreateInfo(const VkRenderPassMultiviewCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkRenderPassMultiviewCreateInfo(const safe_VkRenderPassMultiviewCreateInfo& copy_src);
     safe_VkRenderPassMultiviewCreateInfo& operator=(const safe_VkRenderPassMultiviewCreateInfo& copy_src);
     safe_VkRenderPassMultiviewCreateInfo();
@@ -1704,7 +1741,8 @@ struct safe_VkPhysicalDeviceMultiviewFeatures {
     VkBool32 multiviewGeometryShader;
     VkBool32 multiviewTessellationShader;
 
-    safe_VkPhysicalDeviceMultiviewFeatures(const VkPhysicalDeviceMultiviewFeatures* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceMultiviewFeatures(const VkPhysicalDeviceMultiviewFeatures* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiviewFeatures(const safe_VkPhysicalDeviceMultiviewFeatures& copy_src);
     safe_VkPhysicalDeviceMultiviewFeatures& operator=(const safe_VkPhysicalDeviceMultiviewFeatures& copy_src);
     safe_VkPhysicalDeviceMultiviewFeatures();
@@ -1722,7 +1760,8 @@ struct safe_VkPhysicalDeviceMultiviewProperties {
     uint32_t maxMultiviewViewCount;
     uint32_t maxMultiviewInstanceIndex;
 
-    safe_VkPhysicalDeviceMultiviewProperties(const VkPhysicalDeviceMultiviewProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceMultiviewProperties(const VkPhysicalDeviceMultiviewProperties* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiviewProperties(const safe_VkPhysicalDeviceMultiviewProperties& copy_src);
     safe_VkPhysicalDeviceMultiviewProperties& operator=(const safe_VkPhysicalDeviceMultiviewProperties& copy_src);
     safe_VkPhysicalDeviceMultiviewProperties();
@@ -1741,7 +1780,7 @@ struct safe_VkPhysicalDeviceVariablePointersFeatures {
     VkBool32 variablePointers;
 
     safe_VkPhysicalDeviceVariablePointersFeatures(const VkPhysicalDeviceVariablePointersFeatures* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceVariablePointersFeatures(const safe_VkPhysicalDeviceVariablePointersFeatures& copy_src);
     safe_VkPhysicalDeviceVariablePointersFeatures& operator=(const safe_VkPhysicalDeviceVariablePointersFeatures& copy_src);
     safe_VkPhysicalDeviceVariablePointersFeatures();
@@ -1759,7 +1798,7 @@ struct safe_VkPhysicalDeviceProtectedMemoryFeatures {
     VkBool32 protectedMemory;
 
     safe_VkPhysicalDeviceProtectedMemoryFeatures(const VkPhysicalDeviceProtectedMemoryFeatures* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceProtectedMemoryFeatures(const safe_VkPhysicalDeviceProtectedMemoryFeatures& copy_src);
     safe_VkPhysicalDeviceProtectedMemoryFeatures& operator=(const safe_VkPhysicalDeviceProtectedMemoryFeatures& copy_src);
     safe_VkPhysicalDeviceProtectedMemoryFeatures();
@@ -1777,7 +1816,7 @@ struct safe_VkPhysicalDeviceProtectedMemoryProperties {
     VkBool32 protectedNoFault;
 
     safe_VkPhysicalDeviceProtectedMemoryProperties(const VkPhysicalDeviceProtectedMemoryProperties* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceProtectedMemoryProperties(const safe_VkPhysicalDeviceProtectedMemoryProperties& copy_src);
     safe_VkPhysicalDeviceProtectedMemoryProperties& operator=(const safe_VkPhysicalDeviceProtectedMemoryProperties& copy_src);
     safe_VkPhysicalDeviceProtectedMemoryProperties();
@@ -1796,7 +1835,7 @@ struct safe_VkDeviceQueueInfo2 {
     uint32_t queueFamilyIndex;
     uint32_t queueIndex;
 
-    safe_VkDeviceQueueInfo2(const VkDeviceQueueInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceQueueInfo2(const VkDeviceQueueInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceQueueInfo2(const safe_VkDeviceQueueInfo2& copy_src);
     safe_VkDeviceQueueInfo2& operator=(const safe_VkDeviceQueueInfo2& copy_src);
     safe_VkDeviceQueueInfo2();
@@ -1811,7 +1850,7 @@ struct safe_VkProtectedSubmitInfo {
     const void* pNext{};
     VkBool32 protectedSubmit;
 
-    safe_VkProtectedSubmitInfo(const VkProtectedSubmitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkProtectedSubmitInfo(const VkProtectedSubmitInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkProtectedSubmitInfo(const safe_VkProtectedSubmitInfo& copy_src);
     safe_VkProtectedSubmitInfo& operator=(const safe_VkProtectedSubmitInfo& copy_src);
     safe_VkProtectedSubmitInfo();
@@ -1833,7 +1872,8 @@ struct safe_VkSamplerYcbcrConversionCreateInfo {
     VkFilter chromaFilter;
     VkBool32 forceExplicitReconstruction;
 
-    safe_VkSamplerYcbcrConversionCreateInfo(const VkSamplerYcbcrConversionCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSamplerYcbcrConversionCreateInfo(const VkSamplerYcbcrConversionCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkSamplerYcbcrConversionCreateInfo(const safe_VkSamplerYcbcrConversionCreateInfo& copy_src);
     safe_VkSamplerYcbcrConversionCreateInfo& operator=(const safe_VkSamplerYcbcrConversionCreateInfo& copy_src);
     safe_VkSamplerYcbcrConversionCreateInfo();
@@ -1850,7 +1890,8 @@ struct safe_VkSamplerYcbcrConversionInfo {
     const void* pNext{};
     VkSamplerYcbcrConversion conversion;
 
-    safe_VkSamplerYcbcrConversionInfo(const VkSamplerYcbcrConversionInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSamplerYcbcrConversionInfo(const VkSamplerYcbcrConversionInfo* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkSamplerYcbcrConversionInfo(const safe_VkSamplerYcbcrConversionInfo& copy_src);
     safe_VkSamplerYcbcrConversionInfo& operator=(const safe_VkSamplerYcbcrConversionInfo& copy_src);
     safe_VkSamplerYcbcrConversionInfo();
@@ -1865,7 +1906,8 @@ struct safe_VkBindImagePlaneMemoryInfo {
     const void* pNext{};
     VkImageAspectFlagBits planeAspect;
 
-    safe_VkBindImagePlaneMemoryInfo(const VkBindImagePlaneMemoryInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindImagePlaneMemoryInfo(const VkBindImagePlaneMemoryInfo* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkBindImagePlaneMemoryInfo(const safe_VkBindImagePlaneMemoryInfo& copy_src);
     safe_VkBindImagePlaneMemoryInfo& operator=(const safe_VkBindImagePlaneMemoryInfo& copy_src);
     safe_VkBindImagePlaneMemoryInfo();
@@ -1880,7 +1922,8 @@ struct safe_VkImagePlaneMemoryRequirementsInfo {
     const void* pNext{};
     VkImageAspectFlagBits planeAspect;
 
-    safe_VkImagePlaneMemoryRequirementsInfo(const VkImagePlaneMemoryRequirementsInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImagePlaneMemoryRequirementsInfo(const VkImagePlaneMemoryRequirementsInfo* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkImagePlaneMemoryRequirementsInfo(const safe_VkImagePlaneMemoryRequirementsInfo& copy_src);
     safe_VkImagePlaneMemoryRequirementsInfo& operator=(const safe_VkImagePlaneMemoryRequirementsInfo& copy_src);
     safe_VkImagePlaneMemoryRequirementsInfo();
@@ -1898,7 +1941,7 @@ struct safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures {
     VkBool32 samplerYcbcrConversion;
 
     safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures(const VkPhysicalDeviceSamplerYcbcrConversionFeatures* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures(const safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures& copy_src);
     safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures& operator=(
         const safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures& copy_src);
@@ -1919,7 +1962,7 @@ struct safe_VkSamplerYcbcrConversionImageFormatProperties {
     uint32_t combinedImageSamplerDescriptorCount;
 
     safe_VkSamplerYcbcrConversionImageFormatProperties(const VkSamplerYcbcrConversionImageFormatProperties* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerYcbcrConversionImageFormatProperties(const safe_VkSamplerYcbcrConversionImageFormatProperties& copy_src);
     safe_VkSamplerYcbcrConversionImageFormatProperties& operator=(
         const safe_VkSamplerYcbcrConversionImageFormatProperties& copy_src);
@@ -1947,7 +1990,7 @@ struct safe_VkDescriptorUpdateTemplateCreateInfo {
     uint32_t set;
 
     safe_VkDescriptorUpdateTemplateCreateInfo(const VkDescriptorUpdateTemplateCreateInfo* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorUpdateTemplateCreateInfo(const safe_VkDescriptorUpdateTemplateCreateInfo& copy_src);
     safe_VkDescriptorUpdateTemplateCreateInfo& operator=(const safe_VkDescriptorUpdateTemplateCreateInfo& copy_src);
     safe_VkDescriptorUpdateTemplateCreateInfo();
@@ -1965,7 +2008,7 @@ struct safe_VkPhysicalDeviceExternalImageFormatInfo {
     VkExternalMemoryHandleTypeFlagBits handleType;
 
     safe_VkPhysicalDeviceExternalImageFormatInfo(const VkPhysicalDeviceExternalImageFormatInfo* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalImageFormatInfo(const safe_VkPhysicalDeviceExternalImageFormatInfo& copy_src);
     safe_VkPhysicalDeviceExternalImageFormatInfo& operator=(const safe_VkPhysicalDeviceExternalImageFormatInfo& copy_src);
     safe_VkPhysicalDeviceExternalImageFormatInfo();
@@ -1982,7 +2025,8 @@ struct safe_VkExternalImageFormatProperties {
     void* pNext{};
     VkExternalMemoryProperties externalMemoryProperties;
 
-    safe_VkExternalImageFormatProperties(const VkExternalImageFormatProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalImageFormatProperties(const VkExternalImageFormatProperties* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkExternalImageFormatProperties(const safe_VkExternalImageFormatProperties& copy_src);
     safe_VkExternalImageFormatProperties& operator=(const safe_VkExternalImageFormatProperties& copy_src);
     safe_VkExternalImageFormatProperties();
@@ -1999,7 +2043,8 @@ struct safe_VkPhysicalDeviceExternalBufferInfo {
     VkBufferUsageFlags usage;
     VkExternalMemoryHandleTypeFlagBits handleType;
 
-    safe_VkPhysicalDeviceExternalBufferInfo(const VkPhysicalDeviceExternalBufferInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceExternalBufferInfo(const VkPhysicalDeviceExternalBufferInfo* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalBufferInfo(const safe_VkPhysicalDeviceExternalBufferInfo& copy_src);
     safe_VkPhysicalDeviceExternalBufferInfo& operator=(const safe_VkPhysicalDeviceExternalBufferInfo& copy_src);
     safe_VkPhysicalDeviceExternalBufferInfo();
@@ -2016,7 +2061,8 @@ struct safe_VkExternalBufferProperties {
     void* pNext{};
     VkExternalMemoryProperties externalMemoryProperties;
 
-    safe_VkExternalBufferProperties(const VkExternalBufferProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalBufferProperties(const VkExternalBufferProperties* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkExternalBufferProperties(const safe_VkExternalBufferProperties& copy_src);
     safe_VkExternalBufferProperties& operator=(const safe_VkExternalBufferProperties& copy_src);
     safe_VkExternalBufferProperties();
@@ -2035,7 +2081,8 @@ struct safe_VkPhysicalDeviceIDProperties {
     uint32_t deviceNodeMask;
     VkBool32 deviceLUIDValid;
 
-    safe_VkPhysicalDeviceIDProperties(const VkPhysicalDeviceIDProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceIDProperties(const VkPhysicalDeviceIDProperties* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkPhysicalDeviceIDProperties(const safe_VkPhysicalDeviceIDProperties& copy_src);
     safe_VkPhysicalDeviceIDProperties& operator=(const safe_VkPhysicalDeviceIDProperties& copy_src);
     safe_VkPhysicalDeviceIDProperties();
@@ -2050,7 +2097,8 @@ struct safe_VkExternalMemoryImageCreateInfo {
     const void* pNext{};
     VkExternalMemoryHandleTypeFlags handleTypes;
 
-    safe_VkExternalMemoryImageCreateInfo(const VkExternalMemoryImageCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalMemoryImageCreateInfo(const VkExternalMemoryImageCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkExternalMemoryImageCreateInfo(const safe_VkExternalMemoryImageCreateInfo& copy_src);
     safe_VkExternalMemoryImageCreateInfo& operator=(const safe_VkExternalMemoryImageCreateInfo& copy_src);
     safe_VkExternalMemoryImageCreateInfo();
@@ -2065,7 +2113,8 @@ struct safe_VkExternalMemoryBufferCreateInfo {
     const void* pNext{};
     VkExternalMemoryHandleTypeFlags handleTypes;
 
-    safe_VkExternalMemoryBufferCreateInfo(const VkExternalMemoryBufferCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalMemoryBufferCreateInfo(const VkExternalMemoryBufferCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkExternalMemoryBufferCreateInfo(const safe_VkExternalMemoryBufferCreateInfo& copy_src);
     safe_VkExternalMemoryBufferCreateInfo& operator=(const safe_VkExternalMemoryBufferCreateInfo& copy_src);
     safe_VkExternalMemoryBufferCreateInfo();
@@ -2080,7 +2129,8 @@ struct safe_VkExportMemoryAllocateInfo {
     const void* pNext{};
     VkExternalMemoryHandleTypeFlags handleTypes;
 
-    safe_VkExportMemoryAllocateInfo(const VkExportMemoryAllocateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMemoryAllocateInfo(const VkExportMemoryAllocateInfo* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkExportMemoryAllocateInfo(const safe_VkExportMemoryAllocateInfo& copy_src);
     safe_VkExportMemoryAllocateInfo& operator=(const safe_VkExportMemoryAllocateInfo& copy_src);
     safe_VkExportMemoryAllocateInfo();
@@ -2095,7 +2145,8 @@ struct safe_VkPhysicalDeviceExternalFenceInfo {
     const void* pNext{};
     VkExternalFenceHandleTypeFlagBits handleType;
 
-    safe_VkPhysicalDeviceExternalFenceInfo(const VkPhysicalDeviceExternalFenceInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceExternalFenceInfo(const VkPhysicalDeviceExternalFenceInfo* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalFenceInfo(const safe_VkPhysicalDeviceExternalFenceInfo& copy_src);
     safe_VkPhysicalDeviceExternalFenceInfo& operator=(const safe_VkPhysicalDeviceExternalFenceInfo& copy_src);
     safe_VkPhysicalDeviceExternalFenceInfo();
@@ -2114,7 +2165,8 @@ struct safe_VkExternalFenceProperties {
     VkExternalFenceHandleTypeFlags compatibleHandleTypes;
     VkExternalFenceFeatureFlags externalFenceFeatures;
 
-    safe_VkExternalFenceProperties(const VkExternalFenceProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalFenceProperties(const VkExternalFenceProperties* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkExternalFenceProperties(const safe_VkExternalFenceProperties& copy_src);
     safe_VkExternalFenceProperties& operator=(const safe_VkExternalFenceProperties& copy_src);
     safe_VkExternalFenceProperties();
@@ -2129,7 +2181,7 @@ struct safe_VkExportFenceCreateInfo {
     const void* pNext{};
     VkExternalFenceHandleTypeFlags handleTypes;
 
-    safe_VkExportFenceCreateInfo(const VkExportFenceCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportFenceCreateInfo(const VkExportFenceCreateInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkExportFenceCreateInfo(const safe_VkExportFenceCreateInfo& copy_src);
     safe_VkExportFenceCreateInfo& operator=(const safe_VkExportFenceCreateInfo& copy_src);
     safe_VkExportFenceCreateInfo();
@@ -2144,7 +2196,8 @@ struct safe_VkExportSemaphoreCreateInfo {
     const void* pNext{};
     VkExternalSemaphoreHandleTypeFlags handleTypes;
 
-    safe_VkExportSemaphoreCreateInfo(const VkExportSemaphoreCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportSemaphoreCreateInfo(const VkExportSemaphoreCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkExportSemaphoreCreateInfo(const safe_VkExportSemaphoreCreateInfo& copy_src);
     safe_VkExportSemaphoreCreateInfo& operator=(const safe_VkExportSemaphoreCreateInfo& copy_src);
     safe_VkExportSemaphoreCreateInfo();
@@ -2160,7 +2213,7 @@ struct safe_VkPhysicalDeviceExternalSemaphoreInfo {
     VkExternalSemaphoreHandleTypeFlagBits handleType;
 
     safe_VkPhysicalDeviceExternalSemaphoreInfo(const VkPhysicalDeviceExternalSemaphoreInfo* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalSemaphoreInfo(const safe_VkPhysicalDeviceExternalSemaphoreInfo& copy_src);
     safe_VkPhysicalDeviceExternalSemaphoreInfo& operator=(const safe_VkPhysicalDeviceExternalSemaphoreInfo& copy_src);
     safe_VkPhysicalDeviceExternalSemaphoreInfo();
@@ -2179,7 +2232,8 @@ struct safe_VkExternalSemaphoreProperties {
     VkExternalSemaphoreHandleTypeFlags compatibleHandleTypes;
     VkExternalSemaphoreFeatureFlags externalSemaphoreFeatures;
 
-    safe_VkExternalSemaphoreProperties(const VkExternalSemaphoreProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalSemaphoreProperties(const VkExternalSemaphoreProperties* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkExternalSemaphoreProperties(const safe_VkExternalSemaphoreProperties& copy_src);
     safe_VkExternalSemaphoreProperties& operator=(const safe_VkExternalSemaphoreProperties& copy_src);
     safe_VkExternalSemaphoreProperties();
@@ -2196,7 +2250,7 @@ struct safe_VkPhysicalDeviceMaintenance3Properties {
     VkDeviceSize maxMemoryAllocationSize;
 
     safe_VkPhysicalDeviceMaintenance3Properties(const VkPhysicalDeviceMaintenance3Properties* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMaintenance3Properties(const safe_VkPhysicalDeviceMaintenance3Properties& copy_src);
     safe_VkPhysicalDeviceMaintenance3Properties& operator=(const safe_VkPhysicalDeviceMaintenance3Properties& copy_src);
     safe_VkPhysicalDeviceMaintenance3Properties();
@@ -2213,7 +2267,8 @@ struct safe_VkDescriptorSetLayoutSupport {
     void* pNext{};
     VkBool32 supported;
 
-    safe_VkDescriptorSetLayoutSupport(const VkDescriptorSetLayoutSupport* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorSetLayoutSupport(const VkDescriptorSetLayoutSupport* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkDescriptorSetLayoutSupport(const safe_VkDescriptorSetLayoutSupport& copy_src);
     safe_VkDescriptorSetLayoutSupport& operator=(const safe_VkDescriptorSetLayoutSupport& copy_src);
     safe_VkDescriptorSetLayoutSupport();
@@ -2229,7 +2284,7 @@ struct safe_VkPhysicalDeviceShaderDrawParametersFeatures {
     VkBool32 shaderDrawParameters;
 
     safe_VkPhysicalDeviceShaderDrawParametersFeatures(const VkPhysicalDeviceShaderDrawParametersFeatures* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderDrawParametersFeatures(const safe_VkPhysicalDeviceShaderDrawParametersFeatures& copy_src);
     safe_VkPhysicalDeviceShaderDrawParametersFeatures& operator=(const safe_VkPhysicalDeviceShaderDrawParametersFeatures& copy_src);
     safe_VkPhysicalDeviceShaderDrawParametersFeatures();
@@ -2259,7 +2314,8 @@ struct safe_VkPhysicalDeviceVulkan11Features {
     VkBool32 samplerYcbcrConversion;
     VkBool32 shaderDrawParameters;
 
-    safe_VkPhysicalDeviceVulkan11Features(const VkPhysicalDeviceVulkan11Features* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVulkan11Features(const VkPhysicalDeviceVulkan11Features* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkan11Features(const safe_VkPhysicalDeviceVulkan11Features& copy_src);
     safe_VkPhysicalDeviceVulkan11Features& operator=(const safe_VkPhysicalDeviceVulkan11Features& copy_src);
     safe_VkPhysicalDeviceVulkan11Features();
@@ -2288,7 +2344,8 @@ struct safe_VkPhysicalDeviceVulkan11Properties {
     uint32_t maxPerSetDescriptors;
     VkDeviceSize maxMemoryAllocationSize;
 
-    safe_VkPhysicalDeviceVulkan11Properties(const VkPhysicalDeviceVulkan11Properties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVulkan11Properties(const VkPhysicalDeviceVulkan11Properties* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkan11Properties(const safe_VkPhysicalDeviceVulkan11Properties& copy_src);
     safe_VkPhysicalDeviceVulkan11Properties& operator=(const safe_VkPhysicalDeviceVulkan11Properties& copy_src);
     safe_VkPhysicalDeviceVulkan11Properties();
@@ -2351,7 +2408,8 @@ struct safe_VkPhysicalDeviceVulkan12Features {
     VkBool32 shaderOutputLayer;
     VkBool32 subgroupBroadcastDynamicId;
 
-    safe_VkPhysicalDeviceVulkan12Features(const VkPhysicalDeviceVulkan12Features* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVulkan12Features(const VkPhysicalDeviceVulkan12Features* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkan12Features(const safe_VkPhysicalDeviceVulkan12Features& copy_src);
     safe_VkPhysicalDeviceVulkan12Features& operator=(const safe_VkPhysicalDeviceVulkan12Features& copy_src);
     safe_VkPhysicalDeviceVulkan12Features();
@@ -2417,7 +2475,8 @@ struct safe_VkPhysicalDeviceVulkan12Properties {
     uint64_t maxTimelineSemaphoreValueDifference;
     VkSampleCountFlags framebufferIntegerColorSampleCounts;
 
-    safe_VkPhysicalDeviceVulkan12Properties(const VkPhysicalDeviceVulkan12Properties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVulkan12Properties(const VkPhysicalDeviceVulkan12Properties* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkan12Properties(const safe_VkPhysicalDeviceVulkan12Properties& copy_src);
     safe_VkPhysicalDeviceVulkan12Properties& operator=(const safe_VkPhysicalDeviceVulkan12Properties& copy_src);
     safe_VkPhysicalDeviceVulkan12Properties();
@@ -2435,7 +2494,8 @@ struct safe_VkImageFormatListCreateInfo {
     uint32_t viewFormatCount;
     const VkFormat* pViewFormats{};
 
-    safe_VkImageFormatListCreateInfo(const VkImageFormatListCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageFormatListCreateInfo(const VkImageFormatListCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkImageFormatListCreateInfo(const safe_VkImageFormatListCreateInfo& copy_src);
     safe_VkImageFormatListCreateInfo& operator=(const safe_VkImageFormatListCreateInfo& copy_src);
     safe_VkImageFormatListCreateInfo();
@@ -2458,7 +2518,8 @@ struct safe_VkAttachmentDescription2 {
     VkImageLayout initialLayout;
     VkImageLayout finalLayout;
 
-    safe_VkAttachmentDescription2(const VkAttachmentDescription2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAttachmentDescription2(const VkAttachmentDescription2* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkAttachmentDescription2(const safe_VkAttachmentDescription2& copy_src);
     safe_VkAttachmentDescription2& operator=(const safe_VkAttachmentDescription2& copy_src);
     safe_VkAttachmentDescription2();
@@ -2475,7 +2536,7 @@ struct safe_VkAttachmentReference2 {
     VkImageLayout layout;
     VkImageAspectFlags aspectMask;
 
-    safe_VkAttachmentReference2(const VkAttachmentReference2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAttachmentReference2(const VkAttachmentReference2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAttachmentReference2(const safe_VkAttachmentReference2& copy_src);
     safe_VkAttachmentReference2& operator=(const safe_VkAttachmentReference2& copy_src);
     safe_VkAttachmentReference2();
@@ -2500,7 +2561,7 @@ struct safe_VkSubpassDescription2 {
     uint32_t preserveAttachmentCount;
     const uint32_t* pPreserveAttachments{};
 
-    safe_VkSubpassDescription2(const VkSubpassDescription2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubpassDescription2(const VkSubpassDescription2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassDescription2(const safe_VkSubpassDescription2& copy_src);
     safe_VkSubpassDescription2& operator=(const safe_VkSubpassDescription2& copy_src);
     safe_VkSubpassDescription2();
@@ -2522,7 +2583,7 @@ struct safe_VkSubpassDependency2 {
     VkDependencyFlags dependencyFlags;
     int32_t viewOffset;
 
-    safe_VkSubpassDependency2(const VkSubpassDependency2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubpassDependency2(const VkSubpassDependency2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassDependency2(const safe_VkSubpassDependency2& copy_src);
     safe_VkSubpassDependency2& operator=(const safe_VkSubpassDependency2& copy_src);
     safe_VkSubpassDependency2();
@@ -2545,7 +2606,7 @@ struct safe_VkRenderPassCreateInfo2 {
     uint32_t correlatedViewMaskCount;
     const uint32_t* pCorrelatedViewMasks{};
 
-    safe_VkRenderPassCreateInfo2(const VkRenderPassCreateInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassCreateInfo2(const VkRenderPassCreateInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassCreateInfo2(const safe_VkRenderPassCreateInfo2& copy_src);
     safe_VkRenderPassCreateInfo2& operator=(const safe_VkRenderPassCreateInfo2& copy_src);
     safe_VkRenderPassCreateInfo2();
@@ -2560,7 +2621,7 @@ struct safe_VkSubpassBeginInfo {
     const void* pNext{};
     VkSubpassContents contents;
 
-    safe_VkSubpassBeginInfo(const VkSubpassBeginInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubpassBeginInfo(const VkSubpassBeginInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassBeginInfo(const safe_VkSubpassBeginInfo& copy_src);
     safe_VkSubpassBeginInfo& operator=(const safe_VkSubpassBeginInfo& copy_src);
     safe_VkSubpassBeginInfo();
@@ -2574,7 +2635,7 @@ struct safe_VkSubpassEndInfo {
     VkStructureType sType;
     const void* pNext{};
 
-    safe_VkSubpassEndInfo(const VkSubpassEndInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubpassEndInfo(const VkSubpassEndInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassEndInfo(const safe_VkSubpassEndInfo& copy_src);
     safe_VkSubpassEndInfo& operator=(const safe_VkSubpassEndInfo& copy_src);
     safe_VkSubpassEndInfo();
@@ -2591,7 +2652,8 @@ struct safe_VkPhysicalDevice8BitStorageFeatures {
     VkBool32 uniformAndStorageBuffer8BitAccess;
     VkBool32 storagePushConstant8;
 
-    safe_VkPhysicalDevice8BitStorageFeatures(const VkPhysicalDevice8BitStorageFeatures* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDevice8BitStorageFeatures(const VkPhysicalDevice8BitStorageFeatures* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkPhysicalDevice8BitStorageFeatures(const safe_VkPhysicalDevice8BitStorageFeatures& copy_src);
     safe_VkPhysicalDevice8BitStorageFeatures& operator=(const safe_VkPhysicalDevice8BitStorageFeatures& copy_src);
     safe_VkPhysicalDevice8BitStorageFeatures();
@@ -2611,7 +2673,8 @@ struct safe_VkPhysicalDeviceDriverProperties {
     char driverInfo[VK_MAX_DRIVER_INFO_SIZE];
     VkConformanceVersion conformanceVersion;
 
-    safe_VkPhysicalDeviceDriverProperties(const VkPhysicalDeviceDriverProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceDriverProperties(const VkPhysicalDeviceDriverProperties* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceDriverProperties(const safe_VkPhysicalDeviceDriverProperties& copy_src);
     safe_VkPhysicalDeviceDriverProperties& operator=(const safe_VkPhysicalDeviceDriverProperties& copy_src);
     safe_VkPhysicalDeviceDriverProperties();
@@ -2628,7 +2691,7 @@ struct safe_VkPhysicalDeviceShaderAtomicInt64Features {
     VkBool32 shaderSharedInt64Atomics;
 
     safe_VkPhysicalDeviceShaderAtomicInt64Features(const VkPhysicalDeviceShaderAtomicInt64Features* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderAtomicInt64Features(const safe_VkPhysicalDeviceShaderAtomicInt64Features& copy_src);
     safe_VkPhysicalDeviceShaderAtomicInt64Features& operator=(const safe_VkPhysicalDeviceShaderAtomicInt64Features& copy_src);
     safe_VkPhysicalDeviceShaderAtomicInt64Features();
@@ -2647,7 +2710,7 @@ struct safe_VkPhysicalDeviceShaderFloat16Int8Features {
     VkBool32 shaderInt8;
 
     safe_VkPhysicalDeviceShaderFloat16Int8Features(const VkPhysicalDeviceShaderFloat16Int8Features* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderFloat16Int8Features(const safe_VkPhysicalDeviceShaderFloat16Int8Features& copy_src);
     safe_VkPhysicalDeviceShaderFloat16Int8Features& operator=(const safe_VkPhysicalDeviceShaderFloat16Int8Features& copy_src);
     safe_VkPhysicalDeviceShaderFloat16Int8Features();
@@ -2681,7 +2744,7 @@ struct safe_VkPhysicalDeviceFloatControlsProperties {
     VkBool32 shaderRoundingModeRTZFloat64;
 
     safe_VkPhysicalDeviceFloatControlsProperties(const VkPhysicalDeviceFloatControlsProperties* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFloatControlsProperties(const safe_VkPhysicalDeviceFloatControlsProperties& copy_src);
     safe_VkPhysicalDeviceFloatControlsProperties& operator=(const safe_VkPhysicalDeviceFloatControlsProperties& copy_src);
     safe_VkPhysicalDeviceFloatControlsProperties();
@@ -2700,7 +2763,7 @@ struct safe_VkDescriptorSetLayoutBindingFlagsCreateInfo {
     const VkDescriptorBindingFlags* pBindingFlags{};
 
     safe_VkDescriptorSetLayoutBindingFlagsCreateInfo(const VkDescriptorSetLayoutBindingFlagsCreateInfo* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorSetLayoutBindingFlagsCreateInfo(const safe_VkDescriptorSetLayoutBindingFlagsCreateInfo& copy_src);
     safe_VkDescriptorSetLayoutBindingFlagsCreateInfo& operator=(const safe_VkDescriptorSetLayoutBindingFlagsCreateInfo& copy_src);
     safe_VkDescriptorSetLayoutBindingFlagsCreateInfo();
@@ -2739,7 +2802,7 @@ struct safe_VkPhysicalDeviceDescriptorIndexingFeatures {
     VkBool32 runtimeDescriptorArray;
 
     safe_VkPhysicalDeviceDescriptorIndexingFeatures(const VkPhysicalDeviceDescriptorIndexingFeatures* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorIndexingFeatures(const safe_VkPhysicalDeviceDescriptorIndexingFeatures& copy_src);
     safe_VkPhysicalDeviceDescriptorIndexingFeatures& operator=(const safe_VkPhysicalDeviceDescriptorIndexingFeatures& copy_src);
     safe_VkPhysicalDeviceDescriptorIndexingFeatures();
@@ -2781,7 +2844,7 @@ struct safe_VkPhysicalDeviceDescriptorIndexingProperties {
     uint32_t maxDescriptorSetUpdateAfterBindInputAttachments;
 
     safe_VkPhysicalDeviceDescriptorIndexingProperties(const VkPhysicalDeviceDescriptorIndexingProperties* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorIndexingProperties(const safe_VkPhysicalDeviceDescriptorIndexingProperties& copy_src);
     safe_VkPhysicalDeviceDescriptorIndexingProperties& operator=(const safe_VkPhysicalDeviceDescriptorIndexingProperties& copy_src);
     safe_VkPhysicalDeviceDescriptorIndexingProperties();
@@ -2802,7 +2865,7 @@ struct safe_VkDescriptorSetVariableDescriptorCountAllocateInfo {
     const uint32_t* pDescriptorCounts{};
 
     safe_VkDescriptorSetVariableDescriptorCountAllocateInfo(const VkDescriptorSetVariableDescriptorCountAllocateInfo* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorSetVariableDescriptorCountAllocateInfo(
         const safe_VkDescriptorSetVariableDescriptorCountAllocateInfo& copy_src);
     safe_VkDescriptorSetVariableDescriptorCountAllocateInfo& operator=(
@@ -2824,7 +2887,7 @@ struct safe_VkDescriptorSetVariableDescriptorCountLayoutSupport {
     uint32_t maxVariableDescriptorCount;
 
     safe_VkDescriptorSetVariableDescriptorCountLayoutSupport(const VkDescriptorSetVariableDescriptorCountLayoutSupport* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorSetVariableDescriptorCountLayoutSupport(
         const safe_VkDescriptorSetVariableDescriptorCountLayoutSupport& copy_src);
     safe_VkDescriptorSetVariableDescriptorCountLayoutSupport& operator=(
@@ -2848,7 +2911,7 @@ struct safe_VkSubpassDescriptionDepthStencilResolve {
     safe_VkAttachmentReference2* pDepthStencilResolveAttachment{};
 
     safe_VkSubpassDescriptionDepthStencilResolve(const VkSubpassDescriptionDepthStencilResolve* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassDescriptionDepthStencilResolve(const safe_VkSubpassDescriptionDepthStencilResolve& copy_src);
     safe_VkSubpassDescriptionDepthStencilResolve& operator=(const safe_VkSubpassDescriptionDepthStencilResolve& copy_src);
     safe_VkSubpassDescriptionDepthStencilResolve();
@@ -2869,7 +2932,7 @@ struct safe_VkPhysicalDeviceDepthStencilResolveProperties {
     VkBool32 independentResolve;
 
     safe_VkPhysicalDeviceDepthStencilResolveProperties(const VkPhysicalDeviceDepthStencilResolveProperties* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDepthStencilResolveProperties(const safe_VkPhysicalDeviceDepthStencilResolveProperties& copy_src);
     safe_VkPhysicalDeviceDepthStencilResolveProperties& operator=(
         const safe_VkPhysicalDeviceDepthStencilResolveProperties& copy_src);
@@ -2890,7 +2953,7 @@ struct safe_VkPhysicalDeviceScalarBlockLayoutFeatures {
     VkBool32 scalarBlockLayout;
 
     safe_VkPhysicalDeviceScalarBlockLayoutFeatures(const VkPhysicalDeviceScalarBlockLayoutFeatures* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceScalarBlockLayoutFeatures(const safe_VkPhysicalDeviceScalarBlockLayoutFeatures& copy_src);
     safe_VkPhysicalDeviceScalarBlockLayoutFeatures& operator=(const safe_VkPhysicalDeviceScalarBlockLayoutFeatures& copy_src);
     safe_VkPhysicalDeviceScalarBlockLayoutFeatures();
@@ -2907,7 +2970,8 @@ struct safe_VkImageStencilUsageCreateInfo {
     const void* pNext{};
     VkImageUsageFlags stencilUsage;
 
-    safe_VkImageStencilUsageCreateInfo(const VkImageStencilUsageCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageStencilUsageCreateInfo(const VkImageStencilUsageCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkImageStencilUsageCreateInfo(const safe_VkImageStencilUsageCreateInfo& copy_src);
     safe_VkImageStencilUsageCreateInfo& operator=(const safe_VkImageStencilUsageCreateInfo& copy_src);
     safe_VkImageStencilUsageCreateInfo();
@@ -2922,7 +2986,8 @@ struct safe_VkSamplerReductionModeCreateInfo {
     const void* pNext{};
     VkSamplerReductionMode reductionMode;
 
-    safe_VkSamplerReductionModeCreateInfo(const VkSamplerReductionModeCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSamplerReductionModeCreateInfo(const VkSamplerReductionModeCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkSamplerReductionModeCreateInfo(const safe_VkSamplerReductionModeCreateInfo& copy_src);
     safe_VkSamplerReductionModeCreateInfo& operator=(const safe_VkSamplerReductionModeCreateInfo& copy_src);
     safe_VkSamplerReductionModeCreateInfo();
@@ -2939,7 +3004,7 @@ struct safe_VkPhysicalDeviceSamplerFilterMinmaxProperties {
     VkBool32 filterMinmaxImageComponentMapping;
 
     safe_VkPhysicalDeviceSamplerFilterMinmaxProperties(const VkPhysicalDeviceSamplerFilterMinmaxProperties* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSamplerFilterMinmaxProperties(const safe_VkPhysicalDeviceSamplerFilterMinmaxProperties& copy_src);
     safe_VkPhysicalDeviceSamplerFilterMinmaxProperties& operator=(
         const safe_VkPhysicalDeviceSamplerFilterMinmaxProperties& copy_src);
@@ -2962,7 +3027,7 @@ struct safe_VkPhysicalDeviceVulkanMemoryModelFeatures {
     VkBool32 vulkanMemoryModelAvailabilityVisibilityChains;
 
     safe_VkPhysicalDeviceVulkanMemoryModelFeatures(const VkPhysicalDeviceVulkanMemoryModelFeatures* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkanMemoryModelFeatures(const safe_VkPhysicalDeviceVulkanMemoryModelFeatures& copy_src);
     safe_VkPhysicalDeviceVulkanMemoryModelFeatures& operator=(const safe_VkPhysicalDeviceVulkanMemoryModelFeatures& copy_src);
     safe_VkPhysicalDeviceVulkanMemoryModelFeatures();
@@ -2980,7 +3045,7 @@ struct safe_VkPhysicalDeviceImagelessFramebufferFeatures {
     VkBool32 imagelessFramebuffer;
 
     safe_VkPhysicalDeviceImagelessFramebufferFeatures(const VkPhysicalDeviceImagelessFramebufferFeatures* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImagelessFramebufferFeatures(const safe_VkPhysicalDeviceImagelessFramebufferFeatures& copy_src);
     safe_VkPhysicalDeviceImagelessFramebufferFeatures& operator=(const safe_VkPhysicalDeviceImagelessFramebufferFeatures& copy_src);
     safe_VkPhysicalDeviceImagelessFramebufferFeatures();
@@ -3005,7 +3070,8 @@ struct safe_VkFramebufferAttachmentImageInfo {
     uint32_t viewFormatCount;
     const VkFormat* pViewFormats{};
 
-    safe_VkFramebufferAttachmentImageInfo(const VkFramebufferAttachmentImageInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFramebufferAttachmentImageInfo(const VkFramebufferAttachmentImageInfo* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkFramebufferAttachmentImageInfo(const safe_VkFramebufferAttachmentImageInfo& copy_src);
     safe_VkFramebufferAttachmentImageInfo& operator=(const safe_VkFramebufferAttachmentImageInfo& copy_src);
     safe_VkFramebufferAttachmentImageInfo();
@@ -3021,7 +3087,8 @@ struct safe_VkFramebufferAttachmentsCreateInfo {
     uint32_t attachmentImageInfoCount;
     safe_VkFramebufferAttachmentImageInfo* pAttachmentImageInfos{};
 
-    safe_VkFramebufferAttachmentsCreateInfo(const VkFramebufferAttachmentsCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFramebufferAttachmentsCreateInfo(const VkFramebufferAttachmentsCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkFramebufferAttachmentsCreateInfo(const safe_VkFramebufferAttachmentsCreateInfo& copy_src);
     safe_VkFramebufferAttachmentsCreateInfo& operator=(const safe_VkFramebufferAttachmentsCreateInfo& copy_src);
     safe_VkFramebufferAttachmentsCreateInfo();
@@ -3039,7 +3106,8 @@ struct safe_VkRenderPassAttachmentBeginInfo {
     uint32_t attachmentCount;
     VkImageView* pAttachments{};
 
-    safe_VkRenderPassAttachmentBeginInfo(const VkRenderPassAttachmentBeginInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassAttachmentBeginInfo(const VkRenderPassAttachmentBeginInfo* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkRenderPassAttachmentBeginInfo(const safe_VkRenderPassAttachmentBeginInfo& copy_src);
     safe_VkRenderPassAttachmentBeginInfo& operator=(const safe_VkRenderPassAttachmentBeginInfo& copy_src);
     safe_VkRenderPassAttachmentBeginInfo();
@@ -3055,7 +3123,7 @@ struct safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures {
     VkBool32 uniformBufferStandardLayout;
 
     safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures(const VkPhysicalDeviceUniformBufferStandardLayoutFeatures* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures(
         const safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures& copy_src);
     safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures& operator=(
@@ -3077,7 +3145,7 @@ struct safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures {
     VkBool32 shaderSubgroupExtendedTypes;
 
     safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures(const VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures(
         const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures& copy_src);
     safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures& operator=(
@@ -3099,7 +3167,7 @@ struct safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures {
     VkBool32 separateDepthStencilLayouts;
 
     safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures(
         const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures& copy_src);
     safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures& operator=(
@@ -3120,7 +3188,8 @@ struct safe_VkAttachmentReferenceStencilLayout {
     void* pNext{};
     VkImageLayout stencilLayout;
 
-    safe_VkAttachmentReferenceStencilLayout(const VkAttachmentReferenceStencilLayout* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAttachmentReferenceStencilLayout(const VkAttachmentReferenceStencilLayout* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkAttachmentReferenceStencilLayout(const safe_VkAttachmentReferenceStencilLayout& copy_src);
     safe_VkAttachmentReferenceStencilLayout& operator=(const safe_VkAttachmentReferenceStencilLayout& copy_src);
     safe_VkAttachmentReferenceStencilLayout();
@@ -3139,7 +3208,7 @@ struct safe_VkAttachmentDescriptionStencilLayout {
     VkImageLayout stencilFinalLayout;
 
     safe_VkAttachmentDescriptionStencilLayout(const VkAttachmentDescriptionStencilLayout* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAttachmentDescriptionStencilLayout(const safe_VkAttachmentDescriptionStencilLayout& copy_src);
     safe_VkAttachmentDescriptionStencilLayout& operator=(const safe_VkAttachmentDescriptionStencilLayout& copy_src);
     safe_VkAttachmentDescriptionStencilLayout();
@@ -3157,7 +3226,7 @@ struct safe_VkPhysicalDeviceHostQueryResetFeatures {
     VkBool32 hostQueryReset;
 
     safe_VkPhysicalDeviceHostQueryResetFeatures(const VkPhysicalDeviceHostQueryResetFeatures* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceHostQueryResetFeatures(const safe_VkPhysicalDeviceHostQueryResetFeatures& copy_src);
     safe_VkPhysicalDeviceHostQueryResetFeatures& operator=(const safe_VkPhysicalDeviceHostQueryResetFeatures& copy_src);
     safe_VkPhysicalDeviceHostQueryResetFeatures();
@@ -3175,7 +3244,7 @@ struct safe_VkPhysicalDeviceTimelineSemaphoreFeatures {
     VkBool32 timelineSemaphore;
 
     safe_VkPhysicalDeviceTimelineSemaphoreFeatures(const VkPhysicalDeviceTimelineSemaphoreFeatures* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTimelineSemaphoreFeatures(const safe_VkPhysicalDeviceTimelineSemaphoreFeatures& copy_src);
     safe_VkPhysicalDeviceTimelineSemaphoreFeatures& operator=(const safe_VkPhysicalDeviceTimelineSemaphoreFeatures& copy_src);
     safe_VkPhysicalDeviceTimelineSemaphoreFeatures();
@@ -3193,7 +3262,7 @@ struct safe_VkPhysicalDeviceTimelineSemaphoreProperties {
     uint64_t maxTimelineSemaphoreValueDifference;
 
     safe_VkPhysicalDeviceTimelineSemaphoreProperties(const VkPhysicalDeviceTimelineSemaphoreProperties* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTimelineSemaphoreProperties(const safe_VkPhysicalDeviceTimelineSemaphoreProperties& copy_src);
     safe_VkPhysicalDeviceTimelineSemaphoreProperties& operator=(const safe_VkPhysicalDeviceTimelineSemaphoreProperties& copy_src);
     safe_VkPhysicalDeviceTimelineSemaphoreProperties();
@@ -3213,7 +3282,8 @@ struct safe_VkSemaphoreTypeCreateInfo {
     VkSemaphoreType semaphoreType;
     uint64_t initialValue;
 
-    safe_VkSemaphoreTypeCreateInfo(const VkSemaphoreTypeCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreTypeCreateInfo(const VkSemaphoreTypeCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkSemaphoreTypeCreateInfo(const safe_VkSemaphoreTypeCreateInfo& copy_src);
     safe_VkSemaphoreTypeCreateInfo& operator=(const safe_VkSemaphoreTypeCreateInfo& copy_src);
     safe_VkSemaphoreTypeCreateInfo();
@@ -3231,7 +3301,8 @@ struct safe_VkTimelineSemaphoreSubmitInfo {
     uint32_t signalSemaphoreValueCount;
     const uint64_t* pSignalSemaphoreValues{};
 
-    safe_VkTimelineSemaphoreSubmitInfo(const VkTimelineSemaphoreSubmitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkTimelineSemaphoreSubmitInfo(const VkTimelineSemaphoreSubmitInfo* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkTimelineSemaphoreSubmitInfo(const safe_VkTimelineSemaphoreSubmitInfo& copy_src);
     safe_VkTimelineSemaphoreSubmitInfo& operator=(const safe_VkTimelineSemaphoreSubmitInfo& copy_src);
     safe_VkTimelineSemaphoreSubmitInfo();
@@ -3249,7 +3320,7 @@ struct safe_VkSemaphoreWaitInfo {
     VkSemaphore* pSemaphores{};
     const uint64_t* pValues{};
 
-    safe_VkSemaphoreWaitInfo(const VkSemaphoreWaitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreWaitInfo(const VkSemaphoreWaitInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSemaphoreWaitInfo(const safe_VkSemaphoreWaitInfo& copy_src);
     safe_VkSemaphoreWaitInfo& operator=(const safe_VkSemaphoreWaitInfo& copy_src);
     safe_VkSemaphoreWaitInfo();
@@ -3265,7 +3336,7 @@ struct safe_VkSemaphoreSignalInfo {
     VkSemaphore semaphore;
     uint64_t value;
 
-    safe_VkSemaphoreSignalInfo(const VkSemaphoreSignalInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreSignalInfo(const VkSemaphoreSignalInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSemaphoreSignalInfo(const safe_VkSemaphoreSignalInfo& copy_src);
     safe_VkSemaphoreSignalInfo& operator=(const safe_VkSemaphoreSignalInfo& copy_src);
     safe_VkSemaphoreSignalInfo();
@@ -3283,7 +3354,7 @@ struct safe_VkPhysicalDeviceBufferDeviceAddressFeatures {
     VkBool32 bufferDeviceAddressMultiDevice;
 
     safe_VkPhysicalDeviceBufferDeviceAddressFeatures(const VkPhysicalDeviceBufferDeviceAddressFeatures* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceBufferDeviceAddressFeatures(const safe_VkPhysicalDeviceBufferDeviceAddressFeatures& copy_src);
     safe_VkPhysicalDeviceBufferDeviceAddressFeatures& operator=(const safe_VkPhysicalDeviceBufferDeviceAddressFeatures& copy_src);
     safe_VkPhysicalDeviceBufferDeviceAddressFeatures();
@@ -3302,7 +3373,8 @@ struct safe_VkBufferDeviceAddressInfo {
     const void* pNext{};
     VkBuffer buffer;
 
-    safe_VkBufferDeviceAddressInfo(const VkBufferDeviceAddressInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferDeviceAddressInfo(const VkBufferDeviceAddressInfo* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkBufferDeviceAddressInfo(const safe_VkBufferDeviceAddressInfo& copy_src);
     safe_VkBufferDeviceAddressInfo& operator=(const safe_VkBufferDeviceAddressInfo& copy_src);
     safe_VkBufferDeviceAddressInfo();
@@ -3318,7 +3390,7 @@ struct safe_VkBufferOpaqueCaptureAddressCreateInfo {
     uint64_t opaqueCaptureAddress;
 
     safe_VkBufferOpaqueCaptureAddressCreateInfo(const VkBufferOpaqueCaptureAddressCreateInfo* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferOpaqueCaptureAddressCreateInfo(const safe_VkBufferOpaqueCaptureAddressCreateInfo& copy_src);
     safe_VkBufferOpaqueCaptureAddressCreateInfo& operator=(const safe_VkBufferOpaqueCaptureAddressCreateInfo& copy_src);
     safe_VkBufferOpaqueCaptureAddressCreateInfo();
@@ -3336,7 +3408,7 @@ struct safe_VkMemoryOpaqueCaptureAddressAllocateInfo {
     uint64_t opaqueCaptureAddress;
 
     safe_VkMemoryOpaqueCaptureAddressAllocateInfo(const VkMemoryOpaqueCaptureAddressAllocateInfo* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryOpaqueCaptureAddressAllocateInfo(const safe_VkMemoryOpaqueCaptureAddressAllocateInfo& copy_src);
     safe_VkMemoryOpaqueCaptureAddressAllocateInfo& operator=(const safe_VkMemoryOpaqueCaptureAddressAllocateInfo& copy_src);
     safe_VkMemoryOpaqueCaptureAddressAllocateInfo();
@@ -3354,7 +3426,7 @@ struct safe_VkDeviceMemoryOpaqueCaptureAddressInfo {
     VkDeviceMemory memory;
 
     safe_VkDeviceMemoryOpaqueCaptureAddressInfo(const VkDeviceMemoryOpaqueCaptureAddressInfo* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceMemoryOpaqueCaptureAddressInfo(const safe_VkDeviceMemoryOpaqueCaptureAddressInfo& copy_src);
     safe_VkDeviceMemoryOpaqueCaptureAddressInfo& operator=(const safe_VkDeviceMemoryOpaqueCaptureAddressInfo& copy_src);
     safe_VkDeviceMemoryOpaqueCaptureAddressInfo();
@@ -3385,7 +3457,8 @@ struct safe_VkPhysicalDeviceVulkan13Features {
     VkBool32 shaderIntegerDotProduct;
     VkBool32 maintenance4;
 
-    safe_VkPhysicalDeviceVulkan13Features(const VkPhysicalDeviceVulkan13Features* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVulkan13Features(const VkPhysicalDeviceVulkan13Features* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkan13Features(const safe_VkPhysicalDeviceVulkan13Features& copy_src);
     safe_VkPhysicalDeviceVulkan13Features& operator=(const safe_VkPhysicalDeviceVulkan13Features& copy_src);
     safe_VkPhysicalDeviceVulkan13Features();
@@ -3444,7 +3517,8 @@ struct safe_VkPhysicalDeviceVulkan13Properties {
     VkBool32 uniformTexelBufferOffsetSingleTexelAlignment;
     VkDeviceSize maxBufferSize;
 
-    safe_VkPhysicalDeviceVulkan13Properties(const VkPhysicalDeviceVulkan13Properties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVulkan13Properties(const VkPhysicalDeviceVulkan13Properties* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPhysicalDeviceVulkan13Properties(const safe_VkPhysicalDeviceVulkan13Properties& copy_src);
     safe_VkPhysicalDeviceVulkan13Properties& operator=(const safe_VkPhysicalDeviceVulkan13Properties& copy_src);
     safe_VkPhysicalDeviceVulkan13Properties();
@@ -3464,7 +3538,7 @@ struct safe_VkPipelineCreationFeedbackCreateInfo {
     VkPipelineCreationFeedback* pPipelineStageCreationFeedbacks{};
 
     safe_VkPipelineCreationFeedbackCreateInfo(const VkPipelineCreationFeedbackCreateInfo* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineCreationFeedbackCreateInfo(const safe_VkPipelineCreationFeedbackCreateInfo& copy_src);
     safe_VkPipelineCreationFeedbackCreateInfo& operator=(const safe_VkPipelineCreationFeedbackCreateInfo& copy_src);
     safe_VkPipelineCreationFeedbackCreateInfo();
@@ -3482,7 +3556,7 @@ struct safe_VkPhysicalDeviceShaderTerminateInvocationFeatures {
     VkBool32 shaderTerminateInvocation;
 
     safe_VkPhysicalDeviceShaderTerminateInvocationFeatures(const VkPhysicalDeviceShaderTerminateInvocationFeatures* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderTerminateInvocationFeatures(const safe_VkPhysicalDeviceShaderTerminateInvocationFeatures& copy_src);
     safe_VkPhysicalDeviceShaderTerminateInvocationFeatures& operator=(
         const safe_VkPhysicalDeviceShaderTerminateInvocationFeatures& copy_src);
@@ -3506,7 +3580,8 @@ struct safe_VkPhysicalDeviceToolProperties {
     char description[VK_MAX_DESCRIPTION_SIZE];
     char layer[VK_MAX_EXTENSION_NAME_SIZE];
 
-    safe_VkPhysicalDeviceToolProperties(const VkPhysicalDeviceToolProperties* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceToolProperties(const VkPhysicalDeviceToolProperties* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkPhysicalDeviceToolProperties(const safe_VkPhysicalDeviceToolProperties& copy_src);
     safe_VkPhysicalDeviceToolProperties& operator=(const safe_VkPhysicalDeviceToolProperties& copy_src);
     safe_VkPhysicalDeviceToolProperties();
@@ -3522,7 +3597,8 @@ struct safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures {
     VkBool32 shaderDemoteToHelperInvocation;
 
     safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures(
-        const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures(
         const safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures& copy_src);
     safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures& operator=(
@@ -3543,7 +3619,8 @@ struct safe_VkPhysicalDevicePrivateDataFeatures {
     void* pNext{};
     VkBool32 privateData;
 
-    safe_VkPhysicalDevicePrivateDataFeatures(const VkPhysicalDevicePrivateDataFeatures* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDevicePrivateDataFeatures(const VkPhysicalDevicePrivateDataFeatures* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkPhysicalDevicePrivateDataFeatures(const safe_VkPhysicalDevicePrivateDataFeatures& copy_src);
     safe_VkPhysicalDevicePrivateDataFeatures& operator=(const safe_VkPhysicalDevicePrivateDataFeatures& copy_src);
     safe_VkPhysicalDevicePrivateDataFeatures();
@@ -3560,7 +3637,8 @@ struct safe_VkDevicePrivateDataCreateInfo {
     const void* pNext{};
     uint32_t privateDataSlotRequestCount;
 
-    safe_VkDevicePrivateDataCreateInfo(const VkDevicePrivateDataCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDevicePrivateDataCreateInfo(const VkDevicePrivateDataCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkDevicePrivateDataCreateInfo(const safe_VkDevicePrivateDataCreateInfo& copy_src);
     safe_VkDevicePrivateDataCreateInfo& operator=(const safe_VkDevicePrivateDataCreateInfo& copy_src);
     safe_VkDevicePrivateDataCreateInfo();
@@ -3575,7 +3653,8 @@ struct safe_VkPrivateDataSlotCreateInfo {
     const void* pNext{};
     VkPrivateDataSlotCreateFlags flags;
 
-    safe_VkPrivateDataSlotCreateInfo(const VkPrivateDataSlotCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPrivateDataSlotCreateInfo(const VkPrivateDataSlotCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkPrivateDataSlotCreateInfo(const safe_VkPrivateDataSlotCreateInfo& copy_src);
     safe_VkPrivateDataSlotCreateInfo& operator=(const safe_VkPrivateDataSlotCreateInfo& copy_src);
     safe_VkPrivateDataSlotCreateInfo();
@@ -3591,7 +3670,7 @@ struct safe_VkPhysicalDevicePipelineCreationCacheControlFeatures {
     VkBool32 pipelineCreationCacheControl;
 
     safe_VkPhysicalDevicePipelineCreationCacheControlFeatures(const VkPhysicalDevicePipelineCreationCacheControlFeatures* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePipelineCreationCacheControlFeatures(
         const safe_VkPhysicalDevicePipelineCreationCacheControlFeatures& copy_src);
     safe_VkPhysicalDevicePipelineCreationCacheControlFeatures& operator=(
@@ -3615,7 +3694,7 @@ struct safe_VkMemoryBarrier2 {
     VkPipelineStageFlags2 dstStageMask;
     VkAccessFlags2 dstAccessMask;
 
-    safe_VkMemoryBarrier2(const VkMemoryBarrier2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryBarrier2(const VkMemoryBarrier2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryBarrier2(const safe_VkMemoryBarrier2& copy_src);
     safe_VkMemoryBarrier2& operator=(const safe_VkMemoryBarrier2& copy_src);
     safe_VkMemoryBarrier2();
@@ -3638,7 +3717,7 @@ struct safe_VkBufferMemoryBarrier2 {
     VkDeviceSize offset;
     VkDeviceSize size;
 
-    safe_VkBufferMemoryBarrier2(const VkBufferMemoryBarrier2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferMemoryBarrier2(const VkBufferMemoryBarrier2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferMemoryBarrier2(const safe_VkBufferMemoryBarrier2& copy_src);
     safe_VkBufferMemoryBarrier2& operator=(const safe_VkBufferMemoryBarrier2& copy_src);
     safe_VkBufferMemoryBarrier2();
@@ -3662,7 +3741,7 @@ struct safe_VkImageMemoryBarrier2 {
     VkImage image;
     VkImageSubresourceRange subresourceRange;
 
-    safe_VkImageMemoryBarrier2(const VkImageMemoryBarrier2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageMemoryBarrier2(const VkImageMemoryBarrier2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageMemoryBarrier2(const safe_VkImageMemoryBarrier2& copy_src);
     safe_VkImageMemoryBarrier2& operator=(const safe_VkImageMemoryBarrier2& copy_src);
     safe_VkImageMemoryBarrier2();
@@ -3683,7 +3762,7 @@ struct safe_VkDependencyInfo {
     uint32_t imageMemoryBarrierCount;
     safe_VkImageMemoryBarrier2* pImageMemoryBarriers{};
 
-    safe_VkDependencyInfo(const VkDependencyInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDependencyInfo(const VkDependencyInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDependencyInfo(const safe_VkDependencyInfo& copy_src);
     safe_VkDependencyInfo& operator=(const safe_VkDependencyInfo& copy_src);
     safe_VkDependencyInfo();
@@ -3701,7 +3780,7 @@ struct safe_VkSemaphoreSubmitInfo {
     VkPipelineStageFlags2 stageMask;
     uint32_t deviceIndex;
 
-    safe_VkSemaphoreSubmitInfo(const VkSemaphoreSubmitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreSubmitInfo(const VkSemaphoreSubmitInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSemaphoreSubmitInfo(const safe_VkSemaphoreSubmitInfo& copy_src);
     safe_VkSemaphoreSubmitInfo& operator=(const safe_VkSemaphoreSubmitInfo& copy_src);
     safe_VkSemaphoreSubmitInfo();
@@ -3717,7 +3796,8 @@ struct safe_VkCommandBufferSubmitInfo {
     VkCommandBuffer commandBuffer;
     uint32_t deviceMask;
 
-    safe_VkCommandBufferSubmitInfo(const VkCommandBufferSubmitInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCommandBufferSubmitInfo(const VkCommandBufferSubmitInfo* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkCommandBufferSubmitInfo(const safe_VkCommandBufferSubmitInfo& copy_src);
     safe_VkCommandBufferSubmitInfo& operator=(const safe_VkCommandBufferSubmitInfo& copy_src);
     safe_VkCommandBufferSubmitInfo();
@@ -3738,7 +3818,7 @@ struct safe_VkSubmitInfo2 {
     uint32_t signalSemaphoreInfoCount;
     safe_VkSemaphoreSubmitInfo* pSignalSemaphoreInfos{};
 
-    safe_VkSubmitInfo2(const VkSubmitInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubmitInfo2(const VkSubmitInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubmitInfo2(const safe_VkSubmitInfo2& copy_src);
     safe_VkSubmitInfo2& operator=(const safe_VkSubmitInfo2& copy_src);
     safe_VkSubmitInfo2();
@@ -3754,7 +3834,7 @@ struct safe_VkPhysicalDeviceSynchronization2Features {
     VkBool32 synchronization2;
 
     safe_VkPhysicalDeviceSynchronization2Features(const VkPhysicalDeviceSynchronization2Features* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSynchronization2Features(const safe_VkPhysicalDeviceSynchronization2Features& copy_src);
     safe_VkPhysicalDeviceSynchronization2Features& operator=(const safe_VkPhysicalDeviceSynchronization2Features& copy_src);
     safe_VkPhysicalDeviceSynchronization2Features();
@@ -3772,7 +3852,8 @@ struct safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures {
     VkBool32 shaderZeroInitializeWorkgroupMemory;
 
     safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures(
-        const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures(
         const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures& copy_src);
     safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures& operator=(
@@ -3794,7 +3875,7 @@ struct safe_VkPhysicalDeviceImageRobustnessFeatures {
     VkBool32 robustImageAccess;
 
     safe_VkPhysicalDeviceImageRobustnessFeatures(const VkPhysicalDeviceImageRobustnessFeatures* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageRobustnessFeatures(const safe_VkPhysicalDeviceImageRobustnessFeatures& copy_src);
     safe_VkPhysicalDeviceImageRobustnessFeatures& operator=(const safe_VkPhysicalDeviceImageRobustnessFeatures& copy_src);
     safe_VkPhysicalDeviceImageRobustnessFeatures();
@@ -3813,7 +3894,7 @@ struct safe_VkBufferCopy2 {
     VkDeviceSize dstOffset;
     VkDeviceSize size;
 
-    safe_VkBufferCopy2(const VkBufferCopy2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferCopy2(const VkBufferCopy2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferCopy2(const safe_VkBufferCopy2& copy_src);
     safe_VkBufferCopy2& operator=(const safe_VkBufferCopy2& copy_src);
     safe_VkBufferCopy2();
@@ -3831,7 +3912,7 @@ struct safe_VkCopyBufferInfo2 {
     uint32_t regionCount;
     safe_VkBufferCopy2* pRegions{};
 
-    safe_VkCopyBufferInfo2(const VkCopyBufferInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyBufferInfo2(const VkCopyBufferInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCopyBufferInfo2(const safe_VkCopyBufferInfo2& copy_src);
     safe_VkCopyBufferInfo2& operator=(const safe_VkCopyBufferInfo2& copy_src);
     safe_VkCopyBufferInfo2();
@@ -3850,7 +3931,7 @@ struct safe_VkImageCopy2 {
     VkOffset3D dstOffset;
     VkExtent3D extent;
 
-    safe_VkImageCopy2(const VkImageCopy2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageCopy2(const VkImageCopy2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageCopy2(const safe_VkImageCopy2& copy_src);
     safe_VkImageCopy2& operator=(const safe_VkImageCopy2& copy_src);
     safe_VkImageCopy2();
@@ -3870,7 +3951,7 @@ struct safe_VkCopyImageInfo2 {
     uint32_t regionCount;
     safe_VkImageCopy2* pRegions{};
 
-    safe_VkCopyImageInfo2(const VkCopyImageInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyImageInfo2(const VkCopyImageInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCopyImageInfo2(const safe_VkCopyImageInfo2& copy_src);
     safe_VkCopyImageInfo2& operator=(const safe_VkCopyImageInfo2& copy_src);
     safe_VkCopyImageInfo2();
@@ -3890,7 +3971,7 @@ struct safe_VkBufferImageCopy2 {
     VkOffset3D imageOffset;
     VkExtent3D imageExtent;
 
-    safe_VkBufferImageCopy2(const VkBufferImageCopy2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferImageCopy2(const VkBufferImageCopy2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferImageCopy2(const safe_VkBufferImageCopy2& copy_src);
     safe_VkBufferImageCopy2& operator=(const safe_VkBufferImageCopy2& copy_src);
     safe_VkBufferImageCopy2();
@@ -3909,7 +3990,8 @@ struct safe_VkCopyBufferToImageInfo2 {
     uint32_t regionCount;
     safe_VkBufferImageCopy2* pRegions{};
 
-    safe_VkCopyBufferToImageInfo2(const VkCopyBufferToImageInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyBufferToImageInfo2(const VkCopyBufferToImageInfo2* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkCopyBufferToImageInfo2(const safe_VkCopyBufferToImageInfo2& copy_src);
     safe_VkCopyBufferToImageInfo2& operator=(const safe_VkCopyBufferToImageInfo2& copy_src);
     safe_VkCopyBufferToImageInfo2();
@@ -3928,7 +4010,8 @@ struct safe_VkCopyImageToBufferInfo2 {
     uint32_t regionCount;
     safe_VkBufferImageCopy2* pRegions{};
 
-    safe_VkCopyImageToBufferInfo2(const VkCopyImageToBufferInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyImageToBufferInfo2(const VkCopyImageToBufferInfo2* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkCopyImageToBufferInfo2(const safe_VkCopyImageToBufferInfo2& copy_src);
     safe_VkCopyImageToBufferInfo2& operator=(const safe_VkCopyImageToBufferInfo2& copy_src);
     safe_VkCopyImageToBufferInfo2();
@@ -3946,7 +4029,7 @@ struct safe_VkImageBlit2 {
     VkImageSubresourceLayers dstSubresource;
     VkOffset3D dstOffsets[2];
 
-    safe_VkImageBlit2(const VkImageBlit2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageBlit2(const VkImageBlit2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageBlit2(const safe_VkImageBlit2& copy_src);
     safe_VkImageBlit2& operator=(const safe_VkImageBlit2& copy_src);
     safe_VkImageBlit2();
@@ -3967,7 +4050,7 @@ struct safe_VkBlitImageInfo2 {
     safe_VkImageBlit2* pRegions{};
     VkFilter filter;
 
-    safe_VkBlitImageInfo2(const VkBlitImageInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBlitImageInfo2(const VkBlitImageInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBlitImageInfo2(const safe_VkBlitImageInfo2& copy_src);
     safe_VkBlitImageInfo2& operator=(const safe_VkBlitImageInfo2& copy_src);
     safe_VkBlitImageInfo2();
@@ -3986,7 +4069,7 @@ struct safe_VkImageResolve2 {
     VkOffset3D dstOffset;
     VkExtent3D extent;
 
-    safe_VkImageResolve2(const VkImageResolve2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageResolve2(const VkImageResolve2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageResolve2(const safe_VkImageResolve2& copy_src);
     safe_VkImageResolve2& operator=(const safe_VkImageResolve2& copy_src);
     safe_VkImageResolve2();
@@ -4006,7 +4089,7 @@ struct safe_VkResolveImageInfo2 {
     uint32_t regionCount;
     safe_VkImageResolve2* pRegions{};
 
-    safe_VkResolveImageInfo2(const VkResolveImageInfo2* in_struct, PNextCopyState* copy_state = {});
+    safe_VkResolveImageInfo2(const VkResolveImageInfo2* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkResolveImageInfo2(const safe_VkResolveImageInfo2& copy_src);
     safe_VkResolveImageInfo2& operator=(const safe_VkResolveImageInfo2& copy_src);
     safe_VkResolveImageInfo2();
@@ -4023,7 +4106,7 @@ struct safe_VkPhysicalDeviceSubgroupSizeControlFeatures {
     VkBool32 computeFullSubgroups;
 
     safe_VkPhysicalDeviceSubgroupSizeControlFeatures(const VkPhysicalDeviceSubgroupSizeControlFeatures* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSubgroupSizeControlFeatures(const safe_VkPhysicalDeviceSubgroupSizeControlFeatures& copy_src);
     safe_VkPhysicalDeviceSubgroupSizeControlFeatures& operator=(const safe_VkPhysicalDeviceSubgroupSizeControlFeatures& copy_src);
     safe_VkPhysicalDeviceSubgroupSizeControlFeatures();
@@ -4046,7 +4129,7 @@ struct safe_VkPhysicalDeviceSubgroupSizeControlProperties {
     VkShaderStageFlags requiredSubgroupSizeStages;
 
     safe_VkPhysicalDeviceSubgroupSizeControlProperties(const VkPhysicalDeviceSubgroupSizeControlProperties* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSubgroupSizeControlProperties(const safe_VkPhysicalDeviceSubgroupSizeControlProperties& copy_src);
     safe_VkPhysicalDeviceSubgroupSizeControlProperties& operator=(
         const safe_VkPhysicalDeviceSubgroupSizeControlProperties& copy_src);
@@ -4067,7 +4150,7 @@ struct safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo {
     uint32_t requiredSubgroupSize;
 
     safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo(const VkPipelineShaderStageRequiredSubgroupSizeCreateInfo* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo(
         const safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo& copy_src);
     safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo& operator=(
@@ -4090,7 +4173,7 @@ struct safe_VkPhysicalDeviceInlineUniformBlockFeatures {
     VkBool32 descriptorBindingInlineUniformBlockUpdateAfterBind;
 
     safe_VkPhysicalDeviceInlineUniformBlockFeatures(const VkPhysicalDeviceInlineUniformBlockFeatures* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceInlineUniformBlockFeatures(const safe_VkPhysicalDeviceInlineUniformBlockFeatures& copy_src);
     safe_VkPhysicalDeviceInlineUniformBlockFeatures& operator=(const safe_VkPhysicalDeviceInlineUniformBlockFeatures& copy_src);
     safe_VkPhysicalDeviceInlineUniformBlockFeatures();
@@ -4114,7 +4197,7 @@ struct safe_VkPhysicalDeviceInlineUniformBlockProperties {
     uint32_t maxDescriptorSetUpdateAfterBindInlineUniformBlocks;
 
     safe_VkPhysicalDeviceInlineUniformBlockProperties(const VkPhysicalDeviceInlineUniformBlockProperties* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceInlineUniformBlockProperties(const safe_VkPhysicalDeviceInlineUniformBlockProperties& copy_src);
     safe_VkPhysicalDeviceInlineUniformBlockProperties& operator=(const safe_VkPhysicalDeviceInlineUniformBlockProperties& copy_src);
     safe_VkPhysicalDeviceInlineUniformBlockProperties();
@@ -4135,7 +4218,7 @@ struct safe_VkWriteDescriptorSetInlineUniformBlock {
     const void* pData{};
 
     safe_VkWriteDescriptorSetInlineUniformBlock(const VkWriteDescriptorSetInlineUniformBlock* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkWriteDescriptorSetInlineUniformBlock(const safe_VkWriteDescriptorSetInlineUniformBlock& copy_src);
     safe_VkWriteDescriptorSetInlineUniformBlock& operator=(const safe_VkWriteDescriptorSetInlineUniformBlock& copy_src);
     safe_VkWriteDescriptorSetInlineUniformBlock();
@@ -4153,7 +4236,7 @@ struct safe_VkDescriptorPoolInlineUniformBlockCreateInfo {
     uint32_t maxInlineUniformBlockBindings;
 
     safe_VkDescriptorPoolInlineUniformBlockCreateInfo(const VkDescriptorPoolInlineUniformBlockCreateInfo* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorPoolInlineUniformBlockCreateInfo(const safe_VkDescriptorPoolInlineUniformBlockCreateInfo& copy_src);
     safe_VkDescriptorPoolInlineUniformBlockCreateInfo& operator=(const safe_VkDescriptorPoolInlineUniformBlockCreateInfo& copy_src);
     safe_VkDescriptorPoolInlineUniformBlockCreateInfo();
@@ -4173,7 +4256,7 @@ struct safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures {
     VkBool32 textureCompressionASTC_HDR;
 
     safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures(const VkPhysicalDeviceTextureCompressionASTCHDRFeatures* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures(const safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures& copy_src);
     safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures& operator=(
         const safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures& copy_src);
@@ -4200,7 +4283,8 @@ struct safe_VkRenderingAttachmentInfo {
     VkAttachmentStoreOp storeOp;
     VkClearValue clearValue;
 
-    safe_VkRenderingAttachmentInfo(const VkRenderingAttachmentInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderingAttachmentInfo(const VkRenderingAttachmentInfo* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkRenderingAttachmentInfo(const safe_VkRenderingAttachmentInfo& copy_src);
     safe_VkRenderingAttachmentInfo& operator=(const safe_VkRenderingAttachmentInfo& copy_src);
     safe_VkRenderingAttachmentInfo();
@@ -4222,7 +4306,7 @@ struct safe_VkRenderingInfo {
     safe_VkRenderingAttachmentInfo* pDepthAttachment{};
     safe_VkRenderingAttachmentInfo* pStencilAttachment{};
 
-    safe_VkRenderingInfo(const VkRenderingInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderingInfo(const VkRenderingInfo* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderingInfo(const safe_VkRenderingInfo& copy_src);
     safe_VkRenderingInfo& operator=(const safe_VkRenderingInfo& copy_src);
     safe_VkRenderingInfo();
@@ -4241,7 +4325,8 @@ struct safe_VkPipelineRenderingCreateInfo {
     VkFormat depthAttachmentFormat;
     VkFormat stencilAttachmentFormat;
 
-    safe_VkPipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkPipelineRenderingCreateInfo(const safe_VkPipelineRenderingCreateInfo& copy_src);
     safe_VkPipelineRenderingCreateInfo& operator=(const safe_VkPipelineRenderingCreateInfo& copy_src);
     safe_VkPipelineRenderingCreateInfo();
@@ -4257,7 +4342,7 @@ struct safe_VkPhysicalDeviceDynamicRenderingFeatures {
     VkBool32 dynamicRendering;
 
     safe_VkPhysicalDeviceDynamicRenderingFeatures(const VkPhysicalDeviceDynamicRenderingFeatures* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDynamicRenderingFeatures(const safe_VkPhysicalDeviceDynamicRenderingFeatures& copy_src);
     safe_VkPhysicalDeviceDynamicRenderingFeatures& operator=(const safe_VkPhysicalDeviceDynamicRenderingFeatures& copy_src);
     safe_VkPhysicalDeviceDynamicRenderingFeatures();
@@ -4281,7 +4366,7 @@ struct safe_VkCommandBufferInheritanceRenderingInfo {
     VkSampleCountFlagBits rasterizationSamples;
 
     safe_VkCommandBufferInheritanceRenderingInfo(const VkCommandBufferInheritanceRenderingInfo* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCommandBufferInheritanceRenderingInfo(const safe_VkCommandBufferInheritanceRenderingInfo& copy_src);
     safe_VkCommandBufferInheritanceRenderingInfo& operator=(const safe_VkCommandBufferInheritanceRenderingInfo& copy_src);
     safe_VkCommandBufferInheritanceRenderingInfo();
@@ -4299,7 +4384,7 @@ struct safe_VkPhysicalDeviceShaderIntegerDotProductFeatures {
     VkBool32 shaderIntegerDotProduct;
 
     safe_VkPhysicalDeviceShaderIntegerDotProductFeatures(const VkPhysicalDeviceShaderIntegerDotProductFeatures* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderIntegerDotProductFeatures(const safe_VkPhysicalDeviceShaderIntegerDotProductFeatures& copy_src);
     safe_VkPhysicalDeviceShaderIntegerDotProductFeatures& operator=(
         const safe_VkPhysicalDeviceShaderIntegerDotProductFeatures& copy_src);
@@ -4349,7 +4434,7 @@ struct safe_VkPhysicalDeviceShaderIntegerDotProductProperties {
     VkBool32 integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
 
     safe_VkPhysicalDeviceShaderIntegerDotProductProperties(const VkPhysicalDeviceShaderIntegerDotProductProperties* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderIntegerDotProductProperties(const safe_VkPhysicalDeviceShaderIntegerDotProductProperties& copy_src);
     safe_VkPhysicalDeviceShaderIntegerDotProductProperties& operator=(
         const safe_VkPhysicalDeviceShaderIntegerDotProductProperties& copy_src);
@@ -4373,7 +4458,7 @@ struct safe_VkPhysicalDeviceTexelBufferAlignmentProperties {
     VkBool32 uniformTexelBufferOffsetSingleTexelAlignment;
 
     safe_VkPhysicalDeviceTexelBufferAlignmentProperties(const VkPhysicalDeviceTexelBufferAlignmentProperties* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTexelBufferAlignmentProperties(const safe_VkPhysicalDeviceTexelBufferAlignmentProperties& copy_src);
     safe_VkPhysicalDeviceTexelBufferAlignmentProperties& operator=(
         const safe_VkPhysicalDeviceTexelBufferAlignmentProperties& copy_src);
@@ -4395,7 +4480,7 @@ struct safe_VkFormatProperties3 {
     VkFormatFeatureFlags2 optimalTilingFeatures;
     VkFormatFeatureFlags2 bufferFeatures;
 
-    safe_VkFormatProperties3(const VkFormatProperties3* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFormatProperties3(const VkFormatProperties3* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFormatProperties3(const safe_VkFormatProperties3& copy_src);
     safe_VkFormatProperties3& operator=(const safe_VkFormatProperties3& copy_src);
     safe_VkFormatProperties3();
@@ -4411,7 +4496,7 @@ struct safe_VkPhysicalDeviceMaintenance4Features {
     VkBool32 maintenance4;
 
     safe_VkPhysicalDeviceMaintenance4Features(const VkPhysicalDeviceMaintenance4Features* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMaintenance4Features(const safe_VkPhysicalDeviceMaintenance4Features& copy_src);
     safe_VkPhysicalDeviceMaintenance4Features& operator=(const safe_VkPhysicalDeviceMaintenance4Features& copy_src);
     safe_VkPhysicalDeviceMaintenance4Features();
@@ -4429,7 +4514,7 @@ struct safe_VkPhysicalDeviceMaintenance4Properties {
     VkDeviceSize maxBufferSize;
 
     safe_VkPhysicalDeviceMaintenance4Properties(const VkPhysicalDeviceMaintenance4Properties* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMaintenance4Properties(const safe_VkPhysicalDeviceMaintenance4Properties& copy_src);
     safe_VkPhysicalDeviceMaintenance4Properties& operator=(const safe_VkPhysicalDeviceMaintenance4Properties& copy_src);
     safe_VkPhysicalDeviceMaintenance4Properties();
@@ -4446,7 +4531,8 @@ struct safe_VkDeviceBufferMemoryRequirements {
     const void* pNext{};
     safe_VkBufferCreateInfo* pCreateInfo{};
 
-    safe_VkDeviceBufferMemoryRequirements(const VkDeviceBufferMemoryRequirements* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceBufferMemoryRequirements(const VkDeviceBufferMemoryRequirements* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkDeviceBufferMemoryRequirements(const safe_VkDeviceBufferMemoryRequirements& copy_src);
     safe_VkDeviceBufferMemoryRequirements& operator=(const safe_VkDeviceBufferMemoryRequirements& copy_src);
     safe_VkDeviceBufferMemoryRequirements();
@@ -4462,7 +4548,8 @@ struct safe_VkDeviceImageMemoryRequirements {
     safe_VkImageCreateInfo* pCreateInfo{};
     VkImageAspectFlagBits planeAspect;
 
-    safe_VkDeviceImageMemoryRequirements(const VkDeviceImageMemoryRequirements* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceImageMemoryRequirements(const VkDeviceImageMemoryRequirements* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkDeviceImageMemoryRequirements(const safe_VkDeviceImageMemoryRequirements& copy_src);
     safe_VkDeviceImageMemoryRequirements& operator=(const safe_VkDeviceImageMemoryRequirements& copy_src);
     safe_VkDeviceImageMemoryRequirements();
@@ -4492,7 +4579,8 @@ struct safe_VkSwapchainCreateInfoKHR {
     VkBool32 clipped;
     VkSwapchainKHR oldSwapchain;
 
-    safe_VkSwapchainCreateInfoKHR(const VkSwapchainCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSwapchainCreateInfoKHR(const VkSwapchainCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkSwapchainCreateInfoKHR(const safe_VkSwapchainCreateInfoKHR& copy_src);
     safe_VkSwapchainCreateInfoKHR& operator=(const safe_VkSwapchainCreateInfoKHR& copy_src);
     safe_VkSwapchainCreateInfoKHR();
@@ -4512,7 +4600,7 @@ struct safe_VkPresentInfoKHR {
     const uint32_t* pImageIndices{};
     VkResult* pResults{};
 
-    safe_VkPresentInfoKHR(const VkPresentInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPresentInfoKHR(const VkPresentInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPresentInfoKHR(const safe_VkPresentInfoKHR& copy_src);
     safe_VkPresentInfoKHR& operator=(const safe_VkPresentInfoKHR& copy_src);
     safe_VkPresentInfoKHR();
@@ -4527,7 +4615,8 @@ struct safe_VkImageSwapchainCreateInfoKHR {
     const void* pNext{};
     VkSwapchainKHR swapchain;
 
-    safe_VkImageSwapchainCreateInfoKHR(const VkImageSwapchainCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageSwapchainCreateInfoKHR(const VkImageSwapchainCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkImageSwapchainCreateInfoKHR(const safe_VkImageSwapchainCreateInfoKHR& copy_src);
     safe_VkImageSwapchainCreateInfoKHR& operator=(const safe_VkImageSwapchainCreateInfoKHR& copy_src);
     safe_VkImageSwapchainCreateInfoKHR();
@@ -4543,7 +4632,8 @@ struct safe_VkBindImageMemorySwapchainInfoKHR {
     VkSwapchainKHR swapchain;
     uint32_t imageIndex;
 
-    safe_VkBindImageMemorySwapchainInfoKHR(const VkBindImageMemorySwapchainInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindImageMemorySwapchainInfoKHR(const VkBindImageMemorySwapchainInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkBindImageMemorySwapchainInfoKHR(const safe_VkBindImageMemorySwapchainInfoKHR& copy_src);
     safe_VkBindImageMemorySwapchainInfoKHR& operator=(const safe_VkBindImageMemorySwapchainInfoKHR& copy_src);
     safe_VkBindImageMemorySwapchainInfoKHR();
@@ -4564,7 +4654,8 @@ struct safe_VkAcquireNextImageInfoKHR {
     VkFence fence;
     uint32_t deviceMask;
 
-    safe_VkAcquireNextImageInfoKHR(const VkAcquireNextImageInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAcquireNextImageInfoKHR(const VkAcquireNextImageInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkAcquireNextImageInfoKHR(const safe_VkAcquireNextImageInfoKHR& copy_src);
     safe_VkAcquireNextImageInfoKHR& operator=(const safe_VkAcquireNextImageInfoKHR& copy_src);
     safe_VkAcquireNextImageInfoKHR();
@@ -4580,7 +4671,8 @@ struct safe_VkDeviceGroupPresentCapabilitiesKHR {
     uint32_t presentMask[VK_MAX_DEVICE_GROUP_SIZE];
     VkDeviceGroupPresentModeFlagsKHR modes;
 
-    safe_VkDeviceGroupPresentCapabilitiesKHR(const VkDeviceGroupPresentCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupPresentCapabilitiesKHR(const VkDeviceGroupPresentCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkDeviceGroupPresentCapabilitiesKHR(const safe_VkDeviceGroupPresentCapabilitiesKHR& copy_src);
     safe_VkDeviceGroupPresentCapabilitiesKHR& operator=(const safe_VkDeviceGroupPresentCapabilitiesKHR& copy_src);
     safe_VkDeviceGroupPresentCapabilitiesKHR();
@@ -4599,7 +4691,8 @@ struct safe_VkDeviceGroupPresentInfoKHR {
     const uint32_t* pDeviceMasks{};
     VkDeviceGroupPresentModeFlagBitsKHR mode;
 
-    safe_VkDeviceGroupPresentInfoKHR(const VkDeviceGroupPresentInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupPresentInfoKHR(const VkDeviceGroupPresentInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkDeviceGroupPresentInfoKHR(const safe_VkDeviceGroupPresentInfoKHR& copy_src);
     safe_VkDeviceGroupPresentInfoKHR& operator=(const safe_VkDeviceGroupPresentInfoKHR& copy_src);
     safe_VkDeviceGroupPresentInfoKHR();
@@ -4614,7 +4707,8 @@ struct safe_VkDeviceGroupSwapchainCreateInfoKHR {
     const void* pNext{};
     VkDeviceGroupPresentModeFlagsKHR modes;
 
-    safe_VkDeviceGroupSwapchainCreateInfoKHR(const VkDeviceGroupSwapchainCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceGroupSwapchainCreateInfoKHR(const VkDeviceGroupSwapchainCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkDeviceGroupSwapchainCreateInfoKHR(const safe_VkDeviceGroupSwapchainCreateInfoKHR& copy_src);
     safe_VkDeviceGroupSwapchainCreateInfoKHR& operator=(const safe_VkDeviceGroupSwapchainCreateInfoKHR& copy_src);
     safe_VkDeviceGroupSwapchainCreateInfoKHR();
@@ -4632,7 +4726,8 @@ struct safe_VkDisplayModeCreateInfoKHR {
     VkDisplayModeCreateFlagsKHR flags;
     VkDisplayModeParametersKHR parameters;
 
-    safe_VkDisplayModeCreateInfoKHR(const VkDisplayModeCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayModeCreateInfoKHR(const VkDisplayModeCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkDisplayModeCreateInfoKHR(const safe_VkDisplayModeCreateInfoKHR& copy_src);
     safe_VkDisplayModeCreateInfoKHR& operator=(const safe_VkDisplayModeCreateInfoKHR& copy_src);
     safe_VkDisplayModeCreateInfoKHR();
@@ -4673,7 +4768,8 @@ struct safe_VkDisplaySurfaceCreateInfoKHR {
     VkDisplayPlaneAlphaFlagBitsKHR alphaMode;
     VkExtent2D imageExtent;
 
-    safe_VkDisplaySurfaceCreateInfoKHR(const VkDisplaySurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplaySurfaceCreateInfoKHR(const VkDisplaySurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkDisplaySurfaceCreateInfoKHR(const safe_VkDisplaySurfaceCreateInfoKHR& copy_src);
     safe_VkDisplaySurfaceCreateInfoKHR& operator=(const safe_VkDisplaySurfaceCreateInfoKHR& copy_src);
     safe_VkDisplaySurfaceCreateInfoKHR();
@@ -4690,7 +4786,7 @@ struct safe_VkDisplayPresentInfoKHR {
     VkRect2D dstRect;
     VkBool32 persistent;
 
-    safe_VkDisplayPresentInfoKHR(const VkDisplayPresentInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayPresentInfoKHR(const VkDisplayPresentInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDisplayPresentInfoKHR(const safe_VkDisplayPresentInfoKHR& copy_src);
     safe_VkDisplayPresentInfoKHR& operator=(const safe_VkDisplayPresentInfoKHR& copy_src);
     safe_VkDisplayPresentInfoKHR();
@@ -4708,7 +4804,8 @@ struct safe_VkXlibSurfaceCreateInfoKHR {
     Display* dpy{};
     Window window;
 
-    safe_VkXlibSurfaceCreateInfoKHR(const VkXlibSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkXlibSurfaceCreateInfoKHR(const VkXlibSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkXlibSurfaceCreateInfoKHR(const safe_VkXlibSurfaceCreateInfoKHR& copy_src);
     safe_VkXlibSurfaceCreateInfoKHR& operator=(const safe_VkXlibSurfaceCreateInfoKHR& copy_src);
     safe_VkXlibSurfaceCreateInfoKHR();
@@ -4727,7 +4824,8 @@ struct safe_VkXcbSurfaceCreateInfoKHR {
     xcb_connection_t* connection{};
     xcb_window_t window;
 
-    safe_VkXcbSurfaceCreateInfoKHR(const VkXcbSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkXcbSurfaceCreateInfoKHR(const VkXcbSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkXcbSurfaceCreateInfoKHR(const safe_VkXcbSurfaceCreateInfoKHR& copy_src);
     safe_VkXcbSurfaceCreateInfoKHR& operator=(const safe_VkXcbSurfaceCreateInfoKHR& copy_src);
     safe_VkXcbSurfaceCreateInfoKHR();
@@ -4746,7 +4844,8 @@ struct safe_VkWaylandSurfaceCreateInfoKHR {
     struct wl_display* display{};
     struct wl_surface* surface{};
 
-    safe_VkWaylandSurfaceCreateInfoKHR(const VkWaylandSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkWaylandSurfaceCreateInfoKHR(const VkWaylandSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkWaylandSurfaceCreateInfoKHR(const safe_VkWaylandSurfaceCreateInfoKHR& copy_src);
     safe_VkWaylandSurfaceCreateInfoKHR& operator=(const safe_VkWaylandSurfaceCreateInfoKHR& copy_src);
     safe_VkWaylandSurfaceCreateInfoKHR();
@@ -4764,7 +4863,8 @@ struct safe_VkAndroidSurfaceCreateInfoKHR {
     VkAndroidSurfaceCreateFlagsKHR flags;
     struct ANativeWindow* window{};
 
-    safe_VkAndroidSurfaceCreateInfoKHR(const VkAndroidSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAndroidSurfaceCreateInfoKHR(const VkAndroidSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkAndroidSurfaceCreateInfoKHR(const safe_VkAndroidSurfaceCreateInfoKHR& copy_src);
     safe_VkAndroidSurfaceCreateInfoKHR& operator=(const safe_VkAndroidSurfaceCreateInfoKHR& copy_src);
     safe_VkAndroidSurfaceCreateInfoKHR();
@@ -4783,7 +4883,8 @@ struct safe_VkWin32SurfaceCreateInfoKHR {
     HINSTANCE hinstance;
     HWND hwnd;
 
-    safe_VkWin32SurfaceCreateInfoKHR(const VkWin32SurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkWin32SurfaceCreateInfoKHR(const VkWin32SurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkWin32SurfaceCreateInfoKHR(const safe_VkWin32SurfaceCreateInfoKHR& copy_src);
     safe_VkWin32SurfaceCreateInfoKHR& operator=(const safe_VkWin32SurfaceCreateInfoKHR& copy_src);
     safe_VkWin32SurfaceCreateInfoKHR();
@@ -4800,7 +4901,7 @@ struct safe_VkQueueFamilyQueryResultStatusPropertiesKHR {
     VkBool32 queryResultStatusSupport;
 
     safe_VkQueueFamilyQueryResultStatusPropertiesKHR(const VkQueueFamilyQueryResultStatusPropertiesKHR* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkQueueFamilyQueryResultStatusPropertiesKHR(const safe_VkQueueFamilyQueryResultStatusPropertiesKHR& copy_src);
     safe_VkQueueFamilyQueryResultStatusPropertiesKHR& operator=(const safe_VkQueueFamilyQueryResultStatusPropertiesKHR& copy_src);
     safe_VkQueueFamilyQueryResultStatusPropertiesKHR();
@@ -4819,7 +4920,8 @@ struct safe_VkQueueFamilyVideoPropertiesKHR {
     void* pNext{};
     VkVideoCodecOperationFlagsKHR videoCodecOperations;
 
-    safe_VkQueueFamilyVideoPropertiesKHR(const VkQueueFamilyVideoPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkQueueFamilyVideoPropertiesKHR(const VkQueueFamilyVideoPropertiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkQueueFamilyVideoPropertiesKHR(const safe_VkQueueFamilyVideoPropertiesKHR& copy_src);
     safe_VkQueueFamilyVideoPropertiesKHR& operator=(const safe_VkQueueFamilyVideoPropertiesKHR& copy_src);
     safe_VkQueueFamilyVideoPropertiesKHR();
@@ -4837,7 +4939,7 @@ struct safe_VkVideoProfileInfoKHR {
     VkVideoComponentBitDepthFlagsKHR lumaBitDepth;
     VkVideoComponentBitDepthFlagsKHR chromaBitDepth;
 
-    safe_VkVideoProfileInfoKHR(const VkVideoProfileInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoProfileInfoKHR(const VkVideoProfileInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoProfileInfoKHR(const safe_VkVideoProfileInfoKHR& copy_src);
     safe_VkVideoProfileInfoKHR& operator=(const safe_VkVideoProfileInfoKHR& copy_src);
     safe_VkVideoProfileInfoKHR();
@@ -4853,7 +4955,8 @@ struct safe_VkVideoProfileListInfoKHR {
     uint32_t profileCount;
     safe_VkVideoProfileInfoKHR* pProfiles{};
 
-    safe_VkVideoProfileListInfoKHR(const VkVideoProfileListInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoProfileListInfoKHR(const VkVideoProfileListInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkVideoProfileListInfoKHR(const safe_VkVideoProfileListInfoKHR& copy_src);
     safe_VkVideoProfileListInfoKHR& operator=(const safe_VkVideoProfileListInfoKHR& copy_src);
     safe_VkVideoProfileListInfoKHR();
@@ -4876,7 +4979,7 @@ struct safe_VkVideoCapabilitiesKHR {
     uint32_t maxActiveReferencePictures;
     VkExtensionProperties stdHeaderVersion;
 
-    safe_VkVideoCapabilitiesKHR(const VkVideoCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoCapabilitiesKHR(const VkVideoCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoCapabilitiesKHR(const safe_VkVideoCapabilitiesKHR& copy_src);
     safe_VkVideoCapabilitiesKHR& operator=(const safe_VkVideoCapabilitiesKHR& copy_src);
     safe_VkVideoCapabilitiesKHR();
@@ -4891,7 +4994,8 @@ struct safe_VkPhysicalDeviceVideoFormatInfoKHR {
     const void* pNext{};
     VkImageUsageFlags imageUsage;
 
-    safe_VkPhysicalDeviceVideoFormatInfoKHR(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceVideoFormatInfoKHR(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPhysicalDeviceVideoFormatInfoKHR(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src);
     safe_VkPhysicalDeviceVideoFormatInfoKHR& operator=(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src);
     safe_VkPhysicalDeviceVideoFormatInfoKHR();
@@ -4913,7 +5017,8 @@ struct safe_VkVideoFormatPropertiesKHR {
     VkImageTiling imageTiling;
     VkImageUsageFlags imageUsageFlags;
 
-    safe_VkVideoFormatPropertiesKHR(const VkVideoFormatPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoFormatPropertiesKHR(const VkVideoFormatPropertiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkVideoFormatPropertiesKHR(const safe_VkVideoFormatPropertiesKHR& copy_src);
     safe_VkVideoFormatPropertiesKHR& operator=(const safe_VkVideoFormatPropertiesKHR& copy_src);
     safe_VkVideoFormatPropertiesKHR();
@@ -4931,7 +5036,8 @@ struct safe_VkVideoPictureResourceInfoKHR {
     uint32_t baseArrayLayer;
     VkImageView imageViewBinding;
 
-    safe_VkVideoPictureResourceInfoKHR(const VkVideoPictureResourceInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoPictureResourceInfoKHR(const VkVideoPictureResourceInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkVideoPictureResourceInfoKHR(const safe_VkVideoPictureResourceInfoKHR& copy_src);
     safe_VkVideoPictureResourceInfoKHR& operator=(const safe_VkVideoPictureResourceInfoKHR& copy_src);
     safe_VkVideoPictureResourceInfoKHR();
@@ -4947,7 +5053,8 @@ struct safe_VkVideoReferenceSlotInfoKHR {
     int32_t slotIndex;
     safe_VkVideoPictureResourceInfoKHR* pPictureResource{};
 
-    safe_VkVideoReferenceSlotInfoKHR(const VkVideoReferenceSlotInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoReferenceSlotInfoKHR(const VkVideoReferenceSlotInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkVideoReferenceSlotInfoKHR(const safe_VkVideoReferenceSlotInfoKHR& copy_src);
     safe_VkVideoReferenceSlotInfoKHR& operator=(const safe_VkVideoReferenceSlotInfoKHR& copy_src);
     safe_VkVideoReferenceSlotInfoKHR();
@@ -4963,7 +5070,8 @@ struct safe_VkVideoSessionMemoryRequirementsKHR {
     uint32_t memoryBindIndex;
     VkMemoryRequirements memoryRequirements;
 
-    safe_VkVideoSessionMemoryRequirementsKHR(const VkVideoSessionMemoryRequirementsKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoSessionMemoryRequirementsKHR(const VkVideoSessionMemoryRequirementsKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkVideoSessionMemoryRequirementsKHR(const safe_VkVideoSessionMemoryRequirementsKHR& copy_src);
     safe_VkVideoSessionMemoryRequirementsKHR& operator=(const safe_VkVideoSessionMemoryRequirementsKHR& copy_src);
     safe_VkVideoSessionMemoryRequirementsKHR();
@@ -4983,7 +5091,8 @@ struct safe_VkBindVideoSessionMemoryInfoKHR {
     VkDeviceSize memoryOffset;
     VkDeviceSize memorySize;
 
-    safe_VkBindVideoSessionMemoryInfoKHR(const VkBindVideoSessionMemoryInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBindVideoSessionMemoryInfoKHR(const VkBindVideoSessionMemoryInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkBindVideoSessionMemoryInfoKHR(const safe_VkBindVideoSessionMemoryInfoKHR& copy_src);
     safe_VkBindVideoSessionMemoryInfoKHR& operator=(const safe_VkBindVideoSessionMemoryInfoKHR& copy_src);
     safe_VkBindVideoSessionMemoryInfoKHR();
@@ -5006,7 +5115,8 @@ struct safe_VkVideoSessionCreateInfoKHR {
     uint32_t maxActiveReferencePictures;
     const VkExtensionProperties* pStdHeaderVersion{};
 
-    safe_VkVideoSessionCreateInfoKHR(const VkVideoSessionCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoSessionCreateInfoKHR(const VkVideoSessionCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkVideoSessionCreateInfoKHR(const safe_VkVideoSessionCreateInfoKHR& copy_src);
     safe_VkVideoSessionCreateInfoKHR& operator=(const safe_VkVideoSessionCreateInfoKHR& copy_src);
     safe_VkVideoSessionCreateInfoKHR();
@@ -5024,7 +5134,7 @@ struct safe_VkVideoSessionParametersCreateInfoKHR {
     VkVideoSessionKHR videoSession;
 
     safe_VkVideoSessionParametersCreateInfoKHR(const VkVideoSessionParametersCreateInfoKHR* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoSessionParametersCreateInfoKHR(const safe_VkVideoSessionParametersCreateInfoKHR& copy_src);
     safe_VkVideoSessionParametersCreateInfoKHR& operator=(const safe_VkVideoSessionParametersCreateInfoKHR& copy_src);
     safe_VkVideoSessionParametersCreateInfoKHR();
@@ -5042,7 +5152,7 @@ struct safe_VkVideoSessionParametersUpdateInfoKHR {
     uint32_t updateSequenceCount;
 
     safe_VkVideoSessionParametersUpdateInfoKHR(const VkVideoSessionParametersUpdateInfoKHR* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoSessionParametersUpdateInfoKHR(const safe_VkVideoSessionParametersUpdateInfoKHR& copy_src);
     safe_VkVideoSessionParametersUpdateInfoKHR& operator=(const safe_VkVideoSessionParametersUpdateInfoKHR& copy_src);
     safe_VkVideoSessionParametersUpdateInfoKHR();
@@ -5063,7 +5173,8 @@ struct safe_VkVideoBeginCodingInfoKHR {
     uint32_t referenceSlotCount;
     safe_VkVideoReferenceSlotInfoKHR* pReferenceSlots{};
 
-    safe_VkVideoBeginCodingInfoKHR(const VkVideoBeginCodingInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoBeginCodingInfoKHR(const VkVideoBeginCodingInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkVideoBeginCodingInfoKHR(const safe_VkVideoBeginCodingInfoKHR& copy_src);
     safe_VkVideoBeginCodingInfoKHR& operator=(const safe_VkVideoBeginCodingInfoKHR& copy_src);
     safe_VkVideoBeginCodingInfoKHR();
@@ -5078,7 +5189,7 @@ struct safe_VkVideoEndCodingInfoKHR {
     const void* pNext{};
     VkVideoEndCodingFlagsKHR flags;
 
-    safe_VkVideoEndCodingInfoKHR(const VkVideoEndCodingInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEndCodingInfoKHR(const VkVideoEndCodingInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEndCodingInfoKHR(const safe_VkVideoEndCodingInfoKHR& copy_src);
     safe_VkVideoEndCodingInfoKHR& operator=(const safe_VkVideoEndCodingInfoKHR& copy_src);
     safe_VkVideoEndCodingInfoKHR();
@@ -5093,7 +5204,8 @@ struct safe_VkVideoCodingControlInfoKHR {
     const void* pNext{};
     VkVideoCodingControlFlagsKHR flags;
 
-    safe_VkVideoCodingControlInfoKHR(const VkVideoCodingControlInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoCodingControlInfoKHR(const VkVideoCodingControlInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkVideoCodingControlInfoKHR(const safe_VkVideoCodingControlInfoKHR& copy_src);
     safe_VkVideoCodingControlInfoKHR& operator=(const safe_VkVideoCodingControlInfoKHR& copy_src);
     safe_VkVideoCodingControlInfoKHR();
@@ -5108,7 +5220,8 @@ struct safe_VkVideoDecodeCapabilitiesKHR {
     void* pNext{};
     VkVideoDecodeCapabilityFlagsKHR flags;
 
-    safe_VkVideoDecodeCapabilitiesKHR(const VkVideoDecodeCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeCapabilitiesKHR(const VkVideoDecodeCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkVideoDecodeCapabilitiesKHR(const safe_VkVideoDecodeCapabilitiesKHR& copy_src);
     safe_VkVideoDecodeCapabilitiesKHR& operator=(const safe_VkVideoDecodeCapabilitiesKHR& copy_src);
     safe_VkVideoDecodeCapabilitiesKHR();
@@ -5123,7 +5236,8 @@ struct safe_VkVideoDecodeUsageInfoKHR {
     const void* pNext{};
     VkVideoDecodeUsageFlagsKHR videoUsageHints;
 
-    safe_VkVideoDecodeUsageInfoKHR(const VkVideoDecodeUsageInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeUsageInfoKHR(const VkVideoDecodeUsageInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkVideoDecodeUsageInfoKHR(const safe_VkVideoDecodeUsageInfoKHR& copy_src);
     safe_VkVideoDecodeUsageInfoKHR& operator=(const safe_VkVideoDecodeUsageInfoKHR& copy_src);
     safe_VkVideoDecodeUsageInfoKHR();
@@ -5145,7 +5259,7 @@ struct safe_VkVideoDecodeInfoKHR {
     uint32_t referenceSlotCount;
     safe_VkVideoReferenceSlotInfoKHR* pReferenceSlots{};
 
-    safe_VkVideoDecodeInfoKHR(const VkVideoDecodeInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeInfoKHR(const VkVideoDecodeInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoDecodeInfoKHR(const safe_VkVideoDecodeInfoKHR& copy_src);
     safe_VkVideoDecodeInfoKHR& operator=(const safe_VkVideoDecodeInfoKHR& copy_src);
     safe_VkVideoDecodeInfoKHR();
@@ -5161,7 +5275,8 @@ struct safe_VkVideoDecodeH264ProfileInfoKHR {
     StdVideoH264ProfileIdc stdProfileIdc;
     VkVideoDecodeH264PictureLayoutFlagBitsKHR pictureLayout;
 
-    safe_VkVideoDecodeH264ProfileInfoKHR(const VkVideoDecodeH264ProfileInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH264ProfileInfoKHR(const VkVideoDecodeH264ProfileInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoDecodeH264ProfileInfoKHR(const safe_VkVideoDecodeH264ProfileInfoKHR& copy_src);
     safe_VkVideoDecodeH264ProfileInfoKHR& operator=(const safe_VkVideoDecodeH264ProfileInfoKHR& copy_src);
     safe_VkVideoDecodeH264ProfileInfoKHR();
@@ -5177,7 +5292,8 @@ struct safe_VkVideoDecodeH264CapabilitiesKHR {
     StdVideoH264LevelIdc maxLevelIdc;
     VkOffset2D fieldOffsetGranularity;
 
-    safe_VkVideoDecodeH264CapabilitiesKHR(const VkVideoDecodeH264CapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH264CapabilitiesKHR(const VkVideoDecodeH264CapabilitiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkVideoDecodeH264CapabilitiesKHR(const safe_VkVideoDecodeH264CapabilitiesKHR& copy_src);
     safe_VkVideoDecodeH264CapabilitiesKHR& operator=(const safe_VkVideoDecodeH264CapabilitiesKHR& copy_src);
     safe_VkVideoDecodeH264CapabilitiesKHR();
@@ -5196,7 +5312,7 @@ struct safe_VkVideoDecodeH264SessionParametersAddInfoKHR {
     const StdVideoH264PictureParameterSet* pStdPPSs{};
 
     safe_VkVideoDecodeH264SessionParametersAddInfoKHR(const VkVideoDecodeH264SessionParametersAddInfoKHR* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoDecodeH264SessionParametersAddInfoKHR(const safe_VkVideoDecodeH264SessionParametersAddInfoKHR& copy_src);
     safe_VkVideoDecodeH264SessionParametersAddInfoKHR& operator=(const safe_VkVideoDecodeH264SessionParametersAddInfoKHR& copy_src);
     safe_VkVideoDecodeH264SessionParametersAddInfoKHR();
@@ -5218,7 +5334,7 @@ struct safe_VkVideoDecodeH264SessionParametersCreateInfoKHR {
     safe_VkVideoDecodeH264SessionParametersAddInfoKHR* pParametersAddInfo{};
 
     safe_VkVideoDecodeH264SessionParametersCreateInfoKHR(const VkVideoDecodeH264SessionParametersCreateInfoKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoDecodeH264SessionParametersCreateInfoKHR(const safe_VkVideoDecodeH264SessionParametersCreateInfoKHR& copy_src);
     safe_VkVideoDecodeH264SessionParametersCreateInfoKHR& operator=(
         const safe_VkVideoDecodeH264SessionParametersCreateInfoKHR& copy_src);
@@ -5240,7 +5356,8 @@ struct safe_VkVideoDecodeH264PictureInfoKHR {
     uint32_t sliceCount;
     const uint32_t* pSliceOffsets{};
 
-    safe_VkVideoDecodeH264PictureInfoKHR(const VkVideoDecodeH264PictureInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH264PictureInfoKHR(const VkVideoDecodeH264PictureInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoDecodeH264PictureInfoKHR(const safe_VkVideoDecodeH264PictureInfoKHR& copy_src);
     safe_VkVideoDecodeH264PictureInfoKHR& operator=(const safe_VkVideoDecodeH264PictureInfoKHR& copy_src);
     safe_VkVideoDecodeH264PictureInfoKHR();
@@ -5255,7 +5372,8 @@ struct safe_VkVideoDecodeH264DpbSlotInfoKHR {
     const void* pNext{};
     const StdVideoDecodeH264ReferenceInfo* pStdReferenceInfo{};
 
-    safe_VkVideoDecodeH264DpbSlotInfoKHR(const VkVideoDecodeH264DpbSlotInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH264DpbSlotInfoKHR(const VkVideoDecodeH264DpbSlotInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoDecodeH264DpbSlotInfoKHR(const safe_VkVideoDecodeH264DpbSlotInfoKHR& copy_src);
     safe_VkVideoDecodeH264DpbSlotInfoKHR& operator=(const safe_VkVideoDecodeH264DpbSlotInfoKHR& copy_src);
     safe_VkVideoDecodeH264DpbSlotInfoKHR();
@@ -5273,7 +5391,7 @@ struct safe_VkRenderingFragmentShadingRateAttachmentInfoKHR {
     VkExtent2D shadingRateAttachmentTexelSize;
 
     safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(const VkRenderingFragmentShadingRateAttachmentInfoKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& copy_src);
     safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& operator=(
         const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& copy_src);
@@ -5295,7 +5413,7 @@ struct safe_VkRenderingFragmentDensityMapAttachmentInfoEXT {
     VkImageLayout imageLayout;
 
     safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& copy_src);
     safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& operator=(
         const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& copy_src);
@@ -5317,7 +5435,8 @@ struct safe_VkAttachmentSampleCountInfoAMD {
     const VkSampleCountFlagBits* pColorAttachmentSamples{};
     VkSampleCountFlagBits depthStencilAttachmentSamples;
 
-    safe_VkAttachmentSampleCountInfoAMD(const VkAttachmentSampleCountInfoAMD* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAttachmentSampleCountInfoAMD(const VkAttachmentSampleCountInfoAMD* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkAttachmentSampleCountInfoAMD(const safe_VkAttachmentSampleCountInfoAMD& copy_src);
     safe_VkAttachmentSampleCountInfoAMD& operator=(const safe_VkAttachmentSampleCountInfoAMD& copy_src);
     safe_VkAttachmentSampleCountInfoAMD();
@@ -5333,7 +5452,8 @@ struct safe_VkMultiviewPerViewAttributesInfoNVX {
     VkBool32 perViewAttributes;
     VkBool32 perViewAttributesPositionXOnly;
 
-    safe_VkMultiviewPerViewAttributesInfoNVX(const VkMultiviewPerViewAttributesInfoNVX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMultiviewPerViewAttributesInfoNVX(const VkMultiviewPerViewAttributesInfoNVX* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkMultiviewPerViewAttributesInfoNVX(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src);
     safe_VkMultiviewPerViewAttributesInfoNVX& operator=(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src);
     safe_VkMultiviewPerViewAttributesInfoNVX();
@@ -5353,7 +5473,8 @@ struct safe_VkImportMemoryWin32HandleInfoKHR {
     HANDLE handle;
     LPCWSTR name;
 
-    safe_VkImportMemoryWin32HandleInfoKHR(const VkImportMemoryWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMemoryWin32HandleInfoKHR(const VkImportMemoryWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkImportMemoryWin32HandleInfoKHR(const safe_VkImportMemoryWin32HandleInfoKHR& copy_src);
     safe_VkImportMemoryWin32HandleInfoKHR& operator=(const safe_VkImportMemoryWin32HandleInfoKHR& copy_src);
     safe_VkImportMemoryWin32HandleInfoKHR();
@@ -5372,7 +5493,8 @@ struct safe_VkExportMemoryWin32HandleInfoKHR {
     DWORD dwAccess;
     LPCWSTR name;
 
-    safe_VkExportMemoryWin32HandleInfoKHR(const VkExportMemoryWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMemoryWin32HandleInfoKHR(const VkExportMemoryWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkExportMemoryWin32HandleInfoKHR(const safe_VkExportMemoryWin32HandleInfoKHR& copy_src);
     safe_VkExportMemoryWin32HandleInfoKHR& operator=(const safe_VkExportMemoryWin32HandleInfoKHR& copy_src);
     safe_VkExportMemoryWin32HandleInfoKHR();
@@ -5389,7 +5511,8 @@ struct safe_VkMemoryWin32HandlePropertiesKHR {
     void* pNext{};
     uint32_t memoryTypeBits;
 
-    safe_VkMemoryWin32HandlePropertiesKHR(const VkMemoryWin32HandlePropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryWin32HandlePropertiesKHR(const VkMemoryWin32HandlePropertiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkMemoryWin32HandlePropertiesKHR(const safe_VkMemoryWin32HandlePropertiesKHR& copy_src);
     safe_VkMemoryWin32HandlePropertiesKHR& operator=(const safe_VkMemoryWin32HandlePropertiesKHR& copy_src);
     safe_VkMemoryWin32HandlePropertiesKHR();
@@ -5407,7 +5530,8 @@ struct safe_VkMemoryGetWin32HandleInfoKHR {
     VkDeviceMemory memory;
     VkExternalMemoryHandleTypeFlagBits handleType;
 
-    safe_VkMemoryGetWin32HandleInfoKHR(const VkMemoryGetWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryGetWin32HandleInfoKHR(const VkMemoryGetWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkMemoryGetWin32HandleInfoKHR(const safe_VkMemoryGetWin32HandleInfoKHR& copy_src);
     safe_VkMemoryGetWin32HandleInfoKHR& operator=(const safe_VkMemoryGetWin32HandleInfoKHR& copy_src);
     safe_VkMemoryGetWin32HandleInfoKHR();
@@ -5424,7 +5548,7 @@ struct safe_VkImportMemoryFdInfoKHR {
     VkExternalMemoryHandleTypeFlagBits handleType;
     int fd;
 
-    safe_VkImportMemoryFdInfoKHR(const VkImportMemoryFdInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMemoryFdInfoKHR(const VkImportMemoryFdInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImportMemoryFdInfoKHR(const safe_VkImportMemoryFdInfoKHR& copy_src);
     safe_VkImportMemoryFdInfoKHR& operator=(const safe_VkImportMemoryFdInfoKHR& copy_src);
     safe_VkImportMemoryFdInfoKHR();
@@ -5439,7 +5563,7 @@ struct safe_VkMemoryFdPropertiesKHR {
     void* pNext{};
     uint32_t memoryTypeBits;
 
-    safe_VkMemoryFdPropertiesKHR(const VkMemoryFdPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryFdPropertiesKHR(const VkMemoryFdPropertiesKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryFdPropertiesKHR(const safe_VkMemoryFdPropertiesKHR& copy_src);
     safe_VkMemoryFdPropertiesKHR& operator=(const safe_VkMemoryFdPropertiesKHR& copy_src);
     safe_VkMemoryFdPropertiesKHR();
@@ -5455,7 +5579,7 @@ struct safe_VkMemoryGetFdInfoKHR {
     VkDeviceMemory memory;
     VkExternalMemoryHandleTypeFlagBits handleType;
 
-    safe_VkMemoryGetFdInfoKHR(const VkMemoryGetFdInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryGetFdInfoKHR(const VkMemoryGetFdInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryGetFdInfoKHR(const safe_VkMemoryGetFdInfoKHR& copy_src);
     safe_VkMemoryGetFdInfoKHR& operator=(const safe_VkMemoryGetFdInfoKHR& copy_src);
     safe_VkMemoryGetFdInfoKHR();
@@ -5478,7 +5602,7 @@ struct safe_VkWin32KeyedMutexAcquireReleaseInfoKHR {
     const uint64_t* pReleaseKeys{};
 
     safe_VkWin32KeyedMutexAcquireReleaseInfoKHR(const VkWin32KeyedMutexAcquireReleaseInfoKHR* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkWin32KeyedMutexAcquireReleaseInfoKHR(const safe_VkWin32KeyedMutexAcquireReleaseInfoKHR& copy_src);
     safe_VkWin32KeyedMutexAcquireReleaseInfoKHR& operator=(const safe_VkWin32KeyedMutexAcquireReleaseInfoKHR& copy_src);
     safe_VkWin32KeyedMutexAcquireReleaseInfoKHR();
@@ -5501,7 +5625,8 @@ struct safe_VkImportSemaphoreWin32HandleInfoKHR {
     HANDLE handle;
     LPCWSTR name;
 
-    safe_VkImportSemaphoreWin32HandleInfoKHR(const VkImportSemaphoreWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportSemaphoreWin32HandleInfoKHR(const VkImportSemaphoreWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkImportSemaphoreWin32HandleInfoKHR(const safe_VkImportSemaphoreWin32HandleInfoKHR& copy_src);
     safe_VkImportSemaphoreWin32HandleInfoKHR& operator=(const safe_VkImportSemaphoreWin32HandleInfoKHR& copy_src);
     safe_VkImportSemaphoreWin32HandleInfoKHR();
@@ -5522,7 +5647,8 @@ struct safe_VkExportSemaphoreWin32HandleInfoKHR {
     DWORD dwAccess;
     LPCWSTR name;
 
-    safe_VkExportSemaphoreWin32HandleInfoKHR(const VkExportSemaphoreWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportSemaphoreWin32HandleInfoKHR(const VkExportSemaphoreWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkExportSemaphoreWin32HandleInfoKHR(const safe_VkExportSemaphoreWin32HandleInfoKHR& copy_src);
     safe_VkExportSemaphoreWin32HandleInfoKHR& operator=(const safe_VkExportSemaphoreWin32HandleInfoKHR& copy_src);
     safe_VkExportSemaphoreWin32HandleInfoKHR();
@@ -5544,7 +5670,8 @@ struct safe_VkD3D12FenceSubmitInfoKHR {
     uint32_t signalSemaphoreValuesCount;
     const uint64_t* pSignalSemaphoreValues{};
 
-    safe_VkD3D12FenceSubmitInfoKHR(const VkD3D12FenceSubmitInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkD3D12FenceSubmitInfoKHR(const VkD3D12FenceSubmitInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkD3D12FenceSubmitInfoKHR(const safe_VkD3D12FenceSubmitInfoKHR& copy_src);
     safe_VkD3D12FenceSubmitInfoKHR& operator=(const safe_VkD3D12FenceSubmitInfoKHR& copy_src);
     safe_VkD3D12FenceSubmitInfoKHR();
@@ -5562,7 +5689,8 @@ struct safe_VkSemaphoreGetWin32HandleInfoKHR {
     VkSemaphore semaphore;
     VkExternalSemaphoreHandleTypeFlagBits handleType;
 
-    safe_VkSemaphoreGetWin32HandleInfoKHR(const VkSemaphoreGetWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreGetWin32HandleInfoKHR(const VkSemaphoreGetWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkSemaphoreGetWin32HandleInfoKHR(const safe_VkSemaphoreGetWin32HandleInfoKHR& copy_src);
     safe_VkSemaphoreGetWin32HandleInfoKHR& operator=(const safe_VkSemaphoreGetWin32HandleInfoKHR& copy_src);
     safe_VkSemaphoreGetWin32HandleInfoKHR();
@@ -5581,7 +5709,8 @@ struct safe_VkImportSemaphoreFdInfoKHR {
     VkExternalSemaphoreHandleTypeFlagBits handleType;
     int fd;
 
-    safe_VkImportSemaphoreFdInfoKHR(const VkImportSemaphoreFdInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportSemaphoreFdInfoKHR(const VkImportSemaphoreFdInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkImportSemaphoreFdInfoKHR(const safe_VkImportSemaphoreFdInfoKHR& copy_src);
     safe_VkImportSemaphoreFdInfoKHR& operator=(const safe_VkImportSemaphoreFdInfoKHR& copy_src);
     safe_VkImportSemaphoreFdInfoKHR();
@@ -5597,7 +5726,7 @@ struct safe_VkSemaphoreGetFdInfoKHR {
     VkSemaphore semaphore;
     VkExternalSemaphoreHandleTypeFlagBits handleType;
 
-    safe_VkSemaphoreGetFdInfoKHR(const VkSemaphoreGetFdInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSemaphoreGetFdInfoKHR(const VkSemaphoreGetFdInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSemaphoreGetFdInfoKHR(const safe_VkSemaphoreGetFdInfoKHR& copy_src);
     safe_VkSemaphoreGetFdInfoKHR& operator=(const safe_VkSemaphoreGetFdInfoKHR& copy_src);
     safe_VkSemaphoreGetFdInfoKHR();
@@ -5613,7 +5742,7 @@ struct safe_VkPhysicalDevicePushDescriptorPropertiesKHR {
     uint32_t maxPushDescriptors;
 
     safe_VkPhysicalDevicePushDescriptorPropertiesKHR(const VkPhysicalDevicePushDescriptorPropertiesKHR* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePushDescriptorPropertiesKHR(const safe_VkPhysicalDevicePushDescriptorPropertiesKHR& copy_src);
     safe_VkPhysicalDevicePushDescriptorPropertiesKHR& operator=(const safe_VkPhysicalDevicePushDescriptorPropertiesKHR& copy_src);
     safe_VkPhysicalDevicePushDescriptorPropertiesKHR();
@@ -5647,7 +5776,7 @@ struct safe_VkPresentRegionsKHR {
     uint32_t swapchainCount;
     safe_VkPresentRegionKHR* pRegions{};
 
-    safe_VkPresentRegionsKHR(const VkPresentRegionsKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPresentRegionsKHR(const VkPresentRegionsKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPresentRegionsKHR(const safe_VkPresentRegionsKHR& copy_src);
     safe_VkPresentRegionsKHR& operator=(const safe_VkPresentRegionsKHR& copy_src);
     safe_VkPresentRegionsKHR();
@@ -5663,7 +5792,7 @@ struct safe_VkSharedPresentSurfaceCapabilitiesKHR {
     VkImageUsageFlags sharedPresentSupportedUsageFlags;
 
     safe_VkSharedPresentSurfaceCapabilitiesKHR(const VkSharedPresentSurfaceCapabilitiesKHR* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSharedPresentSurfaceCapabilitiesKHR(const safe_VkSharedPresentSurfaceCapabilitiesKHR& copy_src);
     safe_VkSharedPresentSurfaceCapabilitiesKHR& operator=(const safe_VkSharedPresentSurfaceCapabilitiesKHR& copy_src);
     safe_VkSharedPresentSurfaceCapabilitiesKHR();
@@ -5685,7 +5814,8 @@ struct safe_VkImportFenceWin32HandleInfoKHR {
     HANDLE handle;
     LPCWSTR name;
 
-    safe_VkImportFenceWin32HandleInfoKHR(const VkImportFenceWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportFenceWin32HandleInfoKHR(const VkImportFenceWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkImportFenceWin32HandleInfoKHR(const safe_VkImportFenceWin32HandleInfoKHR& copy_src);
     safe_VkImportFenceWin32HandleInfoKHR& operator=(const safe_VkImportFenceWin32HandleInfoKHR& copy_src);
     safe_VkImportFenceWin32HandleInfoKHR();
@@ -5704,7 +5834,8 @@ struct safe_VkExportFenceWin32HandleInfoKHR {
     DWORD dwAccess;
     LPCWSTR name;
 
-    safe_VkExportFenceWin32HandleInfoKHR(const VkExportFenceWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportFenceWin32HandleInfoKHR(const VkExportFenceWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkExportFenceWin32HandleInfoKHR(const safe_VkExportFenceWin32HandleInfoKHR& copy_src);
     safe_VkExportFenceWin32HandleInfoKHR& operator=(const safe_VkExportFenceWin32HandleInfoKHR& copy_src);
     safe_VkExportFenceWin32HandleInfoKHR();
@@ -5722,7 +5853,8 @@ struct safe_VkFenceGetWin32HandleInfoKHR {
     VkFence fence;
     VkExternalFenceHandleTypeFlagBits handleType;
 
-    safe_VkFenceGetWin32HandleInfoKHR(const VkFenceGetWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFenceGetWin32HandleInfoKHR(const VkFenceGetWin32HandleInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkFenceGetWin32HandleInfoKHR(const safe_VkFenceGetWin32HandleInfoKHR& copy_src);
     safe_VkFenceGetWin32HandleInfoKHR& operator=(const safe_VkFenceGetWin32HandleInfoKHR& copy_src);
     safe_VkFenceGetWin32HandleInfoKHR();
@@ -5741,7 +5873,7 @@ struct safe_VkImportFenceFdInfoKHR {
     VkExternalFenceHandleTypeFlagBits handleType;
     int fd;
 
-    safe_VkImportFenceFdInfoKHR(const VkImportFenceFdInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportFenceFdInfoKHR(const VkImportFenceFdInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImportFenceFdInfoKHR(const safe_VkImportFenceFdInfoKHR& copy_src);
     safe_VkImportFenceFdInfoKHR& operator=(const safe_VkImportFenceFdInfoKHR& copy_src);
     safe_VkImportFenceFdInfoKHR();
@@ -5757,7 +5889,7 @@ struct safe_VkFenceGetFdInfoKHR {
     VkFence fence;
     VkExternalFenceHandleTypeFlagBits handleType;
 
-    safe_VkFenceGetFdInfoKHR(const VkFenceGetFdInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFenceGetFdInfoKHR(const VkFenceGetFdInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFenceGetFdInfoKHR(const safe_VkFenceGetFdInfoKHR& copy_src);
     safe_VkFenceGetFdInfoKHR& operator=(const safe_VkFenceGetFdInfoKHR& copy_src);
     safe_VkFenceGetFdInfoKHR();
@@ -5774,7 +5906,7 @@ struct safe_VkPhysicalDevicePerformanceQueryFeaturesKHR {
     VkBool32 performanceCounterMultipleQueryPools;
 
     safe_VkPhysicalDevicePerformanceQueryFeaturesKHR(const VkPhysicalDevicePerformanceQueryFeaturesKHR* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePerformanceQueryFeaturesKHR(const safe_VkPhysicalDevicePerformanceQueryFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePerformanceQueryFeaturesKHR& operator=(const safe_VkPhysicalDevicePerformanceQueryFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePerformanceQueryFeaturesKHR();
@@ -5794,7 +5926,7 @@ struct safe_VkPhysicalDevicePerformanceQueryPropertiesKHR {
     VkBool32 allowCommandBufferQueryCopies;
 
     safe_VkPhysicalDevicePerformanceQueryPropertiesKHR(const VkPhysicalDevicePerformanceQueryPropertiesKHR* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePerformanceQueryPropertiesKHR(const safe_VkPhysicalDevicePerformanceQueryPropertiesKHR& copy_src);
     safe_VkPhysicalDevicePerformanceQueryPropertiesKHR& operator=(
         const safe_VkPhysicalDevicePerformanceQueryPropertiesKHR& copy_src);
@@ -5817,7 +5949,7 @@ struct safe_VkPerformanceCounterKHR {
     VkPerformanceCounterStorageKHR storage;
     uint8_t uuid[VK_UUID_SIZE];
 
-    safe_VkPerformanceCounterKHR(const VkPerformanceCounterKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPerformanceCounterKHR(const VkPerformanceCounterKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPerformanceCounterKHR(const safe_VkPerformanceCounterKHR& copy_src);
     safe_VkPerformanceCounterKHR& operator=(const safe_VkPerformanceCounterKHR& copy_src);
     safe_VkPerformanceCounterKHR();
@@ -5835,7 +5967,8 @@ struct safe_VkPerformanceCounterDescriptionKHR {
     char category[VK_MAX_DESCRIPTION_SIZE];
     char description[VK_MAX_DESCRIPTION_SIZE];
 
-    safe_VkPerformanceCounterDescriptionKHR(const VkPerformanceCounterDescriptionKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPerformanceCounterDescriptionKHR(const VkPerformanceCounterDescriptionKHR* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPerformanceCounterDescriptionKHR(const safe_VkPerformanceCounterDescriptionKHR& copy_src);
     safe_VkPerformanceCounterDescriptionKHR& operator=(const safe_VkPerformanceCounterDescriptionKHR& copy_src);
     safe_VkPerformanceCounterDescriptionKHR();
@@ -5854,7 +5987,8 @@ struct safe_VkQueryPoolPerformanceCreateInfoKHR {
     uint32_t counterIndexCount;
     const uint32_t* pCounterIndices{};
 
-    safe_VkQueryPoolPerformanceCreateInfoKHR(const VkQueryPoolPerformanceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkQueryPoolPerformanceCreateInfoKHR(const VkQueryPoolPerformanceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkQueryPoolPerformanceCreateInfoKHR(const safe_VkQueryPoolPerformanceCreateInfoKHR& copy_src);
     safe_VkQueryPoolPerformanceCreateInfoKHR& operator=(const safe_VkQueryPoolPerformanceCreateInfoKHR& copy_src);
     safe_VkQueryPoolPerformanceCreateInfoKHR();
@@ -5872,7 +6006,8 @@ struct safe_VkAcquireProfilingLockInfoKHR {
     VkAcquireProfilingLockFlagsKHR flags;
     uint64_t timeout;
 
-    safe_VkAcquireProfilingLockInfoKHR(const VkAcquireProfilingLockInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAcquireProfilingLockInfoKHR(const VkAcquireProfilingLockInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkAcquireProfilingLockInfoKHR(const safe_VkAcquireProfilingLockInfoKHR& copy_src);
     safe_VkAcquireProfilingLockInfoKHR& operator=(const safe_VkAcquireProfilingLockInfoKHR& copy_src);
     safe_VkAcquireProfilingLockInfoKHR();
@@ -5887,7 +6022,8 @@ struct safe_VkPerformanceQuerySubmitInfoKHR {
     const void* pNext{};
     uint32_t counterPassIndex;
 
-    safe_VkPerformanceQuerySubmitInfoKHR(const VkPerformanceQuerySubmitInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPerformanceQuerySubmitInfoKHR(const VkPerformanceQuerySubmitInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkPerformanceQuerySubmitInfoKHR(const safe_VkPerformanceQuerySubmitInfoKHR& copy_src);
     safe_VkPerformanceQuerySubmitInfoKHR& operator=(const safe_VkPerformanceQuerySubmitInfoKHR& copy_src);
     safe_VkPerformanceQuerySubmitInfoKHR();
@@ -5902,7 +6038,8 @@ struct safe_VkPhysicalDeviceSurfaceInfo2KHR {
     const void* pNext{};
     VkSurfaceKHR surface;
 
-    safe_VkPhysicalDeviceSurfaceInfo2KHR(const VkPhysicalDeviceSurfaceInfo2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceSurfaceInfo2KHR(const VkPhysicalDeviceSurfaceInfo2KHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkPhysicalDeviceSurfaceInfo2KHR(const safe_VkPhysicalDeviceSurfaceInfo2KHR& copy_src);
     safe_VkPhysicalDeviceSurfaceInfo2KHR& operator=(const safe_VkPhysicalDeviceSurfaceInfo2KHR& copy_src);
     safe_VkPhysicalDeviceSurfaceInfo2KHR();
@@ -5917,7 +6054,8 @@ struct safe_VkSurfaceCapabilities2KHR {
     void* pNext{};
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
 
-    safe_VkSurfaceCapabilities2KHR(const VkSurfaceCapabilities2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSurfaceCapabilities2KHR(const VkSurfaceCapabilities2KHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkSurfaceCapabilities2KHR(const safe_VkSurfaceCapabilities2KHR& copy_src);
     safe_VkSurfaceCapabilities2KHR& operator=(const safe_VkSurfaceCapabilities2KHR& copy_src);
     safe_VkSurfaceCapabilities2KHR();
@@ -5932,7 +6070,7 @@ struct safe_VkSurfaceFormat2KHR {
     void* pNext{};
     VkSurfaceFormatKHR surfaceFormat;
 
-    safe_VkSurfaceFormat2KHR(const VkSurfaceFormat2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSurfaceFormat2KHR(const VkSurfaceFormat2KHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfaceFormat2KHR(const safe_VkSurfaceFormat2KHR& copy_src);
     safe_VkSurfaceFormat2KHR& operator=(const safe_VkSurfaceFormat2KHR& copy_src);
     safe_VkSurfaceFormat2KHR();
@@ -5947,7 +6085,7 @@ struct safe_VkDisplayProperties2KHR {
     void* pNext{};
     safe_VkDisplayPropertiesKHR displayProperties;
 
-    safe_VkDisplayProperties2KHR(const VkDisplayProperties2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayProperties2KHR(const VkDisplayProperties2KHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDisplayProperties2KHR(const safe_VkDisplayProperties2KHR& copy_src);
     safe_VkDisplayProperties2KHR& operator=(const safe_VkDisplayProperties2KHR& copy_src);
     safe_VkDisplayProperties2KHR();
@@ -5962,7 +6100,8 @@ struct safe_VkDisplayPlaneProperties2KHR {
     void* pNext{};
     VkDisplayPlanePropertiesKHR displayPlaneProperties;
 
-    safe_VkDisplayPlaneProperties2KHR(const VkDisplayPlaneProperties2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayPlaneProperties2KHR(const VkDisplayPlaneProperties2KHR* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkDisplayPlaneProperties2KHR(const safe_VkDisplayPlaneProperties2KHR& copy_src);
     safe_VkDisplayPlaneProperties2KHR& operator=(const safe_VkDisplayPlaneProperties2KHR& copy_src);
     safe_VkDisplayPlaneProperties2KHR();
@@ -5977,7 +6116,8 @@ struct safe_VkDisplayModeProperties2KHR {
     void* pNext{};
     VkDisplayModePropertiesKHR displayModeProperties;
 
-    safe_VkDisplayModeProperties2KHR(const VkDisplayModeProperties2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayModeProperties2KHR(const VkDisplayModeProperties2KHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkDisplayModeProperties2KHR(const safe_VkDisplayModeProperties2KHR& copy_src);
     safe_VkDisplayModeProperties2KHR& operator=(const safe_VkDisplayModeProperties2KHR& copy_src);
     safe_VkDisplayModeProperties2KHR();
@@ -5993,7 +6133,7 @@ struct safe_VkDisplayPlaneInfo2KHR {
     VkDisplayModeKHR mode;
     uint32_t planeIndex;
 
-    safe_VkDisplayPlaneInfo2KHR(const VkDisplayPlaneInfo2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayPlaneInfo2KHR(const VkDisplayPlaneInfo2KHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDisplayPlaneInfo2KHR(const safe_VkDisplayPlaneInfo2KHR& copy_src);
     safe_VkDisplayPlaneInfo2KHR& operator=(const safe_VkDisplayPlaneInfo2KHR& copy_src);
     safe_VkDisplayPlaneInfo2KHR();
@@ -6008,7 +6148,8 @@ struct safe_VkDisplayPlaneCapabilities2KHR {
     void* pNext{};
     VkDisplayPlaneCapabilitiesKHR capabilities;
 
-    safe_VkDisplayPlaneCapabilities2KHR(const VkDisplayPlaneCapabilities2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayPlaneCapabilities2KHR(const VkDisplayPlaneCapabilities2KHR* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkDisplayPlaneCapabilities2KHR(const safe_VkDisplayPlaneCapabilities2KHR& copy_src);
     safe_VkDisplayPlaneCapabilities2KHR& operator=(const safe_VkDisplayPlaneCapabilities2KHR& copy_src);
     safe_VkDisplayPlaneCapabilities2KHR();
@@ -6039,7 +6180,7 @@ struct safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR {
     VkBool32 vertexAttributeAccessBeyondStride;
 
     safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(const VkPhysicalDevicePortabilitySubsetFeaturesKHR* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR& operator=(const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR();
@@ -6061,7 +6202,7 @@ struct safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR {
     uint32_t minVertexInputBindingStrideAlignment;
 
     safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR(const VkPhysicalDevicePortabilitySubsetPropertiesKHR* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR(const safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR& copy_src);
     safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR& operator=(
         const safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR& copy_src);
@@ -6084,7 +6225,7 @@ struct safe_VkPhysicalDeviceShaderClockFeaturesKHR {
     VkBool32 shaderDeviceClock;
 
     safe_VkPhysicalDeviceShaderClockFeaturesKHR(const VkPhysicalDeviceShaderClockFeaturesKHR* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderClockFeaturesKHR(const safe_VkPhysicalDeviceShaderClockFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceShaderClockFeaturesKHR& operator=(const safe_VkPhysicalDeviceShaderClockFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceShaderClockFeaturesKHR();
@@ -6101,7 +6242,8 @@ struct safe_VkVideoDecodeH265ProfileInfoKHR {
     const void* pNext{};
     StdVideoH265ProfileIdc stdProfileIdc;
 
-    safe_VkVideoDecodeH265ProfileInfoKHR(const VkVideoDecodeH265ProfileInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH265ProfileInfoKHR(const VkVideoDecodeH265ProfileInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoDecodeH265ProfileInfoKHR(const safe_VkVideoDecodeH265ProfileInfoKHR& copy_src);
     safe_VkVideoDecodeH265ProfileInfoKHR& operator=(const safe_VkVideoDecodeH265ProfileInfoKHR& copy_src);
     safe_VkVideoDecodeH265ProfileInfoKHR();
@@ -6116,7 +6258,8 @@ struct safe_VkVideoDecodeH265CapabilitiesKHR {
     void* pNext{};
     StdVideoH265LevelIdc maxLevelIdc;
 
-    safe_VkVideoDecodeH265CapabilitiesKHR(const VkVideoDecodeH265CapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH265CapabilitiesKHR(const VkVideoDecodeH265CapabilitiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkVideoDecodeH265CapabilitiesKHR(const safe_VkVideoDecodeH265CapabilitiesKHR& copy_src);
     safe_VkVideoDecodeH265CapabilitiesKHR& operator=(const safe_VkVideoDecodeH265CapabilitiesKHR& copy_src);
     safe_VkVideoDecodeH265CapabilitiesKHR();
@@ -6137,7 +6280,7 @@ struct safe_VkVideoDecodeH265SessionParametersAddInfoKHR {
     const StdVideoH265PictureParameterSet* pStdPPSs{};
 
     safe_VkVideoDecodeH265SessionParametersAddInfoKHR(const VkVideoDecodeH265SessionParametersAddInfoKHR* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoDecodeH265SessionParametersAddInfoKHR(const safe_VkVideoDecodeH265SessionParametersAddInfoKHR& copy_src);
     safe_VkVideoDecodeH265SessionParametersAddInfoKHR& operator=(const safe_VkVideoDecodeH265SessionParametersAddInfoKHR& copy_src);
     safe_VkVideoDecodeH265SessionParametersAddInfoKHR();
@@ -6160,7 +6303,7 @@ struct safe_VkVideoDecodeH265SessionParametersCreateInfoKHR {
     safe_VkVideoDecodeH265SessionParametersAddInfoKHR* pParametersAddInfo{};
 
     safe_VkVideoDecodeH265SessionParametersCreateInfoKHR(const VkVideoDecodeH265SessionParametersCreateInfoKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoDecodeH265SessionParametersCreateInfoKHR(const safe_VkVideoDecodeH265SessionParametersCreateInfoKHR& copy_src);
     safe_VkVideoDecodeH265SessionParametersCreateInfoKHR& operator=(
         const safe_VkVideoDecodeH265SessionParametersCreateInfoKHR& copy_src);
@@ -6182,7 +6325,8 @@ struct safe_VkVideoDecodeH265PictureInfoKHR {
     uint32_t sliceSegmentCount;
     const uint32_t* pSliceSegmentOffsets{};
 
-    safe_VkVideoDecodeH265PictureInfoKHR(const VkVideoDecodeH265PictureInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH265PictureInfoKHR(const VkVideoDecodeH265PictureInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoDecodeH265PictureInfoKHR(const safe_VkVideoDecodeH265PictureInfoKHR& copy_src);
     safe_VkVideoDecodeH265PictureInfoKHR& operator=(const safe_VkVideoDecodeH265PictureInfoKHR& copy_src);
     safe_VkVideoDecodeH265PictureInfoKHR();
@@ -6197,7 +6341,8 @@ struct safe_VkVideoDecodeH265DpbSlotInfoKHR {
     const void* pNext{};
     const StdVideoDecodeH265ReferenceInfo* pStdReferenceInfo{};
 
-    safe_VkVideoDecodeH265DpbSlotInfoKHR(const VkVideoDecodeH265DpbSlotInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoDecodeH265DpbSlotInfoKHR(const VkVideoDecodeH265DpbSlotInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoDecodeH265DpbSlotInfoKHR(const safe_VkVideoDecodeH265DpbSlotInfoKHR& copy_src);
     safe_VkVideoDecodeH265DpbSlotInfoKHR& operator=(const safe_VkVideoDecodeH265DpbSlotInfoKHR& copy_src);
     safe_VkVideoDecodeH265DpbSlotInfoKHR();
@@ -6213,7 +6358,7 @@ struct safe_VkDeviceQueueGlobalPriorityCreateInfoKHR {
     VkQueueGlobalPriorityKHR globalPriority;
 
     safe_VkDeviceQueueGlobalPriorityCreateInfoKHR(const VkDeviceQueueGlobalPriorityCreateInfoKHR* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceQueueGlobalPriorityCreateInfoKHR(const safe_VkDeviceQueueGlobalPriorityCreateInfoKHR& copy_src);
     safe_VkDeviceQueueGlobalPriorityCreateInfoKHR& operator=(const safe_VkDeviceQueueGlobalPriorityCreateInfoKHR& copy_src);
     safe_VkDeviceQueueGlobalPriorityCreateInfoKHR();
@@ -6231,7 +6376,7 @@ struct safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR {
     VkBool32 globalPriorityQuery;
 
     safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR(const VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR& operator=(
         const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR& copy_src);
@@ -6253,7 +6398,7 @@ struct safe_VkQueueFamilyGlobalPriorityPropertiesKHR {
     VkQueueGlobalPriorityKHR priorities[VK_MAX_GLOBAL_PRIORITY_SIZE_KHR];
 
     safe_VkQueueFamilyGlobalPriorityPropertiesKHR(const VkQueueFamilyGlobalPriorityPropertiesKHR* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkQueueFamilyGlobalPriorityPropertiesKHR(const safe_VkQueueFamilyGlobalPriorityPropertiesKHR& copy_src);
     safe_VkQueueFamilyGlobalPriorityPropertiesKHR& operator=(const safe_VkQueueFamilyGlobalPriorityPropertiesKHR& copy_src);
     safe_VkQueueFamilyGlobalPriorityPropertiesKHR();
@@ -6272,7 +6417,7 @@ struct safe_VkFragmentShadingRateAttachmentInfoKHR {
     VkExtent2D shadingRateAttachmentTexelSize;
 
     safe_VkFragmentShadingRateAttachmentInfoKHR(const VkFragmentShadingRateAttachmentInfoKHR* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFragmentShadingRateAttachmentInfoKHR(const safe_VkFragmentShadingRateAttachmentInfoKHR& copy_src);
     safe_VkFragmentShadingRateAttachmentInfoKHR& operator=(const safe_VkFragmentShadingRateAttachmentInfoKHR& copy_src);
     safe_VkFragmentShadingRateAttachmentInfoKHR();
@@ -6291,7 +6436,7 @@ struct safe_VkPipelineFragmentShadingRateStateCreateInfoKHR {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2];
 
     safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(const VkPipelineFragmentShadingRateStateCreateInfoKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& copy_src);
     safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& operator=(
         const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& copy_src);
@@ -6314,7 +6459,7 @@ struct safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR {
     VkBool32 attachmentFragmentShadingRate;
 
     safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& operator=(
         const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& copy_src);
@@ -6351,7 +6496,7 @@ struct safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR {
     VkBool32 fragmentShadingRateStrictMultiplyCombiner;
 
     safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(const VkPhysicalDeviceFragmentShadingRatePropertiesKHR* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& copy_src);
     safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& operator=(
         const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& copy_src);
@@ -6373,7 +6518,7 @@ struct safe_VkPhysicalDeviceFragmentShadingRateKHR {
     VkExtent2D fragmentSize;
 
     safe_VkPhysicalDeviceFragmentShadingRateKHR(const VkPhysicalDeviceFragmentShadingRateKHR* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShadingRateKHR(const safe_VkPhysicalDeviceFragmentShadingRateKHR& copy_src);
     safe_VkPhysicalDeviceFragmentShadingRateKHR& operator=(const safe_VkPhysicalDeviceFragmentShadingRateKHR& copy_src);
     safe_VkPhysicalDeviceFragmentShadingRateKHR();
@@ -6390,7 +6535,8 @@ struct safe_VkSurfaceProtectedCapabilitiesKHR {
     const void* pNext{};
     VkBool32 supportsProtected;
 
-    safe_VkSurfaceProtectedCapabilitiesKHR(const VkSurfaceProtectedCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSurfaceProtectedCapabilitiesKHR(const VkSurfaceProtectedCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkSurfaceProtectedCapabilitiesKHR(const safe_VkSurfaceProtectedCapabilitiesKHR& copy_src);
     safe_VkSurfaceProtectedCapabilitiesKHR& operator=(const safe_VkSurfaceProtectedCapabilitiesKHR& copy_src);
     safe_VkSurfaceProtectedCapabilitiesKHR();
@@ -6408,7 +6554,7 @@ struct safe_VkPhysicalDevicePresentWaitFeaturesKHR {
     VkBool32 presentWait;
 
     safe_VkPhysicalDevicePresentWaitFeaturesKHR(const VkPhysicalDevicePresentWaitFeaturesKHR* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePresentWaitFeaturesKHR(const safe_VkPhysicalDevicePresentWaitFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePresentWaitFeaturesKHR& operator=(const safe_VkPhysicalDevicePresentWaitFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePresentWaitFeaturesKHR();
@@ -6426,7 +6572,8 @@ struct safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR {
     VkBool32 pipelineExecutableInfo;
 
     safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(
-        const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(
         const safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR& operator=(
@@ -6447,7 +6594,7 @@ struct safe_VkPipelineInfoKHR {
     const void* pNext{};
     VkPipeline pipeline;
 
-    safe_VkPipelineInfoKHR(const VkPipelineInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineInfoKHR(const VkPipelineInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineInfoKHR(const safe_VkPipelineInfoKHR& copy_src);
     safe_VkPipelineInfoKHR& operator=(const safe_VkPipelineInfoKHR& copy_src);
     safe_VkPipelineInfoKHR();
@@ -6465,7 +6612,8 @@ struct safe_VkPipelineExecutablePropertiesKHR {
     char description[VK_MAX_DESCRIPTION_SIZE];
     uint32_t subgroupSize;
 
-    safe_VkPipelineExecutablePropertiesKHR(const VkPipelineExecutablePropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineExecutablePropertiesKHR(const VkPipelineExecutablePropertiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPipelineExecutablePropertiesKHR(const safe_VkPipelineExecutablePropertiesKHR& copy_src);
     safe_VkPipelineExecutablePropertiesKHR& operator=(const safe_VkPipelineExecutablePropertiesKHR& copy_src);
     safe_VkPipelineExecutablePropertiesKHR();
@@ -6483,7 +6631,8 @@ struct safe_VkPipelineExecutableInfoKHR {
     VkPipeline pipeline;
     uint32_t executableIndex;
 
-    safe_VkPipelineExecutableInfoKHR(const VkPipelineExecutableInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineExecutableInfoKHR(const VkPipelineExecutableInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkPipelineExecutableInfoKHR(const safe_VkPipelineExecutableInfoKHR& copy_src);
     safe_VkPipelineExecutableInfoKHR& operator=(const safe_VkPipelineExecutableInfoKHR& copy_src);
     safe_VkPipelineExecutableInfoKHR();
@@ -6501,7 +6650,8 @@ struct safe_VkPipelineExecutableStatisticKHR {
     VkPipelineExecutableStatisticFormatKHR format;
     VkPipelineExecutableStatisticValueKHR value;
 
-    safe_VkPipelineExecutableStatisticKHR(const VkPipelineExecutableStatisticKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineExecutableStatisticKHR(const VkPipelineExecutableStatisticKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPipelineExecutableStatisticKHR(const safe_VkPipelineExecutableStatisticKHR& copy_src);
     safe_VkPipelineExecutableStatisticKHR& operator=(const safe_VkPipelineExecutableStatisticKHR& copy_src);
     safe_VkPipelineExecutableStatisticKHR();
@@ -6521,7 +6671,7 @@ struct safe_VkPipelineExecutableInternalRepresentationKHR {
     void* pData{};
 
     safe_VkPipelineExecutableInternalRepresentationKHR(const VkPipelineExecutableInternalRepresentationKHR* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineExecutableInternalRepresentationKHR(const safe_VkPipelineExecutableInternalRepresentationKHR& copy_src);
     safe_VkPipelineExecutableInternalRepresentationKHR& operator=(
         const safe_VkPipelineExecutableInternalRepresentationKHR& copy_src);
@@ -6544,7 +6694,7 @@ struct safe_VkMemoryMapInfoKHR {
     VkDeviceSize offset;
     VkDeviceSize size;
 
-    safe_VkMemoryMapInfoKHR(const VkMemoryMapInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryMapInfoKHR(const VkMemoryMapInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryMapInfoKHR(const safe_VkMemoryMapInfoKHR& copy_src);
     safe_VkMemoryMapInfoKHR& operator=(const safe_VkMemoryMapInfoKHR& copy_src);
     safe_VkMemoryMapInfoKHR();
@@ -6560,7 +6710,7 @@ struct safe_VkMemoryUnmapInfoKHR {
     VkMemoryUnmapFlagsKHR flags;
     VkDeviceMemory memory;
 
-    safe_VkMemoryUnmapInfoKHR(const VkMemoryUnmapInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryUnmapInfoKHR(const VkMemoryUnmapInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryUnmapInfoKHR(const safe_VkMemoryUnmapInfoKHR& copy_src);
     safe_VkMemoryUnmapInfoKHR& operator=(const safe_VkMemoryUnmapInfoKHR& copy_src);
     safe_VkMemoryUnmapInfoKHR();
@@ -6576,7 +6726,8 @@ struct safe_VkPipelineLibraryCreateInfoKHR {
     uint32_t libraryCount;
     VkPipeline* pLibraries{};
 
-    safe_VkPipelineLibraryCreateInfoKHR(const VkPipelineLibraryCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineLibraryCreateInfoKHR(const VkPipelineLibraryCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkPipelineLibraryCreateInfoKHR(const safe_VkPipelineLibraryCreateInfoKHR& copy_src);
     safe_VkPipelineLibraryCreateInfoKHR& operator=(const safe_VkPipelineLibraryCreateInfoKHR& copy_src);
     safe_VkPipelineLibraryCreateInfoKHR();
@@ -6592,7 +6743,7 @@ struct safe_VkPresentIdKHR {
     uint32_t swapchainCount;
     const uint64_t* pPresentIds{};
 
-    safe_VkPresentIdKHR(const VkPresentIdKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPresentIdKHR(const VkPresentIdKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPresentIdKHR(const safe_VkPresentIdKHR& copy_src);
     safe_VkPresentIdKHR& operator=(const safe_VkPresentIdKHR& copy_src);
     safe_VkPresentIdKHR();
@@ -6608,7 +6759,7 @@ struct safe_VkPhysicalDevicePresentIdFeaturesKHR {
     VkBool32 presentId;
 
     safe_VkPhysicalDevicePresentIdFeaturesKHR(const VkPhysicalDevicePresentIdFeaturesKHR* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePresentIdFeaturesKHR(const safe_VkPhysicalDevicePresentIdFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePresentIdFeaturesKHR& operator=(const safe_VkPhysicalDevicePresentIdFeaturesKHR& copy_src);
     safe_VkPhysicalDevicePresentIdFeaturesKHR();
@@ -6634,7 +6785,7 @@ struct safe_VkVideoEncodeInfoKHR {
     safe_VkVideoReferenceSlotInfoKHR* pReferenceSlots{};
     uint32_t precedingExternallyEncodedBytes;
 
-    safe_VkVideoEncodeInfoKHR(const VkVideoEncodeInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeInfoKHR(const VkVideoEncodeInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeInfoKHR(const safe_VkVideoEncodeInfoKHR& copy_src);
     safe_VkVideoEncodeInfoKHR& operator=(const safe_VkVideoEncodeInfoKHR& copy_src);
     safe_VkVideoEncodeInfoKHR();
@@ -6657,7 +6808,8 @@ struct safe_VkVideoEncodeCapabilitiesKHR {
     VkExtent2D encodeInputPictureGranularity;
     VkVideoEncodeFeedbackFlagsKHR supportedEncodeFeedbackFlags;
 
-    safe_VkVideoEncodeCapabilitiesKHR(const VkVideoEncodeCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeCapabilitiesKHR(const VkVideoEncodeCapabilitiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkVideoEncodeCapabilitiesKHR(const safe_VkVideoEncodeCapabilitiesKHR& copy_src);
     safe_VkVideoEncodeCapabilitiesKHR& operator=(const safe_VkVideoEncodeCapabilitiesKHR& copy_src);
     safe_VkVideoEncodeCapabilitiesKHR();
@@ -6675,7 +6827,7 @@ struct safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR {
     VkVideoEncodeFeedbackFlagsKHR encodeFeedbackFlags;
 
     safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR(const VkQueryPoolVideoEncodeFeedbackCreateInfoKHR* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR(const safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR& copy_src);
     safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR& operator=(const safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR& copy_src);
     safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR();
@@ -6698,7 +6850,8 @@ struct safe_VkVideoEncodeUsageInfoKHR {
     VkVideoEncodeContentFlagsKHR videoContentHints;
     VkVideoEncodeTuningModeKHR tuningMode;
 
-    safe_VkVideoEncodeUsageInfoKHR(const VkVideoEncodeUsageInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeUsageInfoKHR(const VkVideoEncodeUsageInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkVideoEncodeUsageInfoKHR(const safe_VkVideoEncodeUsageInfoKHR& copy_src);
     safe_VkVideoEncodeUsageInfoKHR& operator=(const safe_VkVideoEncodeUsageInfoKHR& copy_src);
     safe_VkVideoEncodeUsageInfoKHR();
@@ -6719,7 +6872,7 @@ struct safe_VkVideoEncodeRateControlLayerInfoKHR {
     uint32_t frameRateDenominator;
 
     safe_VkVideoEncodeRateControlLayerInfoKHR(const VkVideoEncodeRateControlLayerInfoKHR* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeRateControlLayerInfoKHR(const safe_VkVideoEncodeRateControlLayerInfoKHR& copy_src);
     safe_VkVideoEncodeRateControlLayerInfoKHR& operator=(const safe_VkVideoEncodeRateControlLayerInfoKHR& copy_src);
     safe_VkVideoEncodeRateControlLayerInfoKHR();
@@ -6743,7 +6896,8 @@ struct safe_VkVideoEncodeRateControlInfoKHR {
     uint32_t virtualBufferSizeInMs;
     uint32_t initialVirtualBufferSizeInMs;
 
-    safe_VkVideoEncodeRateControlInfoKHR(const VkVideoEncodeRateControlInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeRateControlInfoKHR(const VkVideoEncodeRateControlInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeRateControlInfoKHR(const safe_VkVideoEncodeRateControlInfoKHR& copy_src);
     safe_VkVideoEncodeRateControlInfoKHR& operator=(const safe_VkVideoEncodeRateControlInfoKHR& copy_src);
     safe_VkVideoEncodeRateControlInfoKHR();
@@ -6762,7 +6916,7 @@ struct safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR {
     uint32_t qualityLevel;
 
     safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR(const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR(const safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR& copy_src);
     safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR& operator=(
         const safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR& copy_src);
@@ -6786,7 +6940,7 @@ struct safe_VkVideoEncodeQualityLevelPropertiesKHR {
     uint32_t preferredRateControlLayerCount;
 
     safe_VkVideoEncodeQualityLevelPropertiesKHR(const VkVideoEncodeQualityLevelPropertiesKHR* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeQualityLevelPropertiesKHR(const safe_VkVideoEncodeQualityLevelPropertiesKHR& copy_src);
     safe_VkVideoEncodeQualityLevelPropertiesKHR& operator=(const safe_VkVideoEncodeQualityLevelPropertiesKHR& copy_src);
     safe_VkVideoEncodeQualityLevelPropertiesKHR();
@@ -6805,7 +6959,8 @@ struct safe_VkVideoEncodeQualityLevelInfoKHR {
     const void* pNext{};
     uint32_t qualityLevel;
 
-    safe_VkVideoEncodeQualityLevelInfoKHR(const VkVideoEncodeQualityLevelInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeQualityLevelInfoKHR(const VkVideoEncodeQualityLevelInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkVideoEncodeQualityLevelInfoKHR(const safe_VkVideoEncodeQualityLevelInfoKHR& copy_src);
     safe_VkVideoEncodeQualityLevelInfoKHR& operator=(const safe_VkVideoEncodeQualityLevelInfoKHR& copy_src);
     safe_VkVideoEncodeQualityLevelInfoKHR();
@@ -6823,7 +6978,7 @@ struct safe_VkVideoEncodeSessionParametersGetInfoKHR {
     VkVideoSessionParametersKHR videoSessionParameters;
 
     safe_VkVideoEncodeSessionParametersGetInfoKHR(const VkVideoEncodeSessionParametersGetInfoKHR* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeSessionParametersGetInfoKHR(const safe_VkVideoEncodeSessionParametersGetInfoKHR& copy_src);
     safe_VkVideoEncodeSessionParametersGetInfoKHR& operator=(const safe_VkVideoEncodeSessionParametersGetInfoKHR& copy_src);
     safe_VkVideoEncodeSessionParametersGetInfoKHR();
@@ -6843,7 +6998,7 @@ struct safe_VkVideoEncodeSessionParametersFeedbackInfoKHR {
     VkBool32 hasOverrides;
 
     safe_VkVideoEncodeSessionParametersFeedbackInfoKHR(const VkVideoEncodeSessionParametersFeedbackInfoKHR* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeSessionParametersFeedbackInfoKHR(const safe_VkVideoEncodeSessionParametersFeedbackInfoKHR& copy_src);
     safe_VkVideoEncodeSessionParametersFeedbackInfoKHR& operator=(
         const safe_VkVideoEncodeSessionParametersFeedbackInfoKHR& copy_src);
@@ -6865,7 +7020,7 @@ struct safe_VkQueueFamilyCheckpointProperties2NV {
     VkPipelineStageFlags2 checkpointExecutionStageMask;
 
     safe_VkQueueFamilyCheckpointProperties2NV(const VkQueueFamilyCheckpointProperties2NV* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkQueueFamilyCheckpointProperties2NV(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src);
     safe_VkQueueFamilyCheckpointProperties2NV& operator=(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src);
     safe_VkQueueFamilyCheckpointProperties2NV();
@@ -6883,7 +7038,7 @@ struct safe_VkCheckpointData2NV {
     VkPipelineStageFlags2 stage;
     void* pCheckpointMarker{};
 
-    safe_VkCheckpointData2NV(const VkCheckpointData2NV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCheckpointData2NV(const VkCheckpointData2NV* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCheckpointData2NV(const safe_VkCheckpointData2NV& copy_src);
     safe_VkCheckpointData2NV& operator=(const safe_VkCheckpointData2NV& copy_src);
     safe_VkCheckpointData2NV();
@@ -6899,7 +7054,7 @@ struct safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR {
     VkBool32 fragmentShaderBarycentric;
 
     safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR(const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR(
         const safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR& operator=(
@@ -6921,7 +7076,8 @@ struct safe_VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR {
     VkBool32 triStripVertexOrderIndependentOfProvokingVertex;
 
     safe_VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR(
-        const VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR(
         const safe_VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR& copy_src);
     safe_VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR& operator=(
@@ -6943,7 +7099,8 @@ struct safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR {
     VkBool32 shaderSubgroupUniformControlFlow;
 
     safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(
-        const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(
         const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& operator=(
@@ -6969,7 +7126,8 @@ struct safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR {
     VkBool32 workgroupMemoryExplicitLayout16BitAccess;
 
     safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(
-        const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(
         const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& operator=(
@@ -6992,7 +7150,7 @@ struct safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR {
     VkBool32 rayTracingPipelineTraceRaysIndirect2;
 
     safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR(const VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR(const safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR& copy_src);
     safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR& operator=(
         const safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR& copy_src);
@@ -7013,7 +7171,7 @@ struct safe_VkPhysicalDeviceMaintenance5FeaturesKHR {
     VkBool32 maintenance5;
 
     safe_VkPhysicalDeviceMaintenance5FeaturesKHR(const VkPhysicalDeviceMaintenance5FeaturesKHR* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMaintenance5FeaturesKHR(const safe_VkPhysicalDeviceMaintenance5FeaturesKHR& copy_src);
     safe_VkPhysicalDeviceMaintenance5FeaturesKHR& operator=(const safe_VkPhysicalDeviceMaintenance5FeaturesKHR& copy_src);
     safe_VkPhysicalDeviceMaintenance5FeaturesKHR();
@@ -7036,7 +7194,7 @@ struct safe_VkPhysicalDeviceMaintenance5PropertiesKHR {
     VkBool32 nonStrictWideLinesUseParallelogram;
 
     safe_VkPhysicalDeviceMaintenance5PropertiesKHR(const VkPhysicalDeviceMaintenance5PropertiesKHR* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMaintenance5PropertiesKHR(const safe_VkPhysicalDeviceMaintenance5PropertiesKHR& copy_src);
     safe_VkPhysicalDeviceMaintenance5PropertiesKHR& operator=(const safe_VkPhysicalDeviceMaintenance5PropertiesKHR& copy_src);
     safe_VkPhysicalDeviceMaintenance5PropertiesKHR();
@@ -7057,7 +7215,7 @@ struct safe_VkRenderingAreaInfoKHR {
     VkFormat depthAttachmentFormat;
     VkFormat stencilAttachmentFormat;
 
-    safe_VkRenderingAreaInfoKHR(const VkRenderingAreaInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderingAreaInfoKHR(const VkRenderingAreaInfoKHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderingAreaInfoKHR(const safe_VkRenderingAreaInfoKHR& copy_src);
     safe_VkRenderingAreaInfoKHR& operator=(const safe_VkRenderingAreaInfoKHR& copy_src);
     safe_VkRenderingAreaInfoKHR();
@@ -7072,7 +7230,7 @@ struct safe_VkImageSubresource2KHR {
     void* pNext{};
     VkImageSubresource imageSubresource;
 
-    safe_VkImageSubresource2KHR(const VkImageSubresource2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageSubresource2KHR(const VkImageSubresource2KHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageSubresource2KHR(const safe_VkImageSubresource2KHR& copy_src);
     safe_VkImageSubresource2KHR& operator=(const safe_VkImageSubresource2KHR& copy_src);
     safe_VkImageSubresource2KHR();
@@ -7088,7 +7246,8 @@ struct safe_VkDeviceImageSubresourceInfoKHR {
     safe_VkImageCreateInfo* pCreateInfo{};
     safe_VkImageSubresource2KHR* pSubresource{};
 
-    safe_VkDeviceImageSubresourceInfoKHR(const VkDeviceImageSubresourceInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceImageSubresourceInfoKHR(const VkDeviceImageSubresourceInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkDeviceImageSubresourceInfoKHR(const safe_VkDeviceImageSubresourceInfoKHR& copy_src);
     safe_VkDeviceImageSubresourceInfoKHR& operator=(const safe_VkDeviceImageSubresourceInfoKHR& copy_src);
     safe_VkDeviceImageSubresourceInfoKHR();
@@ -7103,7 +7262,7 @@ struct safe_VkSubresourceLayout2KHR {
     void* pNext{};
     VkSubresourceLayout subresourceLayout;
 
-    safe_VkSubresourceLayout2KHR(const VkSubresourceLayout2KHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubresourceLayout2KHR(const VkSubresourceLayout2KHR* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubresourceLayout2KHR(const safe_VkSubresourceLayout2KHR& copy_src);
     safe_VkSubresourceLayout2KHR& operator=(const safe_VkSubresourceLayout2KHR& copy_src);
     safe_VkSubresourceLayout2KHR();
@@ -7118,7 +7277,8 @@ struct safe_VkPipelineCreateFlags2CreateInfoKHR {
     const void* pNext{};
     VkPipelineCreateFlags2KHR flags;
 
-    safe_VkPipelineCreateFlags2CreateInfoKHR(const VkPipelineCreateFlags2CreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineCreateFlags2CreateInfoKHR(const VkPipelineCreateFlags2CreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkPipelineCreateFlags2CreateInfoKHR(const safe_VkPipelineCreateFlags2CreateInfoKHR& copy_src);
     safe_VkPipelineCreateFlags2CreateInfoKHR& operator=(const safe_VkPipelineCreateFlags2CreateInfoKHR& copy_src);
     safe_VkPipelineCreateFlags2CreateInfoKHR();
@@ -7135,7 +7295,8 @@ struct safe_VkBufferUsageFlags2CreateInfoKHR {
     const void* pNext{};
     VkBufferUsageFlags2KHR usage;
 
-    safe_VkBufferUsageFlags2CreateInfoKHR(const VkBufferUsageFlags2CreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferUsageFlags2CreateInfoKHR(const VkBufferUsageFlags2CreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkBufferUsageFlags2CreateInfoKHR(const safe_VkBufferUsageFlags2CreateInfoKHR& copy_src);
     safe_VkBufferUsageFlags2CreateInfoKHR& operator=(const safe_VkBufferUsageFlags2CreateInfoKHR& copy_src);
     safe_VkBufferUsageFlags2CreateInfoKHR();
@@ -7151,7 +7312,7 @@ struct safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR {
     VkBool32 rayTracingPositionFetch;
 
     safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR(const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR(
         const safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR& operator=(
@@ -7180,7 +7341,8 @@ struct safe_VkCooperativeMatrixPropertiesKHR {
     VkBool32 saturatingAccumulation;
     VkScopeKHR scope;
 
-    safe_VkCooperativeMatrixPropertiesKHR(const VkCooperativeMatrixPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCooperativeMatrixPropertiesKHR(const VkCooperativeMatrixPropertiesKHR* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkCooperativeMatrixPropertiesKHR(const safe_VkCooperativeMatrixPropertiesKHR& copy_src);
     safe_VkCooperativeMatrixPropertiesKHR& operator=(const safe_VkCooperativeMatrixPropertiesKHR& copy_src);
     safe_VkCooperativeMatrixPropertiesKHR();
@@ -7197,7 +7359,7 @@ struct safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR {
     VkBool32 cooperativeMatrixRobustBufferAccess;
 
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(const VkPhysicalDeviceCooperativeMatrixFeaturesKHR* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& operator=(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR();
@@ -7217,7 +7379,7 @@ struct safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR {
     VkShaderStageFlags cooperativeMatrixSupportedStages;
 
     safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(const VkPhysicalDeviceCooperativeMatrixPropertiesKHR* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& copy_src);
     safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& operator=(
         const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& copy_src);
@@ -7239,7 +7401,8 @@ struct safe_VkDebugReportCallbackCreateInfoEXT {
     PFN_vkDebugReportCallbackEXT pfnCallback;
     void* pUserData{};
 
-    safe_VkDebugReportCallbackCreateInfoEXT(const VkDebugReportCallbackCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugReportCallbackCreateInfoEXT(const VkDebugReportCallbackCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkDebugReportCallbackCreateInfoEXT(const safe_VkDebugReportCallbackCreateInfoEXT& copy_src);
     safe_VkDebugReportCallbackCreateInfoEXT& operator=(const safe_VkDebugReportCallbackCreateInfoEXT& copy_src);
     safe_VkDebugReportCallbackCreateInfoEXT();
@@ -7257,7 +7420,7 @@ struct safe_VkPipelineRasterizationStateRasterizationOrderAMD {
     VkRasterizationOrderAMD rasterizationOrder;
 
     safe_VkPipelineRasterizationStateRasterizationOrderAMD(const VkPipelineRasterizationStateRasterizationOrderAMD* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineRasterizationStateRasterizationOrderAMD(const safe_VkPipelineRasterizationStateRasterizationOrderAMD& copy_src);
     safe_VkPipelineRasterizationStateRasterizationOrderAMD& operator=(
         const safe_VkPipelineRasterizationStateRasterizationOrderAMD& copy_src);
@@ -7279,7 +7442,8 @@ struct safe_VkDebugMarkerObjectNameInfoEXT {
     uint64_t object;
     const char* pObjectName{};
 
-    safe_VkDebugMarkerObjectNameInfoEXT(const VkDebugMarkerObjectNameInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugMarkerObjectNameInfoEXT(const VkDebugMarkerObjectNameInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkDebugMarkerObjectNameInfoEXT(const safe_VkDebugMarkerObjectNameInfoEXT& copy_src);
     safe_VkDebugMarkerObjectNameInfoEXT& operator=(const safe_VkDebugMarkerObjectNameInfoEXT& copy_src);
     safe_VkDebugMarkerObjectNameInfoEXT();
@@ -7298,7 +7462,8 @@ struct safe_VkDebugMarkerObjectTagInfoEXT {
     size_t tagSize;
     const void* pTag{};
 
-    safe_VkDebugMarkerObjectTagInfoEXT(const VkDebugMarkerObjectTagInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugMarkerObjectTagInfoEXT(const VkDebugMarkerObjectTagInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkDebugMarkerObjectTagInfoEXT(const safe_VkDebugMarkerObjectTagInfoEXT& copy_src);
     safe_VkDebugMarkerObjectTagInfoEXT& operator=(const safe_VkDebugMarkerObjectTagInfoEXT& copy_src);
     safe_VkDebugMarkerObjectTagInfoEXT();
@@ -7314,7 +7479,8 @@ struct safe_VkDebugMarkerMarkerInfoEXT {
     const char* pMarkerName{};
     float color[4];
 
-    safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMarkerMarkerInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMarkerMarkerInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkDebugMarkerMarkerInfoEXT(const safe_VkDebugMarkerMarkerInfoEXT& copy_src);
     safe_VkDebugMarkerMarkerInfoEXT& operator=(const safe_VkDebugMarkerMarkerInfoEXT& copy_src);
     safe_VkDebugMarkerMarkerInfoEXT();
@@ -7330,7 +7496,7 @@ struct safe_VkDedicatedAllocationImageCreateInfoNV {
     VkBool32 dedicatedAllocation;
 
     safe_VkDedicatedAllocationImageCreateInfoNV(const VkDedicatedAllocationImageCreateInfoNV* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDedicatedAllocationImageCreateInfoNV(const safe_VkDedicatedAllocationImageCreateInfoNV& copy_src);
     safe_VkDedicatedAllocationImageCreateInfoNV& operator=(const safe_VkDedicatedAllocationImageCreateInfoNV& copy_src);
     safe_VkDedicatedAllocationImageCreateInfoNV();
@@ -7348,7 +7514,7 @@ struct safe_VkDedicatedAllocationBufferCreateInfoNV {
     VkBool32 dedicatedAllocation;
 
     safe_VkDedicatedAllocationBufferCreateInfoNV(const VkDedicatedAllocationBufferCreateInfoNV* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDedicatedAllocationBufferCreateInfoNV(const safe_VkDedicatedAllocationBufferCreateInfoNV& copy_src);
     safe_VkDedicatedAllocationBufferCreateInfoNV& operator=(const safe_VkDedicatedAllocationBufferCreateInfoNV& copy_src);
     safe_VkDedicatedAllocationBufferCreateInfoNV();
@@ -7367,7 +7533,7 @@ struct safe_VkDedicatedAllocationMemoryAllocateInfoNV {
     VkBuffer buffer;
 
     safe_VkDedicatedAllocationMemoryAllocateInfoNV(const VkDedicatedAllocationMemoryAllocateInfoNV* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDedicatedAllocationMemoryAllocateInfoNV(const safe_VkDedicatedAllocationMemoryAllocateInfoNV& copy_src);
     safe_VkDedicatedAllocationMemoryAllocateInfoNV& operator=(const safe_VkDedicatedAllocationMemoryAllocateInfoNV& copy_src);
     safe_VkDedicatedAllocationMemoryAllocateInfoNV();
@@ -7386,7 +7552,7 @@ struct safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT {
     VkBool32 geometryStreams;
 
     safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT(const VkPhysicalDeviceTransformFeedbackFeaturesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT(const safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT& operator=(const safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT();
@@ -7415,7 +7581,7 @@ struct safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT {
     VkBool32 transformFeedbackDraw;
 
     safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT(const VkPhysicalDeviceTransformFeedbackPropertiesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT(const safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT& copy_src);
@@ -7437,7 +7603,7 @@ struct safe_VkPipelineRasterizationStateStreamCreateInfoEXT {
     uint32_t rasterizationStream;
 
     safe_VkPipelineRasterizationStateStreamCreateInfoEXT(const VkPipelineRasterizationStateStreamCreateInfoEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineRasterizationStateStreamCreateInfoEXT(const safe_VkPipelineRasterizationStateStreamCreateInfoEXT& copy_src);
     safe_VkPipelineRasterizationStateStreamCreateInfoEXT& operator=(
         const safe_VkPipelineRasterizationStateStreamCreateInfoEXT& copy_src);
@@ -7458,7 +7624,7 @@ struct safe_VkCuModuleCreateInfoNVX {
     size_t dataSize;
     const void* pData{};
 
-    safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreateInfoNVX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreateInfoNVX* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCuModuleCreateInfoNVX(const safe_VkCuModuleCreateInfoNVX& copy_src);
     safe_VkCuModuleCreateInfoNVX& operator=(const safe_VkCuModuleCreateInfoNVX& copy_src);
     safe_VkCuModuleCreateInfoNVX();
@@ -7474,7 +7640,8 @@ struct safe_VkCuFunctionCreateInfoNVX {
     VkCuModuleNVX module;
     const char* pName{};
 
-    safe_VkCuFunctionCreateInfoNVX(const VkCuFunctionCreateInfoNVX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCuFunctionCreateInfoNVX(const VkCuFunctionCreateInfoNVX* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkCuFunctionCreateInfoNVX(const safe_VkCuFunctionCreateInfoNVX& copy_src);
     safe_VkCuFunctionCreateInfoNVX& operator=(const safe_VkCuFunctionCreateInfoNVX& copy_src);
     safe_VkCuFunctionCreateInfoNVX();
@@ -7500,7 +7667,7 @@ struct safe_VkCuLaunchInfoNVX {
     size_t extraCount;
     const void* const* pExtras{};
 
-    safe_VkCuLaunchInfoNVX(const VkCuLaunchInfoNVX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCuLaunchInfoNVX(const VkCuLaunchInfoNVX* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCuLaunchInfoNVX(const safe_VkCuLaunchInfoNVX& copy_src);
     safe_VkCuLaunchInfoNVX& operator=(const safe_VkCuLaunchInfoNVX& copy_src);
     safe_VkCuLaunchInfoNVX();
@@ -7517,7 +7684,8 @@ struct safe_VkImageViewHandleInfoNVX {
     VkDescriptorType descriptorType;
     VkSampler sampler;
 
-    safe_VkImageViewHandleInfoNVX(const VkImageViewHandleInfoNVX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewHandleInfoNVX(const VkImageViewHandleInfoNVX* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkImageViewHandleInfoNVX(const safe_VkImageViewHandleInfoNVX& copy_src);
     safe_VkImageViewHandleInfoNVX& operator=(const safe_VkImageViewHandleInfoNVX& copy_src);
     safe_VkImageViewHandleInfoNVX();
@@ -7533,7 +7701,8 @@ struct safe_VkImageViewAddressPropertiesNVX {
     VkDeviceAddress deviceAddress;
     VkDeviceSize size;
 
-    safe_VkImageViewAddressPropertiesNVX(const VkImageViewAddressPropertiesNVX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewAddressPropertiesNVX(const VkImageViewAddressPropertiesNVX* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkImageViewAddressPropertiesNVX(const safe_VkImageViewAddressPropertiesNVX& copy_src);
     safe_VkImageViewAddressPropertiesNVX& operator=(const safe_VkImageViewAddressPropertiesNVX& copy_src);
     safe_VkImageViewAddressPropertiesNVX();
@@ -7561,7 +7730,8 @@ struct safe_VkVideoEncodeH264CapabilitiesEXT {
     VkBool32 requiresGopRemainingFrames;
     VkVideoEncodeH264StdFlagsEXT stdSyntaxFlags;
 
-    safe_VkVideoEncodeH264CapabilitiesEXT(const VkVideoEncodeH264CapabilitiesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH264CapabilitiesEXT(const VkVideoEncodeH264CapabilitiesEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkVideoEncodeH264CapabilitiesEXT(const safe_VkVideoEncodeH264CapabilitiesEXT& copy_src);
     safe_VkVideoEncodeH264CapabilitiesEXT& operator=(const safe_VkVideoEncodeH264CapabilitiesEXT& copy_src);
     safe_VkVideoEncodeH264CapabilitiesEXT();
@@ -7587,7 +7757,7 @@ struct safe_VkVideoEncodeH264QualityLevelPropertiesEXT {
     VkBool32 preferredStdEntropyCodingModeFlag;
 
     safe_VkVideoEncodeH264QualityLevelPropertiesEXT(const VkVideoEncodeH264QualityLevelPropertiesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264QualityLevelPropertiesEXT(const safe_VkVideoEncodeH264QualityLevelPropertiesEXT& copy_src);
     safe_VkVideoEncodeH264QualityLevelPropertiesEXT& operator=(const safe_VkVideoEncodeH264QualityLevelPropertiesEXT& copy_src);
     safe_VkVideoEncodeH264QualityLevelPropertiesEXT();
@@ -7610,7 +7780,7 @@ struct safe_VkVideoEncodeH264SessionCreateInfoEXT {
     StdVideoH264LevelIdc maxLevelIdc;
 
     safe_VkVideoEncodeH264SessionCreateInfoEXT(const VkVideoEncodeH264SessionCreateInfoEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264SessionCreateInfoEXT(const safe_VkVideoEncodeH264SessionCreateInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionCreateInfoEXT& operator=(const safe_VkVideoEncodeH264SessionCreateInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionCreateInfoEXT();
@@ -7633,7 +7803,7 @@ struct safe_VkVideoEncodeH264SessionParametersAddInfoEXT {
     const StdVideoH264PictureParameterSet* pStdPPSs{};
 
     safe_VkVideoEncodeH264SessionParametersAddInfoEXT(const VkVideoEncodeH264SessionParametersAddInfoEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264SessionParametersAddInfoEXT(const safe_VkVideoEncodeH264SessionParametersAddInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionParametersAddInfoEXT& operator=(const safe_VkVideoEncodeH264SessionParametersAddInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionParametersAddInfoEXT();
@@ -7657,7 +7827,7 @@ struct safe_VkVideoEncodeH264SessionParametersCreateInfoEXT {
     safe_VkVideoEncodeH264SessionParametersAddInfoEXT* pParametersAddInfo{};
 
     safe_VkVideoEncodeH264SessionParametersCreateInfoEXT(const VkVideoEncodeH264SessionParametersCreateInfoEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264SessionParametersCreateInfoEXT(const safe_VkVideoEncodeH264SessionParametersCreateInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionParametersCreateInfoEXT& operator=(
         const safe_VkVideoEncodeH264SessionParametersCreateInfoEXT& copy_src);
@@ -7683,7 +7853,7 @@ struct safe_VkVideoEncodeH264SessionParametersGetInfoEXT {
     uint32_t stdPPSId;
 
     safe_VkVideoEncodeH264SessionParametersGetInfoEXT(const VkVideoEncodeH264SessionParametersGetInfoEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264SessionParametersGetInfoEXT(const safe_VkVideoEncodeH264SessionParametersGetInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionParametersGetInfoEXT& operator=(const safe_VkVideoEncodeH264SessionParametersGetInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionParametersGetInfoEXT();
@@ -7706,7 +7876,7 @@ struct safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT {
     VkBool32 hasStdPPSOverrides;
 
     safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT(const VkVideoEncodeH264SessionParametersFeedbackInfoEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT(const safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT& copy_src);
     safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT& operator=(
         const safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT& copy_src);
@@ -7729,7 +7899,8 @@ struct safe_VkVideoEncodeH264NaluSliceInfoEXT {
     int32_t constantQp;
     const StdVideoEncodeH264SliceHeader* pStdSliceHeader{};
 
-    safe_VkVideoEncodeH264NaluSliceInfoEXT(const VkVideoEncodeH264NaluSliceInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH264NaluSliceInfoEXT(const VkVideoEncodeH264NaluSliceInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkVideoEncodeH264NaluSliceInfoEXT(const safe_VkVideoEncodeH264NaluSliceInfoEXT& copy_src);
     safe_VkVideoEncodeH264NaluSliceInfoEXT& operator=(const safe_VkVideoEncodeH264NaluSliceInfoEXT& copy_src);
     safe_VkVideoEncodeH264NaluSliceInfoEXT();
@@ -7751,7 +7922,8 @@ struct safe_VkVideoEncodeH264PictureInfoEXT {
     const StdVideoEncodeH264PictureInfo* pStdPictureInfo{};
     VkBool32 generatePrefixNalu;
 
-    safe_VkVideoEncodeH264PictureInfoEXT(const VkVideoEncodeH264PictureInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH264PictureInfoEXT(const VkVideoEncodeH264PictureInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeH264PictureInfoEXT(const safe_VkVideoEncodeH264PictureInfoEXT& copy_src);
     safe_VkVideoEncodeH264PictureInfoEXT& operator=(const safe_VkVideoEncodeH264PictureInfoEXT& copy_src);
     safe_VkVideoEncodeH264PictureInfoEXT();
@@ -7768,7 +7940,8 @@ struct safe_VkVideoEncodeH264DpbSlotInfoEXT {
     const void* pNext{};
     const StdVideoEncodeH264ReferenceInfo* pStdReferenceInfo{};
 
-    safe_VkVideoEncodeH264DpbSlotInfoEXT(const VkVideoEncodeH264DpbSlotInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH264DpbSlotInfoEXT(const VkVideoEncodeH264DpbSlotInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeH264DpbSlotInfoEXT(const safe_VkVideoEncodeH264DpbSlotInfoEXT& copy_src);
     safe_VkVideoEncodeH264DpbSlotInfoEXT& operator=(const safe_VkVideoEncodeH264DpbSlotInfoEXT& copy_src);
     safe_VkVideoEncodeH264DpbSlotInfoEXT();
@@ -7785,7 +7958,8 @@ struct safe_VkVideoEncodeH264ProfileInfoEXT {
     const void* pNext{};
     StdVideoH264ProfileIdc stdProfileIdc;
 
-    safe_VkVideoEncodeH264ProfileInfoEXT(const VkVideoEncodeH264ProfileInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH264ProfileInfoEXT(const VkVideoEncodeH264ProfileInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeH264ProfileInfoEXT(const safe_VkVideoEncodeH264ProfileInfoEXT& copy_src);
     safe_VkVideoEncodeH264ProfileInfoEXT& operator=(const safe_VkVideoEncodeH264ProfileInfoEXT& copy_src);
     safe_VkVideoEncodeH264ProfileInfoEXT();
@@ -7806,7 +7980,8 @@ struct safe_VkVideoEncodeH264RateControlInfoEXT {
     uint32_t consecutiveBFrameCount;
     uint32_t temporalLayerCount;
 
-    safe_VkVideoEncodeH264RateControlInfoEXT(const VkVideoEncodeH264RateControlInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH264RateControlInfoEXT(const VkVideoEncodeH264RateControlInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkVideoEncodeH264RateControlInfoEXT(const safe_VkVideoEncodeH264RateControlInfoEXT& copy_src);
     safe_VkVideoEncodeH264RateControlInfoEXT& operator=(const safe_VkVideoEncodeH264RateControlInfoEXT& copy_src);
     safe_VkVideoEncodeH264RateControlInfoEXT();
@@ -7831,7 +8006,7 @@ struct safe_VkVideoEncodeH264RateControlLayerInfoEXT {
     VkVideoEncodeH264FrameSizeEXT maxFrameSize;
 
     safe_VkVideoEncodeH264RateControlLayerInfoEXT(const VkVideoEncodeH264RateControlLayerInfoEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264RateControlLayerInfoEXT(const safe_VkVideoEncodeH264RateControlLayerInfoEXT& copy_src);
     safe_VkVideoEncodeH264RateControlLayerInfoEXT& operator=(const safe_VkVideoEncodeH264RateControlLayerInfoEXT& copy_src);
     safe_VkVideoEncodeH264RateControlLayerInfoEXT();
@@ -7854,7 +8029,7 @@ struct safe_VkVideoEncodeH264GopRemainingFrameInfoEXT {
     uint32_t gopRemainingB;
 
     safe_VkVideoEncodeH264GopRemainingFrameInfoEXT(const VkVideoEncodeH264GopRemainingFrameInfoEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH264GopRemainingFrameInfoEXT(const safe_VkVideoEncodeH264GopRemainingFrameInfoEXT& copy_src);
     safe_VkVideoEncodeH264GopRemainingFrameInfoEXT& operator=(const safe_VkVideoEncodeH264GopRemainingFrameInfoEXT& copy_src);
     safe_VkVideoEncodeH264GopRemainingFrameInfoEXT();
@@ -7888,7 +8063,8 @@ struct safe_VkVideoEncodeH265CapabilitiesEXT {
     VkBool32 requiresGopRemainingFrames;
     VkVideoEncodeH265StdFlagsEXT stdSyntaxFlags;
 
-    safe_VkVideoEncodeH265CapabilitiesEXT(const VkVideoEncodeH265CapabilitiesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH265CapabilitiesEXT(const VkVideoEncodeH265CapabilitiesEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkVideoEncodeH265CapabilitiesEXT(const safe_VkVideoEncodeH265CapabilitiesEXT& copy_src);
     safe_VkVideoEncodeH265CapabilitiesEXT& operator=(const safe_VkVideoEncodeH265CapabilitiesEXT& copy_src);
     safe_VkVideoEncodeH265CapabilitiesEXT();
@@ -7907,7 +8083,7 @@ struct safe_VkVideoEncodeH265SessionCreateInfoEXT {
     StdVideoH265LevelIdc maxLevelIdc;
 
     safe_VkVideoEncodeH265SessionCreateInfoEXT(const VkVideoEncodeH265SessionCreateInfoEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265SessionCreateInfoEXT(const safe_VkVideoEncodeH265SessionCreateInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionCreateInfoEXT& operator=(const safe_VkVideoEncodeH265SessionCreateInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionCreateInfoEXT();
@@ -7934,7 +8110,7 @@ struct safe_VkVideoEncodeH265QualityLevelPropertiesEXT {
     uint32_t preferredMaxL1ReferenceCount;
 
     safe_VkVideoEncodeH265QualityLevelPropertiesEXT(const VkVideoEncodeH265QualityLevelPropertiesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265QualityLevelPropertiesEXT(const safe_VkVideoEncodeH265QualityLevelPropertiesEXT& copy_src);
     safe_VkVideoEncodeH265QualityLevelPropertiesEXT& operator=(const safe_VkVideoEncodeH265QualityLevelPropertiesEXT& copy_src);
     safe_VkVideoEncodeH265QualityLevelPropertiesEXT();
@@ -7961,7 +8137,7 @@ struct safe_VkVideoEncodeH265SessionParametersAddInfoEXT {
     const StdVideoH265PictureParameterSet* pStdPPSs{};
 
     safe_VkVideoEncodeH265SessionParametersAddInfoEXT(const VkVideoEncodeH265SessionParametersAddInfoEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265SessionParametersAddInfoEXT(const safe_VkVideoEncodeH265SessionParametersAddInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionParametersAddInfoEXT& operator=(const safe_VkVideoEncodeH265SessionParametersAddInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionParametersAddInfoEXT();
@@ -7986,7 +8162,7 @@ struct safe_VkVideoEncodeH265SessionParametersCreateInfoEXT {
     safe_VkVideoEncodeH265SessionParametersAddInfoEXT* pParametersAddInfo{};
 
     safe_VkVideoEncodeH265SessionParametersCreateInfoEXT(const VkVideoEncodeH265SessionParametersCreateInfoEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265SessionParametersCreateInfoEXT(const safe_VkVideoEncodeH265SessionParametersCreateInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionParametersCreateInfoEXT& operator=(
         const safe_VkVideoEncodeH265SessionParametersCreateInfoEXT& copy_src);
@@ -8014,7 +8190,7 @@ struct safe_VkVideoEncodeH265SessionParametersGetInfoEXT {
     uint32_t stdPPSId;
 
     safe_VkVideoEncodeH265SessionParametersGetInfoEXT(const VkVideoEncodeH265SessionParametersGetInfoEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265SessionParametersGetInfoEXT(const safe_VkVideoEncodeH265SessionParametersGetInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionParametersGetInfoEXT& operator=(const safe_VkVideoEncodeH265SessionParametersGetInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionParametersGetInfoEXT();
@@ -8038,7 +8214,7 @@ struct safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT {
     VkBool32 hasStdPPSOverrides;
 
     safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT(const VkVideoEncodeH265SessionParametersFeedbackInfoEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT(const safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT& copy_src);
     safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT& operator=(
         const safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT& copy_src);
@@ -8062,7 +8238,7 @@ struct safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT {
     const StdVideoEncodeH265SliceSegmentHeader* pStdSliceSegmentHeader{};
 
     safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT(const VkVideoEncodeH265NaluSliceSegmentInfoEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT(const safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& copy_src);
     safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& operator=(const safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& copy_src);
     safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT();
@@ -8083,7 +8259,8 @@ struct safe_VkVideoEncodeH265PictureInfoEXT {
     safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT* pNaluSliceSegmentEntries{};
     const StdVideoEncodeH265PictureInfo* pStdPictureInfo{};
 
-    safe_VkVideoEncodeH265PictureInfoEXT(const VkVideoEncodeH265PictureInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH265PictureInfoEXT(const VkVideoEncodeH265PictureInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeH265PictureInfoEXT(const safe_VkVideoEncodeH265PictureInfoEXT& copy_src);
     safe_VkVideoEncodeH265PictureInfoEXT& operator=(const safe_VkVideoEncodeH265PictureInfoEXT& copy_src);
     safe_VkVideoEncodeH265PictureInfoEXT();
@@ -8100,7 +8277,8 @@ struct safe_VkVideoEncodeH265DpbSlotInfoEXT {
     const void* pNext{};
     const StdVideoEncodeH265ReferenceInfo* pStdReferenceInfo{};
 
-    safe_VkVideoEncodeH265DpbSlotInfoEXT(const VkVideoEncodeH265DpbSlotInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH265DpbSlotInfoEXT(const VkVideoEncodeH265DpbSlotInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeH265DpbSlotInfoEXT(const safe_VkVideoEncodeH265DpbSlotInfoEXT& copy_src);
     safe_VkVideoEncodeH265DpbSlotInfoEXT& operator=(const safe_VkVideoEncodeH265DpbSlotInfoEXT& copy_src);
     safe_VkVideoEncodeH265DpbSlotInfoEXT();
@@ -8117,7 +8295,8 @@ struct safe_VkVideoEncodeH265ProfileInfoEXT {
     const void* pNext{};
     StdVideoH265ProfileIdc stdProfileIdc;
 
-    safe_VkVideoEncodeH265ProfileInfoEXT(const VkVideoEncodeH265ProfileInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH265ProfileInfoEXT(const VkVideoEncodeH265ProfileInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkVideoEncodeH265ProfileInfoEXT(const safe_VkVideoEncodeH265ProfileInfoEXT& copy_src);
     safe_VkVideoEncodeH265ProfileInfoEXT& operator=(const safe_VkVideoEncodeH265ProfileInfoEXT& copy_src);
     safe_VkVideoEncodeH265ProfileInfoEXT();
@@ -8138,7 +8317,8 @@ struct safe_VkVideoEncodeH265RateControlInfoEXT {
     uint32_t consecutiveBFrameCount;
     uint32_t subLayerCount;
 
-    safe_VkVideoEncodeH265RateControlInfoEXT(const VkVideoEncodeH265RateControlInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVideoEncodeH265RateControlInfoEXT(const VkVideoEncodeH265RateControlInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkVideoEncodeH265RateControlInfoEXT(const safe_VkVideoEncodeH265RateControlInfoEXT& copy_src);
     safe_VkVideoEncodeH265RateControlInfoEXT& operator=(const safe_VkVideoEncodeH265RateControlInfoEXT& copy_src);
     safe_VkVideoEncodeH265RateControlInfoEXT();
@@ -8163,7 +8343,7 @@ struct safe_VkVideoEncodeH265RateControlLayerInfoEXT {
     VkVideoEncodeH265FrameSizeEXT maxFrameSize;
 
     safe_VkVideoEncodeH265RateControlLayerInfoEXT(const VkVideoEncodeH265RateControlLayerInfoEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265RateControlLayerInfoEXT(const safe_VkVideoEncodeH265RateControlLayerInfoEXT& copy_src);
     safe_VkVideoEncodeH265RateControlLayerInfoEXT& operator=(const safe_VkVideoEncodeH265RateControlLayerInfoEXT& copy_src);
     safe_VkVideoEncodeH265RateControlLayerInfoEXT();
@@ -8186,7 +8366,7 @@ struct safe_VkVideoEncodeH265GopRemainingFrameInfoEXT {
     uint32_t gopRemainingB;
 
     safe_VkVideoEncodeH265GopRemainingFrameInfoEXT(const VkVideoEncodeH265GopRemainingFrameInfoEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVideoEncodeH265GopRemainingFrameInfoEXT(const safe_VkVideoEncodeH265GopRemainingFrameInfoEXT& copy_src);
     safe_VkVideoEncodeH265GopRemainingFrameInfoEXT& operator=(const safe_VkVideoEncodeH265GopRemainingFrameInfoEXT& copy_src);
     safe_VkVideoEncodeH265GopRemainingFrameInfoEXT();
@@ -8205,7 +8385,7 @@ struct safe_VkTextureLODGatherFormatPropertiesAMD {
     VkBool32 supportsTextureGatherLODBiasAMD;
 
     safe_VkTextureLODGatherFormatPropertiesAMD(const VkTextureLODGatherFormatPropertiesAMD* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkTextureLODGatherFormatPropertiesAMD(const safe_VkTextureLODGatherFormatPropertiesAMD& copy_src);
     safe_VkTextureLODGatherFormatPropertiesAMD& operator=(const safe_VkTextureLODGatherFormatPropertiesAMD& copy_src);
     safe_VkTextureLODGatherFormatPropertiesAMD();
@@ -8225,7 +8405,7 @@ struct safe_VkStreamDescriptorSurfaceCreateInfoGGP {
     GgpStreamDescriptor streamDescriptor;
 
     safe_VkStreamDescriptorSurfaceCreateInfoGGP(const VkStreamDescriptorSurfaceCreateInfoGGP* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkStreamDescriptorSurfaceCreateInfoGGP(const safe_VkStreamDescriptorSurfaceCreateInfoGGP& copy_src);
     safe_VkStreamDescriptorSurfaceCreateInfoGGP& operator=(const safe_VkStreamDescriptorSurfaceCreateInfoGGP& copy_src);
     safe_VkStreamDescriptorSurfaceCreateInfoGGP();
@@ -8244,7 +8424,7 @@ struct safe_VkPhysicalDeviceCornerSampledImageFeaturesNV {
     VkBool32 cornerSampledImage;
 
     safe_VkPhysicalDeviceCornerSampledImageFeaturesNV(const VkPhysicalDeviceCornerSampledImageFeaturesNV* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCornerSampledImageFeaturesNV(const safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& operator=(const safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCornerSampledImageFeaturesNV();
@@ -8263,7 +8443,8 @@ struct safe_VkExternalMemoryImageCreateInfoNV {
     const void* pNext{};
     VkExternalMemoryHandleTypeFlagsNV handleTypes;
 
-    safe_VkExternalMemoryImageCreateInfoNV(const VkExternalMemoryImageCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalMemoryImageCreateInfoNV(const VkExternalMemoryImageCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkExternalMemoryImageCreateInfoNV(const safe_VkExternalMemoryImageCreateInfoNV& copy_src);
     safe_VkExternalMemoryImageCreateInfoNV& operator=(const safe_VkExternalMemoryImageCreateInfoNV& copy_src);
     safe_VkExternalMemoryImageCreateInfoNV();
@@ -8280,7 +8461,8 @@ struct safe_VkExportMemoryAllocateInfoNV {
     const void* pNext{};
     VkExternalMemoryHandleTypeFlagsNV handleTypes;
 
-    safe_VkExportMemoryAllocateInfoNV(const VkExportMemoryAllocateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMemoryAllocateInfoNV(const VkExportMemoryAllocateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkExportMemoryAllocateInfoNV(const safe_VkExportMemoryAllocateInfoNV& copy_src);
     safe_VkExportMemoryAllocateInfoNV& operator=(const safe_VkExportMemoryAllocateInfoNV& copy_src);
     safe_VkExportMemoryAllocateInfoNV();
@@ -8297,7 +8479,8 @@ struct safe_VkImportMemoryWin32HandleInfoNV {
     VkExternalMemoryHandleTypeFlagsNV handleType;
     HANDLE handle;
 
-    safe_VkImportMemoryWin32HandleInfoNV(const VkImportMemoryWin32HandleInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMemoryWin32HandleInfoNV(const VkImportMemoryWin32HandleInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkImportMemoryWin32HandleInfoNV(const safe_VkImportMemoryWin32HandleInfoNV& copy_src);
     safe_VkImportMemoryWin32HandleInfoNV& operator=(const safe_VkImportMemoryWin32HandleInfoNV& copy_src);
     safe_VkImportMemoryWin32HandleInfoNV();
@@ -8315,7 +8498,8 @@ struct safe_VkExportMemoryWin32HandleInfoNV {
     const SECURITY_ATTRIBUTES* pAttributes{};
     DWORD dwAccess;
 
-    safe_VkExportMemoryWin32HandleInfoNV(const VkExportMemoryWin32HandleInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMemoryWin32HandleInfoNV(const VkExportMemoryWin32HandleInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkExportMemoryWin32HandleInfoNV(const safe_VkExportMemoryWin32HandleInfoNV& copy_src);
     safe_VkExportMemoryWin32HandleInfoNV& operator=(const safe_VkExportMemoryWin32HandleInfoNV& copy_src);
     safe_VkExportMemoryWin32HandleInfoNV();
@@ -8339,7 +8523,7 @@ struct safe_VkWin32KeyedMutexAcquireReleaseInfoNV {
     const uint64_t* pReleaseKeys{};
 
     safe_VkWin32KeyedMutexAcquireReleaseInfoNV(const VkWin32KeyedMutexAcquireReleaseInfoNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkWin32KeyedMutexAcquireReleaseInfoNV(const safe_VkWin32KeyedMutexAcquireReleaseInfoNV& copy_src);
     safe_VkWin32KeyedMutexAcquireReleaseInfoNV& operator=(const safe_VkWin32KeyedMutexAcquireReleaseInfoNV& copy_src);
     safe_VkWin32KeyedMutexAcquireReleaseInfoNV();
@@ -8358,7 +8542,7 @@ struct safe_VkValidationFlagsEXT {
     uint32_t disabledValidationCheckCount;
     const VkValidationCheckEXT* pDisabledValidationChecks{};
 
-    safe_VkValidationFlagsEXT(const VkValidationFlagsEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkValidationFlagsEXT(const VkValidationFlagsEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkValidationFlagsEXT(const safe_VkValidationFlagsEXT& copy_src);
     safe_VkValidationFlagsEXT& operator=(const safe_VkValidationFlagsEXT& copy_src);
     safe_VkValidationFlagsEXT();
@@ -8375,7 +8559,7 @@ struct safe_VkViSurfaceCreateInfoNN {
     VkViSurfaceCreateFlagsNN flags;
     void* window{};
 
-    safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCreateInfoNN* in_struct, PNextCopyState* copy_state = {});
+    safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCreateInfoNN* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkViSurfaceCreateInfoNN(const safe_VkViSurfaceCreateInfoNN& copy_src);
     safe_VkViSurfaceCreateInfoNN& operator=(const safe_VkViSurfaceCreateInfoNN& copy_src);
     safe_VkViSurfaceCreateInfoNN();
@@ -8391,7 +8575,8 @@ struct safe_VkImageViewASTCDecodeModeEXT {
     const void* pNext{};
     VkFormat decodeMode;
 
-    safe_VkImageViewASTCDecodeModeEXT(const VkImageViewASTCDecodeModeEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewASTCDecodeModeEXT(const VkImageViewASTCDecodeModeEXT* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkImageViewASTCDecodeModeEXT(const safe_VkImageViewASTCDecodeModeEXT& copy_src);
     safe_VkImageViewASTCDecodeModeEXT& operator=(const safe_VkImageViewASTCDecodeModeEXT& copy_src);
     safe_VkImageViewASTCDecodeModeEXT();
@@ -8407,7 +8592,7 @@ struct safe_VkPhysicalDeviceASTCDecodeFeaturesEXT {
     VkBool32 decodeModeSharedExponent;
 
     safe_VkPhysicalDeviceASTCDecodeFeaturesEXT(const VkPhysicalDeviceASTCDecodeFeaturesEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceASTCDecodeFeaturesEXT(const safe_VkPhysicalDeviceASTCDecodeFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceASTCDecodeFeaturesEXT& operator=(const safe_VkPhysicalDeviceASTCDecodeFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceASTCDecodeFeaturesEXT();
@@ -8425,7 +8610,7 @@ struct safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT {
     VkBool32 pipelineRobustness;
 
     safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(const VkPhysicalDevicePipelineRobustnessFeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& operator=(
         const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& copy_src);
@@ -8449,7 +8634,7 @@ struct safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT {
     VkPipelineRobustnessImageBehaviorEXT defaultRobustnessImages;
 
     safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(const VkPhysicalDevicePipelineRobustnessPropertiesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& copy_src);
     safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& operator=(
         const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& copy_src);
@@ -8472,7 +8657,8 @@ struct safe_VkPipelineRobustnessCreateInfoEXT {
     VkPipelineRobustnessBufferBehaviorEXT vertexInputs;
     VkPipelineRobustnessImageBehaviorEXT images;
 
-    safe_VkPipelineRobustnessCreateInfoEXT(const VkPipelineRobustnessCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineRobustnessCreateInfoEXT(const VkPipelineRobustnessCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPipelineRobustnessCreateInfoEXT(const safe_VkPipelineRobustnessCreateInfoEXT& copy_src);
     safe_VkPipelineRobustnessCreateInfoEXT& operator=(const safe_VkPipelineRobustnessCreateInfoEXT& copy_src);
     safe_VkPipelineRobustnessCreateInfoEXT();
@@ -8491,7 +8677,8 @@ struct safe_VkConditionalRenderingBeginInfoEXT {
     VkDeviceSize offset;
     VkConditionalRenderingFlagsEXT flags;
 
-    safe_VkConditionalRenderingBeginInfoEXT(const VkConditionalRenderingBeginInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkConditionalRenderingBeginInfoEXT(const VkConditionalRenderingBeginInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkConditionalRenderingBeginInfoEXT(const safe_VkConditionalRenderingBeginInfoEXT& copy_src);
     safe_VkConditionalRenderingBeginInfoEXT& operator=(const safe_VkConditionalRenderingBeginInfoEXT& copy_src);
     safe_VkConditionalRenderingBeginInfoEXT();
@@ -8510,7 +8697,7 @@ struct safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT {
     VkBool32 inheritedConditionalRendering;
 
     safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT(const VkPhysicalDeviceConditionalRenderingFeaturesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT(const safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT& copy_src);
@@ -8531,7 +8718,8 @@ struct safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT {
     VkBool32 conditionalRenderingEnable;
 
     safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT(
-        const VkCommandBufferInheritanceConditionalRenderingInfoEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkCommandBufferInheritanceConditionalRenderingInfoEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT(
         const safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT& copy_src);
     safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT& operator=(
@@ -8555,7 +8743,7 @@ struct safe_VkPipelineViewportWScalingStateCreateInfoNV {
     const VkViewportWScalingNV* pViewportWScalings{};
 
     safe_VkPipelineViewportWScalingStateCreateInfoNV(const VkPipelineViewportWScalingStateCreateInfoNV* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportWScalingStateCreateInfoNV(const safe_VkPipelineViewportWScalingStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportWScalingStateCreateInfoNV& operator=(const safe_VkPipelineViewportWScalingStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportWScalingStateCreateInfoNV();
@@ -8584,7 +8772,8 @@ struct safe_VkSurfaceCapabilities2EXT {
     VkImageUsageFlags supportedUsageFlags;
     VkSurfaceCounterFlagsEXT supportedSurfaceCounters;
 
-    safe_VkSurfaceCapabilities2EXT(const VkSurfaceCapabilities2EXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSurfaceCapabilities2EXT(const VkSurfaceCapabilities2EXT* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkSurfaceCapabilities2EXT(const safe_VkSurfaceCapabilities2EXT& copy_src);
     safe_VkSurfaceCapabilities2EXT& operator=(const safe_VkSurfaceCapabilities2EXT& copy_src);
     safe_VkSurfaceCapabilities2EXT();
@@ -8599,7 +8788,7 @@ struct safe_VkDisplayPowerInfoEXT {
     const void* pNext{};
     VkDisplayPowerStateEXT powerState;
 
-    safe_VkDisplayPowerInfoEXT(const VkDisplayPowerInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayPowerInfoEXT(const VkDisplayPowerInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDisplayPowerInfoEXT(const safe_VkDisplayPowerInfoEXT& copy_src);
     safe_VkDisplayPowerInfoEXT& operator=(const safe_VkDisplayPowerInfoEXT& copy_src);
     safe_VkDisplayPowerInfoEXT();
@@ -8614,7 +8803,7 @@ struct safe_VkDeviceEventInfoEXT {
     const void* pNext{};
     VkDeviceEventTypeEXT deviceEvent;
 
-    safe_VkDeviceEventInfoEXT(const VkDeviceEventInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceEventInfoEXT(const VkDeviceEventInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceEventInfoEXT(const safe_VkDeviceEventInfoEXT& copy_src);
     safe_VkDeviceEventInfoEXT& operator=(const safe_VkDeviceEventInfoEXT& copy_src);
     safe_VkDeviceEventInfoEXT();
@@ -8629,7 +8818,7 @@ struct safe_VkDisplayEventInfoEXT {
     const void* pNext{};
     VkDisplayEventTypeEXT displayEvent;
 
-    safe_VkDisplayEventInfoEXT(const VkDisplayEventInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDisplayEventInfoEXT(const VkDisplayEventInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDisplayEventInfoEXT(const safe_VkDisplayEventInfoEXT& copy_src);
     safe_VkDisplayEventInfoEXT& operator=(const safe_VkDisplayEventInfoEXT& copy_src);
     safe_VkDisplayEventInfoEXT();
@@ -8644,7 +8833,8 @@ struct safe_VkSwapchainCounterCreateInfoEXT {
     const void* pNext{};
     VkSurfaceCounterFlagsEXT surfaceCounters;
 
-    safe_VkSwapchainCounterCreateInfoEXT(const VkSwapchainCounterCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSwapchainCounterCreateInfoEXT(const VkSwapchainCounterCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkSwapchainCounterCreateInfoEXT(const safe_VkSwapchainCounterCreateInfoEXT& copy_src);
     safe_VkSwapchainCounterCreateInfoEXT& operator=(const safe_VkSwapchainCounterCreateInfoEXT& copy_src);
     safe_VkSwapchainCounterCreateInfoEXT();
@@ -8660,7 +8850,8 @@ struct safe_VkPresentTimesInfoGOOGLE {
     uint32_t swapchainCount;
     const VkPresentTimeGOOGLE* pTimes{};
 
-    safe_VkPresentTimesInfoGOOGLE(const VkPresentTimesInfoGOOGLE* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPresentTimesInfoGOOGLE(const VkPresentTimesInfoGOOGLE* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkPresentTimesInfoGOOGLE(const safe_VkPresentTimesInfoGOOGLE& copy_src);
     safe_VkPresentTimesInfoGOOGLE& operator=(const safe_VkPresentTimesInfoGOOGLE& copy_src);
     safe_VkPresentTimesInfoGOOGLE();
@@ -8676,7 +8867,8 @@ struct safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX {
     VkBool32 perViewPositionAllComponents;
 
     safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX(
-        const VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX(
         const safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX& copy_src);
     safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX& operator=(
@@ -8700,7 +8892,7 @@ struct safe_VkPipelineViewportSwizzleStateCreateInfoNV {
     const VkViewportSwizzleNV* pViewportSwizzles{};
 
     safe_VkPipelineViewportSwizzleStateCreateInfoNV(const VkPipelineViewportSwizzleStateCreateInfoNV* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportSwizzleStateCreateInfoNV(const safe_VkPipelineViewportSwizzleStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportSwizzleStateCreateInfoNV& operator=(const safe_VkPipelineViewportSwizzleStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportSwizzleStateCreateInfoNV();
@@ -8720,7 +8912,7 @@ struct safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT {
     uint32_t maxDiscardRectangles;
 
     safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT(const VkPhysicalDeviceDiscardRectanglePropertiesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT(const safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT& copy_src);
     safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT& operator=(
         const safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT& copy_src);
@@ -8744,7 +8936,7 @@ struct safe_VkPipelineDiscardRectangleStateCreateInfoEXT {
     const VkRect2D* pDiscardRectangles{};
 
     safe_VkPipelineDiscardRectangleStateCreateInfoEXT(const VkPipelineDiscardRectangleStateCreateInfoEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineDiscardRectangleStateCreateInfoEXT(const safe_VkPipelineDiscardRectangleStateCreateInfoEXT& copy_src);
     safe_VkPipelineDiscardRectangleStateCreateInfoEXT& operator=(const safe_VkPipelineDiscardRectangleStateCreateInfoEXT& copy_src);
     safe_VkPipelineDiscardRectangleStateCreateInfoEXT();
@@ -8772,7 +8964,8 @@ struct safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT {
     VkBool32 conservativeRasterizationPostDepthCoverage;
 
     safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT(
-        const VkPhysicalDeviceConservativeRasterizationPropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceConservativeRasterizationPropertiesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT(
         const safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT& operator=(
@@ -8796,7 +8989,8 @@ struct safe_VkPipelineRasterizationConservativeStateCreateInfoEXT {
     float extraPrimitiveOverestimationSize;
 
     safe_VkPipelineRasterizationConservativeStateCreateInfoEXT(
-        const VkPipelineRasterizationConservativeStateCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPipelineRasterizationConservativeStateCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPipelineRasterizationConservativeStateCreateInfoEXT(
         const safe_VkPipelineRasterizationConservativeStateCreateInfoEXT& copy_src);
     safe_VkPipelineRasterizationConservativeStateCreateInfoEXT& operator=(
@@ -8818,7 +9012,7 @@ struct safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT {
     VkBool32 depthClipEnable;
 
     safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT(const VkPhysicalDeviceDepthClipEnableFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT(const safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT& operator=(const safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT();
@@ -8839,7 +9033,7 @@ struct safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT {
     VkBool32 depthClipEnable;
 
     safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT(const VkPipelineRasterizationDepthClipStateCreateInfoEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT(
         const safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT& copy_src);
     safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT& operator=(
@@ -8867,7 +9061,7 @@ struct safe_VkHdrMetadataEXT {
     float maxContentLightLevel;
     float maxFrameAverageLightLevel;
 
-    safe_VkHdrMetadataEXT(const VkHdrMetadataEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkHdrMetadataEXT(const VkHdrMetadataEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkHdrMetadataEXT(const safe_VkHdrMetadataEXT& copy_src);
     safe_VkHdrMetadataEXT& operator=(const safe_VkHdrMetadataEXT& copy_src);
     safe_VkHdrMetadataEXT();
@@ -8884,7 +9078,8 @@ struct safe_VkIOSSurfaceCreateInfoMVK {
     VkIOSSurfaceCreateFlagsMVK flags;
     const void* pView{};
 
-    safe_VkIOSSurfaceCreateInfoMVK(const VkIOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {});
+    safe_VkIOSSurfaceCreateInfoMVK(const VkIOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkIOSSurfaceCreateInfoMVK(const safe_VkIOSSurfaceCreateInfoMVK& copy_src);
     safe_VkIOSSurfaceCreateInfoMVK& operator=(const safe_VkIOSSurfaceCreateInfoMVK& copy_src);
     safe_VkIOSSurfaceCreateInfoMVK();
@@ -8902,7 +9097,8 @@ struct safe_VkMacOSSurfaceCreateInfoMVK {
     VkMacOSSurfaceCreateFlagsMVK flags;
     const void* pView{};
 
-    safe_VkMacOSSurfaceCreateInfoMVK(const VkMacOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMacOSSurfaceCreateInfoMVK(const VkMacOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkMacOSSurfaceCreateInfoMVK(const safe_VkMacOSSurfaceCreateInfoMVK& copy_src);
     safe_VkMacOSSurfaceCreateInfoMVK& operator=(const safe_VkMacOSSurfaceCreateInfoMVK& copy_src);
     safe_VkMacOSSurfaceCreateInfoMVK();
@@ -8919,7 +9115,7 @@ struct safe_VkDebugUtilsLabelEXT {
     const char* pLabelName{};
     float color[4];
 
-    safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDebugUtilsLabelEXT(const safe_VkDebugUtilsLabelEXT& copy_src);
     safe_VkDebugUtilsLabelEXT& operator=(const safe_VkDebugUtilsLabelEXT& copy_src);
     safe_VkDebugUtilsLabelEXT();
@@ -8936,7 +9132,8 @@ struct safe_VkDebugUtilsObjectNameInfoEXT {
     uint64_t objectHandle;
     const char* pObjectName{};
 
-    safe_VkDebugUtilsObjectNameInfoEXT(const VkDebugUtilsObjectNameInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugUtilsObjectNameInfoEXT(const VkDebugUtilsObjectNameInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkDebugUtilsObjectNameInfoEXT(const safe_VkDebugUtilsObjectNameInfoEXT& copy_src);
     safe_VkDebugUtilsObjectNameInfoEXT& operator=(const safe_VkDebugUtilsObjectNameInfoEXT& copy_src);
     safe_VkDebugUtilsObjectNameInfoEXT();
@@ -8961,7 +9158,7 @@ struct safe_VkDebugUtilsMessengerCallbackDataEXT {
     safe_VkDebugUtilsObjectNameInfoEXT* pObjects{};
 
     safe_VkDebugUtilsMessengerCallbackDataEXT(const VkDebugUtilsMessengerCallbackDataEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDebugUtilsMessengerCallbackDataEXT(const safe_VkDebugUtilsMessengerCallbackDataEXT& copy_src);
     safe_VkDebugUtilsMessengerCallbackDataEXT& operator=(const safe_VkDebugUtilsMessengerCallbackDataEXT& copy_src);
     safe_VkDebugUtilsMessengerCallbackDataEXT();
@@ -8982,7 +9179,8 @@ struct safe_VkDebugUtilsMessengerCreateInfoEXT {
     PFN_vkDebugUtilsMessengerCallbackEXT pfnUserCallback;
     void* pUserData{};
 
-    safe_VkDebugUtilsMessengerCreateInfoEXT(const VkDebugUtilsMessengerCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugUtilsMessengerCreateInfoEXT(const VkDebugUtilsMessengerCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkDebugUtilsMessengerCreateInfoEXT(const safe_VkDebugUtilsMessengerCreateInfoEXT& copy_src);
     safe_VkDebugUtilsMessengerCreateInfoEXT& operator=(const safe_VkDebugUtilsMessengerCreateInfoEXT& copy_src);
     safe_VkDebugUtilsMessengerCreateInfoEXT();
@@ -9003,7 +9201,8 @@ struct safe_VkDebugUtilsObjectTagInfoEXT {
     size_t tagSize;
     const void* pTag{};
 
-    safe_VkDebugUtilsObjectTagInfoEXT(const VkDebugUtilsObjectTagInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDebugUtilsObjectTagInfoEXT(const VkDebugUtilsObjectTagInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkDebugUtilsObjectTagInfoEXT(const safe_VkDebugUtilsObjectTagInfoEXT& copy_src);
     safe_VkDebugUtilsObjectTagInfoEXT& operator=(const safe_VkDebugUtilsObjectTagInfoEXT& copy_src);
     safe_VkDebugUtilsObjectTagInfoEXT();
@@ -9019,7 +9218,8 @@ struct safe_VkAndroidHardwareBufferUsageANDROID {
     void* pNext{};
     uint64_t androidHardwareBufferUsage;
 
-    safe_VkAndroidHardwareBufferUsageANDROID(const VkAndroidHardwareBufferUsageANDROID* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAndroidHardwareBufferUsageANDROID(const VkAndroidHardwareBufferUsageANDROID* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkAndroidHardwareBufferUsageANDROID(const safe_VkAndroidHardwareBufferUsageANDROID& copy_src);
     safe_VkAndroidHardwareBufferUsageANDROID& operator=(const safe_VkAndroidHardwareBufferUsageANDROID& copy_src);
     safe_VkAndroidHardwareBufferUsageANDROID();
@@ -9040,7 +9240,7 @@ struct safe_VkAndroidHardwareBufferPropertiesANDROID {
     uint32_t memoryTypeBits;
 
     safe_VkAndroidHardwareBufferPropertiesANDROID(const VkAndroidHardwareBufferPropertiesANDROID* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAndroidHardwareBufferPropertiesANDROID(const safe_VkAndroidHardwareBufferPropertiesANDROID& copy_src);
     safe_VkAndroidHardwareBufferPropertiesANDROID& operator=(const safe_VkAndroidHardwareBufferPropertiesANDROID& copy_src);
     safe_VkAndroidHardwareBufferPropertiesANDROID();
@@ -9067,7 +9267,7 @@ struct safe_VkAndroidHardwareBufferFormatPropertiesANDROID {
     VkChromaLocation suggestedYChromaOffset;
 
     safe_VkAndroidHardwareBufferFormatPropertiesANDROID(const VkAndroidHardwareBufferFormatPropertiesANDROID* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAndroidHardwareBufferFormatPropertiesANDROID(const safe_VkAndroidHardwareBufferFormatPropertiesANDROID& copy_src);
     safe_VkAndroidHardwareBufferFormatPropertiesANDROID& operator=(
         const safe_VkAndroidHardwareBufferFormatPropertiesANDROID& copy_src);
@@ -9090,7 +9290,7 @@ struct safe_VkImportAndroidHardwareBufferInfoANDROID {
     struct AHardwareBuffer* buffer{};
 
     safe_VkImportAndroidHardwareBufferInfoANDROID(const VkImportAndroidHardwareBufferInfoANDROID* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImportAndroidHardwareBufferInfoANDROID(const safe_VkImportAndroidHardwareBufferInfoANDROID& copy_src);
     safe_VkImportAndroidHardwareBufferInfoANDROID& operator=(const safe_VkImportAndroidHardwareBufferInfoANDROID& copy_src);
     safe_VkImportAndroidHardwareBufferInfoANDROID();
@@ -9110,7 +9310,7 @@ struct safe_VkMemoryGetAndroidHardwareBufferInfoANDROID {
     VkDeviceMemory memory;
 
     safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(const VkMemoryGetAndroidHardwareBufferInfoANDROID* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(const safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& copy_src);
     safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& operator=(const safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& copy_src);
     safe_VkMemoryGetAndroidHardwareBufferInfoANDROID();
@@ -9131,7 +9331,7 @@ struct safe_VkExternalFormatANDROID {
     void* pNext{};
     uint64_t externalFormat;
 
-    safe_VkExternalFormatANDROID(const VkExternalFormatANDROID* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalFormatANDROID(const VkExternalFormatANDROID* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkExternalFormatANDROID(const safe_VkExternalFormatANDROID& copy_src);
     safe_VkExternalFormatANDROID& operator=(const safe_VkExternalFormatANDROID& copy_src);
     safe_VkExternalFormatANDROID();
@@ -9156,7 +9356,7 @@ struct safe_VkAndroidHardwareBufferFormatProperties2ANDROID {
     VkChromaLocation suggestedYChromaOffset;
 
     safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src);
     safe_VkAndroidHardwareBufferFormatProperties2ANDROID& operator=(
         const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src);
@@ -9179,7 +9379,7 @@ struct safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX {
     VkBool32 shaderEnqueue;
 
     safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(const VkPhysicalDeviceShaderEnqueueFeaturesAMDX* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(const safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX& copy_src);
     safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX& operator=(const safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX& copy_src);
     safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX();
@@ -9203,7 +9403,7 @@ struct safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX {
     uint32_t executionGraphDispatchAddressAlignment;
 
     safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX(const VkPhysicalDeviceShaderEnqueuePropertiesAMDX* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX(const safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX& copy_src);
     safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX& operator=(const safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX& copy_src);
     safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX();
@@ -9225,7 +9425,7 @@ struct safe_VkExecutionGraphPipelineScratchSizeAMDX {
     VkDeviceSize size;
 
     safe_VkExecutionGraphPipelineScratchSizeAMDX(const VkExecutionGraphPipelineScratchSizeAMDX* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkExecutionGraphPipelineScratchSizeAMDX(const safe_VkExecutionGraphPipelineScratchSizeAMDX& copy_src);
     safe_VkExecutionGraphPipelineScratchSizeAMDX& operator=(const safe_VkExecutionGraphPipelineScratchSizeAMDX& copy_src);
     safe_VkExecutionGraphPipelineScratchSizeAMDX();
@@ -9251,7 +9451,7 @@ struct safe_VkExecutionGraphPipelineCreateInfoAMDX {
     int32_t basePipelineIndex;
 
     safe_VkExecutionGraphPipelineCreateInfoAMDX(const VkExecutionGraphPipelineCreateInfoAMDX* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkExecutionGraphPipelineCreateInfoAMDX(const safe_VkExecutionGraphPipelineCreateInfoAMDX& copy_src);
     safe_VkExecutionGraphPipelineCreateInfoAMDX& operator=(const safe_VkExecutionGraphPipelineCreateInfoAMDX& copy_src);
     safe_VkExecutionGraphPipelineCreateInfoAMDX();
@@ -9288,7 +9488,7 @@ struct safe_VkPipelineShaderStageNodeCreateInfoAMDX {
     uint32_t index;
 
     safe_VkPipelineShaderStageNodeCreateInfoAMDX(const VkPipelineShaderStageNodeCreateInfoAMDX* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineShaderStageNodeCreateInfoAMDX(const safe_VkPipelineShaderStageNodeCreateInfoAMDX& copy_src);
     safe_VkPipelineShaderStageNodeCreateInfoAMDX& operator=(const safe_VkPipelineShaderStageNodeCreateInfoAMDX& copy_src);
     safe_VkPipelineShaderStageNodeCreateInfoAMDX();
@@ -9309,7 +9509,8 @@ struct safe_VkSampleLocationsInfoEXT {
     uint32_t sampleLocationsCount;
     const VkSampleLocationEXT* pSampleLocations{};
 
-    safe_VkSampleLocationsInfoEXT(const VkSampleLocationsInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSampleLocationsInfoEXT(const VkSampleLocationsInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkSampleLocationsInfoEXT(const safe_VkSampleLocationsInfoEXT& copy_src);
     safe_VkSampleLocationsInfoEXT& operator=(const safe_VkSampleLocationsInfoEXT& copy_src);
     safe_VkSampleLocationsInfoEXT();
@@ -9328,7 +9529,7 @@ struct safe_VkRenderPassSampleLocationsBeginInfoEXT {
     const VkSubpassSampleLocationsEXT* pPostSubpassSampleLocations{};
 
     safe_VkRenderPassSampleLocationsBeginInfoEXT(const VkRenderPassSampleLocationsBeginInfoEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassSampleLocationsBeginInfoEXT(const safe_VkRenderPassSampleLocationsBeginInfoEXT& copy_src);
     safe_VkRenderPassSampleLocationsBeginInfoEXT& operator=(const safe_VkRenderPassSampleLocationsBeginInfoEXT& copy_src);
     safe_VkRenderPassSampleLocationsBeginInfoEXT();
@@ -9347,7 +9548,7 @@ struct safe_VkPipelineSampleLocationsStateCreateInfoEXT {
     safe_VkSampleLocationsInfoEXT sampleLocationsInfo;
 
     safe_VkPipelineSampleLocationsStateCreateInfoEXT(const VkPipelineSampleLocationsStateCreateInfoEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineSampleLocationsStateCreateInfoEXT(const safe_VkPipelineSampleLocationsStateCreateInfoEXT& copy_src);
     safe_VkPipelineSampleLocationsStateCreateInfoEXT& operator=(const safe_VkPipelineSampleLocationsStateCreateInfoEXT& copy_src);
     safe_VkPipelineSampleLocationsStateCreateInfoEXT();
@@ -9371,7 +9572,7 @@ struct safe_VkPhysicalDeviceSampleLocationsPropertiesEXT {
     VkBool32 variableSampleLocations;
 
     safe_VkPhysicalDeviceSampleLocationsPropertiesEXT(const VkPhysicalDeviceSampleLocationsPropertiesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSampleLocationsPropertiesEXT(const safe_VkPhysicalDeviceSampleLocationsPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceSampleLocationsPropertiesEXT& operator=(const safe_VkPhysicalDeviceSampleLocationsPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceSampleLocationsPropertiesEXT();
@@ -9390,7 +9591,8 @@ struct safe_VkMultisamplePropertiesEXT {
     void* pNext{};
     VkExtent2D maxSampleLocationGridSize;
 
-    safe_VkMultisamplePropertiesEXT(const VkMultisamplePropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMultisamplePropertiesEXT(const VkMultisamplePropertiesEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkMultisamplePropertiesEXT(const safe_VkMultisamplePropertiesEXT& copy_src);
     safe_VkMultisamplePropertiesEXT& operator=(const safe_VkMultisamplePropertiesEXT& copy_src);
     safe_VkMultisamplePropertiesEXT();
@@ -9406,7 +9608,7 @@ struct safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT {
     VkBool32 advancedBlendCoherentOperations;
 
     safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT(const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT(const safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT& copy_src);
@@ -9432,7 +9634,7 @@ struct safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT {
     VkBool32 advancedBlendAllOperations;
 
     safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT(const VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT(
         const safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT& operator=(
@@ -9456,7 +9658,7 @@ struct safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT {
     VkBlendOverlapEXT blendOverlap;
 
     safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT(const VkPipelineColorBlendAdvancedStateCreateInfoEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT(const safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT& copy_src);
     safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT& operator=(
         const safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT& copy_src);
@@ -9479,7 +9681,7 @@ struct safe_VkPipelineCoverageToColorStateCreateInfoNV {
     uint32_t coverageToColorLocation;
 
     safe_VkPipelineCoverageToColorStateCreateInfoNV(const VkPipelineCoverageToColorStateCreateInfoNV* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineCoverageToColorStateCreateInfoNV(const safe_VkPipelineCoverageToColorStateCreateInfoNV& copy_src);
     safe_VkPipelineCoverageToColorStateCreateInfoNV& operator=(const safe_VkPipelineCoverageToColorStateCreateInfoNV& copy_src);
     safe_VkPipelineCoverageToColorStateCreateInfoNV();
@@ -9503,7 +9705,7 @@ struct safe_VkPipelineCoverageModulationStateCreateInfoNV {
     const float* pCoverageModulationTable{};
 
     safe_VkPipelineCoverageModulationStateCreateInfoNV(const VkPipelineCoverageModulationStateCreateInfoNV* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineCoverageModulationStateCreateInfoNV(const safe_VkPipelineCoverageModulationStateCreateInfoNV& copy_src);
     safe_VkPipelineCoverageModulationStateCreateInfoNV& operator=(
         const safe_VkPipelineCoverageModulationStateCreateInfoNV& copy_src);
@@ -9525,7 +9727,7 @@ struct safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV {
     uint32_t shaderWarpsPerSM;
 
     safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV(const VkPhysicalDeviceShaderSMBuiltinsPropertiesNV* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV(const safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& copy_src);
     safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& operator=(const safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& copy_src);
     safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV();
@@ -9545,7 +9747,7 @@ struct safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV {
     VkBool32 shaderSMBuiltins;
 
     safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV(const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV(const safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& copy_src);
     safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& operator=(const safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& copy_src);
     safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV();
@@ -9566,7 +9768,7 @@ struct safe_VkDrmFormatModifierPropertiesListEXT {
     VkDrmFormatModifierPropertiesEXT* pDrmFormatModifierProperties{};
 
     safe_VkDrmFormatModifierPropertiesListEXT(const VkDrmFormatModifierPropertiesListEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDrmFormatModifierPropertiesListEXT(const safe_VkDrmFormatModifierPropertiesListEXT& copy_src);
     safe_VkDrmFormatModifierPropertiesListEXT& operator=(const safe_VkDrmFormatModifierPropertiesListEXT& copy_src);
     safe_VkDrmFormatModifierPropertiesListEXT();
@@ -9587,7 +9789,7 @@ struct safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT {
     const uint32_t* pQueueFamilyIndices{};
 
     safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT(const VkPhysicalDeviceImageDrmFormatModifierInfoEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT(const safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT& copy_src);
     safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT& operator=(
         const safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT& copy_src);
@@ -9609,7 +9811,7 @@ struct safe_VkImageDrmFormatModifierListCreateInfoEXT {
     const uint64_t* pDrmFormatModifiers{};
 
     safe_VkImageDrmFormatModifierListCreateInfoEXT(const VkImageDrmFormatModifierListCreateInfoEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageDrmFormatModifierListCreateInfoEXT(const safe_VkImageDrmFormatModifierListCreateInfoEXT& copy_src);
     safe_VkImageDrmFormatModifierListCreateInfoEXT& operator=(const safe_VkImageDrmFormatModifierListCreateInfoEXT& copy_src);
     safe_VkImageDrmFormatModifierListCreateInfoEXT();
@@ -9629,7 +9831,7 @@ struct safe_VkImageDrmFormatModifierExplicitCreateInfoEXT {
     const VkSubresourceLayout* pPlaneLayouts{};
 
     safe_VkImageDrmFormatModifierExplicitCreateInfoEXT(const VkImageDrmFormatModifierExplicitCreateInfoEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageDrmFormatModifierExplicitCreateInfoEXT(const safe_VkImageDrmFormatModifierExplicitCreateInfoEXT& copy_src);
     safe_VkImageDrmFormatModifierExplicitCreateInfoEXT& operator=(
         const safe_VkImageDrmFormatModifierExplicitCreateInfoEXT& copy_src);
@@ -9650,7 +9852,7 @@ struct safe_VkImageDrmFormatModifierPropertiesEXT {
     uint64_t drmFormatModifier;
 
     safe_VkImageDrmFormatModifierPropertiesEXT(const VkImageDrmFormatModifierPropertiesEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageDrmFormatModifierPropertiesEXT(const safe_VkImageDrmFormatModifierPropertiesEXT& copy_src);
     safe_VkImageDrmFormatModifierPropertiesEXT& operator=(const safe_VkImageDrmFormatModifierPropertiesEXT& copy_src);
     safe_VkImageDrmFormatModifierPropertiesEXT();
@@ -9669,7 +9871,7 @@ struct safe_VkDrmFormatModifierPropertiesList2EXT {
     VkDrmFormatModifierProperties2EXT* pDrmFormatModifierProperties{};
 
     safe_VkDrmFormatModifierPropertiesList2EXT(const VkDrmFormatModifierPropertiesList2EXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDrmFormatModifierPropertiesList2EXT(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src);
     safe_VkDrmFormatModifierPropertiesList2EXT& operator=(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src);
     safe_VkDrmFormatModifierPropertiesList2EXT();
@@ -9688,7 +9890,8 @@ struct safe_VkValidationCacheCreateInfoEXT {
     size_t initialDataSize;
     const void* pInitialData{};
 
-    safe_VkValidationCacheCreateInfoEXT(const VkValidationCacheCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkValidationCacheCreateInfoEXT(const VkValidationCacheCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkValidationCacheCreateInfoEXT(const safe_VkValidationCacheCreateInfoEXT& copy_src);
     safe_VkValidationCacheCreateInfoEXT& operator=(const safe_VkValidationCacheCreateInfoEXT& copy_src);
     safe_VkValidationCacheCreateInfoEXT();
@@ -9704,7 +9907,7 @@ struct safe_VkShaderModuleValidationCacheCreateInfoEXT {
     VkValidationCacheEXT validationCache;
 
     safe_VkShaderModuleValidationCacheCreateInfoEXT(const VkShaderModuleValidationCacheCreateInfoEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkShaderModuleValidationCacheCreateInfoEXT(const safe_VkShaderModuleValidationCacheCreateInfoEXT& copy_src);
     safe_VkShaderModuleValidationCacheCreateInfoEXT& operator=(const safe_VkShaderModuleValidationCacheCreateInfoEXT& copy_src);
     safe_VkShaderModuleValidationCacheCreateInfoEXT();
@@ -9740,7 +9943,7 @@ struct safe_VkPipelineViewportShadingRateImageStateCreateInfoNV {
     safe_VkShadingRatePaletteNV* pShadingRatePalettes{};
 
     safe_VkPipelineViewportShadingRateImageStateCreateInfoNV(const VkPipelineViewportShadingRateImageStateCreateInfoNV* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportShadingRateImageStateCreateInfoNV(
         const safe_VkPipelineViewportShadingRateImageStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportShadingRateImageStateCreateInfoNV& operator=(
@@ -9763,7 +9966,7 @@ struct safe_VkPhysicalDeviceShadingRateImageFeaturesNV {
     VkBool32 shadingRateCoarseSampleOrder;
 
     safe_VkPhysicalDeviceShadingRateImageFeaturesNV(const VkPhysicalDeviceShadingRateImageFeaturesNV* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShadingRateImageFeaturesNV(const safe_VkPhysicalDeviceShadingRateImageFeaturesNV& copy_src);
     safe_VkPhysicalDeviceShadingRateImageFeaturesNV& operator=(const safe_VkPhysicalDeviceShadingRateImageFeaturesNV& copy_src);
     safe_VkPhysicalDeviceShadingRateImageFeaturesNV();
@@ -9785,7 +9988,7 @@ struct safe_VkPhysicalDeviceShadingRateImagePropertiesNV {
     uint32_t shadingRateMaxCoarseSamples;
 
     safe_VkPhysicalDeviceShadingRateImagePropertiesNV(const VkPhysicalDeviceShadingRateImagePropertiesNV* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShadingRateImagePropertiesNV(const safe_VkPhysicalDeviceShadingRateImagePropertiesNV& copy_src);
     safe_VkPhysicalDeviceShadingRateImagePropertiesNV& operator=(const safe_VkPhysicalDeviceShadingRateImagePropertiesNV& copy_src);
     safe_VkPhysicalDeviceShadingRateImagePropertiesNV();
@@ -9823,7 +10026,7 @@ struct safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV {
     safe_VkCoarseSampleOrderCustomNV* pCustomSampleOrders{};
 
     safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV(const VkPipelineViewportCoarseSampleOrderStateCreateInfoNV* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV(
         const safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV& operator=(
@@ -9848,7 +10051,8 @@ struct safe_VkRayTracingShaderGroupCreateInfoNV {
     uint32_t anyHitShader;
     uint32_t intersectionShader;
 
-    safe_VkRayTracingShaderGroupCreateInfoNV(const VkRayTracingShaderGroupCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRayTracingShaderGroupCreateInfoNV(const VkRayTracingShaderGroupCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkRayTracingShaderGroupCreateInfoNV(const safe_VkRayTracingShaderGroupCreateInfoNV& copy_src);
     safe_VkRayTracingShaderGroupCreateInfoNV& operator=(const safe_VkRayTracingShaderGroupCreateInfoNV& copy_src);
     safe_VkRayTracingShaderGroupCreateInfoNV();
@@ -9873,7 +10077,8 @@ struct safe_VkRayTracingPipelineCreateInfoNV {
     VkPipeline basePipelineHandle;
     int32_t basePipelineIndex;
 
-    safe_VkRayTracingPipelineCreateInfoNV(const VkRayTracingPipelineCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRayTracingPipelineCreateInfoNV(const VkRayTracingPipelineCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkRayTracingPipelineCreateInfoNV(const safe_VkRayTracingPipelineCreateInfoNV& copy_src);
     safe_VkRayTracingPipelineCreateInfoNV& operator=(const safe_VkRayTracingPipelineCreateInfoNV& copy_src);
     safe_VkRayTracingPipelineCreateInfoNV();
@@ -9898,7 +10103,7 @@ struct safe_VkGeometryTrianglesNV {
     VkBuffer transformData;
     VkDeviceSize transformOffset;
 
-    safe_VkGeometryTrianglesNV(const VkGeometryTrianglesNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkGeometryTrianglesNV(const VkGeometryTrianglesNV* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkGeometryTrianglesNV(const safe_VkGeometryTrianglesNV& copy_src);
     safe_VkGeometryTrianglesNV& operator=(const safe_VkGeometryTrianglesNV& copy_src);
     safe_VkGeometryTrianglesNV();
@@ -9916,7 +10121,7 @@ struct safe_VkGeometryAABBNV {
     uint32_t stride;
     VkDeviceSize offset;
 
-    safe_VkGeometryAABBNV(const VkGeometryAABBNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkGeometryAABBNV(const VkGeometryAABBNV* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkGeometryAABBNV(const safe_VkGeometryAABBNV& copy_src);
     safe_VkGeometryAABBNV& operator=(const safe_VkGeometryAABBNV& copy_src);
     safe_VkGeometryAABBNV();
@@ -9933,7 +10138,7 @@ struct safe_VkGeometryNV {
     VkGeometryDataNV geometry;
     VkGeometryFlagsKHR flags;
 
-    safe_VkGeometryNV(const VkGeometryNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkGeometryNV(const VkGeometryNV* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkGeometryNV(const safe_VkGeometryNV& copy_src);
     safe_VkGeometryNV& operator=(const safe_VkGeometryNV& copy_src);
     safe_VkGeometryNV();
@@ -9952,7 +10157,8 @@ struct safe_VkAccelerationStructureInfoNV {
     uint32_t geometryCount;
     safe_VkGeometryNV* pGeometries{};
 
-    safe_VkAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkAccelerationStructureInfoNV(const safe_VkAccelerationStructureInfoNV& copy_src);
     safe_VkAccelerationStructureInfoNV& operator=(const safe_VkAccelerationStructureInfoNV& copy_src);
     safe_VkAccelerationStructureInfoNV();
@@ -9968,7 +10174,8 @@ struct safe_VkAccelerationStructureCreateInfoNV {
     VkDeviceSize compactedSize;
     safe_VkAccelerationStructureInfoNV info;
 
-    safe_VkAccelerationStructureCreateInfoNV(const VkAccelerationStructureCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAccelerationStructureCreateInfoNV(const VkAccelerationStructureCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkAccelerationStructureCreateInfoNV(const safe_VkAccelerationStructureCreateInfoNV& copy_src);
     safe_VkAccelerationStructureCreateInfoNV& operator=(const safe_VkAccelerationStructureCreateInfoNV& copy_src);
     safe_VkAccelerationStructureCreateInfoNV();
@@ -9990,7 +10197,7 @@ struct safe_VkBindAccelerationStructureMemoryInfoNV {
     const uint32_t* pDeviceIndices{};
 
     safe_VkBindAccelerationStructureMemoryInfoNV(const VkBindAccelerationStructureMemoryInfoNV* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBindAccelerationStructureMemoryInfoNV(const safe_VkBindAccelerationStructureMemoryInfoNV& copy_src);
     safe_VkBindAccelerationStructureMemoryInfoNV& operator=(const safe_VkBindAccelerationStructureMemoryInfoNV& copy_src);
     safe_VkBindAccelerationStructureMemoryInfoNV();
@@ -10009,7 +10216,7 @@ struct safe_VkWriteDescriptorSetAccelerationStructureNV {
     VkAccelerationStructureNV* pAccelerationStructures{};
 
     safe_VkWriteDescriptorSetAccelerationStructureNV(const VkWriteDescriptorSetAccelerationStructureNV* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkWriteDescriptorSetAccelerationStructureNV(const safe_VkWriteDescriptorSetAccelerationStructureNV& copy_src);
     safe_VkWriteDescriptorSetAccelerationStructureNV& operator=(const safe_VkWriteDescriptorSetAccelerationStructureNV& copy_src);
     safe_VkWriteDescriptorSetAccelerationStructureNV();
@@ -10030,7 +10237,7 @@ struct safe_VkAccelerationStructureMemoryRequirementsInfoNV {
     VkAccelerationStructureNV accelerationStructure;
 
     safe_VkAccelerationStructureMemoryRequirementsInfoNV(const VkAccelerationStructureMemoryRequirementsInfoNV* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureMemoryRequirementsInfoNV(const safe_VkAccelerationStructureMemoryRequirementsInfoNV& copy_src);
     safe_VkAccelerationStructureMemoryRequirementsInfoNV& operator=(
         const safe_VkAccelerationStructureMemoryRequirementsInfoNV& copy_src);
@@ -10058,7 +10265,7 @@ struct safe_VkPhysicalDeviceRayTracingPropertiesNV {
     uint32_t maxDescriptorSetAccelerationStructures;
 
     safe_VkPhysicalDeviceRayTracingPropertiesNV(const VkPhysicalDeviceRayTracingPropertiesNV* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingPropertiesNV(const safe_VkPhysicalDeviceRayTracingPropertiesNV& copy_src);
     safe_VkPhysicalDeviceRayTracingPropertiesNV& operator=(const safe_VkPhysicalDeviceRayTracingPropertiesNV& copy_src);
     safe_VkPhysicalDeviceRayTracingPropertiesNV();
@@ -10076,7 +10283,7 @@ struct safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV {
     VkBool32 representativeFragmentTest;
 
     safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(
         const safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV& copy_src);
     safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV& operator=(
@@ -10098,7 +10305,8 @@ struct safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV {
     VkBool32 representativeFragmentTestEnable;
 
     safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV(
-        const VkPipelineRepresentativeFragmentTestStateCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPipelineRepresentativeFragmentTestStateCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV(
         const safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV& copy_src);
     safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV& operator=(
@@ -10120,7 +10328,7 @@ struct safe_VkPhysicalDeviceImageViewImageFormatInfoEXT {
     VkImageViewType imageViewType;
 
     safe_VkPhysicalDeviceImageViewImageFormatInfoEXT(const VkPhysicalDeviceImageViewImageFormatInfoEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageViewImageFormatInfoEXT(const safe_VkPhysicalDeviceImageViewImageFormatInfoEXT& copy_src);
     safe_VkPhysicalDeviceImageViewImageFormatInfoEXT& operator=(const safe_VkPhysicalDeviceImageViewImageFormatInfoEXT& copy_src);
     safe_VkPhysicalDeviceImageViewImageFormatInfoEXT();
@@ -10141,7 +10349,7 @@ struct safe_VkFilterCubicImageViewImageFormatPropertiesEXT {
     VkBool32 filterCubicMinmax;
 
     safe_VkFilterCubicImageViewImageFormatPropertiesEXT(const VkFilterCubicImageViewImageFormatPropertiesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFilterCubicImageViewImageFormatPropertiesEXT(const safe_VkFilterCubicImageViewImageFormatPropertiesEXT& copy_src);
     safe_VkFilterCubicImageViewImageFormatPropertiesEXT& operator=(
         const safe_VkFilterCubicImageViewImageFormatPropertiesEXT& copy_src);
@@ -10162,7 +10370,8 @@ struct safe_VkImportMemoryHostPointerInfoEXT {
     VkExternalMemoryHandleTypeFlagBits handleType;
     void* pHostPointer{};
 
-    safe_VkImportMemoryHostPointerInfoEXT(const VkImportMemoryHostPointerInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMemoryHostPointerInfoEXT(const VkImportMemoryHostPointerInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkImportMemoryHostPointerInfoEXT(const safe_VkImportMemoryHostPointerInfoEXT& copy_src);
     safe_VkImportMemoryHostPointerInfoEXT& operator=(const safe_VkImportMemoryHostPointerInfoEXT& copy_src);
     safe_VkImportMemoryHostPointerInfoEXT();
@@ -10177,7 +10386,8 @@ struct safe_VkMemoryHostPointerPropertiesEXT {
     void* pNext{};
     uint32_t memoryTypeBits;
 
-    safe_VkMemoryHostPointerPropertiesEXT(const VkMemoryHostPointerPropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryHostPointerPropertiesEXT(const VkMemoryHostPointerPropertiesEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkMemoryHostPointerPropertiesEXT(const safe_VkMemoryHostPointerPropertiesEXT& copy_src);
     safe_VkMemoryHostPointerPropertiesEXT& operator=(const safe_VkMemoryHostPointerPropertiesEXT& copy_src);
     safe_VkMemoryHostPointerPropertiesEXT();
@@ -10193,7 +10403,7 @@ struct safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT {
     VkDeviceSize minImportedHostPointerAlignment;
 
     safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT(const VkPhysicalDeviceExternalMemoryHostPropertiesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT(const safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT& copy_src);
@@ -10214,7 +10424,7 @@ struct safe_VkPipelineCompilerControlCreateInfoAMD {
     VkPipelineCompilerControlFlagsAMD compilerControlFlags;
 
     safe_VkPipelineCompilerControlCreateInfoAMD(const VkPipelineCompilerControlCreateInfoAMD* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineCompilerControlCreateInfoAMD(const safe_VkPipelineCompilerControlCreateInfoAMD& copy_src);
     safe_VkPipelineCompilerControlCreateInfoAMD& operator=(const safe_VkPipelineCompilerControlCreateInfoAMD& copy_src);
     safe_VkPipelineCompilerControlCreateInfoAMD();
@@ -10231,7 +10441,8 @@ struct safe_VkCalibratedTimestampInfoEXT {
     const void* pNext{};
     VkTimeDomainEXT timeDomain;
 
-    safe_VkCalibratedTimestampInfoEXT(const VkCalibratedTimestampInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCalibratedTimestampInfoEXT(const VkCalibratedTimestampInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkCalibratedTimestampInfoEXT(const safe_VkCalibratedTimestampInfoEXT& copy_src);
     safe_VkCalibratedTimestampInfoEXT& operator=(const safe_VkCalibratedTimestampInfoEXT& copy_src);
     safe_VkCalibratedTimestampInfoEXT();
@@ -10260,7 +10471,7 @@ struct safe_VkPhysicalDeviceShaderCorePropertiesAMD {
     uint32_t vgprAllocationGranularity;
 
     safe_VkPhysicalDeviceShaderCorePropertiesAMD(const VkPhysicalDeviceShaderCorePropertiesAMD* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderCorePropertiesAMD(const safe_VkPhysicalDeviceShaderCorePropertiesAMD& copy_src);
     safe_VkPhysicalDeviceShaderCorePropertiesAMD& operator=(const safe_VkPhysicalDeviceShaderCorePropertiesAMD& copy_src);
     safe_VkPhysicalDeviceShaderCorePropertiesAMD();
@@ -10278,7 +10489,7 @@ struct safe_VkDeviceMemoryOverallocationCreateInfoAMD {
     VkMemoryOverallocationBehaviorAMD overallocationBehavior;
 
     safe_VkDeviceMemoryOverallocationCreateInfoAMD(const VkDeviceMemoryOverallocationCreateInfoAMD* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceMemoryOverallocationCreateInfoAMD(const safe_VkDeviceMemoryOverallocationCreateInfoAMD& copy_src);
     safe_VkDeviceMemoryOverallocationCreateInfoAMD& operator=(const safe_VkDeviceMemoryOverallocationCreateInfoAMD& copy_src);
     safe_VkDeviceMemoryOverallocationCreateInfoAMD();
@@ -10296,7 +10507,7 @@ struct safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT {
     uint32_t maxVertexAttribDivisor;
 
     safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT(const VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT(
         const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT& operator=(
@@ -10319,7 +10530,7 @@ struct safe_VkPipelineVertexInputDivisorStateCreateInfoEXT {
     const VkVertexInputBindingDivisorDescriptionEXT* pVertexBindingDivisors{};
 
     safe_VkPipelineVertexInputDivisorStateCreateInfoEXT(const VkPipelineVertexInputDivisorStateCreateInfoEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineVertexInputDivisorStateCreateInfoEXT(const safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& copy_src);
     safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& operator=(
         const safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& copy_src);
@@ -10341,7 +10552,7 @@ struct safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT {
     VkBool32 vertexAttributeInstanceRateZeroDivisor;
 
     safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT(const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT(const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& copy_src);
@@ -10362,7 +10573,7 @@ struct safe_VkPresentFrameTokenGGP {
     const void* pNext{};
     GgpFrameToken frameToken;
 
-    safe_VkPresentFrameTokenGGP(const VkPresentFrameTokenGGP* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPresentFrameTokenGGP(const VkPresentFrameTokenGGP* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPresentFrameTokenGGP(const safe_VkPresentFrameTokenGGP& copy_src);
     safe_VkPresentFrameTokenGGP& operator=(const safe_VkPresentFrameTokenGGP& copy_src);
     safe_VkPresentFrameTokenGGP();
@@ -10380,7 +10591,7 @@ struct safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV {
     VkBool32 computeDerivativeGroupLinear;
 
     safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV(const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV(
         const safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV& copy_src);
     safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV& operator=(
@@ -10403,7 +10614,7 @@ struct safe_VkPhysicalDeviceMeshShaderFeaturesNV {
     VkBool32 meshShader;
 
     safe_VkPhysicalDeviceMeshShaderFeaturesNV(const VkPhysicalDeviceMeshShaderFeaturesNV* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMeshShaderFeaturesNV(const safe_VkPhysicalDeviceMeshShaderFeaturesNV& copy_src);
     safe_VkPhysicalDeviceMeshShaderFeaturesNV& operator=(const safe_VkPhysicalDeviceMeshShaderFeaturesNV& copy_src);
     safe_VkPhysicalDeviceMeshShaderFeaturesNV();
@@ -10433,7 +10644,7 @@ struct safe_VkPhysicalDeviceMeshShaderPropertiesNV {
     uint32_t meshOutputPerPrimitiveGranularity;
 
     safe_VkPhysicalDeviceMeshShaderPropertiesNV(const VkPhysicalDeviceMeshShaderPropertiesNV* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMeshShaderPropertiesNV(const safe_VkPhysicalDeviceMeshShaderPropertiesNV& copy_src);
     safe_VkPhysicalDeviceMeshShaderPropertiesNV& operator=(const safe_VkPhysicalDeviceMeshShaderPropertiesNV& copy_src);
     safe_VkPhysicalDeviceMeshShaderPropertiesNV();
@@ -10451,7 +10662,7 @@ struct safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV {
     VkBool32 imageFootprint;
 
     safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV(const VkPhysicalDeviceShaderImageFootprintFeaturesNV* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV(const safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& copy_src);
     safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& operator=(
         const safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& copy_src);
@@ -10473,7 +10684,7 @@ struct safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV {
     const VkRect2D* pExclusiveScissors{};
 
     safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV(const VkPipelineViewportExclusiveScissorStateCreateInfoNV* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV(
         const safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV& copy_src);
     safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV& operator=(
@@ -10495,7 +10706,7 @@ struct safe_VkPhysicalDeviceExclusiveScissorFeaturesNV {
     VkBool32 exclusiveScissor;
 
     safe_VkPhysicalDeviceExclusiveScissorFeaturesNV(const VkPhysicalDeviceExclusiveScissorFeaturesNV* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExclusiveScissorFeaturesNV(const safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& copy_src);
     safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& operator=(const safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& copy_src);
     safe_VkPhysicalDeviceExclusiveScissorFeaturesNV();
@@ -10514,7 +10725,8 @@ struct safe_VkQueueFamilyCheckpointPropertiesNV {
     void* pNext{};
     VkPipelineStageFlags checkpointExecutionStageMask;
 
-    safe_VkQueueFamilyCheckpointPropertiesNV(const VkQueueFamilyCheckpointPropertiesNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkQueueFamilyCheckpointPropertiesNV(const VkQueueFamilyCheckpointPropertiesNV* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkQueueFamilyCheckpointPropertiesNV(const safe_VkQueueFamilyCheckpointPropertiesNV& copy_src);
     safe_VkQueueFamilyCheckpointPropertiesNV& operator=(const safe_VkQueueFamilyCheckpointPropertiesNV& copy_src);
     safe_VkQueueFamilyCheckpointPropertiesNV();
@@ -10532,7 +10744,7 @@ struct safe_VkCheckpointDataNV {
     VkPipelineStageFlagBits stage;
     void* pCheckpointMarker{};
 
-    safe_VkCheckpointDataNV(const VkCheckpointDataNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCheckpointDataNV(const VkCheckpointDataNV* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCheckpointDataNV(const safe_VkCheckpointDataNV& copy_src);
     safe_VkCheckpointDataNV& operator=(const safe_VkCheckpointDataNV& copy_src);
     safe_VkCheckpointDataNV();
@@ -10548,7 +10760,7 @@ struct safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL {
     VkBool32 shaderIntegerFunctions2;
 
     safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL(const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL(
         const safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL& copy_src);
     safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL& operator=(
@@ -10586,7 +10798,8 @@ struct safe_VkInitializePerformanceApiInfoINTEL {
     const void* pNext{};
     void* pUserData{};
 
-    safe_VkInitializePerformanceApiInfoINTEL(const VkInitializePerformanceApiInfoINTEL* in_struct, PNextCopyState* copy_state = {});
+    safe_VkInitializePerformanceApiInfoINTEL(const VkInitializePerformanceApiInfoINTEL* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkInitializePerformanceApiInfoINTEL(const safe_VkInitializePerformanceApiInfoINTEL& copy_src);
     safe_VkInitializePerformanceApiInfoINTEL& operator=(const safe_VkInitializePerformanceApiInfoINTEL& copy_src);
     safe_VkInitializePerformanceApiInfoINTEL();
@@ -10604,7 +10817,7 @@ struct safe_VkQueryPoolPerformanceQueryCreateInfoINTEL {
     VkQueryPoolSamplingModeINTEL performanceCountersSampling;
 
     safe_VkQueryPoolPerformanceQueryCreateInfoINTEL(const VkQueryPoolPerformanceQueryCreateInfoINTEL* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkQueryPoolPerformanceQueryCreateInfoINTEL(const safe_VkQueryPoolPerformanceQueryCreateInfoINTEL& copy_src);
     safe_VkQueryPoolPerformanceQueryCreateInfoINTEL& operator=(const safe_VkQueryPoolPerformanceQueryCreateInfoINTEL& copy_src);
     safe_VkQueryPoolPerformanceQueryCreateInfoINTEL();
@@ -10623,7 +10836,8 @@ struct safe_VkPerformanceMarkerInfoINTEL {
     const void* pNext{};
     uint64_t marker;
 
-    safe_VkPerformanceMarkerInfoINTEL(const VkPerformanceMarkerInfoINTEL* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPerformanceMarkerInfoINTEL(const VkPerformanceMarkerInfoINTEL* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkPerformanceMarkerInfoINTEL(const safe_VkPerformanceMarkerInfoINTEL& copy_src);
     safe_VkPerformanceMarkerInfoINTEL& operator=(const safe_VkPerformanceMarkerInfoINTEL& copy_src);
     safe_VkPerformanceMarkerInfoINTEL();
@@ -10638,7 +10852,8 @@ struct safe_VkPerformanceStreamMarkerInfoINTEL {
     const void* pNext{};
     uint32_t marker;
 
-    safe_VkPerformanceStreamMarkerInfoINTEL(const VkPerformanceStreamMarkerInfoINTEL* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPerformanceStreamMarkerInfoINTEL(const VkPerformanceStreamMarkerInfoINTEL* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkPerformanceStreamMarkerInfoINTEL(const safe_VkPerformanceStreamMarkerInfoINTEL& copy_src);
     safe_VkPerformanceStreamMarkerInfoINTEL& operator=(const safe_VkPerformanceStreamMarkerInfoINTEL& copy_src);
     safe_VkPerformanceStreamMarkerInfoINTEL();
@@ -10657,7 +10872,8 @@ struct safe_VkPerformanceOverrideInfoINTEL {
     VkBool32 enable;
     uint64_t parameter;
 
-    safe_VkPerformanceOverrideInfoINTEL(const VkPerformanceOverrideInfoINTEL* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPerformanceOverrideInfoINTEL(const VkPerformanceOverrideInfoINTEL* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkPerformanceOverrideInfoINTEL(const safe_VkPerformanceOverrideInfoINTEL& copy_src);
     safe_VkPerformanceOverrideInfoINTEL& operator=(const safe_VkPerformanceOverrideInfoINTEL& copy_src);
     safe_VkPerformanceOverrideInfoINTEL();
@@ -10673,7 +10889,7 @@ struct safe_VkPerformanceConfigurationAcquireInfoINTEL {
     VkPerformanceConfigurationTypeINTEL type;
 
     safe_VkPerformanceConfigurationAcquireInfoINTEL(const VkPerformanceConfigurationAcquireInfoINTEL* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPerformanceConfigurationAcquireInfoINTEL(const safe_VkPerformanceConfigurationAcquireInfoINTEL& copy_src);
     safe_VkPerformanceConfigurationAcquireInfoINTEL& operator=(const safe_VkPerformanceConfigurationAcquireInfoINTEL& copy_src);
     safe_VkPerformanceConfigurationAcquireInfoINTEL();
@@ -10696,7 +10912,7 @@ struct safe_VkPhysicalDevicePCIBusInfoPropertiesEXT {
     uint32_t pciFunction;
 
     safe_VkPhysicalDevicePCIBusInfoPropertiesEXT(const VkPhysicalDevicePCIBusInfoPropertiesEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePCIBusInfoPropertiesEXT(const safe_VkPhysicalDevicePCIBusInfoPropertiesEXT& copy_src);
     safe_VkPhysicalDevicePCIBusInfoPropertiesEXT& operator=(const safe_VkPhysicalDevicePCIBusInfoPropertiesEXT& copy_src);
     safe_VkPhysicalDevicePCIBusInfoPropertiesEXT();
@@ -10714,7 +10930,7 @@ struct safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD {
     VkBool32 localDimmingSupport;
 
     safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD(const VkDisplayNativeHdrSurfaceCapabilitiesAMD* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD(const safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& copy_src);
     safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& operator=(const safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& copy_src);
     safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD();
@@ -10732,7 +10948,7 @@ struct safe_VkSwapchainDisplayNativeHdrCreateInfoAMD {
     VkBool32 localDimmingEnable;
 
     safe_VkSwapchainDisplayNativeHdrCreateInfoAMD(const VkSwapchainDisplayNativeHdrCreateInfoAMD* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSwapchainDisplayNativeHdrCreateInfoAMD(const safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& copy_src);
     safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& operator=(const safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& copy_src);
     safe_VkSwapchainDisplayNativeHdrCreateInfoAMD();
@@ -10751,7 +10967,8 @@ struct safe_VkImagePipeSurfaceCreateInfoFUCHSIA {
     VkImagePipeSurfaceCreateFlagsFUCHSIA flags;
     zx_handle_t imagePipeHandle;
 
-    safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const VkImagePipeSurfaceCreateInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const VkImagePipeSurfaceCreateInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const safe_VkImagePipeSurfaceCreateInfoFUCHSIA& copy_src);
     safe_VkImagePipeSurfaceCreateInfoFUCHSIA& operator=(const safe_VkImagePipeSurfaceCreateInfoFUCHSIA& copy_src);
     safe_VkImagePipeSurfaceCreateInfoFUCHSIA();
@@ -10771,7 +10988,8 @@ struct safe_VkMetalSurfaceCreateInfoEXT {
     VkMetalSurfaceCreateFlagsEXT flags;
     const CAMetalLayer* pLayer{};
 
-    safe_VkMetalSurfaceCreateInfoEXT(const VkMetalSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMetalSurfaceCreateInfoEXT(const VkMetalSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkMetalSurfaceCreateInfoEXT(const safe_VkMetalSurfaceCreateInfoEXT& copy_src);
     safe_VkMetalSurfaceCreateInfoEXT& operator=(const safe_VkMetalSurfaceCreateInfoEXT& copy_src);
     safe_VkMetalSurfaceCreateInfoEXT();
@@ -10790,7 +11008,7 @@ struct safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT {
     VkBool32 fragmentDensityMapNonSubsampledImages;
 
     safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT(const VkPhysicalDeviceFragmentDensityMapFeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT(const safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT& copy_src);
@@ -10813,7 +11031,7 @@ struct safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT {
     VkBool32 fragmentDensityInvocations;
 
     safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT(const VkPhysicalDeviceFragmentDensityMapPropertiesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT(const safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT& copy_src);
@@ -10834,7 +11052,7 @@ struct safe_VkRenderPassFragmentDensityMapCreateInfoEXT {
     VkAttachmentReference fragmentDensityMapAttachment;
 
     safe_VkRenderPassFragmentDensityMapCreateInfoEXT(const VkRenderPassFragmentDensityMapCreateInfoEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassFragmentDensityMapCreateInfoEXT(const safe_VkRenderPassFragmentDensityMapCreateInfoEXT& copy_src);
     safe_VkRenderPassFragmentDensityMapCreateInfoEXT& operator=(const safe_VkRenderPassFragmentDensityMapCreateInfoEXT& copy_src);
     safe_VkRenderPassFragmentDensityMapCreateInfoEXT();
@@ -10855,7 +11073,7 @@ struct safe_VkPhysicalDeviceShaderCoreProperties2AMD {
     uint32_t activeComputeUnitCount;
 
     safe_VkPhysicalDeviceShaderCoreProperties2AMD(const VkPhysicalDeviceShaderCoreProperties2AMD* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderCoreProperties2AMD(const safe_VkPhysicalDeviceShaderCoreProperties2AMD& copy_src);
     safe_VkPhysicalDeviceShaderCoreProperties2AMD& operator=(const safe_VkPhysicalDeviceShaderCoreProperties2AMD& copy_src);
     safe_VkPhysicalDeviceShaderCoreProperties2AMD();
@@ -10873,7 +11091,7 @@ struct safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD {
     VkBool32 deviceCoherentMemory;
 
     safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(const VkPhysicalDeviceCoherentMemoryFeaturesAMD* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& copy_src);
     safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& operator=(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& copy_src);
     safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD();
@@ -10892,7 +11110,7 @@ struct safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT {
     VkBool32 sparseImageInt64Atomics;
 
     safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& operator=(
         const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& copy_src);
@@ -10914,7 +11132,7 @@ struct safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT {
     VkDeviceSize heapUsage[VK_MAX_MEMORY_HEAPS];
 
     safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT(const VkPhysicalDeviceMemoryBudgetPropertiesEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT(const safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT& operator=(const safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT();
@@ -10932,7 +11150,7 @@ struct safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT {
     VkBool32 memoryPriority;
 
     safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT(const VkPhysicalDeviceMemoryPriorityFeaturesEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT(const safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT& operator=(const safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT();
@@ -10949,7 +11167,8 @@ struct safe_VkMemoryPriorityAllocateInfoEXT {
     const void* pNext{};
     float priority;
 
-    safe_VkMemoryPriorityAllocateInfoEXT(const VkMemoryPriorityAllocateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryPriorityAllocateInfoEXT(const VkMemoryPriorityAllocateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkMemoryPriorityAllocateInfoEXT(const safe_VkMemoryPriorityAllocateInfoEXT& copy_src);
     safe_VkMemoryPriorityAllocateInfoEXT& operator=(const safe_VkMemoryPriorityAllocateInfoEXT& copy_src);
     safe_VkMemoryPriorityAllocateInfoEXT();
@@ -10965,7 +11184,8 @@ struct safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV {
     VkBool32 dedicatedAllocationImageAliasing;
 
     safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV(
-        const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV(
         const safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV& operator=(
@@ -10990,7 +11210,7 @@ struct safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT {
     VkBool32 bufferDeviceAddressMultiDevice;
 
     safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT(const VkPhysicalDeviceBufferDeviceAddressFeaturesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT& copy_src);
@@ -11010,7 +11230,8 @@ struct safe_VkBufferDeviceAddressCreateInfoEXT {
     const void* pNext{};
     VkDeviceAddress deviceAddress;
 
-    safe_VkBufferDeviceAddressCreateInfoEXT(const VkBufferDeviceAddressCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferDeviceAddressCreateInfoEXT(const VkBufferDeviceAddressCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkBufferDeviceAddressCreateInfoEXT(const safe_VkBufferDeviceAddressCreateInfoEXT& copy_src);
     safe_VkBufferDeviceAddressCreateInfoEXT& operator=(const safe_VkBufferDeviceAddressCreateInfoEXT& copy_src);
     safe_VkBufferDeviceAddressCreateInfoEXT();
@@ -11030,7 +11251,7 @@ struct safe_VkValidationFeaturesEXT {
     uint32_t disabledValidationFeatureCount;
     const VkValidationFeatureDisableEXT* pDisabledValidationFeatures{};
 
-    safe_VkValidationFeaturesEXT(const VkValidationFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkValidationFeaturesEXT(const VkValidationFeaturesEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkValidationFeaturesEXT(const safe_VkValidationFeaturesEXT& copy_src);
     safe_VkValidationFeaturesEXT& operator=(const safe_VkValidationFeaturesEXT& copy_src);
     safe_VkValidationFeaturesEXT();
@@ -11052,7 +11273,8 @@ struct safe_VkCooperativeMatrixPropertiesNV {
     VkComponentTypeNV DType;
     VkScopeNV scope;
 
-    safe_VkCooperativeMatrixPropertiesNV(const VkCooperativeMatrixPropertiesNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCooperativeMatrixPropertiesNV(const VkCooperativeMatrixPropertiesNV* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkCooperativeMatrixPropertiesNV(const safe_VkCooperativeMatrixPropertiesNV& copy_src);
     safe_VkCooperativeMatrixPropertiesNV& operator=(const safe_VkCooperativeMatrixPropertiesNV& copy_src);
     safe_VkCooperativeMatrixPropertiesNV();
@@ -11069,7 +11291,7 @@ struct safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV {
     VkBool32 cooperativeMatrixRobustBufferAccess;
 
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV(const VkPhysicalDeviceCooperativeMatrixFeaturesNV* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& operator=(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV();
@@ -11089,7 +11311,7 @@ struct safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV {
     VkShaderStageFlags cooperativeMatrixSupportedStages;
 
     safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV(const VkPhysicalDeviceCooperativeMatrixPropertiesNV* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& copy_src);
     safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& operator=(
         const safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& copy_src);
@@ -11110,7 +11332,7 @@ struct safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV {
     VkBool32 coverageReductionMode;
 
     safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV(const VkPhysicalDeviceCoverageReductionModeFeaturesNV* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV(const safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& operator=(
         const safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& copy_src);
@@ -11132,7 +11354,7 @@ struct safe_VkPipelineCoverageReductionStateCreateInfoNV {
     VkCoverageReductionModeNV coverageReductionMode;
 
     safe_VkPipelineCoverageReductionStateCreateInfoNV(const VkPipelineCoverageReductionStateCreateInfoNV* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineCoverageReductionStateCreateInfoNV(const safe_VkPipelineCoverageReductionStateCreateInfoNV& copy_src);
     safe_VkPipelineCoverageReductionStateCreateInfoNV& operator=(const safe_VkPipelineCoverageReductionStateCreateInfoNV& copy_src);
     safe_VkPipelineCoverageReductionStateCreateInfoNV();
@@ -11155,7 +11377,7 @@ struct safe_VkFramebufferMixedSamplesCombinationNV {
     VkSampleCountFlags colorSamples;
 
     safe_VkFramebufferMixedSamplesCombinationNV(const VkFramebufferMixedSamplesCombinationNV* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFramebufferMixedSamplesCombinationNV(const safe_VkFramebufferMixedSamplesCombinationNV& copy_src);
     safe_VkFramebufferMixedSamplesCombinationNV& operator=(const safe_VkFramebufferMixedSamplesCombinationNV& copy_src);
     safe_VkFramebufferMixedSamplesCombinationNV();
@@ -11175,7 +11397,7 @@ struct safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT {
     VkBool32 fragmentShaderShadingRateInterlock;
 
     safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT(const VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT(
         const safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT& operator=(
@@ -11197,7 +11419,7 @@ struct safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT {
     VkBool32 ycbcrImageArrays;
 
     safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT(const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT(const safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT& operator=(const safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT();
@@ -11218,7 +11440,7 @@ struct safe_VkPhysicalDeviceProvokingVertexFeaturesEXT {
     VkBool32 transformFeedbackPreservesProvokingVertex;
 
     safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(const VkPhysicalDeviceProvokingVertexFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& operator=(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceProvokingVertexFeaturesEXT();
@@ -11239,7 +11461,7 @@ struct safe_VkPhysicalDeviceProvokingVertexPropertiesEXT {
     VkBool32 transformFeedbackPreservesTriangleFanProvokingVertex;
 
     safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(const VkPhysicalDeviceProvokingVertexPropertiesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& operator=(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceProvokingVertexPropertiesEXT();
@@ -11259,7 +11481,8 @@ struct safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT {
     VkProvokingVertexModeEXT provokingVertexMode;
 
     safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(
-        const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(
         const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& copy_src);
     safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& operator=(
@@ -11281,7 +11504,8 @@ struct safe_VkSurfaceFullScreenExclusiveInfoEXT {
     void* pNext{};
     VkFullScreenExclusiveEXT fullScreenExclusive;
 
-    safe_VkSurfaceFullScreenExclusiveInfoEXT(const VkSurfaceFullScreenExclusiveInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSurfaceFullScreenExclusiveInfoEXT(const VkSurfaceFullScreenExclusiveInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkSurfaceFullScreenExclusiveInfoEXT(const safe_VkSurfaceFullScreenExclusiveInfoEXT& copy_src);
     safe_VkSurfaceFullScreenExclusiveInfoEXT& operator=(const safe_VkSurfaceFullScreenExclusiveInfoEXT& copy_src);
     safe_VkSurfaceFullScreenExclusiveInfoEXT();
@@ -11301,7 +11525,7 @@ struct safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT {
     VkBool32 fullScreenExclusiveSupported;
 
     safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT(const VkSurfaceCapabilitiesFullScreenExclusiveEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT(const safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT& copy_src);
     safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT& operator=(const safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT& copy_src);
     safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT();
@@ -11323,7 +11547,7 @@ struct safe_VkSurfaceFullScreenExclusiveWin32InfoEXT {
     HMONITOR hmonitor;
 
     safe_VkSurfaceFullScreenExclusiveWin32InfoEXT(const VkSurfaceFullScreenExclusiveWin32InfoEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfaceFullScreenExclusiveWin32InfoEXT(const safe_VkSurfaceFullScreenExclusiveWin32InfoEXT& copy_src);
     safe_VkSurfaceFullScreenExclusiveWin32InfoEXT& operator=(const safe_VkSurfaceFullScreenExclusiveWin32InfoEXT& copy_src);
     safe_VkSurfaceFullScreenExclusiveWin32InfoEXT();
@@ -11341,7 +11565,8 @@ struct safe_VkHeadlessSurfaceCreateInfoEXT {
     const void* pNext{};
     VkHeadlessSurfaceCreateFlagsEXT flags;
 
-    safe_VkHeadlessSurfaceCreateInfoEXT(const VkHeadlessSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkHeadlessSurfaceCreateInfoEXT(const VkHeadlessSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkHeadlessSurfaceCreateInfoEXT(const safe_VkHeadlessSurfaceCreateInfoEXT& copy_src);
     safe_VkHeadlessSurfaceCreateInfoEXT& operator=(const safe_VkHeadlessSurfaceCreateInfoEXT& copy_src);
     safe_VkHeadlessSurfaceCreateInfoEXT();
@@ -11362,7 +11587,7 @@ struct safe_VkPhysicalDeviceLineRasterizationFeaturesEXT {
     VkBool32 stippledSmoothLines;
 
     safe_VkPhysicalDeviceLineRasterizationFeaturesEXT(const VkPhysicalDeviceLineRasterizationFeaturesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceLineRasterizationFeaturesEXT(const safe_VkPhysicalDeviceLineRasterizationFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceLineRasterizationFeaturesEXT& operator=(const safe_VkPhysicalDeviceLineRasterizationFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceLineRasterizationFeaturesEXT();
@@ -11382,7 +11607,7 @@ struct safe_VkPhysicalDeviceLineRasterizationPropertiesEXT {
     uint32_t lineSubPixelPrecisionBits;
 
     safe_VkPhysicalDeviceLineRasterizationPropertiesEXT(const VkPhysicalDeviceLineRasterizationPropertiesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceLineRasterizationPropertiesEXT(const safe_VkPhysicalDeviceLineRasterizationPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceLineRasterizationPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceLineRasterizationPropertiesEXT& copy_src);
@@ -11406,7 +11631,7 @@ struct safe_VkPipelineRasterizationLineStateCreateInfoEXT {
     uint16_t lineStipplePattern;
 
     safe_VkPipelineRasterizationLineStateCreateInfoEXT(const VkPipelineRasterizationLineStateCreateInfoEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineRasterizationLineStateCreateInfoEXT(const safe_VkPipelineRasterizationLineStateCreateInfoEXT& copy_src);
     safe_VkPipelineRasterizationLineStateCreateInfoEXT& operator=(
         const safe_VkPipelineRasterizationLineStateCreateInfoEXT& copy_src);
@@ -11438,7 +11663,7 @@ struct safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT {
     VkBool32 sparseImageFloat32AtomicAdd;
 
     safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT(const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT(const safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT();
@@ -11458,7 +11683,7 @@ struct safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT {
     VkBool32 indexTypeUint8;
 
     safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT(const VkPhysicalDeviceIndexTypeUint8FeaturesEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT(const safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT& operator=(const safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT();
@@ -11476,7 +11701,7 @@ struct safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT {
     VkBool32 extendedDynamicState;
 
     safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT(const VkPhysicalDeviceExtendedDynamicStateFeaturesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT(const safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT& copy_src);
@@ -11497,7 +11722,7 @@ struct safe_VkPhysicalDeviceHostImageCopyFeaturesEXT {
     VkBool32 hostImageCopy;
 
     safe_VkPhysicalDeviceHostImageCopyFeaturesEXT(const VkPhysicalDeviceHostImageCopyFeaturesEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceHostImageCopyFeaturesEXT(const safe_VkPhysicalDeviceHostImageCopyFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceHostImageCopyFeaturesEXT& operator=(const safe_VkPhysicalDeviceHostImageCopyFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceHostImageCopyFeaturesEXT();
@@ -11520,7 +11745,7 @@ struct safe_VkPhysicalDeviceHostImageCopyPropertiesEXT {
     VkBool32 identicalMemoryTypeRequirements;
 
     safe_VkPhysicalDeviceHostImageCopyPropertiesEXT(const VkPhysicalDeviceHostImageCopyPropertiesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceHostImageCopyPropertiesEXT(const safe_VkPhysicalDeviceHostImageCopyPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceHostImageCopyPropertiesEXT& operator=(const safe_VkPhysicalDeviceHostImageCopyPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceHostImageCopyPropertiesEXT();
@@ -11544,7 +11769,7 @@ struct safe_VkMemoryToImageCopyEXT {
     VkOffset3D imageOffset;
     VkExtent3D imageExtent;
 
-    safe_VkMemoryToImageCopyEXT(const VkMemoryToImageCopyEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryToImageCopyEXT(const VkMemoryToImageCopyEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryToImageCopyEXT(const safe_VkMemoryToImageCopyEXT& copy_src);
     safe_VkMemoryToImageCopyEXT& operator=(const safe_VkMemoryToImageCopyEXT& copy_src);
     safe_VkMemoryToImageCopyEXT();
@@ -11564,7 +11789,7 @@ struct safe_VkImageToMemoryCopyEXT {
     VkOffset3D imageOffset;
     VkExtent3D imageExtent;
 
-    safe_VkImageToMemoryCopyEXT(const VkImageToMemoryCopyEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageToMemoryCopyEXT(const VkImageToMemoryCopyEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageToMemoryCopyEXT(const safe_VkImageToMemoryCopyEXT& copy_src);
     safe_VkImageToMemoryCopyEXT& operator=(const safe_VkImageToMemoryCopyEXT& copy_src);
     safe_VkImageToMemoryCopyEXT();
@@ -11583,7 +11808,8 @@ struct safe_VkCopyMemoryToImageInfoEXT {
     uint32_t regionCount;
     safe_VkMemoryToImageCopyEXT* pRegions{};
 
-    safe_VkCopyMemoryToImageInfoEXT(const VkCopyMemoryToImageInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyMemoryToImageInfoEXT(const VkCopyMemoryToImageInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkCopyMemoryToImageInfoEXT(const safe_VkCopyMemoryToImageInfoEXT& copy_src);
     safe_VkCopyMemoryToImageInfoEXT& operator=(const safe_VkCopyMemoryToImageInfoEXT& copy_src);
     safe_VkCopyMemoryToImageInfoEXT();
@@ -11602,7 +11828,8 @@ struct safe_VkCopyImageToMemoryInfoEXT {
     uint32_t regionCount;
     safe_VkImageToMemoryCopyEXT* pRegions{};
 
-    safe_VkCopyImageToMemoryInfoEXT(const VkCopyImageToMemoryInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyImageToMemoryInfoEXT(const VkCopyImageToMemoryInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkCopyImageToMemoryInfoEXT(const safe_VkCopyImageToMemoryInfoEXT& copy_src);
     safe_VkCopyImageToMemoryInfoEXT& operator=(const safe_VkCopyImageToMemoryInfoEXT& copy_src);
     safe_VkCopyImageToMemoryInfoEXT();
@@ -11623,7 +11850,8 @@ struct safe_VkCopyImageToImageInfoEXT {
     uint32_t regionCount;
     safe_VkImageCopy2* pRegions{};
 
-    safe_VkCopyImageToImageInfoEXT(const VkCopyImageToImageInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyImageToImageInfoEXT(const VkCopyImageToImageInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkCopyImageToImageInfoEXT(const safe_VkCopyImageToImageInfoEXT& copy_src);
     safe_VkCopyImageToImageInfoEXT& operator=(const safe_VkCopyImageToImageInfoEXT& copy_src);
     safe_VkCopyImageToImageInfoEXT();
@@ -11641,7 +11869,8 @@ struct safe_VkHostImageLayoutTransitionInfoEXT {
     VkImageLayout newLayout;
     VkImageSubresourceRange subresourceRange;
 
-    safe_VkHostImageLayoutTransitionInfoEXT(const VkHostImageLayoutTransitionInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkHostImageLayoutTransitionInfoEXT(const VkHostImageLayoutTransitionInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkHostImageLayoutTransitionInfoEXT(const safe_VkHostImageLayoutTransitionInfoEXT& copy_src);
     safe_VkHostImageLayoutTransitionInfoEXT& operator=(const safe_VkHostImageLayoutTransitionInfoEXT& copy_src);
     safe_VkHostImageLayoutTransitionInfoEXT();
@@ -11658,7 +11887,8 @@ struct safe_VkSubresourceHostMemcpySizeEXT {
     void* pNext{};
     VkDeviceSize size;
 
-    safe_VkSubresourceHostMemcpySizeEXT(const VkSubresourceHostMemcpySizeEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubresourceHostMemcpySizeEXT(const VkSubresourceHostMemcpySizeEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkSubresourceHostMemcpySizeEXT(const safe_VkSubresourceHostMemcpySizeEXT& copy_src);
     safe_VkSubresourceHostMemcpySizeEXT& operator=(const safe_VkSubresourceHostMemcpySizeEXT& copy_src);
     safe_VkSubresourceHostMemcpySizeEXT();
@@ -11675,7 +11905,7 @@ struct safe_VkHostImageCopyDevicePerformanceQueryEXT {
     VkBool32 identicalMemoryLayout;
 
     safe_VkHostImageCopyDevicePerformanceQueryEXT(const VkHostImageCopyDevicePerformanceQueryEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkHostImageCopyDevicePerformanceQueryEXT(const safe_VkHostImageCopyDevicePerformanceQueryEXT& copy_src);
     safe_VkHostImageCopyDevicePerformanceQueryEXT& operator=(const safe_VkHostImageCopyDevicePerformanceQueryEXT& copy_src);
     safe_VkHostImageCopyDevicePerformanceQueryEXT();
@@ -11704,7 +11934,7 @@ struct safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT {
     VkBool32 sparseImageFloat32AtomicMinMax;
 
     safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT(const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT(const safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& operator=(
         const safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& copy_src);
@@ -11724,7 +11954,7 @@ struct safe_VkSurfacePresentModeEXT {
     void* pNext{};
     VkPresentModeKHR presentMode;
 
-    safe_VkSurfacePresentModeEXT(const VkSurfacePresentModeEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSurfacePresentModeEXT(const VkSurfacePresentModeEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfacePresentModeEXT(const safe_VkSurfacePresentModeEXT& copy_src);
     safe_VkSurfacePresentModeEXT& operator=(const safe_VkSurfacePresentModeEXT& copy_src);
     safe_VkSurfacePresentModeEXT();
@@ -11744,7 +11974,7 @@ struct safe_VkSurfacePresentScalingCapabilitiesEXT {
     VkExtent2D maxScaledImageExtent;
 
     safe_VkSurfacePresentScalingCapabilitiesEXT(const VkSurfacePresentScalingCapabilitiesEXT* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfacePresentScalingCapabilitiesEXT(const safe_VkSurfacePresentScalingCapabilitiesEXT& copy_src);
     safe_VkSurfacePresentScalingCapabilitiesEXT& operator=(const safe_VkSurfacePresentScalingCapabilitiesEXT& copy_src);
     safe_VkSurfacePresentScalingCapabilitiesEXT();
@@ -11763,7 +11993,7 @@ struct safe_VkSurfacePresentModeCompatibilityEXT {
     VkPresentModeKHR* pPresentModes{};
 
     safe_VkSurfacePresentModeCompatibilityEXT(const VkSurfacePresentModeCompatibilityEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfacePresentModeCompatibilityEXT(const safe_VkSurfacePresentModeCompatibilityEXT& copy_src);
     safe_VkSurfacePresentModeCompatibilityEXT& operator=(const safe_VkSurfacePresentModeCompatibilityEXT& copy_src);
     safe_VkSurfacePresentModeCompatibilityEXT();
@@ -11781,7 +12011,7 @@ struct safe_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT {
     VkBool32 swapchainMaintenance1;
 
     safe_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT(const VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT(const safe_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT& operator=(
         const safe_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT& copy_src);
@@ -11802,7 +12032,8 @@ struct safe_VkSwapchainPresentFenceInfoEXT {
     uint32_t swapchainCount;
     VkFence* pFences{};
 
-    safe_VkSwapchainPresentFenceInfoEXT(const VkSwapchainPresentFenceInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSwapchainPresentFenceInfoEXT(const VkSwapchainPresentFenceInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkSwapchainPresentFenceInfoEXT(const safe_VkSwapchainPresentFenceInfoEXT& copy_src);
     safe_VkSwapchainPresentFenceInfoEXT& operator=(const safe_VkSwapchainPresentFenceInfoEXT& copy_src);
     safe_VkSwapchainPresentFenceInfoEXT();
@@ -11819,7 +12050,7 @@ struct safe_VkSwapchainPresentModesCreateInfoEXT {
     const VkPresentModeKHR* pPresentModes{};
 
     safe_VkSwapchainPresentModesCreateInfoEXT(const VkSwapchainPresentModesCreateInfoEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSwapchainPresentModesCreateInfoEXT(const safe_VkSwapchainPresentModesCreateInfoEXT& copy_src);
     safe_VkSwapchainPresentModesCreateInfoEXT& operator=(const safe_VkSwapchainPresentModesCreateInfoEXT& copy_src);
     safe_VkSwapchainPresentModesCreateInfoEXT();
@@ -11837,7 +12068,8 @@ struct safe_VkSwapchainPresentModeInfoEXT {
     uint32_t swapchainCount;
     const VkPresentModeKHR* pPresentModes{};
 
-    safe_VkSwapchainPresentModeInfoEXT(const VkSwapchainPresentModeInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSwapchainPresentModeInfoEXT(const VkSwapchainPresentModeInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkSwapchainPresentModeInfoEXT(const safe_VkSwapchainPresentModeInfoEXT& copy_src);
     safe_VkSwapchainPresentModeInfoEXT& operator=(const safe_VkSwapchainPresentModeInfoEXT& copy_src);
     safe_VkSwapchainPresentModeInfoEXT();
@@ -11855,7 +12087,7 @@ struct safe_VkSwapchainPresentScalingCreateInfoEXT {
     VkPresentGravityFlagsEXT presentGravityY;
 
     safe_VkSwapchainPresentScalingCreateInfoEXT(const VkSwapchainPresentScalingCreateInfoEXT* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSwapchainPresentScalingCreateInfoEXT(const safe_VkSwapchainPresentScalingCreateInfoEXT& copy_src);
     safe_VkSwapchainPresentScalingCreateInfoEXT& operator=(const safe_VkSwapchainPresentScalingCreateInfoEXT& copy_src);
     safe_VkSwapchainPresentScalingCreateInfoEXT();
@@ -11874,7 +12106,8 @@ struct safe_VkReleaseSwapchainImagesInfoEXT {
     uint32_t imageIndexCount;
     const uint32_t* pImageIndices{};
 
-    safe_VkReleaseSwapchainImagesInfoEXT(const VkReleaseSwapchainImagesInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkReleaseSwapchainImagesInfoEXT(const VkReleaseSwapchainImagesInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkReleaseSwapchainImagesInfoEXT(const safe_VkReleaseSwapchainImagesInfoEXT& copy_src);
     safe_VkReleaseSwapchainImagesInfoEXT& operator=(const safe_VkReleaseSwapchainImagesInfoEXT& copy_src);
     safe_VkReleaseSwapchainImagesInfoEXT();
@@ -11898,7 +12131,7 @@ struct safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV {
     uint32_t minIndirectCommandsBufferOffsetAlignment;
 
     safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV(const VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV(
         const safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV& copy_src);
     safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV& operator=(
@@ -11920,7 +12153,7 @@ struct safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV {
     VkBool32 deviceGeneratedCommands;
 
     safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV(const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV(const safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& operator=(
         const safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& copy_src);
@@ -11943,7 +12176,8 @@ struct safe_VkGraphicsShaderGroupCreateInfoNV {
     safe_VkPipelineVertexInputStateCreateInfo* pVertexInputState{};
     safe_VkPipelineTessellationStateCreateInfo* pTessellationState{};
 
-    safe_VkGraphicsShaderGroupCreateInfoNV(const VkGraphicsShaderGroupCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkGraphicsShaderGroupCreateInfoNV(const VkGraphicsShaderGroupCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkGraphicsShaderGroupCreateInfoNV(const safe_VkGraphicsShaderGroupCreateInfoNV& copy_src);
     safe_VkGraphicsShaderGroupCreateInfoNV& operator=(const safe_VkGraphicsShaderGroupCreateInfoNV& copy_src);
     safe_VkGraphicsShaderGroupCreateInfoNV();
@@ -11964,7 +12198,7 @@ struct safe_VkGraphicsPipelineShaderGroupsCreateInfoNV {
     VkPipeline* pPipelines{};
 
     safe_VkGraphicsPipelineShaderGroupsCreateInfoNV(const VkGraphicsPipelineShaderGroupsCreateInfoNV* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkGraphicsPipelineShaderGroupsCreateInfoNV(const safe_VkGraphicsPipelineShaderGroupsCreateInfoNV& copy_src);
     safe_VkGraphicsPipelineShaderGroupsCreateInfoNV& operator=(const safe_VkGraphicsPipelineShaderGroupsCreateInfoNV& copy_src);
     safe_VkGraphicsPipelineShaderGroupsCreateInfoNV();
@@ -11995,7 +12229,8 @@ struct safe_VkIndirectCommandsLayoutTokenNV {
     const VkIndexType* pIndexTypes{};
     const uint32_t* pIndexTypeValues{};
 
-    safe_VkIndirectCommandsLayoutTokenNV(const VkIndirectCommandsLayoutTokenNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkIndirectCommandsLayoutTokenNV(const VkIndirectCommandsLayoutTokenNV* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkIndirectCommandsLayoutTokenNV(const safe_VkIndirectCommandsLayoutTokenNV& copy_src);
     safe_VkIndirectCommandsLayoutTokenNV& operator=(const safe_VkIndirectCommandsLayoutTokenNV& copy_src);
     safe_VkIndirectCommandsLayoutTokenNV();
@@ -12016,7 +12251,7 @@ struct safe_VkIndirectCommandsLayoutCreateInfoNV {
     const uint32_t* pStreamStrides{};
 
     safe_VkIndirectCommandsLayoutCreateInfoNV(const VkIndirectCommandsLayoutCreateInfoNV* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkIndirectCommandsLayoutCreateInfoNV(const safe_VkIndirectCommandsLayoutCreateInfoNV& copy_src);
     safe_VkIndirectCommandsLayoutCreateInfoNV& operator=(const safe_VkIndirectCommandsLayoutCreateInfoNV& copy_src);
     safe_VkIndirectCommandsLayoutCreateInfoNV();
@@ -12045,7 +12280,8 @@ struct safe_VkGeneratedCommandsInfoNV {
     VkBuffer sequencesIndexBuffer;
     VkDeviceSize sequencesIndexOffset;
 
-    safe_VkGeneratedCommandsInfoNV(const VkGeneratedCommandsInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkGeneratedCommandsInfoNV(const VkGeneratedCommandsInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkGeneratedCommandsInfoNV(const safe_VkGeneratedCommandsInfoNV& copy_src);
     safe_VkGeneratedCommandsInfoNV& operator=(const safe_VkGeneratedCommandsInfoNV& copy_src);
     safe_VkGeneratedCommandsInfoNV();
@@ -12064,7 +12300,7 @@ struct safe_VkGeneratedCommandsMemoryRequirementsInfoNV {
     uint32_t maxSequencesCount;
 
     safe_VkGeneratedCommandsMemoryRequirementsInfoNV(const VkGeneratedCommandsMemoryRequirementsInfoNV* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkGeneratedCommandsMemoryRequirementsInfoNV(const safe_VkGeneratedCommandsMemoryRequirementsInfoNV& copy_src);
     safe_VkGeneratedCommandsMemoryRequirementsInfoNV& operator=(const safe_VkGeneratedCommandsMemoryRequirementsInfoNV& copy_src);
     safe_VkGeneratedCommandsMemoryRequirementsInfoNV();
@@ -12084,7 +12320,7 @@ struct safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV {
     VkBool32 inheritedViewportScissor2D;
 
     safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV(const VkPhysicalDeviceInheritedViewportScissorFeaturesNV* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV(
         const safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV& copy_src);
     safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV& operator=(
@@ -12108,7 +12344,7 @@ struct safe_VkCommandBufferInheritanceViewportScissorInfoNV {
     const VkViewport* pViewportDepths{};
 
     safe_VkCommandBufferInheritanceViewportScissorInfoNV(const VkCommandBufferInheritanceViewportScissorInfoNV* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCommandBufferInheritanceViewportScissorInfoNV(const safe_VkCommandBufferInheritanceViewportScissorInfoNV& copy_src);
     safe_VkCommandBufferInheritanceViewportScissorInfoNV& operator=(
         const safe_VkCommandBufferInheritanceViewportScissorInfoNV& copy_src);
@@ -12129,7 +12365,7 @@ struct safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT {
     VkBool32 texelBufferAlignment;
 
     safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT(const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT(const safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& copy_src);
@@ -12149,7 +12385,8 @@ struct safe_VkRenderPassTransformBeginInfoQCOM {
     void* pNext{};
     VkSurfaceTransformFlagBitsKHR transform;
 
-    safe_VkRenderPassTransformBeginInfoQCOM(const VkRenderPassTransformBeginInfoQCOM* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassTransformBeginInfoQCOM(const VkRenderPassTransformBeginInfoQCOM* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkRenderPassTransformBeginInfoQCOM(const safe_VkRenderPassTransformBeginInfoQCOM& copy_src);
     safe_VkRenderPassTransformBeginInfoQCOM& operator=(const safe_VkRenderPassTransformBeginInfoQCOM& copy_src);
     safe_VkRenderPassTransformBeginInfoQCOM();
@@ -12168,7 +12405,8 @@ struct safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM {
     VkRect2D renderArea;
 
     safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(
-        const VkCommandBufferInheritanceRenderPassTransformInfoQCOM* in_struct, PNextCopyState* copy_state = {});
+        const VkCommandBufferInheritanceRenderPassTransformInfoQCOM* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(
         const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM& copy_src);
     safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM& operator=(
@@ -12193,7 +12431,7 @@ struct safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT {
     VkBool32 depthBiasExact;
 
     safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT(const VkPhysicalDeviceDepthBiasControlFeaturesEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT(const safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT& operator=(const safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT();
@@ -12214,7 +12452,7 @@ struct safe_VkDepthBiasInfoEXT {
     float depthBiasClamp;
     float depthBiasSlopeFactor;
 
-    safe_VkDepthBiasInfoEXT(const VkDepthBiasInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDepthBiasInfoEXT(const VkDepthBiasInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDepthBiasInfoEXT(const safe_VkDepthBiasInfoEXT& copy_src);
     safe_VkDepthBiasInfoEXT& operator=(const safe_VkDepthBiasInfoEXT& copy_src);
     safe_VkDepthBiasInfoEXT();
@@ -12230,7 +12468,8 @@ struct safe_VkDepthBiasRepresentationInfoEXT {
     VkDepthBiasRepresentationEXT depthBiasRepresentation;
     VkBool32 depthBiasExact;
 
-    safe_VkDepthBiasRepresentationInfoEXT(const VkDepthBiasRepresentationInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDepthBiasRepresentationInfoEXT(const VkDepthBiasRepresentationInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkDepthBiasRepresentationInfoEXT(const safe_VkDepthBiasRepresentationInfoEXT& copy_src);
     safe_VkDepthBiasRepresentationInfoEXT& operator=(const safe_VkDepthBiasRepresentationInfoEXT& copy_src);
     safe_VkDepthBiasRepresentationInfoEXT();
@@ -12246,7 +12485,7 @@ struct safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT {
     VkBool32 deviceMemoryReport;
 
     safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& copy_src);
@@ -12272,7 +12511,8 @@ struct safe_VkDeviceMemoryReportCallbackDataEXT {
     uint64_t objectHandle;
     uint32_t heapIndex;
 
-    safe_VkDeviceMemoryReportCallbackDataEXT(const VkDeviceMemoryReportCallbackDataEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceMemoryReportCallbackDataEXT(const VkDeviceMemoryReportCallbackDataEXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkDeviceMemoryReportCallbackDataEXT(const safe_VkDeviceMemoryReportCallbackDataEXT& copy_src);
     safe_VkDeviceMemoryReportCallbackDataEXT& operator=(const safe_VkDeviceMemoryReportCallbackDataEXT& copy_src);
     safe_VkDeviceMemoryReportCallbackDataEXT();
@@ -12292,7 +12532,7 @@ struct safe_VkDeviceDeviceMemoryReportCreateInfoEXT {
     void* pUserData{};
 
     safe_VkDeviceDeviceMemoryReportCreateInfoEXT(const VkDeviceDeviceMemoryReportCreateInfoEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceDeviceMemoryReportCreateInfoEXT(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT& copy_src);
     safe_VkDeviceDeviceMemoryReportCreateInfoEXT& operator=(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT& copy_src);
     safe_VkDeviceDeviceMemoryReportCreateInfoEXT();
@@ -12312,7 +12552,7 @@ struct safe_VkPhysicalDeviceRobustness2FeaturesEXT {
     VkBool32 nullDescriptor;
 
     safe_VkPhysicalDeviceRobustness2FeaturesEXT(const VkPhysicalDeviceRobustness2FeaturesEXT* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRobustness2FeaturesEXT(const safe_VkPhysicalDeviceRobustness2FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceRobustness2FeaturesEXT& operator=(const safe_VkPhysicalDeviceRobustness2FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceRobustness2FeaturesEXT();
@@ -12331,7 +12571,7 @@ struct safe_VkPhysicalDeviceRobustness2PropertiesEXT {
     VkDeviceSize robustUniformBufferAccessSizeAlignment;
 
     safe_VkPhysicalDeviceRobustness2PropertiesEXT(const VkPhysicalDeviceRobustness2PropertiesEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRobustness2PropertiesEXT(const safe_VkPhysicalDeviceRobustness2PropertiesEXT& copy_src);
     safe_VkPhysicalDeviceRobustness2PropertiesEXT& operator=(const safe_VkPhysicalDeviceRobustness2PropertiesEXT& copy_src);
     safe_VkPhysicalDeviceRobustness2PropertiesEXT();
@@ -12350,7 +12590,7 @@ struct safe_VkSamplerCustomBorderColorCreateInfoEXT {
     VkFormat format;
 
     safe_VkSamplerCustomBorderColorCreateInfoEXT(const VkSamplerCustomBorderColorCreateInfoEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerCustomBorderColorCreateInfoEXT(const safe_VkSamplerCustomBorderColorCreateInfoEXT& copy_src);
     safe_VkSamplerCustomBorderColorCreateInfoEXT& operator=(const safe_VkSamplerCustomBorderColorCreateInfoEXT& copy_src);
     safe_VkSamplerCustomBorderColorCreateInfoEXT();
@@ -12368,7 +12608,7 @@ struct safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT {
     uint32_t maxCustomBorderColorSamplers;
 
     safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT(const VkPhysicalDeviceCustomBorderColorPropertiesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT(const safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT& copy_src);
@@ -12390,7 +12630,7 @@ struct safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT {
     VkBool32 customBorderColorWithoutFormat;
 
     safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT(const VkPhysicalDeviceCustomBorderColorFeaturesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT(const safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT& operator=(const safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT();
@@ -12410,7 +12650,7 @@ struct safe_VkPhysicalDevicePresentBarrierFeaturesNV {
     VkBool32 presentBarrier;
 
     safe_VkPhysicalDevicePresentBarrierFeaturesNV(const VkPhysicalDevicePresentBarrierFeaturesNV* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePresentBarrierFeaturesNV(const safe_VkPhysicalDevicePresentBarrierFeaturesNV& copy_src);
     safe_VkPhysicalDevicePresentBarrierFeaturesNV& operator=(const safe_VkPhysicalDevicePresentBarrierFeaturesNV& copy_src);
     safe_VkPhysicalDevicePresentBarrierFeaturesNV();
@@ -12428,7 +12668,7 @@ struct safe_VkSurfaceCapabilitiesPresentBarrierNV {
     VkBool32 presentBarrierSupported;
 
     safe_VkSurfaceCapabilitiesPresentBarrierNV(const VkSurfaceCapabilitiesPresentBarrierNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSurfaceCapabilitiesPresentBarrierNV(const safe_VkSurfaceCapabilitiesPresentBarrierNV& copy_src);
     safe_VkSurfaceCapabilitiesPresentBarrierNV& operator=(const safe_VkSurfaceCapabilitiesPresentBarrierNV& copy_src);
     safe_VkSurfaceCapabilitiesPresentBarrierNV();
@@ -12446,7 +12686,7 @@ struct safe_VkSwapchainPresentBarrierCreateInfoNV {
     VkBool32 presentBarrierEnable;
 
     safe_VkSwapchainPresentBarrierCreateInfoNV(const VkSwapchainPresentBarrierCreateInfoNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSwapchainPresentBarrierCreateInfoNV(const safe_VkSwapchainPresentBarrierCreateInfoNV& copy_src);
     safe_VkSwapchainPresentBarrierCreateInfoNV& operator=(const safe_VkSwapchainPresentBarrierCreateInfoNV& copy_src);
     safe_VkSwapchainPresentBarrierCreateInfoNV();
@@ -12464,7 +12704,7 @@ struct safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV {
     VkBool32 diagnosticsConfig;
 
     safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(const VkPhysicalDeviceDiagnosticsConfigFeaturesNV* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(const safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV& operator=(const safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV();
@@ -12484,7 +12724,7 @@ struct safe_VkDeviceDiagnosticsConfigCreateInfoNV {
     VkDeviceDiagnosticsConfigFlagsNV flags;
 
     safe_VkDeviceDiagnosticsConfigCreateInfoNV(const VkDeviceDiagnosticsConfigCreateInfoNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceDiagnosticsConfigCreateInfoNV(const safe_VkDeviceDiagnosticsConfigCreateInfoNV& copy_src);
     safe_VkDeviceDiagnosticsConfigCreateInfoNV& operator=(const safe_VkDeviceDiagnosticsConfigCreateInfoNV& copy_src);
     safe_VkDeviceDiagnosticsConfigCreateInfoNV();
@@ -12501,7 +12741,8 @@ struct safe_VkQueryLowLatencySupportNV {
     const void* pNext{};
     void* pQueriedLowLatencyData{};
 
-    safe_VkQueryLowLatencySupportNV(const VkQueryLowLatencySupportNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkQueryLowLatencySupportNV(const VkQueryLowLatencySupportNV* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkQueryLowLatencySupportNV(const safe_VkQueryLowLatencySupportNV& copy_src);
     safe_VkQueryLowLatencySupportNV& operator=(const safe_VkQueryLowLatencySupportNV& copy_src);
     safe_VkQueryLowLatencySupportNV();
@@ -12517,7 +12758,8 @@ struct safe_VkExportMetalObjectCreateInfoEXT {
     const void* pNext{};
     VkExportMetalObjectTypeFlagBitsEXT exportObjectType;
 
-    safe_VkExportMetalObjectCreateInfoEXT(const VkExportMetalObjectCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalObjectCreateInfoEXT(const VkExportMetalObjectCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkExportMetalObjectCreateInfoEXT(const safe_VkExportMetalObjectCreateInfoEXT& copy_src);
     safe_VkExportMetalObjectCreateInfoEXT& operator=(const safe_VkExportMetalObjectCreateInfoEXT& copy_src);
     safe_VkExportMetalObjectCreateInfoEXT();
@@ -12533,7 +12775,8 @@ struct safe_VkExportMetalObjectsInfoEXT {
     VkStructureType sType;
     const void* pNext{};
 
-    safe_VkExportMetalObjectsInfoEXT(const VkExportMetalObjectsInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalObjectsInfoEXT(const VkExportMetalObjectsInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkExportMetalObjectsInfoEXT(const safe_VkExportMetalObjectsInfoEXT& copy_src);
     safe_VkExportMetalObjectsInfoEXT& operator=(const safe_VkExportMetalObjectsInfoEXT& copy_src);
     safe_VkExportMetalObjectsInfoEXT();
@@ -12550,7 +12793,8 @@ struct safe_VkExportMetalDeviceInfoEXT {
     const void* pNext{};
     MTLDevice_id mtlDevice;
 
-    safe_VkExportMetalDeviceInfoEXT(const VkExportMetalDeviceInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalDeviceInfoEXT(const VkExportMetalDeviceInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkExportMetalDeviceInfoEXT(const safe_VkExportMetalDeviceInfoEXT& copy_src);
     safe_VkExportMetalDeviceInfoEXT& operator=(const safe_VkExportMetalDeviceInfoEXT& copy_src);
     safe_VkExportMetalDeviceInfoEXT();
@@ -12568,7 +12812,8 @@ struct safe_VkExportMetalCommandQueueInfoEXT {
     VkQueue queue;
     MTLCommandQueue_id mtlCommandQueue;
 
-    safe_VkExportMetalCommandQueueInfoEXT(const VkExportMetalCommandQueueInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalCommandQueueInfoEXT(const VkExportMetalCommandQueueInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkExportMetalCommandQueueInfoEXT(const safe_VkExportMetalCommandQueueInfoEXT& copy_src);
     safe_VkExportMetalCommandQueueInfoEXT& operator=(const safe_VkExportMetalCommandQueueInfoEXT& copy_src);
     safe_VkExportMetalCommandQueueInfoEXT();
@@ -12586,7 +12831,8 @@ struct safe_VkExportMetalBufferInfoEXT {
     VkDeviceMemory memory;
     MTLBuffer_id mtlBuffer;
 
-    safe_VkExportMetalBufferInfoEXT(const VkExportMetalBufferInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalBufferInfoEXT(const VkExportMetalBufferInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkExportMetalBufferInfoEXT(const safe_VkExportMetalBufferInfoEXT& copy_src);
     safe_VkExportMetalBufferInfoEXT& operator=(const safe_VkExportMetalBufferInfoEXT& copy_src);
     safe_VkExportMetalBufferInfoEXT();
@@ -12603,7 +12849,8 @@ struct safe_VkImportMetalBufferInfoEXT {
     const void* pNext{};
     MTLBuffer_id mtlBuffer;
 
-    safe_VkImportMetalBufferInfoEXT(const VkImportMetalBufferInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMetalBufferInfoEXT(const VkImportMetalBufferInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkImportMetalBufferInfoEXT(const safe_VkImportMetalBufferInfoEXT& copy_src);
     safe_VkImportMetalBufferInfoEXT& operator=(const safe_VkImportMetalBufferInfoEXT& copy_src);
     safe_VkImportMetalBufferInfoEXT();
@@ -12624,7 +12871,8 @@ struct safe_VkExportMetalTextureInfoEXT {
     VkImageAspectFlagBits plane;
     MTLTexture_id mtlTexture;
 
-    safe_VkExportMetalTextureInfoEXT(const VkExportMetalTextureInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalTextureInfoEXT(const VkExportMetalTextureInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkExportMetalTextureInfoEXT(const safe_VkExportMetalTextureInfoEXT& copy_src);
     safe_VkExportMetalTextureInfoEXT& operator=(const safe_VkExportMetalTextureInfoEXT& copy_src);
     safe_VkExportMetalTextureInfoEXT();
@@ -12642,7 +12890,8 @@ struct safe_VkImportMetalTextureInfoEXT {
     VkImageAspectFlagBits plane;
     MTLTexture_id mtlTexture;
 
-    safe_VkImportMetalTextureInfoEXT(const VkImportMetalTextureInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMetalTextureInfoEXT(const VkImportMetalTextureInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkImportMetalTextureInfoEXT(const safe_VkImportMetalTextureInfoEXT& copy_src);
     safe_VkImportMetalTextureInfoEXT& operator=(const safe_VkImportMetalTextureInfoEXT& copy_src);
     safe_VkImportMetalTextureInfoEXT();
@@ -12660,7 +12909,8 @@ struct safe_VkExportMetalIOSurfaceInfoEXT {
     VkImage image;
     IOSurfaceRef ioSurface;
 
-    safe_VkExportMetalIOSurfaceInfoEXT(const VkExportMetalIOSurfaceInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalIOSurfaceInfoEXT(const VkExportMetalIOSurfaceInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkExportMetalIOSurfaceInfoEXT(const safe_VkExportMetalIOSurfaceInfoEXT& copy_src);
     safe_VkExportMetalIOSurfaceInfoEXT& operator=(const safe_VkExportMetalIOSurfaceInfoEXT& copy_src);
     safe_VkExportMetalIOSurfaceInfoEXT();
@@ -12677,7 +12927,8 @@ struct safe_VkImportMetalIOSurfaceInfoEXT {
     const void* pNext{};
     IOSurfaceRef ioSurface;
 
-    safe_VkImportMetalIOSurfaceInfoEXT(const VkImportMetalIOSurfaceInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMetalIOSurfaceInfoEXT(const VkImportMetalIOSurfaceInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkImportMetalIOSurfaceInfoEXT(const safe_VkImportMetalIOSurfaceInfoEXT& copy_src);
     safe_VkImportMetalIOSurfaceInfoEXT& operator=(const safe_VkImportMetalIOSurfaceInfoEXT& copy_src);
     safe_VkImportMetalIOSurfaceInfoEXT();
@@ -12696,7 +12947,8 @@ struct safe_VkExportMetalSharedEventInfoEXT {
     VkEvent event;
     MTLSharedEvent_id mtlSharedEvent;
 
-    safe_VkExportMetalSharedEventInfoEXT(const VkExportMetalSharedEventInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExportMetalSharedEventInfoEXT(const VkExportMetalSharedEventInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkExportMetalSharedEventInfoEXT(const safe_VkExportMetalSharedEventInfoEXT& copy_src);
     safe_VkExportMetalSharedEventInfoEXT& operator=(const safe_VkExportMetalSharedEventInfoEXT& copy_src);
     safe_VkExportMetalSharedEventInfoEXT();
@@ -12713,7 +12965,8 @@ struct safe_VkImportMetalSharedEventInfoEXT {
     const void* pNext{};
     MTLSharedEvent_id mtlSharedEvent;
 
-    safe_VkImportMetalSharedEventInfoEXT(const VkImportMetalSharedEventInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportMetalSharedEventInfoEXT(const VkImportMetalSharedEventInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkImportMetalSharedEventInfoEXT(const safe_VkImportMetalSharedEventInfoEXT& copy_src);
     safe_VkImportMetalSharedEventInfoEXT& operator=(const safe_VkImportMetalSharedEventInfoEXT& copy_src);
     safe_VkImportMetalSharedEventInfoEXT();
@@ -12762,7 +13015,7 @@ struct safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT {
     VkDeviceSize descriptorBufferAddressSpaceSize;
 
     safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT(const VkPhysicalDeviceDescriptorBufferPropertiesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT(const safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT& copy_src);
@@ -12783,7 +13036,8 @@ struct safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT {
     size_t combinedImageSamplerDensityMapDescriptorSize;
 
     safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT(
-        const VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT(
         const safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT& operator=(
@@ -12808,7 +13062,7 @@ struct safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT {
     VkBool32 descriptorBufferPushDescriptors;
 
     safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT(const VkPhysicalDeviceDescriptorBufferFeaturesEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT(const safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT& operator=(const safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT();
@@ -12829,7 +13083,8 @@ struct safe_VkDescriptorAddressInfoEXT {
     VkDeviceSize range;
     VkFormat format;
 
-    safe_VkDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkDescriptorAddressInfoEXT(const safe_VkDescriptorAddressInfoEXT& copy_src);
     safe_VkDescriptorAddressInfoEXT& operator=(const safe_VkDescriptorAddressInfoEXT& copy_src);
     safe_VkDescriptorAddressInfoEXT();
@@ -12845,7 +13100,8 @@ struct safe_VkDescriptorBufferBindingInfoEXT {
     VkDeviceAddress address;
     VkBufferUsageFlags usage;
 
-    safe_VkDescriptorBufferBindingInfoEXT(const VkDescriptorBufferBindingInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorBufferBindingInfoEXT(const VkDescriptorBufferBindingInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkDescriptorBufferBindingInfoEXT(const safe_VkDescriptorBufferBindingInfoEXT& copy_src);
     safe_VkDescriptorBufferBindingInfoEXT& operator=(const safe_VkDescriptorBufferBindingInfoEXT& copy_src);
     safe_VkDescriptorBufferBindingInfoEXT();
@@ -12861,7 +13117,8 @@ struct safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT {
     VkBuffer buffer;
 
     safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT(
-        const VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT(
         const safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT& copy_src);
     safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT& operator=(
@@ -12905,7 +13162,7 @@ struct safe_VkDescriptorGetInfoEXT {
     VkDescriptorType type;
     safe_VkDescriptorDataEXT data;
 
-    safe_VkDescriptorGetInfoEXT(const VkDescriptorGetInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDescriptorGetInfoEXT(const VkDescriptorGetInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorGetInfoEXT(const safe_VkDescriptorGetInfoEXT& copy_src);
     safe_VkDescriptorGetInfoEXT& operator=(const safe_VkDescriptorGetInfoEXT& copy_src);
     safe_VkDescriptorGetInfoEXT();
@@ -12921,7 +13178,7 @@ struct safe_VkBufferCaptureDescriptorDataInfoEXT {
     VkBuffer buffer;
 
     safe_VkBufferCaptureDescriptorDataInfoEXT(const VkBufferCaptureDescriptorDataInfoEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferCaptureDescriptorDataInfoEXT(const safe_VkBufferCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkBufferCaptureDescriptorDataInfoEXT& operator=(const safe_VkBufferCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkBufferCaptureDescriptorDataInfoEXT();
@@ -12938,7 +13195,8 @@ struct safe_VkImageCaptureDescriptorDataInfoEXT {
     const void* pNext{};
     VkImage image;
 
-    safe_VkImageCaptureDescriptorDataInfoEXT(const VkImageCaptureDescriptorDataInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageCaptureDescriptorDataInfoEXT(const VkImageCaptureDescriptorDataInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkImageCaptureDescriptorDataInfoEXT(const safe_VkImageCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkImageCaptureDescriptorDataInfoEXT& operator=(const safe_VkImageCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkImageCaptureDescriptorDataInfoEXT();
@@ -12956,7 +13214,7 @@ struct safe_VkImageViewCaptureDescriptorDataInfoEXT {
     VkImageView imageView;
 
     safe_VkImageViewCaptureDescriptorDataInfoEXT(const VkImageViewCaptureDescriptorDataInfoEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageViewCaptureDescriptorDataInfoEXT(const safe_VkImageViewCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkImageViewCaptureDescriptorDataInfoEXT& operator=(const safe_VkImageViewCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkImageViewCaptureDescriptorDataInfoEXT();
@@ -12974,7 +13232,7 @@ struct safe_VkSamplerCaptureDescriptorDataInfoEXT {
     VkSampler sampler;
 
     safe_VkSamplerCaptureDescriptorDataInfoEXT(const VkSamplerCaptureDescriptorDataInfoEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerCaptureDescriptorDataInfoEXT(const safe_VkSamplerCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkSamplerCaptureDescriptorDataInfoEXT& operator=(const safe_VkSamplerCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkSamplerCaptureDescriptorDataInfoEXT();
@@ -12992,7 +13250,7 @@ struct safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT {
     const void* opaqueCaptureDescriptorData{};
 
     safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT(const VkOpaqueCaptureDescriptorDataCreateInfoEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT(const safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT& copy_src);
     safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT& operator=(const safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT& copy_src);
     safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT();
@@ -13013,7 +13271,7 @@ struct safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT {
     VkAccelerationStructureNV accelerationStructureNV;
 
     safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT(const VkAccelerationStructureCaptureDescriptorDataInfoEXT* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT(
         const safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT& copy_src);
     safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT& operator=(
@@ -13035,7 +13293,7 @@ struct safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT {
     VkBool32 graphicsPipelineLibrary;
 
     safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT(const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT(
         const safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT& operator=(
@@ -13058,7 +13316,7 @@ struct safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT {
     VkBool32 graphicsPipelineLibraryIndependentInterpolationDecoration;
 
     safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT(const VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT(
         const safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT& operator=(
@@ -13080,7 +13338,7 @@ struct safe_VkGraphicsPipelineLibraryCreateInfoEXT {
     VkGraphicsPipelineLibraryFlagsEXT flags;
 
     safe_VkGraphicsPipelineLibraryCreateInfoEXT(const VkGraphicsPipelineLibraryCreateInfoEXT* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkGraphicsPipelineLibraryCreateInfoEXT(const safe_VkGraphicsPipelineLibraryCreateInfoEXT& copy_src);
     safe_VkGraphicsPipelineLibraryCreateInfoEXT& operator=(const safe_VkGraphicsPipelineLibraryCreateInfoEXT& copy_src);
     safe_VkGraphicsPipelineLibraryCreateInfoEXT();
@@ -13098,7 +13356,8 @@ struct safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD {
     VkBool32 shaderEarlyAndLateFragmentTests;
 
     safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD(
-        const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD(
         const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD& copy_src);
     safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD& operator=(
@@ -13123,7 +13382,7 @@ struct safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV {
     VkBool32 noInvocationFragmentShadingRates;
 
     safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(
         const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src);
     safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& operator=(
@@ -13145,7 +13404,7 @@ struct safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV {
     VkSampleCountFlagBits maxFragmentShadingRateInvocationCount;
 
     safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(
         const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src);
     safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& operator=(
@@ -13169,7 +13428,7 @@ struct safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2];
 
     safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(
         const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src);
     safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& operator=(
@@ -13205,7 +13464,7 @@ struct safe_VkAccelerationStructureGeometryMotionTrianglesDataNV {
     safe_VkDeviceOrHostAddressConstKHR vertexData;
 
     safe_VkAccelerationStructureGeometryMotionTrianglesDataNV(const VkAccelerationStructureGeometryMotionTrianglesDataNV* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureGeometryMotionTrianglesDataNV(
         const safe_VkAccelerationStructureGeometryMotionTrianglesDataNV& copy_src);
     safe_VkAccelerationStructureGeometryMotionTrianglesDataNV& operator=(
@@ -13227,7 +13486,8 @@ struct safe_VkAccelerationStructureMotionInfoNV {
     uint32_t maxInstances;
     VkAccelerationStructureMotionInfoFlagsNV flags;
 
-    safe_VkAccelerationStructureMotionInfoNV(const VkAccelerationStructureMotionInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAccelerationStructureMotionInfoNV(const VkAccelerationStructureMotionInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkAccelerationStructureMotionInfoNV(const safe_VkAccelerationStructureMotionInfoNV& copy_src);
     safe_VkAccelerationStructureMotionInfoNV& operator=(const safe_VkAccelerationStructureMotionInfoNV& copy_src);
     safe_VkAccelerationStructureMotionInfoNV();
@@ -13246,7 +13506,7 @@ struct safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV {
     VkBool32 rayTracingMotionBlurPipelineTraceRaysIndirect;
 
     safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV(const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV(const safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV& copy_src);
     safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV& operator=(
         const safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV& copy_src);
@@ -13267,7 +13527,7 @@ struct safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT {
     VkBool32 ycbcr2plane444Formats;
 
     safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT(const VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT(const safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT& copy_src);
@@ -13288,7 +13548,7 @@ struct safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT {
     VkBool32 fragmentDensityMapDeferred;
 
     safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& operator=(
         const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& copy_src);
@@ -13312,7 +13572,7 @@ struct safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT {
     uint32_t maxDescriptorSetSubsampledSamplers;
 
     safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& copy_src);
     safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& operator=(
         const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& copy_src);
@@ -13332,7 +13592,8 @@ struct safe_VkCopyCommandTransformInfoQCOM {
     const void* pNext{};
     VkSurfaceTransformFlagBitsKHR transform;
 
-    safe_VkCopyCommandTransformInfoQCOM(const VkCopyCommandTransformInfoQCOM* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyCommandTransformInfoQCOM(const VkCopyCommandTransformInfoQCOM* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkCopyCommandTransformInfoQCOM(const safe_VkCopyCommandTransformInfoQCOM& copy_src);
     safe_VkCopyCommandTransformInfoQCOM& operator=(const safe_VkCopyCommandTransformInfoQCOM& copy_src);
     safe_VkCopyCommandTransformInfoQCOM();
@@ -13348,7 +13609,7 @@ struct safe_VkPhysicalDeviceImageCompressionControlFeaturesEXT {
     VkBool32 imageCompressionControl;
 
     safe_VkPhysicalDeviceImageCompressionControlFeaturesEXT(const VkPhysicalDeviceImageCompressionControlFeaturesEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageCompressionControlFeaturesEXT(
         const safe_VkPhysicalDeviceImageCompressionControlFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImageCompressionControlFeaturesEXT& operator=(
@@ -13371,7 +13632,8 @@ struct safe_VkImageCompressionControlEXT {
     uint32_t compressionControlPlaneCount;
     VkImageCompressionFixedRateFlagsEXT* pFixedRateFlags{};
 
-    safe_VkImageCompressionControlEXT(const VkImageCompressionControlEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageCompressionControlEXT(const VkImageCompressionControlEXT* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkImageCompressionControlEXT(const safe_VkImageCompressionControlEXT& copy_src);
     safe_VkImageCompressionControlEXT& operator=(const safe_VkImageCompressionControlEXT& copy_src);
     safe_VkImageCompressionControlEXT();
@@ -13387,7 +13649,8 @@ struct safe_VkImageCompressionPropertiesEXT {
     VkImageCompressionFlagsEXT imageCompressionFlags;
     VkImageCompressionFixedRateFlagsEXT imageCompressionFixedRateFlags;
 
-    safe_VkImageCompressionPropertiesEXT(const VkImageCompressionPropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageCompressionPropertiesEXT(const VkImageCompressionPropertiesEXT* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkImageCompressionPropertiesEXT(const safe_VkImageCompressionPropertiesEXT& copy_src);
     safe_VkImageCompressionPropertiesEXT& operator=(const safe_VkImageCompressionPropertiesEXT& copy_src);
     safe_VkImageCompressionPropertiesEXT();
@@ -13403,7 +13666,8 @@ struct safe_VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT {
     VkBool32 attachmentFeedbackLoopLayout;
 
     safe_VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT(
-        const VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT(
         const safe_VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT& operator=(
@@ -13426,7 +13690,7 @@ struct safe_VkPhysicalDevice4444FormatsFeaturesEXT {
     VkBool32 formatA4B4G4R4;
 
     safe_VkPhysicalDevice4444FormatsFeaturesEXT(const VkPhysicalDevice4444FormatsFeaturesEXT* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevice4444FormatsFeaturesEXT(const safe_VkPhysicalDevice4444FormatsFeaturesEXT& copy_src);
     safe_VkPhysicalDevice4444FormatsFeaturesEXT& operator=(const safe_VkPhysicalDevice4444FormatsFeaturesEXT& copy_src);
     safe_VkPhysicalDevice4444FormatsFeaturesEXT();
@@ -13444,7 +13708,8 @@ struct safe_VkPhysicalDeviceFaultFeaturesEXT {
     VkBool32 deviceFault;
     VkBool32 deviceFaultVendorBinary;
 
-    safe_VkPhysicalDeviceFaultFeaturesEXT(const VkPhysicalDeviceFaultFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceFaultFeaturesEXT(const VkPhysicalDeviceFaultFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceFaultFeaturesEXT(const safe_VkPhysicalDeviceFaultFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFaultFeaturesEXT& operator=(const safe_VkPhysicalDeviceFaultFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFaultFeaturesEXT();
@@ -13461,7 +13726,7 @@ struct safe_VkDeviceFaultCountsEXT {
     uint32_t vendorInfoCount;
     VkDeviceSize vendorBinarySize;
 
-    safe_VkDeviceFaultCountsEXT(const VkDeviceFaultCountsEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceFaultCountsEXT(const VkDeviceFaultCountsEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceFaultCountsEXT(const safe_VkDeviceFaultCountsEXT& copy_src);
     safe_VkDeviceFaultCountsEXT& operator=(const safe_VkDeviceFaultCountsEXT& copy_src);
     safe_VkDeviceFaultCountsEXT();
@@ -13479,7 +13744,7 @@ struct safe_VkDeviceFaultInfoEXT {
     VkDeviceFaultVendorInfoEXT* pVendorInfos{};
     void* pVendorBinaryData{};
 
-    safe_VkDeviceFaultInfoEXT(const VkDeviceFaultInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDeviceFaultInfoEXT(const VkDeviceFaultInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceFaultInfoEXT(const safe_VkDeviceFaultInfoEXT& copy_src);
     safe_VkDeviceFaultInfoEXT& operator=(const safe_VkDeviceFaultInfoEXT& copy_src);
     safe_VkDeviceFaultInfoEXT();
@@ -13497,7 +13762,8 @@ struct safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT {
     VkBool32 rasterizationOrderStencilAttachmentAccess;
 
     safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT(
-        const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT(
         const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT& operator=(
@@ -13521,7 +13787,7 @@ struct safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT {
     VkBool32 formatRgba10x6WithoutYCbCrSampler;
 
     safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& operator=(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT();
@@ -13543,7 +13809,8 @@ struct safe_VkDirectFBSurfaceCreateInfoEXT {
     IDirectFB* dfb{};
     IDirectFBSurface* surface{};
 
-    safe_VkDirectFBSurfaceCreateInfoEXT(const VkDirectFBSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDirectFBSurfaceCreateInfoEXT(const VkDirectFBSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkDirectFBSurfaceCreateInfoEXT(const safe_VkDirectFBSurfaceCreateInfoEXT& copy_src);
     safe_VkDirectFBSurfaceCreateInfoEXT& operator=(const safe_VkDirectFBSurfaceCreateInfoEXT& copy_src);
     safe_VkDirectFBSurfaceCreateInfoEXT();
@@ -13560,7 +13827,7 @@ struct safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT {
     VkBool32 mutableDescriptorType;
 
     safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT(const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& copy_src);
@@ -13596,7 +13863,7 @@ struct safe_VkMutableDescriptorTypeCreateInfoEXT {
     safe_VkMutableDescriptorTypeListEXT* pMutableDescriptorTypeLists{};
 
     safe_VkMutableDescriptorTypeCreateInfoEXT(const VkMutableDescriptorTypeCreateInfoEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMutableDescriptorTypeCreateInfoEXT(const safe_VkMutableDescriptorTypeCreateInfoEXT& copy_src);
     safe_VkMutableDescriptorTypeCreateInfoEXT& operator=(const safe_VkMutableDescriptorTypeCreateInfoEXT& copy_src);
     safe_VkMutableDescriptorTypeCreateInfoEXT();
@@ -13614,7 +13881,7 @@ struct safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT {
     VkBool32 vertexInputDynamicState;
 
     safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT(const VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT(
         const safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT& operator=(
@@ -13638,7 +13905,8 @@ struct safe_VkVertexInputBindingDescription2EXT {
     VkVertexInputRate inputRate;
     uint32_t divisor;
 
-    safe_VkVertexInputBindingDescription2EXT(const VkVertexInputBindingDescription2EXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkVertexInputBindingDescription2EXT(const VkVertexInputBindingDescription2EXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkVertexInputBindingDescription2EXT(const safe_VkVertexInputBindingDescription2EXT& copy_src);
     safe_VkVertexInputBindingDescription2EXT& operator=(const safe_VkVertexInputBindingDescription2EXT& copy_src);
     safe_VkVertexInputBindingDescription2EXT();
@@ -13659,7 +13927,7 @@ struct safe_VkVertexInputAttributeDescription2EXT {
     uint32_t offset;
 
     safe_VkVertexInputAttributeDescription2EXT(const VkVertexInputAttributeDescription2EXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkVertexInputAttributeDescription2EXT(const safe_VkVertexInputAttributeDescription2EXT& copy_src);
     safe_VkVertexInputAttributeDescription2EXT& operator=(const safe_VkVertexInputAttributeDescription2EXT& copy_src);
     safe_VkVertexInputAttributeDescription2EXT();
@@ -13681,7 +13949,8 @@ struct safe_VkPhysicalDeviceDrmPropertiesEXT {
     int64_t renderMajor;
     int64_t renderMinor;
 
-    safe_VkPhysicalDeviceDrmPropertiesEXT(const VkPhysicalDeviceDrmPropertiesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceDrmPropertiesEXT(const VkPhysicalDeviceDrmPropertiesEXT* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkPhysicalDeviceDrmPropertiesEXT(const safe_VkPhysicalDeviceDrmPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceDrmPropertiesEXT& operator=(const safe_VkPhysicalDeviceDrmPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceDrmPropertiesEXT();
@@ -13697,7 +13966,7 @@ struct safe_VkPhysicalDeviceAddressBindingReportFeaturesEXT {
     VkBool32 reportAddressBinding;
 
     safe_VkPhysicalDeviceAddressBindingReportFeaturesEXT(const VkPhysicalDeviceAddressBindingReportFeaturesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceAddressBindingReportFeaturesEXT(const safe_VkPhysicalDeviceAddressBindingReportFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceAddressBindingReportFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceAddressBindingReportFeaturesEXT& copy_src);
@@ -13721,7 +13990,7 @@ struct safe_VkDeviceAddressBindingCallbackDataEXT {
     VkDeviceAddressBindingTypeEXT bindingType;
 
     safe_VkDeviceAddressBindingCallbackDataEXT(const VkDeviceAddressBindingCallbackDataEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDeviceAddressBindingCallbackDataEXT(const safe_VkDeviceAddressBindingCallbackDataEXT& copy_src);
     safe_VkDeviceAddressBindingCallbackDataEXT& operator=(const safe_VkDeviceAddressBindingCallbackDataEXT& copy_src);
     safe_VkDeviceAddressBindingCallbackDataEXT();
@@ -13739,7 +14008,7 @@ struct safe_VkPhysicalDeviceDepthClipControlFeaturesEXT {
     VkBool32 depthClipControl;
 
     safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(const VkPhysicalDeviceDepthClipControlFeaturesEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& operator=(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthClipControlFeaturesEXT();
@@ -13759,7 +14028,7 @@ struct safe_VkPipelineViewportDepthClipControlCreateInfoEXT {
     VkBool32 negativeOneToOne;
 
     safe_VkPipelineViewportDepthClipControlCreateInfoEXT(const VkPipelineViewportDepthClipControlCreateInfoEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineViewportDepthClipControlCreateInfoEXT(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT& copy_src);
     safe_VkPipelineViewportDepthClipControlCreateInfoEXT& operator=(
         const safe_VkPipelineViewportDepthClipControlCreateInfoEXT& copy_src);
@@ -13781,7 +14050,8 @@ struct safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT {
     VkBool32 primitiveTopologyPatchListRestart;
 
     safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(
-        const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(
         const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& operator=(
@@ -13805,7 +14075,7 @@ struct safe_VkImportMemoryZirconHandleInfoFUCHSIA {
     zx_handle_t handle;
 
     safe_VkImportMemoryZirconHandleInfoFUCHSIA(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImportMemoryZirconHandleInfoFUCHSIA(const safe_VkImportMemoryZirconHandleInfoFUCHSIA& copy_src);
     safe_VkImportMemoryZirconHandleInfoFUCHSIA& operator=(const safe_VkImportMemoryZirconHandleInfoFUCHSIA& copy_src);
     safe_VkImportMemoryZirconHandleInfoFUCHSIA();
@@ -13825,7 +14095,7 @@ struct safe_VkMemoryZirconHandlePropertiesFUCHSIA {
     uint32_t memoryTypeBits;
 
     safe_VkMemoryZirconHandlePropertiesFUCHSIA(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMemoryZirconHandlePropertiesFUCHSIA(const safe_VkMemoryZirconHandlePropertiesFUCHSIA& copy_src);
     safe_VkMemoryZirconHandlePropertiesFUCHSIA& operator=(const safe_VkMemoryZirconHandlePropertiesFUCHSIA& copy_src);
     safe_VkMemoryZirconHandlePropertiesFUCHSIA();
@@ -13845,7 +14115,8 @@ struct safe_VkMemoryGetZirconHandleInfoFUCHSIA {
     VkDeviceMemory memory;
     VkExternalMemoryHandleTypeFlagBits handleType;
 
-    safe_VkMemoryGetZirconHandleInfoFUCHSIA(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryGetZirconHandleInfoFUCHSIA(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkMemoryGetZirconHandleInfoFUCHSIA(const safe_VkMemoryGetZirconHandleInfoFUCHSIA& copy_src);
     safe_VkMemoryGetZirconHandleInfoFUCHSIA& operator=(const safe_VkMemoryGetZirconHandleInfoFUCHSIA& copy_src);
     safe_VkMemoryGetZirconHandleInfoFUCHSIA();
@@ -13868,7 +14139,7 @@ struct safe_VkImportSemaphoreZirconHandleInfoFUCHSIA {
     zx_handle_t zirconHandle;
 
     safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& copy_src);
     safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& operator=(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& copy_src);
     safe_VkImportSemaphoreZirconHandleInfoFUCHSIA();
@@ -13889,7 +14160,7 @@ struct safe_VkSemaphoreGetZirconHandleInfoFUCHSIA {
     VkExternalSemaphoreHandleTypeFlagBits handleType;
 
     safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& copy_src);
     safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& operator=(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& copy_src);
     safe_VkSemaphoreGetZirconHandleInfoFUCHSIA();
@@ -13908,7 +14179,8 @@ struct safe_VkBufferCollectionCreateInfoFUCHSIA {
     const void* pNext{};
     zx_handle_t collectionToken;
 
-    safe_VkBufferCollectionCreateInfoFUCHSIA(const VkBufferCollectionCreateInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferCollectionCreateInfoFUCHSIA(const VkBufferCollectionCreateInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkBufferCollectionCreateInfoFUCHSIA(const safe_VkBufferCollectionCreateInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionCreateInfoFUCHSIA& operator=(const safe_VkBufferCollectionCreateInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionCreateInfoFUCHSIA();
@@ -13929,7 +14201,7 @@ struct safe_VkImportMemoryBufferCollectionFUCHSIA {
     uint32_t index;
 
     safe_VkImportMemoryBufferCollectionFUCHSIA(const VkImportMemoryBufferCollectionFUCHSIA* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImportMemoryBufferCollectionFUCHSIA(const safe_VkImportMemoryBufferCollectionFUCHSIA& copy_src);
     safe_VkImportMemoryBufferCollectionFUCHSIA& operator=(const safe_VkImportMemoryBufferCollectionFUCHSIA& copy_src);
     safe_VkImportMemoryBufferCollectionFUCHSIA();
@@ -13950,7 +14222,7 @@ struct safe_VkBufferCollectionImageCreateInfoFUCHSIA {
     uint32_t index;
 
     safe_VkBufferCollectionImageCreateInfoFUCHSIA(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferCollectionImageCreateInfoFUCHSIA(const safe_VkBufferCollectionImageCreateInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionImageCreateInfoFUCHSIA& operator=(const safe_VkBufferCollectionImageCreateInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionImageCreateInfoFUCHSIA();
@@ -13974,7 +14246,7 @@ struct safe_VkBufferCollectionConstraintsInfoFUCHSIA {
     uint32_t minBufferCountForSharedSlack;
 
     safe_VkBufferCollectionConstraintsInfoFUCHSIA(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferCollectionConstraintsInfoFUCHSIA(const safe_VkBufferCollectionConstraintsInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionConstraintsInfoFUCHSIA& operator=(const safe_VkBufferCollectionConstraintsInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionConstraintsInfoFUCHSIA();
@@ -13995,7 +14267,8 @@ struct safe_VkBufferConstraintsInfoFUCHSIA {
     VkFormatFeatureFlags requiredFormatFeatures;
     safe_VkBufferCollectionConstraintsInfoFUCHSIA bufferCollectionConstraints;
 
-    safe_VkBufferConstraintsInfoFUCHSIA(const VkBufferConstraintsInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferConstraintsInfoFUCHSIA(const VkBufferConstraintsInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkBufferConstraintsInfoFUCHSIA(const safe_VkBufferConstraintsInfoFUCHSIA& copy_src);
     safe_VkBufferConstraintsInfoFUCHSIA& operator=(const safe_VkBufferConstraintsInfoFUCHSIA& copy_src);
     safe_VkBufferConstraintsInfoFUCHSIA();
@@ -14014,7 +14287,7 @@ struct safe_VkBufferCollectionBufferCreateInfoFUCHSIA {
     uint32_t index;
 
     safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionBufferCreateInfoFUCHSIA& operator=(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA& copy_src);
     safe_VkBufferCollectionBufferCreateInfoFUCHSIA();
@@ -14033,7 +14306,8 @@ struct safe_VkSysmemColorSpaceFUCHSIA {
     const void* pNext{};
     uint32_t colorSpace;
 
-    safe_VkSysmemColorSpaceFUCHSIA(const VkSysmemColorSpaceFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSysmemColorSpaceFUCHSIA(const VkSysmemColorSpaceFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                   bool copy_pnext = true);
     safe_VkSysmemColorSpaceFUCHSIA(const safe_VkSysmemColorSpaceFUCHSIA& copy_src);
     safe_VkSysmemColorSpaceFUCHSIA& operator=(const safe_VkSysmemColorSpaceFUCHSIA& copy_src);
     safe_VkSysmemColorSpaceFUCHSIA();
@@ -14060,7 +14334,8 @@ struct safe_VkBufferCollectionPropertiesFUCHSIA {
     VkChromaLocation suggestedXChromaOffset;
     VkChromaLocation suggestedYChromaOffset;
 
-    safe_VkBufferCollectionPropertiesFUCHSIA(const VkBufferCollectionPropertiesFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBufferCollectionPropertiesFUCHSIA(const VkBufferCollectionPropertiesFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkBufferCollectionPropertiesFUCHSIA(const safe_VkBufferCollectionPropertiesFUCHSIA& copy_src);
     safe_VkBufferCollectionPropertiesFUCHSIA& operator=(const safe_VkBufferCollectionPropertiesFUCHSIA& copy_src);
     safe_VkBufferCollectionPropertiesFUCHSIA();
@@ -14084,7 +14359,8 @@ struct safe_VkImageFormatConstraintsInfoFUCHSIA {
     uint32_t colorSpaceCount;
     safe_VkSysmemColorSpaceFUCHSIA* pColorSpaces{};
 
-    safe_VkImageFormatConstraintsInfoFUCHSIA(const VkImageFormatConstraintsInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageFormatConstraintsInfoFUCHSIA(const VkImageFormatConstraintsInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkImageFormatConstraintsInfoFUCHSIA(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src);
     safe_VkImageFormatConstraintsInfoFUCHSIA& operator=(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src);
     safe_VkImageFormatConstraintsInfoFUCHSIA();
@@ -14106,7 +14382,8 @@ struct safe_VkImageConstraintsInfoFUCHSIA {
     safe_VkBufferCollectionConstraintsInfoFUCHSIA bufferCollectionConstraints;
     VkImageConstraintsInfoFlagsFUCHSIA flags;
 
-    safe_VkImageConstraintsInfoFUCHSIA(const VkImageConstraintsInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageConstraintsInfoFUCHSIA(const VkImageConstraintsInfoFUCHSIA* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkImageConstraintsInfoFUCHSIA(const safe_VkImageConstraintsInfoFUCHSIA& copy_src);
     safe_VkImageConstraintsInfoFUCHSIA& operator=(const safe_VkImageConstraintsInfoFUCHSIA& copy_src);
     safe_VkImageConstraintsInfoFUCHSIA();
@@ -14124,7 +14401,7 @@ struct safe_VkSubpassShadingPipelineCreateInfoHUAWEI {
     uint32_t subpass;
 
     safe_VkSubpassShadingPipelineCreateInfoHUAWEI(const VkSubpassShadingPipelineCreateInfoHUAWEI* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassShadingPipelineCreateInfoHUAWEI(const safe_VkSubpassShadingPipelineCreateInfoHUAWEI& copy_src);
     safe_VkSubpassShadingPipelineCreateInfoHUAWEI& operator=(const safe_VkSubpassShadingPipelineCreateInfoHUAWEI& copy_src);
     safe_VkSubpassShadingPipelineCreateInfoHUAWEI();
@@ -14142,7 +14419,7 @@ struct safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI {
     VkBool32 subpassShading;
 
     safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI(const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI(const safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI& copy_src);
     safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI& operator=(const safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI& copy_src);
     safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI();
@@ -14162,7 +14439,7 @@ struct safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI {
     uint32_t maxSubpassShadingWorkgroupSizeAspectRatio;
 
     safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI(const VkPhysicalDeviceSubpassShadingPropertiesHUAWEI* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI(const safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI& copy_src);
     safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI& operator=(
         const safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI& copy_src);
@@ -14183,7 +14460,7 @@ struct safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI {
     VkBool32 invocationMask;
 
     safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI(const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI(const safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI& copy_src);
     safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI& operator=(const safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI& copy_src);
     safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI();
@@ -14203,7 +14480,8 @@ struct safe_VkMemoryGetRemoteAddressInfoNV {
     VkDeviceMemory memory;
     VkExternalMemoryHandleTypeFlagBits handleType;
 
-    safe_VkMemoryGetRemoteAddressInfoNV(const VkMemoryGetRemoteAddressInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMemoryGetRemoteAddressInfoNV(const VkMemoryGetRemoteAddressInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkMemoryGetRemoteAddressInfoNV(const safe_VkMemoryGetRemoteAddressInfoNV& copy_src);
     safe_VkMemoryGetRemoteAddressInfoNV& operator=(const safe_VkMemoryGetRemoteAddressInfoNV& copy_src);
     safe_VkMemoryGetRemoteAddressInfoNV();
@@ -14219,7 +14497,7 @@ struct safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV {
     VkBool32 externalMemoryRDMA;
 
     safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV(const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& copy_src);
     safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& operator=(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& copy_src);
     safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV();
@@ -14238,7 +14516,8 @@ struct safe_VkPipelinePropertiesIdentifierEXT {
     void* pNext{};
     uint8_t pipelineIdentifier[VK_UUID_SIZE];
 
-    safe_VkPipelinePropertiesIdentifierEXT(const VkPipelinePropertiesIdentifierEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelinePropertiesIdentifierEXT(const VkPipelinePropertiesIdentifierEXT* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPipelinePropertiesIdentifierEXT(const safe_VkPipelinePropertiesIdentifierEXT& copy_src);
     safe_VkPipelinePropertiesIdentifierEXT& operator=(const safe_VkPipelinePropertiesIdentifierEXT& copy_src);
     safe_VkPipelinePropertiesIdentifierEXT();
@@ -14256,7 +14535,7 @@ struct safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT {
     VkBool32 pipelinePropertiesIdentifier;
 
     safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT(const VkPhysicalDevicePipelinePropertiesFeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT(const safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT& operator=(
         const safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT& copy_src);
@@ -14277,7 +14556,7 @@ struct safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT {
     VkBool32 frameBoundary;
 
     safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT(const VkPhysicalDeviceFrameBoundaryFeaturesEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT(const safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT& operator=(const safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT();
@@ -14302,7 +14581,7 @@ struct safe_VkFrameBoundaryEXT {
     size_t tagSize;
     const void* pTag{};
 
-    safe_VkFrameBoundaryEXT(const VkFrameBoundaryEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFrameBoundaryEXT(const VkFrameBoundaryEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkFrameBoundaryEXT(const safe_VkFrameBoundaryEXT& copy_src);
     safe_VkFrameBoundaryEXT& operator=(const safe_VkFrameBoundaryEXT& copy_src);
     safe_VkFrameBoundaryEXT();
@@ -14318,7 +14597,8 @@ struct safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT {
     VkBool32 multisampledRenderToSingleSampled;
 
     safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT(
-        const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT(
         const safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT& operator=(
@@ -14340,7 +14620,8 @@ struct safe_VkSubpassResolvePerformanceQueryEXT {
     void* pNext{};
     VkBool32 optimal;
 
-    safe_VkSubpassResolvePerformanceQueryEXT(const VkSubpassResolvePerformanceQueryEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSubpassResolvePerformanceQueryEXT(const VkSubpassResolvePerformanceQueryEXT* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkSubpassResolvePerformanceQueryEXT(const safe_VkSubpassResolvePerformanceQueryEXT& copy_src);
     safe_VkSubpassResolvePerformanceQueryEXT& operator=(const safe_VkSubpassResolvePerformanceQueryEXT& copy_src);
     safe_VkSubpassResolvePerformanceQueryEXT();
@@ -14359,7 +14640,7 @@ struct safe_VkMultisampledRenderToSingleSampledInfoEXT {
     VkSampleCountFlagBits rasterizationSamples;
 
     safe_VkMultisampledRenderToSingleSampledInfoEXT(const VkMultisampledRenderToSingleSampledInfoEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMultisampledRenderToSingleSampledInfoEXT(const safe_VkMultisampledRenderToSingleSampledInfoEXT& copy_src);
     safe_VkMultisampledRenderToSingleSampledInfoEXT& operator=(const safe_VkMultisampledRenderToSingleSampledInfoEXT& copy_src);
     safe_VkMultisampledRenderToSingleSampledInfoEXT();
@@ -14381,7 +14662,7 @@ struct safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT {
     VkBool32 extendedDynamicState2PatchControlPoints;
 
     safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT(const VkPhysicalDeviceExtendedDynamicState2FeaturesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT(const safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT& operator=(
         const safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT& copy_src);
@@ -14404,7 +14685,8 @@ struct safe_VkScreenSurfaceCreateInfoQNX {
     struct _screen_context* context{};
     struct _screen_window* window{};
 
-    safe_VkScreenSurfaceCreateInfoQNX(const VkScreenSurfaceCreateInfoQNX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkScreenSurfaceCreateInfoQNX(const VkScreenSurfaceCreateInfoQNX* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
     safe_VkScreenSurfaceCreateInfoQNX(const safe_VkScreenSurfaceCreateInfoQNX& copy_src);
     safe_VkScreenSurfaceCreateInfoQNX& operator=(const safe_VkScreenSurfaceCreateInfoQNX& copy_src);
     safe_VkScreenSurfaceCreateInfoQNX();
@@ -14421,7 +14703,7 @@ struct safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT {
     VkBool32 colorWriteEnable;
 
     safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT(const VkPhysicalDeviceColorWriteEnableFeaturesEXT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT(const safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT& operator=(const safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT();
@@ -14441,7 +14723,8 @@ struct safe_VkPipelineColorWriteCreateInfoEXT {
     uint32_t attachmentCount;
     const VkBool32* pColorWriteEnables{};
 
-    safe_VkPipelineColorWriteCreateInfoEXT(const VkPipelineColorWriteCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPipelineColorWriteCreateInfoEXT(const VkPipelineColorWriteCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkPipelineColorWriteCreateInfoEXT(const safe_VkPipelineColorWriteCreateInfoEXT& copy_src);
     safe_VkPipelineColorWriteCreateInfoEXT& operator=(const safe_VkPipelineColorWriteCreateInfoEXT& copy_src);
     safe_VkPipelineColorWriteCreateInfoEXT();
@@ -14461,7 +14744,7 @@ struct safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT {
     VkBool32 primitivesGeneratedQueryWithNonZeroStreams;
 
     safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT(const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT(
         const safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT& operator=(
@@ -14483,7 +14766,7 @@ struct safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT {
     VkBool32 minLod;
 
     safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& operator=(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT();
@@ -14502,7 +14785,8 @@ struct safe_VkImageViewMinLodCreateInfoEXT {
     const void* pNext{};
     float minLod;
 
-    safe_VkImageViewMinLodCreateInfoEXT(const VkImageViewMinLodCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewMinLodCreateInfoEXT(const VkImageViewMinLodCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkImageViewMinLodCreateInfoEXT(const safe_VkImageViewMinLodCreateInfoEXT& copy_src);
     safe_VkImageViewMinLodCreateInfoEXT& operator=(const safe_VkImageViewMinLodCreateInfoEXT& copy_src);
     safe_VkImageViewMinLodCreateInfoEXT();
@@ -14518,7 +14802,7 @@ struct safe_VkPhysicalDeviceMultiDrawFeaturesEXT {
     VkBool32 multiDraw;
 
     safe_VkPhysicalDeviceMultiDrawFeaturesEXT(const VkPhysicalDeviceMultiDrawFeaturesEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiDrawFeaturesEXT(const safe_VkPhysicalDeviceMultiDrawFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMultiDrawFeaturesEXT& operator=(const safe_VkPhysicalDeviceMultiDrawFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMultiDrawFeaturesEXT();
@@ -14536,7 +14820,7 @@ struct safe_VkPhysicalDeviceMultiDrawPropertiesEXT {
     uint32_t maxMultiDrawCount;
 
     safe_VkPhysicalDeviceMultiDrawPropertiesEXT(const VkPhysicalDeviceMultiDrawPropertiesEXT* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiDrawPropertiesEXT(const safe_VkPhysicalDeviceMultiDrawPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceMultiDrawPropertiesEXT& operator=(const safe_VkPhysicalDeviceMultiDrawPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceMultiDrawPropertiesEXT();
@@ -14555,7 +14839,7 @@ struct safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT {
     VkBool32 sampler2DViewOf3D;
 
     safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT(const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT(const safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT& operator=(const safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT();
@@ -14577,7 +14861,7 @@ struct safe_VkPhysicalDeviceShaderTileImageFeaturesEXT {
     VkBool32 shaderTileImageStencilReadAccess;
 
     safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(const VkPhysicalDeviceShaderTileImageFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderTileImageFeaturesEXT();
@@ -14599,7 +14883,7 @@ struct safe_VkPhysicalDeviceShaderTileImagePropertiesEXT {
     VkBool32 shaderTileImageReadFromHelperInvocation;
 
     safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(const VkPhysicalDeviceShaderTileImagePropertiesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& copy_src);
     safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& operator=(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& copy_src);
     safe_VkPhysicalDeviceShaderTileImagePropertiesEXT();
@@ -14642,7 +14926,7 @@ struct safe_VkMicromapBuildInfoEXT {
     safe_VkDeviceOrHostAddressConstKHR triangleArray;
     VkDeviceSize triangleArrayStride;
 
-    safe_VkMicromapBuildInfoEXT(const VkMicromapBuildInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMicromapBuildInfoEXT(const VkMicromapBuildInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMicromapBuildInfoEXT(const safe_VkMicromapBuildInfoEXT& copy_src);
     safe_VkMicromapBuildInfoEXT& operator=(const safe_VkMicromapBuildInfoEXT& copy_src);
     safe_VkMicromapBuildInfoEXT();
@@ -14662,7 +14946,7 @@ struct safe_VkMicromapCreateInfoEXT {
     VkMicromapTypeEXT type;
     VkDeviceAddress deviceAddress;
 
-    safe_VkMicromapCreateInfoEXT(const VkMicromapCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMicromapCreateInfoEXT(const VkMicromapCreateInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMicromapCreateInfoEXT(const safe_VkMicromapCreateInfoEXT& copy_src);
     safe_VkMicromapCreateInfoEXT& operator=(const safe_VkMicromapCreateInfoEXT& copy_src);
     safe_VkMicromapCreateInfoEXT();
@@ -14680,7 +14964,7 @@ struct safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT {
     VkBool32 micromapHostCommands;
 
     safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT(const VkPhysicalDeviceOpacityMicromapFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT(const safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT& operator=(const safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT();
@@ -14701,7 +14985,7 @@ struct safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT {
     uint32_t maxOpacity4StateSubdivisionLevel;
 
     safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT(const VkPhysicalDeviceOpacityMicromapPropertiesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT(const safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT& operator=(const safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceOpacityMicromapPropertiesEXT();
@@ -14720,7 +15004,8 @@ struct safe_VkMicromapVersionInfoEXT {
     const void* pNext{};
     const uint8_t* pVersionData{};
 
-    safe_VkMicromapVersionInfoEXT(const VkMicromapVersionInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMicromapVersionInfoEXT(const VkMicromapVersionInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkMicromapVersionInfoEXT(const safe_VkMicromapVersionInfoEXT& copy_src);
     safe_VkMicromapVersionInfoEXT& operator=(const safe_VkMicromapVersionInfoEXT& copy_src);
     safe_VkMicromapVersionInfoEXT();
@@ -14737,7 +15022,8 @@ struct safe_VkCopyMicromapToMemoryInfoEXT {
     safe_VkDeviceOrHostAddressKHR dst;
     VkCopyMicromapModeEXT mode;
 
-    safe_VkCopyMicromapToMemoryInfoEXT(const VkCopyMicromapToMemoryInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyMicromapToMemoryInfoEXT(const VkCopyMicromapToMemoryInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkCopyMicromapToMemoryInfoEXT(const safe_VkCopyMicromapToMemoryInfoEXT& copy_src);
     safe_VkCopyMicromapToMemoryInfoEXT& operator=(const safe_VkCopyMicromapToMemoryInfoEXT& copy_src);
     safe_VkCopyMicromapToMemoryInfoEXT();
@@ -14754,7 +15040,8 @@ struct safe_VkCopyMemoryToMicromapInfoEXT {
     VkMicromapEXT dst;
     VkCopyMicromapModeEXT mode;
 
-    safe_VkCopyMemoryToMicromapInfoEXT(const VkCopyMemoryToMicromapInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyMemoryToMicromapInfoEXT(const VkCopyMemoryToMicromapInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkCopyMemoryToMicromapInfoEXT(const safe_VkCopyMemoryToMicromapInfoEXT& copy_src);
     safe_VkCopyMemoryToMicromapInfoEXT& operator=(const safe_VkCopyMemoryToMicromapInfoEXT& copy_src);
     safe_VkCopyMemoryToMicromapInfoEXT();
@@ -14771,7 +15058,7 @@ struct safe_VkCopyMicromapInfoEXT {
     VkMicromapEXT dst;
     VkCopyMicromapModeEXT mode;
 
-    safe_VkCopyMicromapInfoEXT(const VkCopyMicromapInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyMicromapInfoEXT(const VkCopyMicromapInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCopyMicromapInfoEXT(const safe_VkCopyMicromapInfoEXT& copy_src);
     safe_VkCopyMicromapInfoEXT& operator=(const safe_VkCopyMicromapInfoEXT& copy_src);
     safe_VkCopyMicromapInfoEXT();
@@ -14788,7 +15075,8 @@ struct safe_VkMicromapBuildSizesInfoEXT {
     VkDeviceSize buildScratchSize;
     VkBool32 discardable;
 
-    safe_VkMicromapBuildSizesInfoEXT(const VkMicromapBuildSizesInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkMicromapBuildSizesInfoEXT(const VkMicromapBuildSizesInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkMicromapBuildSizesInfoEXT(const safe_VkMicromapBuildSizesInfoEXT& copy_src);
     safe_VkMicromapBuildSizesInfoEXT& operator=(const safe_VkMicromapBuildSizesInfoEXT& copy_src);
     safe_VkMicromapBuildSizesInfoEXT();
@@ -14811,7 +15099,7 @@ struct safe_VkAccelerationStructureTrianglesOpacityMicromapEXT {
     VkMicromapEXT micromap;
 
     safe_VkAccelerationStructureTrianglesOpacityMicromapEXT(const VkAccelerationStructureTrianglesOpacityMicromapEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureTrianglesOpacityMicromapEXT(
         const safe_VkAccelerationStructureTrianglesOpacityMicromapEXT& copy_src);
     safe_VkAccelerationStructureTrianglesOpacityMicromapEXT& operator=(
@@ -14834,7 +15122,7 @@ struct safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV {
     VkBool32 displacementMicromap;
 
     safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const VkPhysicalDeviceDisplacementMicromapFeaturesNV* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& operator=(
         const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& copy_src);
@@ -14857,7 +15145,7 @@ struct safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV {
     uint32_t maxDisplacementMicromapSubdivisionLevel;
 
     safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& copy_src);
     safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& operator=(
         const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& copy_src);
@@ -14895,7 +15183,8 @@ struct safe_VkAccelerationStructureTrianglesDisplacementMicromapNV {
     VkMicromapEXT micromap;
 
     safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(
-        const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct, PNextCopyState* copy_state = {});
+        const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(
         const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& copy_src);
     safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& operator=(
@@ -14919,7 +15208,7 @@ struct safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI {
     VkBool32 multiviewClusterCullingShader;
 
     safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(
         const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& copy_src);
     safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& operator=(
@@ -14944,7 +15233,7 @@ struct safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI {
     VkDeviceSize indirectBufferOffsetAlignment;
 
     safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI(const VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI(
         const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& copy_src);
     safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& operator=(
@@ -14967,7 +15256,7 @@ struct safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT {
     VkBool32 borderColorSwizzleFromImage;
 
     safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT(const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT(const safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT& copy_src);
@@ -14989,7 +15278,7 @@ struct safe_VkSamplerBorderColorComponentMappingCreateInfoEXT {
     VkBool32 srgb;
 
     safe_VkSamplerBorderColorComponentMappingCreateInfoEXT(const VkSamplerBorderColorComponentMappingCreateInfoEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerBorderColorComponentMappingCreateInfoEXT(const safe_VkSamplerBorderColorComponentMappingCreateInfoEXT& copy_src);
     safe_VkSamplerBorderColorComponentMappingCreateInfoEXT& operator=(
         const safe_VkSamplerBorderColorComponentMappingCreateInfoEXT& copy_src);
@@ -15010,7 +15299,7 @@ struct safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT {
     VkBool32 pageableDeviceLocalMemory;
 
     safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(
         const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& operator=(
@@ -15034,7 +15323,7 @@ struct safe_VkPhysicalDeviceShaderCorePropertiesARM {
     uint32_t fmaRate;
 
     safe_VkPhysicalDeviceShaderCorePropertiesARM(const VkPhysicalDeviceShaderCorePropertiesARM* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderCorePropertiesARM(const safe_VkPhysicalDeviceShaderCorePropertiesARM& copy_src);
     safe_VkPhysicalDeviceShaderCorePropertiesARM& operator=(const safe_VkPhysicalDeviceShaderCorePropertiesARM& copy_src);
     safe_VkPhysicalDeviceShaderCorePropertiesARM();
@@ -15052,7 +15341,7 @@ struct safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT {
     VkBool32 imageSlicedViewOf3D;
 
     safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT(const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT(const safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT& copy_src);
@@ -15073,7 +15362,8 @@ struct safe_VkImageViewSlicedCreateInfoEXT {
     uint32_t sliceOffset;
     uint32_t sliceCount;
 
-    safe_VkImageViewSlicedCreateInfoEXT(const VkImageViewSlicedCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImageViewSlicedCreateInfoEXT(const VkImageViewSlicedCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkImageViewSlicedCreateInfoEXT(const safe_VkImageViewSlicedCreateInfoEXT& copy_src);
     safe_VkImageViewSlicedCreateInfoEXT& operator=(const safe_VkImageViewSlicedCreateInfoEXT& copy_src);
     safe_VkImageViewSlicedCreateInfoEXT();
@@ -15089,7 +15379,8 @@ struct safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE {
     VkBool32 descriptorSetHostMapping;
 
     safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(
-        const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(
         const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src);
     safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& operator=(
@@ -15112,7 +15403,7 @@ struct safe_VkDescriptorSetBindingReferenceVALVE {
     uint32_t binding;
 
     safe_VkDescriptorSetBindingReferenceVALVE(const VkDescriptorSetBindingReferenceVALVE* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorSetBindingReferenceVALVE(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src);
     safe_VkDescriptorSetBindingReferenceVALVE& operator=(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src);
     safe_VkDescriptorSetBindingReferenceVALVE();
@@ -15131,7 +15422,7 @@ struct safe_VkDescriptorSetLayoutHostMappingInfoVALVE {
     uint32_t descriptorSize;
 
     safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src);
     safe_VkDescriptorSetLayoutHostMappingInfoVALVE& operator=(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src);
     safe_VkDescriptorSetLayoutHostMappingInfoVALVE();
@@ -15149,7 +15440,7 @@ struct safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT {
     VkBool32 depthClampZeroOne;
 
     safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT(const VkPhysicalDeviceDepthClampZeroOneFeaturesEXT* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT(const safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT& operator=(const safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT();
@@ -15169,7 +15460,7 @@ struct safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT {
     VkBool32 nonSeamlessCubeMap;
 
     safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT(const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT(const safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT& copy_src);
@@ -15190,7 +15481,7 @@ struct safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM {
     VkBool32 fragmentDensityMapOffset;
 
     safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(
         const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& operator=(
@@ -15212,7 +15503,8 @@ struct safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM {
     VkExtent2D fragmentDensityOffsetGranularity;
 
     safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(
-        const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(
         const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& copy_src);
     safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& operator=(
@@ -15235,7 +15527,7 @@ struct safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM {
     const VkOffset2D* pFragmentDensityOffsets{};
 
     safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& copy_src);
     safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& operator=(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& copy_src);
     safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM();
@@ -15255,7 +15547,7 @@ struct safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV {
     VkBool32 indirectCopy;
 
     safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& operator=(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& copy_src);
     safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV();
@@ -15275,7 +15567,7 @@ struct safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV {
     VkQueueFlags supportedQueues;
 
     safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& copy_src);
     safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& operator=(
         const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& copy_src);
@@ -15296,7 +15588,7 @@ struct safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV {
     VkBool32 memoryDecompression;
 
     safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(const VkPhysicalDeviceMemoryDecompressionFeaturesNV* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& copy_src);
     safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& operator=(
         const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& copy_src);
@@ -15318,7 +15610,7 @@ struct safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV {
     uint64_t maxDecompressionIndirectCount;
 
     safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(const VkPhysicalDeviceMemoryDecompressionPropertiesNV* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& copy_src);
     safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& operator=(
         const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& copy_src);
@@ -15341,7 +15633,8 @@ struct safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV {
     VkBool32 deviceGeneratedComputeCaptureReplay;
 
     safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV(
-        const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV(
         const safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV& operator=(
@@ -15365,7 +15658,7 @@ struct safe_VkComputePipelineIndirectBufferInfoNV {
     VkDeviceAddress pipelineDeviceAddressCaptureReplay;
 
     safe_VkComputePipelineIndirectBufferInfoNV(const VkComputePipelineIndirectBufferInfoNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkComputePipelineIndirectBufferInfoNV(const safe_VkComputePipelineIndirectBufferInfoNV& copy_src);
     safe_VkComputePipelineIndirectBufferInfoNV& operator=(const safe_VkComputePipelineIndirectBufferInfoNV& copy_src);
     safe_VkComputePipelineIndirectBufferInfoNV();
@@ -15384,7 +15677,7 @@ struct safe_VkPipelineIndirectDeviceAddressInfoNV {
     VkPipeline pipeline;
 
     safe_VkPipelineIndirectDeviceAddressInfoNV(const VkPipelineIndirectDeviceAddressInfoNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineIndirectDeviceAddressInfoNV(const safe_VkPipelineIndirectDeviceAddressInfoNV& copy_src);
     safe_VkPipelineIndirectDeviceAddressInfoNV& operator=(const safe_VkPipelineIndirectDeviceAddressInfoNV& copy_src);
     safe_VkPipelineIndirectDeviceAddressInfoNV();
@@ -15402,7 +15695,7 @@ struct safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV {
     VkBool32 linearColorAttachment;
 
     safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& copy_src);
     safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& operator=(
         const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& copy_src);
@@ -15423,7 +15716,8 @@ struct safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT {
     VkBool32 imageCompressionControlSwapchain;
 
     safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT(
-        const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT(
         const safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT& operator=(
@@ -15448,7 +15742,7 @@ struct safe_VkImageViewSampleWeightCreateInfoQCOM {
     uint32_t numPhases;
 
     safe_VkImageViewSampleWeightCreateInfoQCOM(const VkImageViewSampleWeightCreateInfoQCOM* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkImageViewSampleWeightCreateInfoQCOM(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src);
     safe_VkImageViewSampleWeightCreateInfoQCOM& operator=(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src);
     safe_VkImageViewSampleWeightCreateInfoQCOM();
@@ -15468,7 +15762,7 @@ struct safe_VkPhysicalDeviceImageProcessingFeaturesQCOM {
     VkBool32 textureBlockMatch;
 
     safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& operator=(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceImageProcessingFeaturesQCOM();
@@ -15491,7 +15785,7 @@ struct safe_VkPhysicalDeviceImageProcessingPropertiesQCOM {
     VkExtent2D maxBoxFilterBlockSize;
 
     safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src);
     safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& operator=(
         const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src);
@@ -15514,7 +15808,7 @@ struct safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT {
     VkBool32 nestedCommandBufferSimultaneousUse;
 
     safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT(const VkPhysicalDeviceNestedCommandBufferFeaturesEXT* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT(const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceNestedCommandBufferFeaturesEXT& copy_src);
@@ -15535,7 +15829,7 @@ struct safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT {
     uint32_t maxCommandBufferNestingLevel;
 
     safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT(const VkPhysicalDeviceNestedCommandBufferPropertiesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT(const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& operator=(
         const safe_VkPhysicalDeviceNestedCommandBufferPropertiesEXT& copy_src);
@@ -15556,7 +15850,7 @@ struct safe_VkExternalMemoryAcquireUnmodifiedEXT {
     VkBool32 acquireUnmodifiedMemory;
 
     safe_VkExternalMemoryAcquireUnmodifiedEXT(const VkExternalMemoryAcquireUnmodifiedEXT* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkExternalMemoryAcquireUnmodifiedEXT(const safe_VkExternalMemoryAcquireUnmodifiedEXT& copy_src);
     safe_VkExternalMemoryAcquireUnmodifiedEXT& operator=(const safe_VkExternalMemoryAcquireUnmodifiedEXT& copy_src);
     safe_VkExternalMemoryAcquireUnmodifiedEXT();
@@ -15604,7 +15898,7 @@ struct safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT {
     VkBool32 extendedDynamicState3ShadingRateImageEnable;
 
     safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT(const VkPhysicalDeviceExtendedDynamicState3FeaturesEXT* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT(const safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT& copy_src);
     safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT& operator=(
         const safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT& copy_src);
@@ -15625,7 +15919,7 @@ struct safe_VkPhysicalDeviceExtendedDynamicState3PropertiesEXT {
     VkBool32 dynamicPrimitiveTopologyUnrestricted;
 
     safe_VkPhysicalDeviceExtendedDynamicState3PropertiesEXT(const VkPhysicalDeviceExtendedDynamicState3PropertiesEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExtendedDynamicState3PropertiesEXT(
         const safe_VkPhysicalDeviceExtendedDynamicState3PropertiesEXT& copy_src);
     safe_VkPhysicalDeviceExtendedDynamicState3PropertiesEXT& operator=(
@@ -15647,7 +15941,7 @@ struct safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT {
     VkBool32 subpassMergeFeedback;
 
     safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT(const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT(const safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT& copy_src);
@@ -15667,7 +15961,8 @@ struct safe_VkRenderPassCreationControlEXT {
     const void* pNext{};
     VkBool32 disallowMerging;
 
-    safe_VkRenderPassCreationControlEXT(const VkRenderPassCreationControlEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRenderPassCreationControlEXT(const VkRenderPassCreationControlEXT* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkRenderPassCreationControlEXT(const safe_VkRenderPassCreationControlEXT& copy_src);
     safe_VkRenderPassCreationControlEXT& operator=(const safe_VkRenderPassCreationControlEXT& copy_src);
     safe_VkRenderPassCreationControlEXT();
@@ -15683,7 +15978,7 @@ struct safe_VkRenderPassCreationFeedbackCreateInfoEXT {
     VkRenderPassCreationFeedbackInfoEXT* pRenderPassFeedback{};
 
     safe_VkRenderPassCreationFeedbackCreateInfoEXT(const VkRenderPassCreationFeedbackCreateInfoEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassCreationFeedbackCreateInfoEXT(const safe_VkRenderPassCreationFeedbackCreateInfoEXT& copy_src);
     safe_VkRenderPassCreationFeedbackCreateInfoEXT& operator=(const safe_VkRenderPassCreationFeedbackCreateInfoEXT& copy_src);
     safe_VkRenderPassCreationFeedbackCreateInfoEXT();
@@ -15701,7 +15996,7 @@ struct safe_VkRenderPassSubpassFeedbackCreateInfoEXT {
     VkRenderPassSubpassFeedbackInfoEXT* pSubpassFeedback{};
 
     safe_VkRenderPassSubpassFeedbackCreateInfoEXT(const VkRenderPassSubpassFeedbackCreateInfoEXT* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRenderPassSubpassFeedbackCreateInfoEXT(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT& copy_src);
     safe_VkRenderPassSubpassFeedbackCreateInfoEXT& operator=(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT& copy_src);
     safe_VkRenderPassSubpassFeedbackCreateInfoEXT();
@@ -15719,7 +16014,8 @@ struct safe_VkDirectDriverLoadingInfoLUNARG {
     VkDirectDriverLoadingFlagsLUNARG flags;
     PFN_vkGetInstanceProcAddrLUNARG pfnGetInstanceProcAddr;
 
-    safe_VkDirectDriverLoadingInfoLUNARG(const VkDirectDriverLoadingInfoLUNARG* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDirectDriverLoadingInfoLUNARG(const VkDirectDriverLoadingInfoLUNARG* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkDirectDriverLoadingInfoLUNARG(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src);
     safe_VkDirectDriverLoadingInfoLUNARG& operator=(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src);
     safe_VkDirectDriverLoadingInfoLUNARG();
@@ -15736,7 +16032,8 @@ struct safe_VkDirectDriverLoadingListLUNARG {
     uint32_t driverCount;
     safe_VkDirectDriverLoadingInfoLUNARG* pDrivers{};
 
-    safe_VkDirectDriverLoadingListLUNARG(const VkDirectDriverLoadingListLUNARG* in_struct, PNextCopyState* copy_state = {});
+    safe_VkDirectDriverLoadingListLUNARG(const VkDirectDriverLoadingListLUNARG* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkDirectDriverLoadingListLUNARG(const safe_VkDirectDriverLoadingListLUNARG& copy_src);
     safe_VkDirectDriverLoadingListLUNARG& operator=(const safe_VkDirectDriverLoadingListLUNARG& copy_src);
     safe_VkDirectDriverLoadingListLUNARG();
@@ -15752,7 +16049,7 @@ struct safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT {
     VkBool32 shaderModuleIdentifier;
 
     safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT(const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT* in_struct,
-                                                           PNextCopyState* copy_state = {});
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT(const safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT& operator=(
         const safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT& copy_src);
@@ -15773,7 +16070,7 @@ struct safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT {
     uint8_t shaderModuleIdentifierAlgorithmUUID[VK_UUID_SIZE];
 
     safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT(const VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT* in_struct,
-                                                             PNextCopyState* copy_state = {});
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT(
         const safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT& operator=(
@@ -15796,7 +16093,7 @@ struct safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT {
     const uint8_t* pIdentifier{};
 
     safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT(const VkPipelineShaderStageModuleIdentifierCreateInfoEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT(
         const safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT& copy_src);
     safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT& operator=(
@@ -15818,7 +16115,8 @@ struct safe_VkShaderModuleIdentifierEXT {
     uint32_t identifierSize;
     uint8_t identifier[VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT];
 
-    safe_VkShaderModuleIdentifierEXT(const VkShaderModuleIdentifierEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkShaderModuleIdentifierEXT(const VkShaderModuleIdentifierEXT* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkShaderModuleIdentifierEXT(const safe_VkShaderModuleIdentifierEXT& copy_src);
     safe_VkShaderModuleIdentifierEXT& operator=(const safe_VkShaderModuleIdentifierEXT& copy_src);
     safe_VkShaderModuleIdentifierEXT();
@@ -15834,7 +16132,7 @@ struct safe_VkPhysicalDeviceOpticalFlowFeaturesNV {
     VkBool32 opticalFlow;
 
     safe_VkPhysicalDeviceOpticalFlowFeaturesNV(const VkPhysicalDeviceOpticalFlowFeaturesNV* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceOpticalFlowFeaturesNV(const safe_VkPhysicalDeviceOpticalFlowFeaturesNV& copy_src);
     safe_VkPhysicalDeviceOpticalFlowFeaturesNV& operator=(const safe_VkPhysicalDeviceOpticalFlowFeaturesNV& copy_src);
     safe_VkPhysicalDeviceOpticalFlowFeaturesNV();
@@ -15862,7 +16160,7 @@ struct safe_VkPhysicalDeviceOpticalFlowPropertiesNV {
     uint32_t maxNumRegionsOfInterest;
 
     safe_VkPhysicalDeviceOpticalFlowPropertiesNV(const VkPhysicalDeviceOpticalFlowPropertiesNV* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceOpticalFlowPropertiesNV(const safe_VkPhysicalDeviceOpticalFlowPropertiesNV& copy_src);
     safe_VkPhysicalDeviceOpticalFlowPropertiesNV& operator=(const safe_VkPhysicalDeviceOpticalFlowPropertiesNV& copy_src);
     safe_VkPhysicalDeviceOpticalFlowPropertiesNV();
@@ -15879,7 +16177,8 @@ struct safe_VkOpticalFlowImageFormatInfoNV {
     const void* pNext{};
     VkOpticalFlowUsageFlagsNV usage;
 
-    safe_VkOpticalFlowImageFormatInfoNV(const VkOpticalFlowImageFormatInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkOpticalFlowImageFormatInfoNV(const VkOpticalFlowImageFormatInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkOpticalFlowImageFormatInfoNV(const safe_VkOpticalFlowImageFormatInfoNV& copy_src);
     safe_VkOpticalFlowImageFormatInfoNV& operator=(const safe_VkOpticalFlowImageFormatInfoNV& copy_src);
     safe_VkOpticalFlowImageFormatInfoNV();
@@ -15895,7 +16194,7 @@ struct safe_VkOpticalFlowImageFormatPropertiesNV {
     VkFormat format;
 
     safe_VkOpticalFlowImageFormatPropertiesNV(const VkOpticalFlowImageFormatPropertiesNV* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkOpticalFlowImageFormatPropertiesNV(const safe_VkOpticalFlowImageFormatPropertiesNV& copy_src);
     safe_VkOpticalFlowImageFormatPropertiesNV& operator=(const safe_VkOpticalFlowImageFormatPropertiesNV& copy_src);
     safe_VkOpticalFlowImageFormatPropertiesNV();
@@ -15920,7 +16219,8 @@ struct safe_VkOpticalFlowSessionCreateInfoNV {
     VkOpticalFlowPerformanceLevelNV performanceLevel;
     VkOpticalFlowSessionCreateFlagsNV flags;
 
-    safe_VkOpticalFlowSessionCreateInfoNV(const VkOpticalFlowSessionCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkOpticalFlowSessionCreateInfoNV(const VkOpticalFlowSessionCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                          bool copy_pnext = true);
     safe_VkOpticalFlowSessionCreateInfoNV(const safe_VkOpticalFlowSessionCreateInfoNV& copy_src);
     safe_VkOpticalFlowSessionCreateInfoNV& operator=(const safe_VkOpticalFlowSessionCreateInfoNV& copy_src);
     safe_VkOpticalFlowSessionCreateInfoNV();
@@ -15938,7 +16238,7 @@ struct safe_VkOpticalFlowSessionCreatePrivateDataInfoNV {
     const void* pPrivateData{};
 
     safe_VkOpticalFlowSessionCreatePrivateDataInfoNV(const VkOpticalFlowSessionCreatePrivateDataInfoNV* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkOpticalFlowSessionCreatePrivateDataInfoNV(const safe_VkOpticalFlowSessionCreatePrivateDataInfoNV& copy_src);
     safe_VkOpticalFlowSessionCreatePrivateDataInfoNV& operator=(const safe_VkOpticalFlowSessionCreatePrivateDataInfoNV& copy_src);
     safe_VkOpticalFlowSessionCreatePrivateDataInfoNV();
@@ -15959,7 +16259,8 @@ struct safe_VkOpticalFlowExecuteInfoNV {
     uint32_t regionCount;
     const VkRect2D* pRegions{};
 
-    safe_VkOpticalFlowExecuteInfoNV(const VkOpticalFlowExecuteInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkOpticalFlowExecuteInfoNV(const VkOpticalFlowExecuteInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkOpticalFlowExecuteInfoNV(const safe_VkOpticalFlowExecuteInfoNV& copy_src);
     safe_VkOpticalFlowExecuteInfoNV& operator=(const safe_VkOpticalFlowExecuteInfoNV& copy_src);
     safe_VkOpticalFlowExecuteInfoNV();
@@ -15975,7 +16276,7 @@ struct safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT {
     VkBool32 legacyDithering;
 
     safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(const VkPhysicalDeviceLegacyDitheringFeaturesEXT* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& operator=(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT();
@@ -15995,7 +16296,7 @@ struct safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT {
     VkBool32 pipelineProtectedAccess;
 
     safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT(const VkPhysicalDevicePipelineProtectedAccessFeaturesEXT* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT(
         const safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT& operator=(
@@ -16018,7 +16319,7 @@ struct safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID {
     VkBool32 externalFormatResolve;
 
     safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID(const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID(
         const safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID& copy_src);
     safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID& operator=(
@@ -16044,7 +16345,8 @@ struct safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID {
     VkChromaLocation externalFormatResolveChromaOffsetY;
 
     safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID(
-        const VkPhysicalDeviceExternalFormatResolvePropertiesANDROID* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceExternalFormatResolvePropertiesANDROID* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID(
         const safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID& copy_src);
     safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID& operator=(
@@ -16068,7 +16370,8 @@ struct safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID {
     VkFormat colorAttachmentFormat;
 
     safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID(
-        const VkAndroidHardwareBufferFormatResolvePropertiesANDROID* in_struct, PNextCopyState* copy_state = {});
+        const VkAndroidHardwareBufferFormatResolvePropertiesANDROID* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID(
         const safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID& copy_src);
     safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID& operator=(
@@ -16091,7 +16394,7 @@ struct safe_VkPhysicalDeviceShaderObjectFeaturesEXT {
     VkBool32 shaderObject;
 
     safe_VkPhysicalDeviceShaderObjectFeaturesEXT(const VkPhysicalDeviceShaderObjectFeaturesEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderObjectFeaturesEXT(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderObjectFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceShaderObjectFeaturesEXT();
@@ -16110,7 +16413,7 @@ struct safe_VkPhysicalDeviceShaderObjectPropertiesEXT {
     uint32_t shaderBinaryVersion;
 
     safe_VkPhysicalDeviceShaderObjectPropertiesEXT(const VkPhysicalDeviceShaderObjectPropertiesEXT* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderObjectPropertiesEXT(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceShaderObjectPropertiesEXT& operator=(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceShaderObjectPropertiesEXT();
@@ -16138,7 +16441,7 @@ struct safe_VkShaderCreateInfoEXT {
     const VkPushConstantRange* pPushConstantRanges{};
     safe_VkSpecializationInfo* pSpecializationInfo{};
 
-    safe_VkShaderCreateInfoEXT(const VkShaderCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkShaderCreateInfoEXT(const VkShaderCreateInfoEXT* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkShaderCreateInfoEXT(const safe_VkShaderCreateInfoEXT& copy_src);
     safe_VkShaderCreateInfoEXT& operator=(const safe_VkShaderCreateInfoEXT& copy_src);
     safe_VkShaderCreateInfoEXT();
@@ -16154,7 +16457,7 @@ struct safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM {
     VkBool32 tileProperties;
 
     safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& operator=(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM();
@@ -16175,7 +16478,7 @@ struct safe_VkTilePropertiesQCOM {
     VkExtent2D apronSize;
     VkOffset2D origin;
 
-    safe_VkTilePropertiesQCOM(const VkTilePropertiesQCOM* in_struct, PNextCopyState* copy_state = {});
+    safe_VkTilePropertiesQCOM(const VkTilePropertiesQCOM* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkTilePropertiesQCOM(const safe_VkTilePropertiesQCOM& copy_src);
     safe_VkTilePropertiesQCOM& operator=(const safe_VkTilePropertiesQCOM& copy_src);
     safe_VkTilePropertiesQCOM();
@@ -16191,7 +16494,7 @@ struct safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC {
     VkBool32 amigoProfiling;
 
     safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC(const VkPhysicalDeviceAmigoProfilingFeaturesSEC* in_struct,
-                                                   PNextCopyState* copy_state = {});
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC(const safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC& copy_src);
     safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC& operator=(const safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC& copy_src);
     safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC();
@@ -16209,7 +16512,8 @@ struct safe_VkAmigoProfilingSubmitInfoSEC {
     uint64_t firstDrawTimestamp;
     uint64_t swapBufferTimestamp;
 
-    safe_VkAmigoProfilingSubmitInfoSEC(const VkAmigoProfilingSubmitInfoSEC* in_struct, PNextCopyState* copy_state = {});
+    safe_VkAmigoProfilingSubmitInfoSEC(const VkAmigoProfilingSubmitInfoSEC* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkAmigoProfilingSubmitInfoSEC(const safe_VkAmigoProfilingSubmitInfoSEC& copy_src);
     safe_VkAmigoProfilingSubmitInfoSEC& operator=(const safe_VkAmigoProfilingSubmitInfoSEC& copy_src);
     safe_VkAmigoProfilingSubmitInfoSEC();
@@ -16225,7 +16529,8 @@ struct safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM {
     VkBool32 multiviewPerViewViewports;
 
     safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(
-        const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(
         const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& operator=(
@@ -16247,7 +16552,8 @@ struct safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV {
     VkRayTracingInvocationReorderModeNV rayTracingInvocationReorderReorderingHint;
 
     safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(
-        const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(
         const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& copy_src);
     safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& operator=(
@@ -16269,7 +16575,8 @@ struct safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV {
     VkBool32 rayTracingInvocationReorder;
 
     safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(
-        const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(
         const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& copy_src);
     safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& operator=(
@@ -16291,7 +16598,7 @@ struct safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV {
     VkBool32 extendedSparseAddressSpace;
 
     safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV(const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV(
         const safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& copy_src);
     safe_VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV& operator=(
@@ -16315,7 +16622,8 @@ struct safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV {
     VkBufferUsageFlags extendedSparseBufferUsageFlags;
 
     safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV(
-        const VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV(
         const safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& copy_src);
     safe_VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV& operator=(
@@ -16337,7 +16645,7 @@ struct safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM {
     VkBool32 shaderCoreBuiltins;
 
     safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src);
     safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& operator=(
         const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src);
@@ -16360,7 +16668,7 @@ struct safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM {
     uint32_t shaderWarpsPerCore;
 
     safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src);
     safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& operator=(
         const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src);
@@ -16381,7 +16689,8 @@ struct safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT {
     VkBool32 pipelineLibraryGroupHandles;
 
     safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(
-        const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(
         const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& copy_src);
     safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& operator=(
@@ -16403,7 +16712,8 @@ struct safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT {
     VkBool32 dynamicRenderingUnusedAttachments;
 
     safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(
-        const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(
         const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& operator=(
@@ -16427,7 +16737,8 @@ struct safe_VkLatencySleepModeInfoNV {
     VkBool32 lowLatencyBoost;
     uint32_t minimumIntervalUs;
 
-    safe_VkLatencySleepModeInfoNV(const VkLatencySleepModeInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkLatencySleepModeInfoNV(const VkLatencySleepModeInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkLatencySleepModeInfoNV(const safe_VkLatencySleepModeInfoNV& copy_src);
     safe_VkLatencySleepModeInfoNV& operator=(const safe_VkLatencySleepModeInfoNV& copy_src);
     safe_VkLatencySleepModeInfoNV();
@@ -16443,7 +16754,7 @@ struct safe_VkLatencySleepInfoNV {
     VkSemaphore signalSemaphore;
     uint64_t value;
 
-    safe_VkLatencySleepInfoNV(const VkLatencySleepInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkLatencySleepInfoNV(const VkLatencySleepInfoNV* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkLatencySleepInfoNV(const safe_VkLatencySleepInfoNV& copy_src);
     safe_VkLatencySleepInfoNV& operator=(const safe_VkLatencySleepInfoNV& copy_src);
     safe_VkLatencySleepInfoNV();
@@ -16459,7 +16770,8 @@ struct safe_VkSetLatencyMarkerInfoNV {
     uint64_t presentID;
     VkLatencyMarkerNV marker;
 
-    safe_VkSetLatencyMarkerInfoNV(const VkSetLatencyMarkerInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSetLatencyMarkerInfoNV(const VkSetLatencyMarkerInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkSetLatencyMarkerInfoNV(const safe_VkSetLatencyMarkerInfoNV& copy_src);
     safe_VkSetLatencyMarkerInfoNV& operator=(const safe_VkSetLatencyMarkerInfoNV& copy_src);
     safe_VkSetLatencyMarkerInfoNV();
@@ -16487,7 +16799,8 @@ struct safe_VkLatencyTimingsFrameReportNV {
     uint64_t gpuRenderStartTimeUs;
     uint64_t gpuRenderEndTimeUs;
 
-    safe_VkLatencyTimingsFrameReportNV(const VkLatencyTimingsFrameReportNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkLatencyTimingsFrameReportNV(const VkLatencyTimingsFrameReportNV* in_struct, PNextCopyState* copy_state = {},
+                                       bool copy_pnext = true);
     safe_VkLatencyTimingsFrameReportNV(const safe_VkLatencyTimingsFrameReportNV& copy_src);
     safe_VkLatencyTimingsFrameReportNV& operator=(const safe_VkLatencyTimingsFrameReportNV& copy_src);
     safe_VkLatencyTimingsFrameReportNV();
@@ -16502,7 +16815,8 @@ struct safe_VkGetLatencyMarkerInfoNV {
     const void* pNext{};
     safe_VkLatencyTimingsFrameReportNV* pTimings{};
 
-    safe_VkGetLatencyMarkerInfoNV(const VkGetLatencyMarkerInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkGetLatencyMarkerInfoNV(const VkGetLatencyMarkerInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                  bool copy_pnext = true);
     safe_VkGetLatencyMarkerInfoNV(const safe_VkGetLatencyMarkerInfoNV& copy_src);
     safe_VkGetLatencyMarkerInfoNV& operator=(const safe_VkGetLatencyMarkerInfoNV& copy_src);
     safe_VkGetLatencyMarkerInfoNV();
@@ -16517,7 +16831,8 @@ struct safe_VkLatencySubmissionPresentIdNV {
     const void* pNext{};
     uint64_t presentID;
 
-    safe_VkLatencySubmissionPresentIdNV(const VkLatencySubmissionPresentIdNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkLatencySubmissionPresentIdNV(const VkLatencySubmissionPresentIdNV* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkLatencySubmissionPresentIdNV(const safe_VkLatencySubmissionPresentIdNV& copy_src);
     safe_VkLatencySubmissionPresentIdNV& operator=(const safe_VkLatencySubmissionPresentIdNV& copy_src);
     safe_VkLatencySubmissionPresentIdNV();
@@ -16532,7 +16847,8 @@ struct safe_VkSwapchainLatencyCreateInfoNV {
     const void* pNext{};
     VkBool32 latencyModeEnable;
 
-    safe_VkSwapchainLatencyCreateInfoNV(const VkSwapchainLatencyCreateInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSwapchainLatencyCreateInfoNV(const VkSwapchainLatencyCreateInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkSwapchainLatencyCreateInfoNV(const safe_VkSwapchainLatencyCreateInfoNV& copy_src);
     safe_VkSwapchainLatencyCreateInfoNV& operator=(const safe_VkSwapchainLatencyCreateInfoNV& copy_src);
     safe_VkSwapchainLatencyCreateInfoNV();
@@ -16547,7 +16863,8 @@ struct safe_VkOutOfBandQueueTypeInfoNV {
     const void* pNext{};
     VkOutOfBandQueueTypeNV queueType;
 
-    safe_VkOutOfBandQueueTypeInfoNV(const VkOutOfBandQueueTypeInfoNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkOutOfBandQueueTypeInfoNV(const VkOutOfBandQueueTypeInfoNV* in_struct, PNextCopyState* copy_state = {},
+                                    bool copy_pnext = true);
     safe_VkOutOfBandQueueTypeInfoNV(const safe_VkOutOfBandQueueTypeInfoNV& copy_src);
     safe_VkOutOfBandQueueTypeInfoNV& operator=(const safe_VkOutOfBandQueueTypeInfoNV& copy_src);
     safe_VkOutOfBandQueueTypeInfoNV();
@@ -16563,7 +16880,8 @@ struct safe_VkLatencySurfaceCapabilitiesNV {
     uint32_t presentModeCount;
     VkPresentModeKHR* pPresentModes{};
 
-    safe_VkLatencySurfaceCapabilitiesNV(const VkLatencySurfaceCapabilitiesNV* in_struct, PNextCopyState* copy_state = {});
+    safe_VkLatencySurfaceCapabilitiesNV(const VkLatencySurfaceCapabilitiesNV* in_struct, PNextCopyState* copy_state = {},
+                                        bool copy_pnext = true);
     safe_VkLatencySurfaceCapabilitiesNV(const safe_VkLatencySurfaceCapabilitiesNV& copy_src);
     safe_VkLatencySurfaceCapabilitiesNV& operator=(const safe_VkLatencySurfaceCapabilitiesNV& copy_src);
     safe_VkLatencySurfaceCapabilitiesNV();
@@ -16579,7 +16897,8 @@ struct safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM {
     VkBool32 multiviewPerViewRenderAreas;
 
     safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(
-        const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(
         const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& operator=(
@@ -16602,7 +16921,7 @@ struct safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM {
     const VkRect2D* pPerViewRenderAreas{};
 
     safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* in_struct,
-                                                              PNextCopyState* copy_state = {});
+                                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(
         const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& copy_src);
     safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& operator=(
@@ -16624,7 +16943,7 @@ struct safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM {
     VkBool32 textureBlockMatch2;
 
     safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM(const VkPhysicalDeviceImageProcessing2FeaturesQCOM* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM(const safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM& operator=(const safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM();
@@ -16644,7 +16963,7 @@ struct safe_VkPhysicalDeviceImageProcessing2PropertiesQCOM {
     VkExtent2D maxBlockMatchWindow;
 
     safe_VkPhysicalDeviceImageProcessing2PropertiesQCOM(const VkPhysicalDeviceImageProcessing2PropertiesQCOM* in_struct,
-                                                        PNextCopyState* copy_state = {});
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceImageProcessing2PropertiesQCOM(const safe_VkPhysicalDeviceImageProcessing2PropertiesQCOM& copy_src);
     safe_VkPhysicalDeviceImageProcessing2PropertiesQCOM& operator=(
         const safe_VkPhysicalDeviceImageProcessing2PropertiesQCOM& copy_src);
@@ -16666,7 +16985,7 @@ struct safe_VkSamplerBlockMatchWindowCreateInfoQCOM {
     VkBlockMatchWindowCompareModeQCOM windowCompareMode;
 
     safe_VkSamplerBlockMatchWindowCreateInfoQCOM(const VkSamplerBlockMatchWindowCreateInfoQCOM* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerBlockMatchWindowCreateInfoQCOM(const safe_VkSamplerBlockMatchWindowCreateInfoQCOM& copy_src);
     safe_VkSamplerBlockMatchWindowCreateInfoQCOM& operator=(const safe_VkSamplerBlockMatchWindowCreateInfoQCOM& copy_src);
     safe_VkSamplerBlockMatchWindowCreateInfoQCOM();
@@ -16684,7 +17003,7 @@ struct safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM {
     VkBool32 selectableCubicWeights;
 
     safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM(const VkPhysicalDeviceCubicWeightsFeaturesQCOM* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM(const safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM& operator=(const safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceCubicWeightsFeaturesQCOM();
@@ -16701,7 +17020,8 @@ struct safe_VkSamplerCubicWeightsCreateInfoQCOM {
     const void* pNext{};
     VkCubicFilterWeightsQCOM cubicWeights;
 
-    safe_VkSamplerCubicWeightsCreateInfoQCOM(const VkSamplerCubicWeightsCreateInfoQCOM* in_struct, PNextCopyState* copy_state = {});
+    safe_VkSamplerCubicWeightsCreateInfoQCOM(const VkSamplerCubicWeightsCreateInfoQCOM* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkSamplerCubicWeightsCreateInfoQCOM(const safe_VkSamplerCubicWeightsCreateInfoQCOM& copy_src);
     safe_VkSamplerCubicWeightsCreateInfoQCOM& operator=(const safe_VkSamplerCubicWeightsCreateInfoQCOM& copy_src);
     safe_VkSamplerCubicWeightsCreateInfoQCOM();
@@ -16718,7 +17038,8 @@ struct safe_VkBlitImageCubicWeightsInfoQCOM {
     const void* pNext{};
     VkCubicFilterWeightsQCOM cubicWeights;
 
-    safe_VkBlitImageCubicWeightsInfoQCOM(const VkBlitImageCubicWeightsInfoQCOM* in_struct, PNextCopyState* copy_state = {});
+    safe_VkBlitImageCubicWeightsInfoQCOM(const VkBlitImageCubicWeightsInfoQCOM* in_struct, PNextCopyState* copy_state = {},
+                                         bool copy_pnext = true);
     safe_VkBlitImageCubicWeightsInfoQCOM(const safe_VkBlitImageCubicWeightsInfoQCOM& copy_src);
     safe_VkBlitImageCubicWeightsInfoQCOM& operator=(const safe_VkBlitImageCubicWeightsInfoQCOM& copy_src);
     safe_VkBlitImageCubicWeightsInfoQCOM();
@@ -16734,7 +17055,7 @@ struct safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM {
     VkBool32 ycbcrDegamma;
 
     safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM(const VkPhysicalDeviceYcbcrDegammaFeaturesQCOM* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM(const safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM& operator=(const safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceYcbcrDegammaFeaturesQCOM();
@@ -16753,7 +17074,7 @@ struct safe_VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM {
     VkBool32 enableCbCrDegamma;
 
     safe_VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM(const VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM(
         const safe_VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM& copy_src);
     safe_VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM& operator=(
@@ -16775,7 +17096,7 @@ struct safe_VkPhysicalDeviceCubicClampFeaturesQCOM {
     VkBool32 cubicRangeClamp;
 
     safe_VkPhysicalDeviceCubicClampFeaturesQCOM(const VkPhysicalDeviceCubicClampFeaturesQCOM* in_struct,
-                                                PNextCopyState* copy_state = {});
+                                                PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceCubicClampFeaturesQCOM(const safe_VkPhysicalDeviceCubicClampFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceCubicClampFeaturesQCOM& operator=(const safe_VkPhysicalDeviceCubicClampFeaturesQCOM& copy_src);
     safe_VkPhysicalDeviceCubicClampFeaturesQCOM();
@@ -16793,7 +17114,8 @@ struct safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT {
     VkBool32 attachmentFeedbackLoopDynamicState;
 
     safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(
-        const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(
         const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& operator=(
@@ -16818,7 +17140,8 @@ struct safe_VkScreenBufferPropertiesQNX {
     VkDeviceSize allocationSize;
     uint32_t memoryTypeBits;
 
-    safe_VkScreenBufferPropertiesQNX(const VkScreenBufferPropertiesQNX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkScreenBufferPropertiesQNX(const VkScreenBufferPropertiesQNX* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkScreenBufferPropertiesQNX(const safe_VkScreenBufferPropertiesQNX& copy_src);
     safe_VkScreenBufferPropertiesQNX& operator=(const safe_VkScreenBufferPropertiesQNX& copy_src);
     safe_VkScreenBufferPropertiesQNX();
@@ -16843,7 +17166,8 @@ struct safe_VkScreenBufferFormatPropertiesQNX {
     VkChromaLocation suggestedXChromaOffset;
     VkChromaLocation suggestedYChromaOffset;
 
-    safe_VkScreenBufferFormatPropertiesQNX(const VkScreenBufferFormatPropertiesQNX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkScreenBufferFormatPropertiesQNX(const VkScreenBufferFormatPropertiesQNX* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkScreenBufferFormatPropertiesQNX(const safe_VkScreenBufferFormatPropertiesQNX& copy_src);
     safe_VkScreenBufferFormatPropertiesQNX& operator=(const safe_VkScreenBufferFormatPropertiesQNX& copy_src);
     safe_VkScreenBufferFormatPropertiesQNX();
@@ -16862,7 +17186,8 @@ struct safe_VkImportScreenBufferInfoQNX {
     const void* pNext{};
     struct _screen_buffer* buffer{};
 
-    safe_VkImportScreenBufferInfoQNX(const VkImportScreenBufferInfoQNX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkImportScreenBufferInfoQNX(const VkImportScreenBufferInfoQNX* in_struct, PNextCopyState* copy_state = {},
+                                     bool copy_pnext = true);
     safe_VkImportScreenBufferInfoQNX(const safe_VkImportScreenBufferInfoQNX& copy_src);
     safe_VkImportScreenBufferInfoQNX& operator=(const safe_VkImportScreenBufferInfoQNX& copy_src);
     safe_VkImportScreenBufferInfoQNX();
@@ -16879,7 +17204,7 @@ struct safe_VkExternalFormatQNX {
     void* pNext{};
     uint64_t externalFormat;
 
-    safe_VkExternalFormatQNX(const VkExternalFormatQNX* in_struct, PNextCopyState* copy_state = {});
+    safe_VkExternalFormatQNX(const VkExternalFormatQNX* in_struct, PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkExternalFormatQNX(const safe_VkExternalFormatQNX& copy_src);
     safe_VkExternalFormatQNX& operator=(const safe_VkExternalFormatQNX& copy_src);
     safe_VkExternalFormatQNX();
@@ -16897,7 +17222,8 @@ struct safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX {
     VkBool32 screenBufferImport;
 
     safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(
-        const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(
         const safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX& copy_src);
     safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX& operator=(
@@ -16920,7 +17246,7 @@ struct safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT {
     VkLayeredDriverUnderlyingApiMSFT underlyingAPI;
 
     safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(const VkPhysicalDeviceLayeredDriverPropertiesMSFT* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& copy_src);
     safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& operator=(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& copy_src);
     safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT();
@@ -16940,7 +17266,8 @@ struct safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV {
     VkBool32 descriptorPoolOverallocation;
 
     safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(
-        const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+        const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* in_struct, PNextCopyState* copy_state = {},
+        bool copy_pnext = true);
     safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(
         const safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV& copy_src);
     safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV& operator=(
@@ -16968,7 +17295,7 @@ struct safe_VkAccelerationStructureGeometryTrianglesDataKHR {
     safe_VkDeviceOrHostAddressConstKHR transformData;
 
     safe_VkAccelerationStructureGeometryTrianglesDataKHR(const VkAccelerationStructureGeometryTrianglesDataKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureGeometryTrianglesDataKHR(const safe_VkAccelerationStructureGeometryTrianglesDataKHR& copy_src);
     safe_VkAccelerationStructureGeometryTrianglesDataKHR& operator=(
         const safe_VkAccelerationStructureGeometryTrianglesDataKHR& copy_src);
@@ -16990,7 +17317,7 @@ struct safe_VkAccelerationStructureGeometryAabbsDataKHR {
     VkDeviceSize stride;
 
     safe_VkAccelerationStructureGeometryAabbsDataKHR(const VkAccelerationStructureGeometryAabbsDataKHR* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureGeometryAabbsDataKHR(const safe_VkAccelerationStructureGeometryAabbsDataKHR& copy_src);
     safe_VkAccelerationStructureGeometryAabbsDataKHR& operator=(const safe_VkAccelerationStructureGeometryAabbsDataKHR& copy_src);
     safe_VkAccelerationStructureGeometryAabbsDataKHR();
@@ -17011,7 +17338,7 @@ struct safe_VkAccelerationStructureGeometryInstancesDataKHR {
     safe_VkDeviceOrHostAddressConstKHR data;
 
     safe_VkAccelerationStructureGeometryInstancesDataKHR(const VkAccelerationStructureGeometryInstancesDataKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureGeometryInstancesDataKHR(const safe_VkAccelerationStructureGeometryInstancesDataKHR& copy_src);
     safe_VkAccelerationStructureGeometryInstancesDataKHR& operator=(
         const safe_VkAccelerationStructureGeometryInstancesDataKHR& copy_src);
@@ -17035,7 +17362,7 @@ struct safe_VkAccelerationStructureGeometryKHR {
 
     safe_VkAccelerationStructureGeometryKHR(const VkAccelerationStructureGeometryKHR* in_struct, const bool is_host,
                                             const VkAccelerationStructureBuildRangeInfoKHR* build_range_info,
-                                            PNextCopyState* copy_state = {});
+                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureGeometryKHR(const safe_VkAccelerationStructureGeometryKHR& copy_src);
     safe_VkAccelerationStructureGeometryKHR& operator=(const safe_VkAccelerationStructureGeometryKHR& copy_src);
     safe_VkAccelerationStructureGeometryKHR();
@@ -17064,7 +17391,7 @@ struct safe_VkAccelerationStructureBuildGeometryInfoKHR {
     safe_VkAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct,
                                                      const bool is_host,
                                                      const VkAccelerationStructureBuildRangeInfoKHR* build_range_infos,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureBuildGeometryInfoKHR(const safe_VkAccelerationStructureBuildGeometryInfoKHR& copy_src);
     safe_VkAccelerationStructureBuildGeometryInfoKHR& operator=(const safe_VkAccelerationStructureBuildGeometryInfoKHR& copy_src);
     safe_VkAccelerationStructureBuildGeometryInfoKHR();
@@ -17090,7 +17417,7 @@ struct safe_VkAccelerationStructureCreateInfoKHR {
     VkDeviceAddress deviceAddress;
 
     safe_VkAccelerationStructureCreateInfoKHR(const VkAccelerationStructureCreateInfoKHR* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureCreateInfoKHR(const safe_VkAccelerationStructureCreateInfoKHR& copy_src);
     safe_VkAccelerationStructureCreateInfoKHR& operator=(const safe_VkAccelerationStructureCreateInfoKHR& copy_src);
     safe_VkAccelerationStructureCreateInfoKHR();
@@ -17109,7 +17436,7 @@ struct safe_VkWriteDescriptorSetAccelerationStructureKHR {
     VkAccelerationStructureKHR* pAccelerationStructures{};
 
     safe_VkWriteDescriptorSetAccelerationStructureKHR(const VkWriteDescriptorSetAccelerationStructureKHR* in_struct,
-                                                      PNextCopyState* copy_state = {});
+                                                      PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkWriteDescriptorSetAccelerationStructureKHR(const safe_VkWriteDescriptorSetAccelerationStructureKHR& copy_src);
     safe_VkWriteDescriptorSetAccelerationStructureKHR& operator=(const safe_VkWriteDescriptorSetAccelerationStructureKHR& copy_src);
     safe_VkWriteDescriptorSetAccelerationStructureKHR();
@@ -17133,7 +17460,7 @@ struct safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR {
     VkBool32 descriptorBindingAccelerationStructureUpdateAfterBind;
 
     safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR(const VkPhysicalDeviceAccelerationStructureFeaturesKHR* in_struct,
-                                                          PNextCopyState* copy_state = {});
+                                                          PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR(const safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR& operator=(
         const safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR& copy_src);
@@ -17161,7 +17488,7 @@ struct safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR {
     uint32_t minAccelerationStructureScratchOffsetAlignment;
 
     safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR(const VkPhysicalDeviceAccelerationStructurePropertiesKHR* in_struct,
-                                                            PNextCopyState* copy_state = {});
+                                                            PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR(
         const safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR& copy_src);
     safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR& operator=(
@@ -17183,7 +17510,7 @@ struct safe_VkAccelerationStructureDeviceAddressInfoKHR {
     VkAccelerationStructureKHR accelerationStructure;
 
     safe_VkAccelerationStructureDeviceAddressInfoKHR(const VkAccelerationStructureDeviceAddressInfoKHR* in_struct,
-                                                     PNextCopyState* copy_state = {});
+                                                     PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureDeviceAddressInfoKHR(const safe_VkAccelerationStructureDeviceAddressInfoKHR& copy_src);
     safe_VkAccelerationStructureDeviceAddressInfoKHR& operator=(const safe_VkAccelerationStructureDeviceAddressInfoKHR& copy_src);
     safe_VkAccelerationStructureDeviceAddressInfoKHR();
@@ -17203,7 +17530,7 @@ struct safe_VkAccelerationStructureVersionInfoKHR {
     const uint8_t* pVersionData{};
 
     safe_VkAccelerationStructureVersionInfoKHR(const VkAccelerationStructureVersionInfoKHR* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureVersionInfoKHR(const safe_VkAccelerationStructureVersionInfoKHR& copy_src);
     safe_VkAccelerationStructureVersionInfoKHR& operator=(const safe_VkAccelerationStructureVersionInfoKHR& copy_src);
     safe_VkAccelerationStructureVersionInfoKHR();
@@ -17223,7 +17550,7 @@ struct safe_VkCopyAccelerationStructureToMemoryInfoKHR {
     VkCopyAccelerationStructureModeKHR mode;
 
     safe_VkCopyAccelerationStructureToMemoryInfoKHR(const VkCopyAccelerationStructureToMemoryInfoKHR* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCopyAccelerationStructureToMemoryInfoKHR(const safe_VkCopyAccelerationStructureToMemoryInfoKHR& copy_src);
     safe_VkCopyAccelerationStructureToMemoryInfoKHR& operator=(const safe_VkCopyAccelerationStructureToMemoryInfoKHR& copy_src);
     safe_VkCopyAccelerationStructureToMemoryInfoKHR();
@@ -17245,7 +17572,7 @@ struct safe_VkCopyMemoryToAccelerationStructureInfoKHR {
     VkCopyAccelerationStructureModeKHR mode;
 
     safe_VkCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkCopyMemoryToAccelerationStructureInfoKHR(const safe_VkCopyMemoryToAccelerationStructureInfoKHR& copy_src);
     safe_VkCopyMemoryToAccelerationStructureInfoKHR& operator=(const safe_VkCopyMemoryToAccelerationStructureInfoKHR& copy_src);
     safe_VkCopyMemoryToAccelerationStructureInfoKHR();
@@ -17266,7 +17593,8 @@ struct safe_VkCopyAccelerationStructureInfoKHR {
     VkAccelerationStructureKHR dst;
     VkCopyAccelerationStructureModeKHR mode;
 
-    safe_VkCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                            bool copy_pnext = true);
     safe_VkCopyAccelerationStructureInfoKHR(const safe_VkCopyAccelerationStructureInfoKHR& copy_src);
     safe_VkCopyAccelerationStructureInfoKHR& operator=(const safe_VkCopyAccelerationStructureInfoKHR& copy_src);
     safe_VkCopyAccelerationStructureInfoKHR();
@@ -17286,7 +17614,7 @@ struct safe_VkAccelerationStructureBuildSizesInfoKHR {
     VkDeviceSize buildScratchSize;
 
     safe_VkAccelerationStructureBuildSizesInfoKHR(const VkAccelerationStructureBuildSizesInfoKHR* in_struct,
-                                                  PNextCopyState* copy_state = {});
+                                                  PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkAccelerationStructureBuildSizesInfoKHR(const safe_VkAccelerationStructureBuildSizesInfoKHR& copy_src);
     safe_VkAccelerationStructureBuildSizesInfoKHR& operator=(const safe_VkAccelerationStructureBuildSizesInfoKHR& copy_src);
     safe_VkAccelerationStructureBuildSizesInfoKHR();
@@ -17309,7 +17637,7 @@ struct safe_VkRayTracingShaderGroupCreateInfoKHR {
     const void* pShaderGroupCaptureReplayHandle{};
 
     safe_VkRayTracingShaderGroupCreateInfoKHR(const VkRayTracingShaderGroupCreateInfoKHR* in_struct,
-                                              PNextCopyState* copy_state = {});
+                                              PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRayTracingShaderGroupCreateInfoKHR(const safe_VkRayTracingShaderGroupCreateInfoKHR& copy_src);
     safe_VkRayTracingShaderGroupCreateInfoKHR& operator=(const safe_VkRayTracingShaderGroupCreateInfoKHR& copy_src);
     safe_VkRayTracingShaderGroupCreateInfoKHR();
@@ -17328,7 +17656,7 @@ struct safe_VkRayTracingPipelineInterfaceCreateInfoKHR {
     uint32_t maxPipelineRayHitAttributeSize;
 
     safe_VkRayTracingPipelineInterfaceCreateInfoKHR(const VkRayTracingPipelineInterfaceCreateInfoKHR* in_struct,
-                                                    PNextCopyState* copy_state = {});
+                                                    PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkRayTracingPipelineInterfaceCreateInfoKHR(const safe_VkRayTracingPipelineInterfaceCreateInfoKHR& copy_src);
     safe_VkRayTracingPipelineInterfaceCreateInfoKHR& operator=(const safe_VkRayTracingPipelineInterfaceCreateInfoKHR& copy_src);
     safe_VkRayTracingPipelineInterfaceCreateInfoKHR();
@@ -17358,7 +17686,8 @@ struct safe_VkRayTracingPipelineCreateInfoKHR {
     VkPipeline basePipelineHandle;
     int32_t basePipelineIndex;
 
-    safe_VkRayTracingPipelineCreateInfoKHR(const VkRayTracingPipelineCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkRayTracingPipelineCreateInfoKHR(const VkRayTracingPipelineCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                           bool copy_pnext = true);
     safe_VkRayTracingPipelineCreateInfoKHR(const safe_VkRayTracingPipelineCreateInfoKHR& copy_src);
     safe_VkRayTracingPipelineCreateInfoKHR& operator=(const safe_VkRayTracingPipelineCreateInfoKHR& copy_src);
     safe_VkRayTracingPipelineCreateInfoKHR();
@@ -17380,7 +17709,7 @@ struct safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR {
     VkBool32 rayTraversalPrimitiveCulling;
 
     safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR(const VkPhysicalDeviceRayTracingPipelineFeaturesKHR* in_struct,
-                                                       PNextCopyState* copy_state = {});
+                                                       PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR(const safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR& operator=(
         const safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR& copy_src);
@@ -17408,7 +17737,7 @@ struct safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR {
     uint32_t maxRayHitAttributeSize;
 
     safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR(const VkPhysicalDeviceRayTracingPipelinePropertiesKHR* in_struct,
-                                                         PNextCopyState* copy_state = {});
+                                                         PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR(const safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR& copy_src);
     safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR& operator=(
         const safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR& copy_src);
@@ -17428,7 +17757,8 @@ struct safe_VkPhysicalDeviceRayQueryFeaturesKHR {
     void* pNext{};
     VkBool32 rayQuery;
 
-    safe_VkPhysicalDeviceRayQueryFeaturesKHR(const VkPhysicalDeviceRayQueryFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceRayQueryFeaturesKHR(const VkPhysicalDeviceRayQueryFeaturesKHR* in_struct, PNextCopyState* copy_state = {},
+                                             bool copy_pnext = true);
     safe_VkPhysicalDeviceRayQueryFeaturesKHR(const safe_VkPhysicalDeviceRayQueryFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceRayQueryFeaturesKHR& operator=(const safe_VkPhysicalDeviceRayQueryFeaturesKHR& copy_src);
     safe_VkPhysicalDeviceRayQueryFeaturesKHR();
@@ -17450,7 +17780,7 @@ struct safe_VkPhysicalDeviceMeshShaderFeaturesEXT {
     VkBool32 meshShaderQueries;
 
     safe_VkPhysicalDeviceMeshShaderFeaturesEXT(const VkPhysicalDeviceMeshShaderFeaturesEXT* in_struct,
-                                               PNextCopyState* copy_state = {});
+                                               PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMeshShaderFeaturesEXT(const safe_VkPhysicalDeviceMeshShaderFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMeshShaderFeaturesEXT& operator=(const safe_VkPhysicalDeviceMeshShaderFeaturesEXT& copy_src);
     safe_VkPhysicalDeviceMeshShaderFeaturesEXT();
@@ -17495,7 +17825,7 @@ struct safe_VkPhysicalDeviceMeshShaderPropertiesEXT {
     VkBool32 prefersCompactPrimitiveOutput;
 
     safe_VkPhysicalDeviceMeshShaderPropertiesEXT(const VkPhysicalDeviceMeshShaderPropertiesEXT* in_struct,
-                                                 PNextCopyState* copy_state = {});
+                                                 PNextCopyState* copy_state = {}, bool copy_pnext = true);
     safe_VkPhysicalDeviceMeshShaderPropertiesEXT(const safe_VkPhysicalDeviceMeshShaderPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceMeshShaderPropertiesEXT& operator=(const safe_VkPhysicalDeviceMeshShaderPropertiesEXT& copy_src);
     safe_VkPhysicalDeviceMeshShaderPropertiesEXT();

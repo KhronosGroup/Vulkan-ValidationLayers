@@ -140,6 +140,7 @@ class SafeStructOutputGenerator(BaseGenerator):
             out.append(f'{"union" if struct.union else "struct"} safe_{struct.name} {{\n')
             # Can only initialize first member of an Union
             canInitialize = True
+            copy_pnext = ', bool copy_pnext = true' if struct.sType is not None else ''
             for member in struct.members:
                 if member.type in self.vk.structs:
                     if needSafeStruct(self.vk.structs[member.type]):
@@ -166,7 +167,7 @@ class SafeStructOutputGenerator(BaseGenerator):
 
             constructParam = self.custom_construct_params.get(struct.name, '')
             out.append(f'''
-                safe_{struct.name}(const {struct.name}* in_struct{constructParam}, PNextCopyState* copy_state = {{}});
+                safe_{struct.name}(const {struct.name}* in_struct{constructParam}, PNextCopyState* copy_state = {{}}{copy_pnext});
                 safe_{struct.name}(const safe_{struct.name}& copy_src);
                 safe_{struct.name}& operator=(const safe_{struct.name}& copy_src);
                 safe_{struct.name}();
@@ -212,61 +213,65 @@ class SafeStructOutputGenerator(BaseGenerator):
         out.append('''
 // clang-format off
 void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
-    if (!pNext) return nullptr;
-
+    void *first_pNext{};
+    VkBaseOutStructure *prev_pNext{};
     void *safe_pNext{};
-    const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
 
-    switch (header->sType) {
-        // Add special-case code to copy beloved secret loader structs
-        // Special-case Loader Instance Struct passed to/from layer in pNext chain
-        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {
-            VkLayerInstanceCreateInfo *struct_copy = new VkLayerInstanceCreateInfo;
-            // TODO: Uses original VkLayerInstanceLink* chain, which should be okay for our uses
-            memcpy(struct_copy, pNext, sizeof(VkLayerInstanceCreateInfo));
-            struct_copy->pNext = SafePnextCopy(header->pNext, copy_state);
-            safe_pNext = struct_copy;
-            break;
-        }
-        // Special-case Loader Device Struct passed to/from layer in pNext chain
-        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {
-            VkLayerDeviceCreateInfo *struct_copy = new VkLayerDeviceCreateInfo;
-            // TODO: Uses original VkLayerDeviceLink*, which should be okay for our uses
-            memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));
-            struct_copy->pNext = SafePnextCopy(header->pNext, copy_state);
-            safe_pNext = struct_copy;
-            break;
-        }''')
+    while (pNext) {
+        const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
+
+        switch (header->sType) {
+            // Add special-case code to copy beloved secret loader structs
+            // Special-case Loader Instance Struct passed to/from layer in pNext chain
+            case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {
+                VkLayerInstanceCreateInfo *struct_copy = new VkLayerInstanceCreateInfo;
+                // TODO: Uses original VkLayerInstanceLink* chain, which should be okay for our uses
+                memcpy(struct_copy, pNext, sizeof(VkLayerInstanceCreateInfo));
+                safe_pNext = struct_copy;
+                break;
+            }
+            // Special-case Loader Device Struct passed to/from layer in pNext chain
+            case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {
+                VkLayerDeviceCreateInfo *struct_copy = new VkLayerDeviceCreateInfo;
+                // TODO: Uses original VkLayerDeviceLink*, which should be okay for our uses
+                memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));
+                safe_pNext = struct_copy;
+                break;
+            }''')
 
         for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
             out.append(f'''
-        case {struct.sType}:
-            safe_pNext = new safe_{struct.name}(reinterpret_cast<const {struct.name} *>(pNext), copy_state);
-            break;''')
+            case {struct.sType}:
+                safe_pNext = new safe_{struct.name}(reinterpret_cast<const {struct.name} *>(pNext), copy_state, false);
+                break;''')
             out.extend([f'\n#endif // {struct.protect}'] if struct.protect else [])
 
         out.append('''
-        default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain
-            // If sType is in custom list, construct blind copy
-            for (auto item : custom_stype_info) {
-                if (item.first == header->sType) {
-                    safe_pNext = malloc(item.second);
-                    memcpy(safe_pNext, header, item.second);
-                    // Deep copy the rest of the pNext chain
-                    VkBaseOutStructure *custom_struct = reinterpret_cast<VkBaseOutStructure *>(safe_pNext);
-                    if (custom_struct->pNext) {
-                        custom_struct->pNext = reinterpret_cast<VkBaseOutStructure *>(SafePnextCopy(custom_struct->pNext, copy_state));
+            default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain
+                // If sType is in custom list, construct blind copy
+                for (auto item : custom_stype_info) {
+                    if (item.first == header->sType) {
+                        safe_pNext = malloc(item.second);
+                        memcpy(safe_pNext, header, item.second);
                     }
                 }
-            }
-            if (!safe_pNext) {
-                safe_pNext = SafePnextCopy(header->pNext, copy_state);
-            }
-            break;
+                break;
+        }
+        if (!first_pNext) {
+            first_pNext = safe_pNext;
+        }
+        pNext = header->pNext;
+        if (prev_pNext && safe_pNext) {
+            prev_pNext->pNext = (VkBaseOutStructure*)safe_pNext;
+        }
+        if (safe_pNext) {
+            prev_pNext = (VkBaseOutStructure*)safe_pNext;
+        }
+        safe_pNext = nullptr;
     }
 
-    return safe_pNext;
+    return first_pNext;
 }
 
 void FreePnextChain(const void *pNext) {
@@ -903,12 +908,18 @@ void FreePnextChain(const void *pNext) {
             construct_txt = ''      # Body of constuctor as well as body of initialize() func following init_func_txt
             destruct_txt = ''
 
+            has_pnext = struct.sType is not None
             copy_pnext = ''
+            copy_pnext_if = ''
             copy_strings = ''
             for member in struct.members:
                 m_type = member.type
                 if member.name == 'pNext':
-                    copy_pnext = '    pNext = SafePnextCopy(in_struct->pNext, copy_state);\n'
+                    copy_pnext = 'pNext = SafePnextCopy(in_struct->pNext, copy_state);\n'
+                    copy_pnext_if = '''
+                    if (copy_pnext) {
+                        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+                    }'''
                 if member.type in self.vk.structs and needSafeStruct(self.vk.structs[member.type]):
                     m_type = f'safe_{member.type}'
                 if member.pointer and 'safe_' not in m_type and 'PFN_' not in member.type and not self.typeContainsObjectHandle(member.type, False):
@@ -1052,22 +1063,23 @@ void FreePnextChain(const void *pNext) {
             if struct.name in custom_construct_txt:
                 construct_txt = custom_construct_txt[struct.name]
 
-            construct_txt = copy_pnext + copy_strings + construct_txt
+            construct_txt = copy_strings + construct_txt
 
             if struct.name in custom_destruct_txt:
                 destruct_txt = custom_destruct_txt[struct.name]
 
-            if copy_pnext:
-                destruct_txt += 'if (pNext)\n'
+            copy_pnext_param = ''
+            if has_pnext:
+                copy_pnext_param = ', bool copy_pnext'
                 destruct_txt += '    FreePnextChain(pNext);\n'
 
             if struct.union:
                 if (struct.name == 'VkDescriptorDataEXT'):
                     default_init_list = ' type_at_end {0},'
                     out.append(f'''
-                        safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state)
+                        safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state{copy_pnext_param})
                         {{
-                        {construct_txt}}}
+                        {copy_pnext + construct_txt}}}
                         ''')
                 else:
                     # Unions don't allow multiple members in the initialization list, so just call initialize
@@ -1079,9 +1091,9 @@ void FreePnextChain(const void *pNext) {
                         ''')
             else:
                 out.append(f'''
-                    safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state) :{init_list}
+                    safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state{copy_pnext_param}) :{init_list}
                     {{
-                    {construct_txt}}}
+                    {copy_pnext_if + construct_txt}}}
                     ''')
             if '' != default_init_list:
                 default_init_list = f' :{default_init_list[:-1]}'
@@ -1091,6 +1103,7 @@ void FreePnextChain(const void *pNext) {
                 {{{default_init_body}}}
                 ''')
             # Create slight variation of init and construct txt for copy constructor that takes a copy_src object reference vs. struct ptr
+            construct_txt = copy_pnext + construct_txt
             copy_construct_init = init_func_txt.replace('in_struct->', 'copy_src.')
             copy_construct_init = copy_construct_init.replace(', copy_state', '')
             if struct.name == 'VkDescriptorGetInfoEXT':
