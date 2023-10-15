@@ -421,6 +421,8 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
     {spv::OpSetMeshOutputsEXT, {"OpSetMeshOutputsEXT", false, false, 0, 0, 0, 0, 0}},
     {spv::OpGroupNonUniformPartitionNV, {"OpGroupNonUniformPartitionNV", true, true, 0, 0, 0, 0, 0}},
     {spv::OpWritePackedPrimitiveIndices4x8NV, {"OpWritePackedPrimitiveIndices4x8NV", false, false, 0, 0, 0, 0, 0}},
+    {spv::OpFetchMicroTriangleVertexPositionNV, {"OpFetchMicroTriangleVertexPositionNV", true, true, 0, 0, 0, 0, 0}},
+    {spv::OpFetchMicroTriangleVertexBarycentricNV, {"OpFetchMicroTriangleVertexBarycentricNV", true, true, 0, 0, 0, 0, 0}},
     {spv::OpReportIntersectionKHR, {"OpReportIntersectionKHR", true, true, 0, 0, 0, 0, 0}},
     {spv::OpIgnoreIntersectionNV, {"OpIgnoreIntersectionNV", false, false, 0, 0, 0, 0, 0}},
     {spv::OpTerminateRayNV, {"OpTerminateRayNV", false, false, 0, 0, 0, 0, 0}},
@@ -1330,6 +1332,10 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "MMHostInterfaceWaitRequestINTEL";
         case spv::DecorationStableKernelArgumentINTEL:
             return "StableKernelArgumentINTEL";
+        case spv::DecorationCacheControlLoadINTEL:
+            return "CacheControlLoadINTEL";
+        case spv::DecorationCacheControlStoreINTEL:
+            return "CacheControlStoreINTEL";
 
         default:
             return "Unknown Decoration";
@@ -1548,6 +1554,10 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "CurrentRayTimeNV";
         case spv::BuiltInHitTriangleVertexPositionsKHR:
             return "HitTriangleVertexPositionsKHR";
+        case spv::BuiltInHitMicroTriangleVertexPositionsNV:
+            return "HitMicroTriangleVertexPositionsNV";
+        case spv::BuiltInHitMicroTriangleVertexBarycentricsNV:
+            return "HitMicroTriangleVertexBarycentricsNV";
         case spv::BuiltInIncomingRayFlagsNV:
             return "IncomingRayFlagsNV";
         case spv::BuiltInRayGeometryIndexKHR:
@@ -1560,6 +1570,10 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "WarpIDNV";
         case spv::BuiltInSMIDNV:
             return "SMIDNV";
+        case spv::BuiltInHitKindFrontFacingMicroTriangleNV:
+            return "HitKindFrontFacingMicroTriangleNV";
+        case spv::BuiltInHitKindBackFacingMicroTriangleNV:
+            return "HitKindBackFacingMicroTriangleNV";
         case spv::BuiltInCullMaskKHR:
             return "CullMaskKHR";
 
