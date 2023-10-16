@@ -8575,6 +8575,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                   true, kVUIDUndefined, "VUID-VkBindSparseInfo-pSignalSemaphores-parameter");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, error_obj);
     return skip;
 }
 
