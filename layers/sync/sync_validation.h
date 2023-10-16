@@ -530,15 +530,12 @@ class ResourceAccessWriteState {
     }
     bool WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const;
     bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteBarrierInScope(const SyncStageAccessFlags &src_access_scope) const;
     bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
     bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
                                         const SyncStageAccessFlags &src_access_scope) const;
 
     bool WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
                            QueueId scope_queue, ResourceUsageTag scope_tag) const;
-
-    bool WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const;
 
     ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
     ResourceAccessWriteState() = default;
@@ -551,8 +548,6 @@ class ResourceAccessWriteState {
     ResourceUsageTag Tag() const { return tag_; }
     bool IsWriteHazard(const SyncStageAccessInfoType &usage_info) const;
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
-
-    bool IsOrderedWriteHazard(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const;
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                               const SyncStageAccessFlags &src_access_scope) const;

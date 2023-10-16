@@ -8957,12 +8957,6 @@ bool ResourceAccessWriteState::IsOrdered(const OrderingBarrier &ordering, QueueI
     return (queue_ == queue_id) && ordering.access_scope[access_->stage_access_index];
 }
 
-bool ResourceAccessWriteState::IsOrderedWriteHazard(VkPipelineStageFlags2KHR src_exec_scope,
-                                                    const SyncStageAccessFlags &src_access_scope) const {
-    // Must be neither in the access scope, nor in the chained access scope
-    return !WriteInScope(src_access_scope) && !WriteInChainedScope(src_exec_scope, src_access_scope);
-}
-
 bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                                                     const SyncStageAccessFlags &src_access_scope) const {
     // Special rules for sequential ILT's
@@ -8980,8 +8974,8 @@ bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipeline
     if (WriteInChain(src_exec_scope)) {
         return false;
     }
-    // Otherwise treat as an ordinary write hazard check with ordering rules.
-    return IsOrderedWriteHazard(src_exec_scope, src_access_scope);
+    // The write is not in chain (previous call), so need only to check if the write is in access scope.
+    return !WriteInScope(src_access_scope);
 }
 
 void ResourceAccessWriteState::Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag) {
@@ -9036,10 +9030,6 @@ bool ResourceAccessWriteState::WriteInScope(const SyncStageAccessFlags &src_acce
     return src_access_scope[access_->stage_access_index];
 }
 
-bool ResourceAccessWriteState::WriteBarrierInScope(const SyncStageAccessFlags &src_access_scope) const {
-    return (barriers_ & src_access_scope).any();
-}
-
 bool ResourceAccessWriteState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
                                                          SyncStageAccessFlags src_access_scope) const {
     assert(access_);
@@ -9060,12 +9050,6 @@ bool ResourceAccessWriteState::WriteInEventScope(VkPipelineStageFlags2KHR src_ex
     // in order to know if it's in the excecution scope
     assert(access_);
     return (tag_ < scope_tag) && WriteInQueueSourceScopeOrChain(scope_queue, src_exec_scope, src_access_scope);
-}
-
-bool ResourceAccessWriteState::WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_scope,
-                                                   const SyncStageAccessFlags &src_access_scope) const {
-    assert(access_);
-    return WriteInChain(src_exec_scope) && WriteBarrierInScope(src_access_scope);
 }
 
 HazardResult::HazardState::HazardState(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_,
