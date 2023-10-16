@@ -222,13 +222,10 @@ jobs:
           run: ctest --output-on-failure -C Debug
 
   macos:
-    env:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
-    runs-on: macos-latest
+    runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        macos_version: ["min","latest"]
+        os: [ macos-11, macos-12 ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -238,9 +235,21 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: macos-${{ matrix.macos_version }}
-      - name: Build
-        run: python3 scripts/macos.py --config release --osx ${{ matrix.macos_version }}
+          key: macos-${{matrix.os}}
+      - name: Configure
+        run: |
+          cmake -S . -B build/ \
+          -D BUILD_TESTS=OFF \
+          -D BUILD_WERROR=ON \
+          -D UPDATE_DEPS=ON \
+          -D CMAKE_BUILD_TYPE=Debug
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - run: cmake --build build
+      - run: cmake --install build --prefix /tmp
+      # Helps verify install location and prints the exported symbols
+      - run: nm -gU /tmp/lib/libVkLayer_khronos_validation.dylib
 
   mingw:
     env:
