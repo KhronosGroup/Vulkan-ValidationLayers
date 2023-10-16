@@ -213,6 +213,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         VkCullModeFlags cull_mode;
         // VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
         VkPrimitiveTopology primitive_topology;
+        // VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT
+        VkSampleLocationsInfoEXT sample_locations_info;
         // VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT
         bool discard_rectangle_enable;
         // VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT
