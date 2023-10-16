@@ -2905,6 +2905,16 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                                  i, region.imageExtent.width, region.imageExtent.height, region.imageExtent.depth,
                                  subresource_extent.width, subresource_extent.height, subresource_extent.depth, info_type);
             }
+            if ((region.memoryRowLength != 0) || (region.memoryImageHeight != 0)) {
+                const char *vuid =
+                    from_image ? "VUID-VkCopyImageToMemoryInfoEXT-flags-09394" : "VUID-VkCopyMemoryToImageInfoEXT-flags-09393";
+                LogObjectList objlist(device, image_state->image());
+                skip |= LogError(vuid, objlist, loc,
+                                 "pRegion[%" PRIu32 "].memoryRowLength (%" PRIu32 "), and pRegion[%" PRIu32
+                                 "].memoryImageHeight (%" PRIu32
+                                 ") must both be zero if %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                                 i, region.memoryRowLength, i, region.memoryImageHeight, info_type);
+            }
         }
 
         Field field = from_image ? Field::srcImageLayout : Field::dstImageLayout;
