@@ -312,6 +312,7 @@ struct DrawDispatchVuid {
     const char* color_attachment_08963 = kVUIDUndefined;
     const char* depth_attachment_08964 = kVUIDUndefined;
     const char* stencil_attachment_08965 = kVUIDUndefined;
+    const char* sample_locations_07482 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {

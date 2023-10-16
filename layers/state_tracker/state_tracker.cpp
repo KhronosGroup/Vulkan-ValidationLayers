@@ -5619,6 +5619,7 @@ void ValidationStateTracker::PostCallRecordCmdSetSampleLocationsEXT(VkCommandBuf
                                                                     const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
+    cb_state->dynamic_state_value.sample_locations_info = *pSampleLocationsInfo;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer,
