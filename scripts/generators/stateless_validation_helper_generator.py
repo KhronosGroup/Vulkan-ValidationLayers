@@ -179,6 +179,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetMemoryFdPropertiesKHR',
             'vkCreateShadersEXT',
             'vkGetShaderBinaryDataEXT',
+            'vkQueueBindSparse'
             ]
 
         # Commands to ignore

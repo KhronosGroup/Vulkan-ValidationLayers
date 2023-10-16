@@ -214,6 +214,7 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
 
     VkSparseImageMemoryBind image_memory_bind = {};
     image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_memory_bind.extent = image_create_info.extent;
 
     VkSparseImageMemoryBindInfo image_memory_bind_info = {};
     image_memory_bind_info.image = image.handle();
@@ -950,6 +951,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     create_info.extent.width = 1024;
     create_info.extent.height = 1024;
+    create_info.extent.depth = 1;
     create_info.arrayLayers = 1;
 
     VkImageObj image{m_device};
@@ -1016,21 +1018,21 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01108");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    image_bind.extent.width = 0u;
+    image_bind.extent.width = granularity.width;
 
     // Force extent.height to invalid value
     image_bind.extent.height = granularity.height - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01110");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    image_bind.extent.height = 0u;
+    image_bind.extent.height = granularity.height;
 
     // Force extent.depth to invalid value
     image_bind.extent.depth = granularity.depth - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01112");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    image_bind.extent.depth = 0u;
+    image_bind.extent.depth = granularity.depth;
 
     // Force greater mip level
     image_bind.subresource.mipLevel = VK_REMAINING_MIP_LEVELS;
@@ -1052,4 +1054,86 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+}
+
+TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
+    TEST_DESCRIPTION("Try to bind sparse resident image with an extent having a null size on one of its dimension");
+
+    RETURN_IF_SKIP(Init())
+
+    if (!m_device->phy().features().sparseBinding || !m_device->phy().features().sparseResidencyImage3D) {
+        GTEST_SKIP() << "sparseBinding && sparseResidencyImage3D features are required.";
+    }
+
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    VkImageCreateInfo create_info = vkt::Image::create_info();
+    create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_3D;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    create_info.extent.width = 1024;
+    create_info.extent.height = 1024;
+    create_info.extent.depth = 1;
+    create_info.arrayLayers = 1;
+
+    VkImageObj image{m_device};
+    image.init_no_mem(*m_device, create_info);
+
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
+    const auto image_mem_alloc =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkt::DeviceMemory image_mem;
+    image_mem.init(*m_device, image_mem_alloc);
+
+    uint32_t requirements_count = 0u;
+    vk::GetImageSparseMemoryRequirements(m_device->handle(), image.handle(), &requirements_count, nullptr);
+
+    if (requirements_count == 0u) {
+        GTEST_SKIP() << "No sparse image requirements for image format VK_FORMAT_B8G8R8A8_UNORM";
+    }
+
+    std::vector<VkSparseImageMemoryRequirements> sparse_reqs(requirements_count);
+    vk::GetImageSparseMemoryRequirements(m_device->handle(), image.handle(), &requirements_count, sparse_reqs.data());
+
+    VkExtent3D granularity = sparse_reqs[0].formatProperties.imageGranularity;
+    VkSparseImageMemoryBind image_bind{};
+    image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_bind.memory = image_mem.handle();
+    image_bind.extent = granularity;
+
+    VkSparseImageMemoryBindInfo image_bind_info{};
+    image_bind_info.image = image.handle();
+    image_bind_info.bindCount = 1u;
+    image_bind_info.pBinds = &image_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.imageBindCount = 1u;
+    bind_info.pImageBinds = &image_bind_info;
+
+    VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
+
+    image_bind.extent.width = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-09388");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    image_bind.extent = granularity;
+
+    image_bind.extent.height = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-09389");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    image_bind.extent = granularity;
+
+    image_bind.extent.depth = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-09390");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
 }

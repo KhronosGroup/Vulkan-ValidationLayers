@@ -256,3 +256,53 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
     return manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
                                                                         pSparseMemoryRequirements, error_obj);
 }
+
+bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
+                                                                const VkBindSparseInfo *pBindInfo, VkFence fence,
+                                                                const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    for (uint32_t bind_info_i = 0; bind_info_i < bindInfoCount; ++bind_info_i) {
+        const VkBindSparseInfo &bind_info = pBindInfo[bind_info_i];
+        for (uint32_t image_bind_i = 0; image_bind_i < bind_info.imageBindCount; ++image_bind_i) {
+            const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_bind_i];
+            for (uint32_t bind_i = 0; bind_i < image_bind.bindCount; ++bind_i) {
+                const VkSparseImageMemoryBind &bind = image_bind.pBinds[bind_i];
+                if (bind.extent.width == 0) {
+                    const LogObjectList objlist(queue, image_bind.image);
+                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09388", objlist,
+                                     error_obj.location.dot(Field::pBindInfo, bind_info_i)
+                                         .dot(Field::pImageBinds, image_bind_i)
+                                         .dot(Field::pBinds, bind_i)
+                                         .dot(Field::extent)
+                                         .dot(Field::width),
+                                     "is zero.");
+                }
+
+                if (bind.extent.height == 0) {
+                    const LogObjectList objlist(queue, image_bind.image);
+                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09389", objlist,
+                                     error_obj.location.dot(Field::pBindInfo, bind_info_i)
+                                         .dot(Field::pImageBinds, image_bind_i)
+                                         .dot(Field::pBinds, bind_i)
+                                         .dot(Field::extent)
+                                         .dot(Field::height),
+                                     "is zero.");
+                }
+
+                if (bind.extent.depth == 0) {
+                    const LogObjectList objlist(queue, image_bind.image);
+                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09390", objlist,
+                                     error_obj.location.dot(Field::pBindInfo, bind_info_i)
+                                         .dot(Field::pImageBinds, image_bind_i)
+                                         .dot(Field::pBinds, bind_i)
+                                         .dot(Field::extent)
+                                         .dot(Field::depth),
+                                     "is zero.");
+                }
+            }
+        }
+    }
+
+    return skip;
+}
