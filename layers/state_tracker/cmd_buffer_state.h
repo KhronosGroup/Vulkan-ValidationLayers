@@ -242,6 +242,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         bool alpha_to_coverage_enable;
         // VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT
         bool logic_op_enable;
+        // VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR
+        VkExtent2D fragment_size;
 
         uint32_t color_write_enable_attachment_count;
 
@@ -621,6 +623,14 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
             if (activeRenderPass->use_dynamic_rendering) {
                 return activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
             }
+        }
+        return false;
+    }
+    bool HasExternalFormatResolveAttachment() const {
+        if (activeRenderPass && activeRenderPass->use_dynamic_rendering &&
+            activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
+            return activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments->resolveMode ==
+                   VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
         }
         return false;
     }

@@ -81,7 +81,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImageCreate) {
     ici.flags = 0;
 
     // external format while usage other than SAMPLED
-    ici.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    ici.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02397");
     vk::CreateImage(device(), &ici, NULL, &img);
     m_errorMonitor->VerifyFound();

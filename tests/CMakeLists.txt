@@ -44,6 +44,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
+    unit/android_external_resolve.cpp
+    unit/android_external_resolve_positive.cpp
     unit/arm_best_practices.cpp
     unit/atomics.cpp
     unit/atomics_positive.cpp

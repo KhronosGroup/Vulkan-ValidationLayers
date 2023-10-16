@@ -95,6 +95,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineExternalFormatResolve(pipeline, subpass_desc, create_info_loc);
 
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
         vvl::unordered_map<VkShaderStageFlags, uint32_t> unique_stage_map;
@@ -761,6 +762,148 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipel
                                  "is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
                                  ", attachment %" PRIu32 ") does not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
                                  string_VkFormat(attachment_desc.format), subpass, attachment);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const PIPELINE_STATE &pipeline,
+                                                               const safe_VkSubpassDescription2 *subpass_desc,
+                                                               const Location &create_info_loc) const {
+    bool skip = false;
+    if (!android_external_format_resolve_feature) {
+        return false;
+    }
+
+    const auto &rp_state = pipeline.RenderPassState();
+    const auto *multisample_state = pipeline.MultisampleState();
+    const auto *color_blend_state = pipeline.ColorBlendState();
+    const auto fragment_shading_rate =
+        vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
+
+    if (rp_state && !rp_state->UsesDynamicRendering()) {
+        if (subpass_desc->colorAttachmentCount == 0) {
+            return false;
+        }
+        // can only have 1 color attachment
+        const uint32_t attachment = subpass_desc->pResolveAttachments[0].attachment;
+        if (attachment == VK_ATTACHMENT_UNUSED) {
+            return false;
+        }
+        const uint64_t external_format = GetExternalFormat(rp_state->createInfo.pAttachments[attachment].pNext);
+        if (external_format == 0) {
+            return false;
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
+            if (multisample_state->rasterizationSamples != VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09313", device,
+                                 create_info_loc.dot(Field::pMultisampleState).dot(Field::rasterizationSamples),
+                                 "is %" PRIu32 ", but externalFormat is %" PRIu64 " for subpass %" PRIu32 ".",
+                                 multisample_state->rasterizationSamples, external_format, pipeline.Subpass());
+            }
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && color_blend_state) {
+            for (uint32_t i = 0; i < color_blend_state->attachmentCount; i++) {
+                if (color_blend_state->pAttachments[i].blendEnable) {
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09314", device,
+                                 create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, i).dot(Field::blendEnable),
+                                 "is VK_TRUE, but externalFormat is %" PRIu64 " for subpass %" PRIu32 ".", external_format,
+                                 pipeline.Subpass());
+                }
+            }
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
+            if (fragment_shading_rate->fragmentSize.width != 1) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09315", device,
+                                 create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize)
+                                     .dot(Field::width),
+                                 "is %" PRIu32 ", but externalFormat is %" PRIu64 " for subpass %" PRIu32 ".",
+                                 fragment_shading_rate->fragmentSize.width, external_format, pipeline.Subpass());
+            }
+            if (fragment_shading_rate->fragmentSize.height != 1) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09316", device,
+                                 create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize)
+                                     .dot(Field::height),
+                                 "is %" PRIu32 ", but externalFormat is %" PRIu64 " for subpass %" PRIu32 ".",
+                                 fragment_shading_rate->fragmentSize.height, external_format, pipeline.Subpass());
+            }
+        }
+    } else {
+        const uint64_t external_format = GetExternalFormat(pipeline.PNext());
+        const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
+        if (external_format == 0 || !rendering_struct) {
+            return false;
+        }
+
+        if (rendering_struct->viewMask != 0) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09301", device,
+                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                             "is 0x%" PRIx32 ", but externalFormat is %" PRIu64 ".", rendering_struct->viewMask, external_format);
+        }
+        if (rendering_struct->colorAttachmentCount != 1) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09309", device,
+                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
+                             "is %" PRIu32 ", but externalFormat is %" PRIu64 ".", rendering_struct->colorAttachmentCount,
+                             external_format);
+        }
+
+        if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader) {
+            // TODO - Find better way to get SPIR-V static data
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
+            const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
+            auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+
+            if (entrypoint->execution_mode.Has(ExecutionModeSet::depth_replacing_bit)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
+                                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
+                                 "is %" PRIu64 " but the fragment shader declares DepthReplacing.", external_format);
+            } else if (entrypoint->execution_mode.Has(ExecutionModeSet::stencil_ref_replacing_bit)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
+                                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
+                                 "is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.", external_format);
+            }
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
+            if (multisample_state->rasterizationSamples != VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09304", device,
+                                 create_info_loc.dot(Field::pMultisampleState).dot(Field::rasterizationSamples),
+                                 "is %s, but externalFormat is %" PRIu64 ".",
+                                 string_VkSampleCountFlagBits(multisample_state->rasterizationSamples), external_format);
+            }
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && color_blend_state) {
+            for (uint32_t i = 0; i < color_blend_state->attachmentCount; i++) {
+                if (color_blend_state->pAttachments[i].blendEnable) {
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09305", device,
+                                 create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, i).dot(Field::blendEnable),
+                                 "is VK_TRUE, but externalFormat is %" PRIu64 ".", external_format);
+                }
+            }
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
+            if (fragment_shading_rate->fragmentSize.width != 1) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09306", device,
+                                 create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize)
+                                     .dot(Field::width),
+                                 "is %" PRIu32 ", but externalFormat is %" PRIu64 ".", fragment_shading_rate->fragmentSize.width,
+                                 external_format);
+            }
+            if (fragment_shading_rate->fragmentSize.height != 1) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09307", device,
+                                 create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize)
+                                     .dot(Field::height),
+                                 "is %" PRIu32 ", but externalFormat is %" PRIu64 ".", fragment_shading_rate->fragmentSize.height,
+                                 external_format);
             }
         }
     }
@@ -2935,6 +3078,7 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
             }
         }
     }
+
     return skip;
 }
 
@@ -3208,6 +3352,78 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                              FormatHandle(rendering_info.pStencilAttachment->imageView).c_str(), FormatHandle(*pipeline).c_str());
             }
         }
+
+        const uint64_t pipeline_external_format = GetExternalFormat(pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pNext);
+        if (pipeline_external_format != 0) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), cb_state.activeRenderPass->renderPass());
+            if (rendering_info.colorAttachmentCount == 1 &&
+                rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
+                auto resolve_image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[0].resolveImageView);
+                if (resolve_image_view_state) {
+                    if (resolve_image_view_state->image_state->ahb_format != pipeline_external_format) {
+                        skip |= LogError(vuid.external_format_resolve_09362, objlist, loc,
+                                         "pipeline externalFormat is %" PRIu64
+                                         " but the resolveImageView's image was created with externalFormat %" PRIu64 "",
+                                         pipeline_external_format, resolve_image_view_state->image_state->ahb_format);
+                    }
+                }
+
+                auto color_image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[0].imageView);
+                if (color_image_view_state) {
+                    if (color_image_view_state->image_state->ahb_format != pipeline_external_format) {
+                        skip |= LogError(vuid.external_format_resolve_09363, objlist, loc,
+                                         "pipeline externalFormat is %" PRIu64
+                                         " but the imageView's image was created with externalFormat %" PRIu64 "",
+                                         pipeline_external_format, color_image_view_state->image_state->ahb_format);
+                    }
+                }
+            }
+
+            if (pipeline->IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+                cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
+                skip |= LogError(vuid.external_format_resolve_09364, objlist, loc,
+                                 "pipeline externalFormat is %" PRIu64
+                                 ", but dynamic blend enable for attachment zero was set to VK_TRUE.",
+                                 pipeline_external_format);
+            }
+            if (pipeline->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+                cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError(vuid.external_format_resolve_09365, objlist, loc,
+                                 "pipeline externalFormat is %" PRIu64 ", but dynamic rasterization samples set to %s.",
+                                 pipeline_external_format,
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+            }
+            if (pipeline->IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+                if (cb_state.dynamic_state_value.fragment_size.width != 1) {
+                    skip |= LogError(vuid.external_format_resolve_09368, objlist, loc,
+                                     "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size width is %" PRIu32 ".",
+                                     pipeline_external_format, cb_state.dynamic_state_value.fragment_size.width);
+                }
+                if (cb_state.dynamic_state_value.fragment_size.height != 1) {
+                    skip |= LogError(vuid.external_format_resolve_09369, objlist, loc,
+                                     "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size height is %" PRIu32 ".",
+                                     pipeline_external_format, cb_state.dynamic_state_value.fragment_size.height);
+                }
+            }
+
+            if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_shader) {
+                // TODO - Find better way to get SPIR-V static data
+                std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline->fragment_shader_state->fragment_shader;
+                const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline->fragment_shader_state->fragment_shader_ci.get();
+                auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+
+                if (entrypoint->execution_mode.Has(ExecutionModeSet::depth_replacing_bit)) {
+                    skip |= LogError(vuid.external_format_resolve_09372, objlist, loc,
+                                     "pipeline externalFormat is %" PRIu64 " but the fragment shader declares DepthReplacing.",
+                                     pipeline_external_format);
+                } else if (entrypoint->execution_mode.Has(ExecutionModeSet::stencil_ref_replacing_bit)) {
+                    skip |=
+                        LogError(vuid.external_format_resolve_09372, objlist, loc,
+                                 "pipeline externalFormat is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.",
+                                 pipeline_external_format);
+                }
+            }
+        }
     }
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
@@ -3269,7 +3485,8 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 }
             }
         }
-    } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
+    } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled &&
+               !android_external_format_resolve_feature) {
         const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
             if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {

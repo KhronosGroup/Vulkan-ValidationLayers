@@ -385,6 +385,12 @@ static inline bool IsMultiplePlaneAspect(VkImageAspectFlags aspect_mask) {
     return planes != 0 && !IsPowerOfTwo(planes);
 }
 
+static inline bool IsAnyPlaneAspect(VkImageAspectFlags aspect_mask) {
+    constexpr VkImageAspectFlags valid_planes =
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+    return (aspect_mask & valid_planes) != 0;
+}
+
 // all "advanced blend operation" found in spec
 static inline bool IsAdvanceBlendOperation(const VkBlendOp blend_op) {
     return (static_cast<int>(blend_op) >= VK_BLEND_OP_ZERO_EXT) && (static_cast<int>(blend_op) <= VK_BLEND_OP_BLUE_EXT);
@@ -514,6 +520,21 @@ constexpr uint32_t ResolveRemainingLevels(const VkImageCreateInfo &ci, VkImageSu
 // Calculates the number of mip layers a VkImageView references.
 constexpr uint32_t ResolveRemainingLayers(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
     return (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (ci.arrayLayers - range.baseArrayLayer) : range.layerCount;
+}
+
+// Used to get the VkExternalFormatANDROID without having to use ifdef in logic
+// Result of zero is same of not having pNext struct
+constexpr uint64_t GetExternalFormat(const void *pNext) {
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    if (pNext) {
+        const auto *external_format = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pNext);
+        if (external_format) {
+            return external_format->externalFormat;
+        }
+    }
+#endif
+    (void)pNext;
+    return 0;
 }
 
 // Find whether or not an element is in list

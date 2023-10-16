@@ -161,7 +161,7 @@ def BuildMockICD(mockAndroid):
 
 #
 # Prepare Profile Layer for use with Layer Validation Tests
-def BuildProfileLayer():
+def BuildProfileLayer(mockAndroid):
     RunShellCmd('pip3 install jsonschema')
 
     SRC_DIR = f'{CI_EXTERNAL_DIR}/Vulkan-Profiles'
@@ -176,6 +176,8 @@ def BuildProfileLayer():
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR}'
     cmake_cmd += ' -D CMAKE_BUILD_TYPE=Release'
     cmake_cmd += ' -D UPDATE_DEPS=ON'
+    if mockAndroid:
+        cmake_cmd += ' -DBUILD_MOCK_ANDROID_SUPPORT=ON'
     RunShellCmd(cmake_cmd)
 
     print("Build Profile Layer")
@@ -240,7 +242,7 @@ def RunVVLTests(args):
     if args.mockAndroid:
         # TODO - only reason running this subset, is mockAndoid fails any test that does
         # a manual vkCreateDevice call and need to investigate more why
-        RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*", env=lvt_env)
+        RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
         return
 
     RunShellCmd(lvt_cmd + f" --gtest_filter={failing_tsan_tests}", env=lvt_env)

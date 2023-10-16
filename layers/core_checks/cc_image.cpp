@@ -36,15 +36,13 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
 
     if (image_format == VK_FORMAT_UNDEFINED) {
         // VU 01975 states format can't be undefined unless an android externalFormat
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-        const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pCreateInfo->pNext);
-        if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (ext_fmt_android != nullptr) && (0 != ext_fmt_android->externalFormat)) {
-            auto it = ahb_ext_formats_map.find(ext_fmt_android->externalFormat);
+        const uint64_t external_format = GetExternalFormat(pCreateInfo->pNext);
+        if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (0 != external_format)) {
+            auto it = ahb_ext_formats_map.find(external_format);
             if (it != ahb_ext_formats_map.end()) {
                 tiling_features = it->second;
             }
         }
-#endif
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         vvl::unordered_set<uint64_t> drm_format_modifiers;
         const VkImageDrmFormatModifierExplicitCreateInfoEXT *drm_explicit =
@@ -968,6 +966,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const IMAGE_VIEW_STATE *stencil_view_state = nullptr;
 
         uint32_t view_mask = 0;
+        bool external_format_resolve = false;
 
         if (cb_state.activeRenderPass->UsesDynamicRendering()) {
             is_valid_color_attachment_index = cb_state.IsValidDynamicColorAttachmentImageIndex(clear_desc->colorAttachment);
@@ -979,6 +978,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             stencil_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicStencilAttachmentImageIndex());
 
             view_mask = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask;
+            external_format_resolve = cb_state.HasExternalFormatResolveAttachment();
         } else {
             const auto *renderpass_create_info = cb_state.activeRenderPass->createInfo.ptr();
             const auto *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
@@ -994,6 +994,13 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         framebuffer->createInfo.attachmentCount) {
                         color_view_state = cb_state.GetActiveAttachmentImageViewState(
                             subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment);
+
+                        if (subpass_desc->pResolveAttachments) {
+                            const uint32_t resolve_attachment =
+                                subpass_desc->pResolveAttachments[clear_desc->colorAttachment].attachment;
+                            external_format_resolve =
+                                GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0;
+                        }
                     }
                 }
 
@@ -1055,6 +1062,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         } else if (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
             skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc->clearValue.depthStencil,
                                                    attachment_loc.dot(Field::clearValue).dot(Field::depthStencil));
+        } else if (external_format_resolve && IsAnyPlaneAspect(aspect_mask)) {
+            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass());
+            skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-09298", objlist, attachment_loc.dot(Field::aspectMask),
+                             "is %s.", string_VkImageAspectFlags(aspect_mask).c_str());
         }
 
         std::array<const IMAGE_VIEW_STATE *, 3> image_views = {nullptr, nullptr, nullptr};
@@ -1506,9 +1517,12 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                     VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV))) {
-        skip |= LogError("VUID-VkImageViewCreateInfo-usage-08932", image_state.image(), create_info_loc.dot(Field::format),
-                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
-                         string_VkFormatFeatureFlags2(tiling_features).c_str());
+        if (!android_external_format_resolve_feature && !android_external_format_resolve_null_color_attachment_prop &&
+            !image_state.HasAHBFormat()) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-usage-08932", image_state.image(), create_info_loc.dot(Field::format),
+                             "%s with tiling %s only supports %s.", string_VkFormat(view_format),
+                             string_VkImageTiling(image_tiling), string_VkFormatFeatureFlags2(tiling_features).c_str());
+        }
     } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
                !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {

@@ -483,11 +483,15 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
                              string_VkImageCreateFlags(create_info->flags).c_str());
         }
 
+        // only SAMPLED is allowed, but format_resolve allowed INPUT as well
         if (0 != (~VK_IMAGE_USAGE_SAMPLED_BIT & create_info->usage)) {
-            skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
-                             create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
-                             "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageUsageFlags(create_info->usage).c_str());
+            if (((VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT & create_info->usage) == VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) ||
+                !android_external_format_resolve_feature) {
+                skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
+                                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
+                                 "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
+                                 string_VkImageUsageFlags(create_info->usage).c_str());
+            }
         }
 
         if (VK_IMAGE_TILING_OPTIMAL != create_info->tiling) {
@@ -561,7 +565,12 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
                 external_format = ycbcr_state->external_format;
             }
         }
-        if ((!conv_found) || (external_format != image_state->ahb_format)) {
+        if (!conv_found) {
+            const LogObjectList objlist(create_info->image);
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
+                             create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
+                             "is not valid (or forgot to add VkSamplerYcbcrConversionInfo).");
+        } else if ((external_format != image_state->ahb_format)) {
             const LogObjectList objlist(create_info->image, ycbcr_conv_info->conversion);
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),

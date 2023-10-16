@@ -27,14 +27,7 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     const auto format = create_info.format;
     VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const VkExternalFormatANDROID *external_format_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(&create_info);
-    const bool is_external_format_conversion = (external_format_android != nullptr && external_format_android->externalFormat != 0);
-#else
-    const bool is_external_format_conversion = false;
-#endif
-
-    if (vkuFormatIsColor(format) || vkuFormatIsMultiplane(format) || is_external_format_conversion) {
+    if (vkuFormatIsColor(format) || vkuFormatIsMultiplane(format) || GetExternalFormat(create_info.pNext) != 0) {
         init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
     } else {
         init_range.aspectMask =
@@ -99,15 +92,6 @@ static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo *pCreateInfo) {
     const auto *swapchain_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     return swapchain_info ? swapchain_info->swapchain : VK_NULL_HANDLE;
 }
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-static uint64_t GetExternalFormat(const VkImageCreateInfo *info) {
-    const VkExternalFormatANDROID *ext_format_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(info->pNext);
-    return ext_format_android ? ext_format_android->externalFormat : 0;
-}
-#else
-static uint64_t GetExternalFormat(const VkImageCreateInfo *info) { return 0; }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracker *dev_data, VkImage img,
                                                      const VkImageCreateInfo *create_info, bool disjoint, bool is_external_ahb) {
@@ -193,7 +177,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       createInfo(*safe_create_info.ptr()),
       shared_presentable(false),
       layout_locked(false),
-      ahb_format(GetExternalFormat(pCreateInfo)),
+      ahb_format(GetExternalFormat(pCreateInfo->pNext)),
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
       owned_by_swapchain(false),
@@ -213,8 +197,8 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
-      supported_video_profiles(
-          dev_data->video_profile_cache_.Get(dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+      supported_video_profiles(dev_data->video_profile_cache_.Get(
+          dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
         bool is_resident = (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
         tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
@@ -236,7 +220,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       createInfo(*safe_create_info.ptr()),
       shared_presentable(false),
       layout_locked(false),
-      ahb_format(GetExternalFormat(pCreateInfo)),
+      ahb_format(GetExternalFormat(pCreateInfo->pNext)),
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(swapchain),
       owned_by_swapchain(true),
@@ -256,8 +240,8 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
-      supported_video_profiles(
-          dev_data->video_profile_cache_.Get(dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+      supported_video_profiles(dev_data->video_profile_cache_.Get(
+          dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 

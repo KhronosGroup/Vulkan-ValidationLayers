@@ -79,10 +79,10 @@ std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::Get
 template <typename CreateInfo>
 VkFormatFeatureFlags2KHR ValidationStateTracker::GetExternalFormatFeaturesANDROID(const CreateInfo *create_info) const {
     VkFormatFeatureFlags2KHR format_features = 0;
-    const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info->pNext);
-    if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
+    const uint64_t external_format = GetExternalFormat(create_info->pNext);
+    if ((0 != external_format)) {
         // VUID 01894 will catch if not found in map
-        auto it = ahb_ext_formats_map.find(ext_fmt_android->externalFormat);
+        auto it = ahb_ext_formats_map.find(external_format);
         if (it != ahb_ext_formats_map.end()) {
             format_features = it->second;
         }
@@ -1452,6 +1452,14 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         }
     }
 
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    const auto *external_format_resolve_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceExternalFormatResolveFeaturesANDROID>(pCreateInfo->pNext);
+    if (external_format_resolve_features) {
+        android_external_format_resolve_feature = external_format_resolve_features->externalFormatResolve;
+    }
+#endif
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(physical_device, &phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(physical_device, &phys_dev_props);
@@ -1688,6 +1696,13 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     }
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_extended_dynamic_state3,
                                    &phys_dev_props->extended_dynamic_state3_props);
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_android_external_format_resolve, &android_format_resolve_props);
+    android_external_format_resolve_null_color_attachment_prop =
+        android_format_resolve_props.nullColorAttachmentWithExternalFormatResolve;
+#endif
 
     if (IsExtEnabled(dev_ext.vk_nv_cooperative_matrix)) {
         // Get the needed cooperative_matrix properties
@@ -5686,6 +5701,7 @@ void ValidationStateTracker::PostCallRecordCmdSetFragmentShadingRateKHR(VkComman
                                                                         const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR);
+    cb_state->dynamic_state_value.fragment_size = *pFragmentSize;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(

@@ -508,7 +508,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     color[0].attachment = VK_ATTACHMENT_UNUSED;
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00847",
-                         "VUID-VkSubpassDescription2-pResolveAttachments-03065");
+                         "VUID-VkSubpassDescription2-externalFormatResolve-09335");
 
     color[0].attachment = 1;
 
@@ -518,7 +518,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     subpass.pDepthStencilAttachment = nullptr;  // avoid mismatch (01418)
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00848",
-                         "VUID-VkSubpassDescription2-pResolveAttachments-03066");
+                         "VUID-VkSubpassDescription2-externalFormatResolve-09338");
 
     attachments[subpass.pColorAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
     subpass.colorAttachmentCount = size32(color);
@@ -536,7 +536,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     attachments[subpass.pColorAttachments[0].attachment].format = VK_FORMAT_R8G8B8A8_SRGB;
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00850",
-                         "VUID-VkSubpassDescription2-pResolveAttachments-03068");
+                         "VUID-VkSubpassDescription2-externalFormatResolve-09339");
 
     attachments[subpass.pColorAttachments[0].attachment].format = attachments[subpass.pResolveAttachments[0].attachment].format;
 
@@ -2267,9 +2267,9 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
             if (useLinearColorAttachment) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-linearColorAttachment-06501");
             } else {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pResolveAttachments-02899");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pResolveAttachments-09343");
             }
-            m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pResolveAttachments-03068");
+            m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-externalFormatResolve-09339");
             vk::CreateRenderPass2KHR(device(), create_info2.ptr(), nullptr, &render_pass);
             m_errorMonitor->VerifyFound();
         }
@@ -2669,7 +2669,7 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
     render_pass_ci_2.subpassCount = 1;
     render_pass_ci_2.pSubpasses = &subpass_2;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-format-06698");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-format-09334");
     vk::CreateRenderPass2(device(), &render_pass_ci_2, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
