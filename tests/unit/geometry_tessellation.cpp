@@ -475,6 +475,8 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
 
+        m_errorMonitor->SetUnexpectedError("Undefined-Value-ShaderInputNotProduced");
+
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
                                      helper.fs_->GetStageCreateInfo()};
@@ -592,6 +594,8 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
         VkPipelineTessellationStateCreateInfo tessInfo = vku::InitStructHelper();
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
+
+        m_errorMonitor->SetUnexpectedError("Undefined-Value-ShaderInputNotProduced");
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),

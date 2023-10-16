@@ -1022,6 +1022,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE& producer, const EntryPoint& producer_entrypoint,
                                         const SPIRV_MODULE_STATE& consumer, const EntryPoint& consumer_entrypoint,
                                         const Location& create_info_loc) const;
+    bool ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                            const PIPELINE_STATE& pipeline, uint32_t subpass_index,
+                                            const Location& create_info_loc) const;
+    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                                            const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateVariables(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
     bool ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE& module_state, const StageCreateInfo& stage_create_info,
                                           const EntryPoint& entrypoint, const Location& loc) const;

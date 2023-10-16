@@ -627,6 +627,141 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
     return skip;
 }
 
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+                                                    const PIPELINE_STATE &pipeline, uint32_t subpass_index,
+                                                    const Location &create_info_loc) const {
+    bool skip = false;
+
+    struct Attachment {
+        const VkAttachmentReference2 *reference = nullptr;
+        const VkAttachmentDescription2 *attachment = nullptr;
+        const StageInteraceVariable *output = nullptr;
+    };
+    std::map<uint32_t, Attachment> location_map;
+
+    const auto &rp_state = pipeline.RenderPassState();
+    if (rp_state && !rp_state->UsesDynamicRendering()) {
+        const auto rpci = rp_state->createInfo.ptr();
+        const auto subpass = rpci->pSubpasses[subpass_index];
+        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+            auto const &reference = subpass.pColorAttachments[i];
+            location_map[i].reference = &reference;
+            if (reference.attachment != VK_ATTACHMENT_UNUSED &&
+                rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
+                location_map[i].attachment = &rpci->pAttachments[reference.attachment];
+            }
+        }
+    }
+
+    // TODO: dual source blend index (spv::DecIndex, zero if not provided)
+    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
+            continue;  // not an output interface
+        }
+        // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
+        // This means all Locations in slots will be the same
+        location_map[variable->interface_slots[0].Location()].output = variable;
+    }
+
+    const auto *ms_state = pipeline.MultisampleState();
+    const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
+
+    // Don't check any color attachments if rasterization is disabled
+    const auto raster_state = pipeline.RasterizationState();
+    if (raster_state && !raster_state->rasterizerDiscardEnable) {
+        for (const auto &location_it : location_map) {
+            const auto reference = location_it.second.reference;
+            if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
+                continue;
+            }
+
+            const auto location = location_it.first;
+            const auto attachment = location_it.second.attachment;
+            const auto output = location_it.second.output;
+            if (attachment && !output) {
+                const auto &attachments = pipeline.Attachments();
+                if (location < attachments.size() && attachments[location].colorWriteMask != 0) {
+                    skip |= LogWarning("Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
+                                       "Attachment %" PRIu32
+                                       " not written by fragment shader; undefined values will be written to attachment",
+                                       location);
+                }
+            } else if (!attachment && output) {
+                if (!(alpha_to_coverage_enabled && location == 0)) {
+                    skip |=
+                        LogWarning("Undefined-Value-ShaderOutputNotConsumed", module_state.handle(), create_info_loc,
+                                   "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);
+                }
+            } else if (attachment && output) {
+                const auto attachment_type = GetFormatType(attachment->format);
+                const auto output_type = module_state.GetNumericType(output->type_id);
+
+                // Type checking
+                if (!(output_type & attachment_type)) {
+                    skip |= LogWarning(
+                        "Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
+                        "Attachment %" PRIu32
+                        " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                        location, string_VkFormat(attachment->format), module_state.DescribeType(output->type_id).c_str());
+                }
+            } else {            // !attachment && !output
+                assert(false);  // at least one exists in the map
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE &module_state,
+                                                                    const EntryPoint &entrypoint, const PIPELINE_STATE &pipeline,
+                                                                    const Location &create_info_loc) const {
+    bool skip = false;
+
+    struct Attachment {
+        const StageInteraceVariable *output = nullptr;
+    };
+    std::map<uint32_t, Attachment> location_map;
+
+    // TODO: dual source blend index (spv::DecIndex, zero if not provided)
+    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
+            continue;  // not an output interface
+        }
+        // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
+        // This means all Locations in slots will be the same
+        location_map[variable->interface_slots[0].Location()].output = variable;
+    }
+
+    for (uint32_t location = 0; location < location_map.size(); ++location) {
+        const auto output = location_map[location].output;
+
+        const auto &rp_state = pipeline.RenderPassState();
+        const auto &attachments = pipeline.Attachments();
+        if (!output && location < attachments.size() && attachments[location].colorWriteMask != 0) {
+            skip |= LogWarning(
+                "Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
+                "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment", location);
+        } else if (pipeline.fragment_output_state && output &&
+                   (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
+            auto format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
+            const auto attachment_type = GetFormatType(format);
+            const auto output_type = module_state.GetNumericType(output->type_id);
+
+            // Type checking
+            if (!(output_type & attachment_type)) {
+                skip |=
+                    LogWarning("Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
+                               "Attachment %" PRIu32
+                               " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                               location, string_VkFormat(format), module_state.DescribeType(output->type_id).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
 bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
@@ -682,6 +817,17 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         if (consumer_spirv && producer_spirv && consumer.entrypoint && producer.entrypoint) {
             skip |= ValidateInterfaceBetweenStages(*producer_spirv.get(), *producer.entrypoint, *consumer_spirv.get(),
                                                    *consumer.entrypoint, create_info_loc);
+        }
+    }
+
+    if (fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state) {
+        const auto &rp_state = pipeline.RenderPassState();
+        if (rp_state && rp_state->UsesDynamicRendering()) {
+            skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->spirv_state.get(),
+                                                                       *fragment_stage->entrypoint, pipeline, create_info_loc);
+        } else {
+            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->spirv_state.get(), *fragment_stage->entrypoint, pipeline,
+                                                       pipeline.Subpass(), create_info_loc);
         }
     }
     return skip;

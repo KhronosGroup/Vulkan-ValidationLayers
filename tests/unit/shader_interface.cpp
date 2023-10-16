@@ -1548,3 +1548,68 @@ TEST_F(NegativeShaderInterface, PackingInsideArray) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
+
+TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputNotWritten) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
+        "attachments");
+
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    VkShaderObj fs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.cb_attachments_[0].colorWriteMask = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "Undefined-Value-ShaderInputNotProduced");
+}
+
+TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputTypeMismatch) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a mismatch between the fundamental type of an fragment shader output variable, and the "
+        "format of the corresponding attachment");
+
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out ivec4 x; /* not UNORM */
+        void main(){
+           x = ivec4(1);
+        }
+    )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "Undefined-Value-ShaderFragmentOutputMismatch");
+}
+
+TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputNotConsumed) {
+    TEST_DESCRIPTION(
+        "Test that a warning is produced for a fragment shader which provides a spurious output with no matching attachment");
+
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        layout(location=1) out vec4 y; /* no matching attachment for this */
+        void main(){
+           x = vec4(1);
+           y = vec4(1);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "Undefined-Value-ShaderOutputNotConsumed");
+}
