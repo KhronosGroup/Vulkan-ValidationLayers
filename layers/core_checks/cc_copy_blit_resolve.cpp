@@ -1882,7 +1882,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 // Depth comes from layerCount for 1D,2D resources, from extent.depth for 3D
                 uint32_t src_slices = (src_is_3d ? src_copy_extent.depth : region.srcSubresource.layerCount);
                 uint32_t dst_slices = (dst_is_3d ? dst_copy_extent.depth : region.dstSubresource.layerCount);
-                if (src_slices != dst_slices) {
+                if (src_slices != dst_slices && src_slices != VK_REMAINING_ARRAY_LAYERS &&
+                    dst_slices != VK_REMAINING_ARRAY_LAYERS) {
                     const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08793" : "VUID-vkCmdCopyImage-srcImage-08793";
                     skip |= LogError(vuid, objlist, region_loc, "%s (%" PRIu32 ") is different from %s (%" PRIu32 ").",
@@ -2160,10 +2161,10 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         // When performing copy from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
         const Location region_loc = loc.dot(Field::pRegions, i);
         const RegionType region = pRegions[i];
-        const auto &src_sub = region.srcSubresource;
-        const auto &dst_sub = region.dstSubresource;
-        bool same_subresource =
-            (same_image && (src_sub.mipLevel == dst_sub.mipLevel) && (src_sub.baseArrayLayer == dst_sub.baseArrayLayer));
+        const VkImageSubresourceLayers &src_subresource = region.srcSubresource;
+        const VkImageSubresourceLayers &dst_subresource = region.dstSubresource;
+        bool same_subresource = (same_image && (src_subresource.mipLevel == dst_subresource.mipLevel) &&
+                                 (src_subresource.baseArrayLayer == dst_subresource.baseArrayLayer));
         VkImageLayout source_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         VkImageLayout destination_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-00128" : "VUID-vkCmdCopyImage-srcImageLayout-00128";
@@ -3344,65 +3345,67 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         const RegionType region = pRegions[i];
 
         // When performing blit from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
-        const auto &src_sub = region.srcSubresource;
-        const auto &dst_sub = region.dstSubresource;
-        bool same_subresource =
-            (same_image && (src_sub.mipLevel == dst_sub.mipLevel) && (src_sub.baseArrayLayer == dst_sub.baseArrayLayer));
+        const VkImageSubresourceLayers &src_subresource = region.srcSubresource;
+        const VkImageSubresourceLayers &dst_subresource = region.dstSubresource;
+
+        bool same_subresource = (same_image && (src_subresource.mipLevel == dst_subresource.mipLevel) &&
+                                 (src_subresource.baseArrayLayer == dst_subresource.baseArrayLayer));
         VkImageLayout source_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         VkImageLayout destination_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImageLayout-00221" : "VUID-vkCmdBlitImage-srcImageLayout-00221";
-        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, region.srcSubresource, srcImageLayout, source_optimal,
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, source_optimal,
                                              src_image_loc, invalid_src_layout_vuid, vuid);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImageLayout-00226" : "VUID-vkCmdBlitImage-dstImageLayout-00226";
-        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.dstSubresource, dstImageLayout, destination_optimal,
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, destination_optimal,
                                              dst_image_loc, invalid_dst_layout_vuid, vuid);
-        skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &region.srcSubresource, src_subresource_loc);
-        skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &region.dstSubresource, dst_subresource_loc);
+        skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &src_subresource, src_subresource_loc);
+        skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &dst_subresource, dst_subresource_loc);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcSubresource-01705" : "VUID-vkCmdBlitImage-srcSubresource-01705";
-        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, region.srcSubresource.mipLevel,
+        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, src_subresource.mipLevel,
                                       src_subresource_loc.dot(Field::mipLevel), vuid);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstSubresource-01706" : "VUID-vkCmdBlitImage-dstSubresource-01706";
-        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, region.dstSubresource.mipLevel,
+        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, dst_subresource.mipLevel,
                                       dst_subresource_loc.dot(Field::mipLevel), vuid);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcSubresource-01707" : "VUID-vkCmdBlitImage-srcSubresource-01707";
-        skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, region.srcSubresource.baseArrayLayer,
-                                             region.srcSubresource.layerCount, src_subresource_loc, vuid);
+        skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, src_subresource.baseArrayLayer,
+                                             src_subresource.layerCount, src_subresource_loc, vuid);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstSubresource-01708" : "VUID-vkCmdBlitImage-dstSubresource-01708";
-        skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, region.dstSubresource.baseArrayLayer,
-                                             region.dstSubresource.layerCount, dst_subresource_loc, vuid);
+        skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, dst_subresource.baseArrayLayer,
+                                             dst_subresource.layerCount, dst_subresource_loc, vuid);
         // Check that src/dst layercounts match
-        if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
+        if (src_subresource.layerCount != dst_subresource.layerCount && src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS &&
+            dst_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
             vuid = is_2 ? "VUID-VkImageBlit2-layerCount-08800" : "VUID-VkImageBlit-layerCount-08800";
             skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::layerCount),
-                             "(%" PRIu32 ") does not match %s (%" PRIu32 ").", region.srcSubresource.layerCount,
-                             dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.dstSubresource.layerCount);
+                             "(%" PRIu32 ") does not match %s (%" PRIu32 ").", src_subresource.layerCount,
+                             dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), dst_subresource.layerCount);
         }
 
-        if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
+        if (src_subresource.aspectMask != dst_subresource.aspectMask) {
             vuid = is_2 ? "VUID-VkImageBlit2-aspectMask-00238" : "VUID-VkImageBlit-aspectMask-00238";
             skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
-                             string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(),
+                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
                              dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
-                             string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
+                             string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
         }
 
-        if (!VerifyAspectsPresent(region.srcSubresource.aspectMask, src_format)) {
+        if (!VerifyAspectsPresent(src_subresource.aspectMask, src_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-aspectMask-00241" : "VUID-vkCmdBlitImage-aspectMask-00241";
             skip |= LogError(vuid, src_objlist, src_subresource_loc.dot(Field::aspectMask),
                              "(%s) cannot specify aspects not present in source image (%s).",
-                             string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(), string_VkFormat(src_format));
+                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(), string_VkFormat(src_format));
         }
 
-        if (!VerifyAspectsPresent(region.dstSubresource.aspectMask, dst_format)) {
+        if (!VerifyAspectsPresent(dst_subresource.aspectMask, dst_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-aspectMask-00242" : "VUID-vkCmdBlitImage-aspectMask-00242";
             skip |= LogError(vuid, dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
                              "(%s) cannot specify aspects not present in destination image (%s).",
-                             string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(), string_VkFormat(src_format));
+                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(), string_VkFormat(src_format));
         }
 
         // Validate source image offsets
-        VkExtent3D src_extent = src_image_state->GetEffectiveSubresourceExtent(region.srcSubresource);
+        VkExtent3D src_extent = src_image_state->GetEffectiveSubresourceExtent(src_subresource);
         if (VK_IMAGE_TYPE_1D == src_type) {
             if ((0 != region.srcOffsets[0].y) || (1 != region.srcOffsets[1].y)) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00245" : "VUID-vkCmdBlitImage-srcImage-00245";
@@ -3456,7 +3459,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Validate dest image offsets
-        VkExtent3D dst_extent = dst_image_state->GetEffectiveSubresourceExtent(region.dstSubresource);
+        VkExtent3D dst_extent = dst_image_state->GetEffectiveSubresourceExtent(dst_subresource);
         if (VK_IMAGE_TYPE_1D == dst_type) {
             if ((0 != region.dstOffsets[0].y) || (1 != region.dstOffsets[1].y)) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImage-00250" : "VUID-vkCmdBlitImage-dstImage-00250";
@@ -3510,8 +3513,8 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         if ((VK_IMAGE_TYPE_3D == src_type) || (VK_IMAGE_TYPE_3D == dst_type)) {
-            if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount) ||
-                (0 != region.dstSubresource.baseArrayLayer) || (1 != region.dstSubresource.layerCount)) {
+            if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount) ||
+                (0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00240" : "VUID-vkCmdBlitImage-srcImage-00240";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "srcImage %s\n"
@@ -3519,9 +3522,8 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                  "srcSubresource (baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32
                                  ")\n"
                                  "dstSubresource (baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32 ")\n",
-                                 string_VkImageType(src_type), string_VkImageType(dst_type), region.srcSubresource.baseArrayLayer,
-                                 region.srcSubresource.layerCount, region.dstSubresource.baseArrayLayer,
-                                 region.dstSubresource.layerCount);
+                                 string_VkImageType(src_type), string_VkImageType(dst_type), src_subresource.baseArrayLayer,
+                                 src_subresource.layerCount, dst_subresource.baseArrayLayer, dst_subresource.layerCount);
             }
         }
 
@@ -3668,8 +3670,8 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
         const RegionType region = pRegions[i];
-        const VkImageSubresourceLayers src_subresource = region.srcSubresource;
-        const VkImageSubresourceLayers dst_subresource = region.dstSubresource;
+        const VkImageSubresourceLayers &src_subresource = region.srcSubresource;
+        const VkImageSubresourceLayers &dst_subresource = region.dstSubresource;
 
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &src_subresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &dst_subresource, dst_subresource_loc);
@@ -3693,7 +3695,8 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                              dst_subresource.layerCount, dst_subresource_loc, vuid);
 
         // layer counts must match
-        if (src_subresource.layerCount != dst_subresource.layerCount) {
+        if (src_subresource.layerCount != dst_subresource.layerCount && src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS &&
+            dst_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
             const LogObjectList objlist(commandBuffer, srcImage, dstImage);
             vuid = is_2 ? "VUID-VkImageResolve2-layerCount-08803" : "VUID-VkImageResolve-layerCount-08803";
             skip |= LogError(vuid, objlist, src_subresource_loc.dot(Field::layerCount),
