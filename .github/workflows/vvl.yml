@@ -24,9 +24,11 @@ concurrency:
 
 on:
     push:
+        branches:
+          - main
     pull_request:
         branches:
-            - main
+          - main
 
 env:
   CMAKE_GENERATOR: Ninja
