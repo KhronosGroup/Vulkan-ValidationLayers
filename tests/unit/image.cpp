@@ -1110,7 +1110,7 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkImageSubresourceLayers-layerCount-01700");  // layer count == 0 (src)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkImageBlit-layerCount-00239");  // src/dst layer count mismatch
+                                         "VUID-VkImageBlit-layerCount-08800");  // src/dst layer count mismatch
     vk::CmdBlitImage(m_commandBuffer->handle(), color_3D_img.image(), color_3D_img.Layout(), color_3D_img.image(),
                      color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();

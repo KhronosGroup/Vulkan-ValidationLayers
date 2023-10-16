@@ -932,8 +932,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
         return skip;
     }
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    if (pCreateInfo->maxSets <= 0) {
-        skip |= LogError("VUID-VkDescriptorPoolCreateInfo-maxSets-00301", device, create_info_loc.dot(Field::maxSets), "is zero.");
+    if (pCreateInfo->maxSets == 0 && ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_ALLOW_OVERALLOCATION_SETS_BIT_NV) == 0)) {
+        skip |= LogError("VUID-VkDescriptorPoolCreateInfo-descriptorPoolOverallocation-09227", device,
+                         create_info_loc.dot(Field::maxSets), "is zero.");
     }
 
     const auto *mutable_descriptor_type_features =

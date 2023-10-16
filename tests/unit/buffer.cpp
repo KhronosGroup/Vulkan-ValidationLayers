@@ -349,7 +349,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     buff_view_ci.range = VK_WHOLE_SIZE;
 
     // `buffer` was created using VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT so we can use that for the first buffer test
-    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-buffer-08778"});
+    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-format-08778"});
 
     // Create a new buffer using VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
     const VkBufferCreateInfo storage_buffer_info =
@@ -357,7 +357,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     vkt::Buffer storage_buffer(*m_device, storage_buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     buff_view_ci.buffer = storage_buffer.handle();
-    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-buffer-08779"});
+    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-format-08779"});
 }
 
 TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {

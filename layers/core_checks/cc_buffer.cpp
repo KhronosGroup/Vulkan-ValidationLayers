@@ -106,7 +106,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE &buffer_state, cons
     const VkBufferUsageFlags2KHR usage = buffer_state.usage;
     if ((usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-08778", buffer_state.buffer(), loc.dot(Field::buffer),
+        skip |= LogError("VUID-VkBufferViewCreateInfo-format-08778", buffer_state.buffer(), loc.dot(Field::buffer),
                          "was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format "
                          "(%s) must be supported for uniform texel buffers. (supported bufferFeatures: %s)",
                          string_VkBufferUsageFlags2KHR(usage).c_str(), string_VkFormat(format),
@@ -114,7 +114,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE &buffer_state, cons
     }
     if ((usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-08779", buffer_state.buffer(), loc.dot(Field::buffer),
+        skip |= LogError("VUID-VkBufferViewCreateInfo-format-08779", buffer_state.buffer(), loc.dot(Field::buffer),
                          "was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format "
                          "(%s) must be supported for storage texel buffers. (supported bufferFeatures: %s)",
                          string_VkBufferUsageFlags2KHR(usage).c_str(), string_VkFormat(format),

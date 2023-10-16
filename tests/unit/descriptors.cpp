@@ -2453,7 +2453,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
         VkDescriptorPoolCreateInfo invalid_dp_ci = dp_ci_template;
         invalid_dp_ci.maxSets = 0;  // invalid maxSets value
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-maxSets-00301");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-descriptorPoolOverallocation-09227");
         {
             VkDescriptorPool pool;
             vk::CreateDescriptorPool(m_device->device(), &invalid_dp_ci, nullptr, &pool);

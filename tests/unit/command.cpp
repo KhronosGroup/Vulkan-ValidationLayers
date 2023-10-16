@@ -1305,7 +1305,7 @@ TEST_F(NegativeCommand, CopyImageLayerCountMismatch) {
     copyRegion.extent.height = 1;
     copyRegion.extent.depth = 1;
 
-    const char *vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-07744" : "VUID-VkImageCopy-apiVersion-07941";
+    const char *vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-08793" : "VUID-VkImageCopy-apiVersion-07941";
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image_obj.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image_obj.image(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
@@ -2651,7 +2651,7 @@ TEST_F(NegativeCommand, CopyImageTypeExtentMismatchMaintenance1) {
     // 2D src / 3D dst and depth not equal to src layerCount
     copy_region.extent = {4, 1, 2};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01791");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-07744");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-08793");
     vk::CmdCopyImage(m_commandBuffer->handle(), image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -2660,7 +2660,7 @@ TEST_F(NegativeCommand, CopyImageTypeExtentMismatchMaintenance1) {
     // 3D src / 2D dst and depth not equal to dst layerCount
     copy_region.extent = {4, 1, 2};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01792");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-07744");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-08793");
     vk::CmdCopyImage(m_commandBuffer->handle(), image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -4193,7 +4193,7 @@ TEST_F(NegativeCommand, ResolveImageImageType) {
 
     // layerCount is not 1
     resolveRegion.srcSubresource.layerCount = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-layerCount-00267");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-layerCount-08803");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-04446");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage3D.image(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);

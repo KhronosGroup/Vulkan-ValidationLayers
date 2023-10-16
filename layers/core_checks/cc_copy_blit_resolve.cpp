@@ -1884,7 +1884,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 uint32_t dst_slices = (dst_is_3d ? dst_copy_extent.depth : region.dstSubresource.layerCount);
                 if (src_slices != dst_slices) {
                     const LogObjectList objlist(commandBuffer, srcImage, dstImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-07744" : "VUID-vkCmdCopyImage-srcImage-07744";
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08793" : "VUID-vkCmdCopyImage-srcImage-08793";
                     skip |= LogError(vuid, objlist, region_loc, "%s (%" PRIu32 ") is different from %s (%" PRIu32 ").",
                                      src_is_3d ? "extent.depth" : "srcSubresource.layerCount", src_slices,
                                      dst_is_3d ? "extent.depth" : "dstSubresource.layerCount", dst_slices);
@@ -3373,7 +3373,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                              region.dstSubresource.layerCount, dst_subresource_loc, vuid);
         // Check that src/dst layercounts match
         if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
-            vuid = is_2 ? "VUID-VkImageBlit2-layerCount-00239" : "VUID-VkImageBlit-layerCount-00239";
+            vuid = is_2 ? "VUID-VkImageBlit2-layerCount-08800" : "VUID-VkImageBlit-layerCount-08800";
             skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::layerCount),
                              "(%" PRIu32 ") does not match %s (%" PRIu32 ").", region.srcSubresource.layerCount,
                              dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.dstSubresource.layerCount);
@@ -3695,7 +3695,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         // layer counts must match
         if (src_subresource.layerCount != dst_subresource.layerCount) {
             const LogObjectList objlist(commandBuffer, srcImage, dstImage);
-            vuid = is_2 ? "VUID-VkImageResolve2-layerCount-00267" : "VUID-VkImageResolve-layerCount-00267";
+            vuid = is_2 ? "VUID-VkImageResolve2-layerCount-08803" : "VUID-VkImageResolve-layerCount-08803";
             skip |= LogError(vuid, objlist, src_subresource_loc.dot(Field::layerCount),
                              "(%" PRIu32 ") does not match %s (%" PRIu32 ").", region.srcSubresource.layerCount,
                              dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.dstSubresource.layerCount);

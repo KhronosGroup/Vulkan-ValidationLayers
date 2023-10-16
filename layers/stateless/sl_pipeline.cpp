@@ -1629,9 +1629,13 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         const VkPipelineCreateFlags flags = pCreateInfos[i].flags;
         // Validate no flags not allowed are used
         if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
-            skip |=
-                LogError("VUID-VkComputePipelineCreateInfo-flags-03364", device, create_info_loc.dot(Field::flags),
-                         "%s must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.", string_VkPipelineCreateFlags(flags).c_str());
+            const auto *shader_enqueue_features =
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderEnqueueFeaturesAMDX>(device_createinfo_pnext);
+            if (!shader_enqueue_features || shader_enqueue_features->shaderEnqueue) {
+                skip |= LogError("VUID-VkComputePipelineCreateInfo-shaderEnqueue-09177", device, create_info_loc.dot(Field::flags),
+                                 "%s must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
+                                 string_VkPipelineCreateFlags(flags).c_str());
+            }
         }
         if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) != 0) {
             skip |= LogError("VUID-VkComputePipelineCreateInfo-flags-03365", device, create_info_loc.dot(Field::flags),

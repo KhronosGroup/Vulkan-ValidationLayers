@@ -2322,7 +2322,7 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     const auto set_info = [&](CreateComputePipelineHelper &helper) { helper.cp_ci_.flags = flags; };
 
     flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-03364");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-shaderEnqueue-09177");
     flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-03365");
     flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
