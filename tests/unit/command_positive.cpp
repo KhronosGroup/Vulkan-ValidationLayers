@@ -982,10 +982,15 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
     VkImageCopy copy_region{};
     copy_region.extent = ci.extent;
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.baseArrayLayer = 7;
+    copy_region.srcSubresource.baseArrayLayer = 2;
     copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
     copy_region.dstSubresource = copy_region.srcSubresource;
 
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+    // layerCount can explicitly list value
+    copy_region.dstSubresource.layerCount = 2;
     vk::CmdCopyImage(m_commandBuffer->handle(), image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_commandBuffer->end();
