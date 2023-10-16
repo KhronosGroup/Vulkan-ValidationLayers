@@ -1789,6 +1789,11 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<VkImageLayout> host_image_copy_src_layouts;
     std::vector<VkImageLayout> host_image_copy_dst_layouts;
 
+    // Features and properties that depend on platforms being defined
+    // They will be false if platform is not defined
+    bool android_external_format_resolve_feature = false;  // VK_ANDROID_external_format_resolve
+    bool android_external_format_resolve_null_color_attachment_prop = false;
+
     // Queue family extension properties -- storing queue family properties gathered from
     // VkQueueFamilyProperties2::pNext chain
     struct QueueFamilyExtensionProperties {

@@ -34,7 +34,7 @@ def Build(args):
     try:
         common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON", mock_android = args.mockAndroid)
         common_ci.BuildLoader()
-        common_ci.BuildProfileLayer()
+        common_ci.BuildProfileLayer(args.mockAndroid)
         common_ci.BuildMockICD(args.mockAndroid)
 
     except subprocess.CalledProcessError as proc_error:

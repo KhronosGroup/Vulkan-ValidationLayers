@@ -90,17 +90,18 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
     }
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
+
         // if not null, also confirms rp2 is being used
+        const void *pNext =
+            (use_rp2) ? reinterpret_cast<VkAttachmentDescription2 const *>(&pCreateInfo->pAttachments[i])->pNext : nullptr;
         const auto *attachment_description_stencil_layout =
-            (use_rp2) ? vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(
-                            reinterpret_cast<VkAttachmentDescription2 const *>(&pCreateInfo->pAttachments[i])->pNext)
-                      : nullptr;
+            (use_rp2) ? vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(pNext) : nullptr;
 
         const VkFormat attachment_format = pCreateInfo->pAttachments[i].format;
         const VkImageLayout initial_layout = pCreateInfo->pAttachments[i].initialLayout;
         const VkImageLayout final_layout = pCreateInfo->pAttachments[i].finalLayout;
-        if (attachment_format == VK_FORMAT_UNDEFINED) {
-            vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06698" : "VUID-VkAttachmentDescription-format-06698";
+        if (attachment_format == VK_FORMAT_UNDEFINED && GetExternalFormat(pNext) == 0) {
+            vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-09334" : "VUID-VkAttachmentDescription-format-06698";
             skip |= LogError(vuid, device, attachment_loc.dot(Field::format), "is VK_FORMAT_UNDEFINED.");
         }
         if (final_layout == VK_IMAGE_LAYOUT_UNDEFINED || final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {

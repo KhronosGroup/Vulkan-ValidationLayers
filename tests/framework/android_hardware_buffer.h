@@ -57,6 +57,13 @@ class AHB {
 
     void init(const AHardwareBuffer_Desc *ahb_desc) { AHardwareBuffer_allocate(ahb_desc, &ahb); }
 
+    uint64_t GetExternalFormat(const Device &dev, void *pNext = nullptr) const {
+        VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper(pNext);
+        VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
+        vk::GetAndroidHardwareBufferPropertiesANDROID(dev.handle(), ahb, &ahb_props);
+        return ahb_fmt_props.externalFormat;
+    }
+
     ~AHB() {
         if (ahb) {
             AHardwareBuffer_release(ahb);

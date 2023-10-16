@@ -263,6 +263,12 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeVertexOrderCcw:
             tessellation_orientation = spv::ExecutionModeVertexOrderCcw;
             break;
+        case spv::ExecutionModeDepthReplacing:
+            flags |= depth_replacing_bit;
+            break;
+        case spv::ExecutionModeStencilRefReplacingEXT:
+            flags |= stencil_ref_replacing_bit;
+            break;
         default:
             break;
     }

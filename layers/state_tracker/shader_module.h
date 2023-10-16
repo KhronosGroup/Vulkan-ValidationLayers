@@ -115,6 +115,9 @@ struct ExecutionModeSet {
         rounding_mode_rtz_width_16 = 1 << 21,
         rounding_mode_rtz_width_32 = 1 << 22,
         rounding_mode_rtz_width_64 = 1 << 23,
+
+        depth_replacing_bit = 1 << 24,
+        stencil_ref_replacing_bit = 1 << 25,
     };
 
     // bits to know if things have been set or not by a Decoration

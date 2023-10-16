@@ -1627,6 +1627,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, CMD
     bool sub_image_found = false;  // Do we find a corresponding subpass description
     VkImageLayout sub_image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     uint32_t attach_index = 0;
+    uint64_t image_ahb_format = 0;
     const Location image_loc = barrier_loc.dot(Field::image);
     // Verify that a framebuffer image matches barrier image
     const auto attachment_count = fb_state->createInfo.attachmentCount;
@@ -1636,6 +1637,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, CMD
         if (view_state && (img_bar_image == view_state->create_info.image)) {
             image_match = true;
             attach_index = attachment;
+            image_ahb_format = view_state->image_state->ahb_format;
             break;
         }
     }
@@ -1663,6 +1665,11 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, CMD
                     sub_desc.pResolveAttachments[j].attachment == attach_index) {
                     sub_image_layout = sub_desc.pResolveAttachments[j].layout;
                     sub_image_found = true;
+                    if (image_ahb_format == 0) {
+                        skip |= LogError("VUID-vkCmdPipelineBarrier2-image-09374", rp_handle, image_loc,
+                                         "(%s) for subpass %" PRIu32 " was not created with an externalFormat.",
+                                         FormatHandle(img_bar_image).c_str(), active_subpass);
+                    }
                     break;
                 }
             }
@@ -1673,6 +1680,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, CMD
                              "(%s) is not referenced by the VkSubpassDescription for active subpass (%" PRIu32 ") of current %s.",
                              FormatHandle(img_bar_image).c_str(), active_subpass, FormatHandle(rp_handle).c_str());
         }
+
     } else {  // !image_match
         const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassMismatch);
         skip |= LogError(vuid, fb_state->framebuffer(), image_loc, "(%s) does not match an image from the current %s.",

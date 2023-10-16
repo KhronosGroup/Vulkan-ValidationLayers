@@ -205,6 +205,13 @@ struct DrawDispatchVuid {
     const char* viewport_w_scaling_08636 = kVUIDUndefined;
     const char* shading_rate_palette_08637 = kVUIDUndefined;
     const char* exclusive_scissor_08638 = kVUIDUndefined;
+    const char* external_format_resolve_09362 = kVUIDUndefined;
+    const char* external_format_resolve_09363 = kVUIDUndefined;
+    const char* external_format_resolve_09364 = kVUIDUndefined;
+    const char* external_format_resolve_09365 = kVUIDUndefined;
+    const char* external_format_resolve_09368 = kVUIDUndefined;
+    const char* external_format_resolve_09369 = kVUIDUndefined;
+    const char* external_format_resolve_09372 = kVUIDUndefined;
     const char* set_rasterizer_discard_enable_08639 = kVUIDUndefined;
     const char* set_depth_bias_enable_08640 = kVUIDUndefined;
     const char* set_logic_op_08641 = kVUIDUndefined;
@@ -936,6 +943,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineExternalFormatResolve(const PIPELINE_STATE& pipeline,
+                                                       const safe_VkSubpassDescription2* subpass_desc,
+                                                       const Location& create_info_loc) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE& pipeline, const VkPipelineRobustnessCreateInfoEXT& create_info,
                                               const Location& loc) const;
@@ -1665,7 +1675,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                           const ErrorObject& error_obj) const override;
     bool ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                         const VkRenderingAttachmentInfo* pAttachments, const Location& loc) const;
+                                         const VkRenderingAttachmentInfo& attachment_info, const Location& loc) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
