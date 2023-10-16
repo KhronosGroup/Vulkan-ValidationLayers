@@ -5190,3 +5190,34 @@ TEST_F(NegativeDynamicState, MissingColorAttachmentBlendBit) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, SampleLocationsSamplesMismatch) {
+    TEST_DESCRIPTION("Dynamically set sample locations samples that don't match that of the pipeline");
+
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    VkSampleLocationEXT sample_locations[2] = {{0.5f, 0.5f}, {0.5f, 0.5f}};
+
+    VkSampleLocationsInfoEXT sapmle_locations_info = vku::InitStructHelper();
+    sapmle_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_2_BIT;
+    sapmle_locations_info.sampleLocationGridSize = {1u, 1u};
+    sapmle_locations_info.sampleLocationsCount = 2u;
+    sapmle_locations_info.pSampleLocations = sample_locations;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sapmle_locations_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsPerPixel-07482");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
