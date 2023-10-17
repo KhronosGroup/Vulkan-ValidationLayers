@@ -603,7 +603,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor sets with a combined image sampler having "
         "their image, sampler, and descriptor set each respectively destroyed and then attempting to submit associated cmd "
         "buffers. Attempt to destroy a DescriptorSet that is in use.");
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -872,7 +872,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
 TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a bound descriptor sets with a combined image sampler where sampler has been deleted.");
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -968,7 +968,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
 
@@ -2933,8 +2933,7 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device, {

@@ -1717,7 +1717,7 @@ TEST_F(NegativePipeline, LineRasterization) {
     line_rasterization_features.stippledBresenhamLines = VK_FALSE;
     line_rasterization_features.stippledSmoothLines = VK_FALSE;
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     {

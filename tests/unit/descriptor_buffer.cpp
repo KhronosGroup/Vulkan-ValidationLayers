@@ -190,7 +190,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         vku::InitStructHelper(&buffer_device_address_features);
     GetPhysicalDeviceFeatures2(acceleration_structure_features);
 
-    RETURN_IF_SKIP(InitState(nullptr, &acceleration_structure_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &acceleration_structure_features));
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -519,7 +519,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper(&descriptor_buffer_features);
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
 
-    RETURN_IF_SKIP(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &buffer_device_address_features));
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);

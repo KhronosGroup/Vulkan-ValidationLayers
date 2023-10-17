@@ -529,7 +529,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     // Check for external semaphore import and export capability
     VkPhysicalDeviceExternalSemaphoreInfoKHR esi = vku::InitStructHelper();

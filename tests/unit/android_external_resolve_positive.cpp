@@ -31,7 +31,7 @@ void AndroidExternalResolveTest::InitBasicAndroidExternalResolve(void* pNextFeat
         GTEST_SKIP() << "Test requires (unsupported) samplerYcbcrConversion";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &external_format_resolve_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &external_format_resolve_features));
 
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID external_format_resolve_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(external_format_resolve_props);

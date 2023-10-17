@@ -1277,7 +1277,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     features2.features.tessellationShader = VK_FALSE;
     features2.features.geometryShader = VK_FALSE;
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -3152,7 +3152,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
     if (features2.features.tessellationShader == VK_FALSE) {
         GTEST_SKIP() << "tessellationShader not supported.";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitDynamicRenderTarget();
 
@@ -3193,7 +3193,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
     if (features2.features.tessellationShader == VK_FALSE) {
         GTEST_SKIP() << "tessellationShader not supported.";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitDynamicRenderTarget();
 
@@ -3234,7 +3234,7 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
     if (features2.features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported.";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitDynamicRenderTarget();
 
@@ -5629,7 +5629,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // Set limit to match with hardcoded values in shaders
     VkPhysicalDeviceProperties props;
@@ -6761,7 +6761,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
         GTEST_SKIP() << "primitivesGeneratedQuery not supported.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitDynamicRenderTarget();
 

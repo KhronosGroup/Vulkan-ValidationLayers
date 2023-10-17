@@ -445,8 +445,7 @@ TEST_F(PositivePipeline, CoreChecksDisabled) {
     features.disabledValidationFeatureCount = 1;
     features.pDisabledValidationFeatures = disables;
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(Init(nullptr, nullptr, pool_flags, &features));
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &features));
     InitRenderTarget();
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1097,8 +1096,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     const VkFormat image_view_format = VK_FORMAT_R32_SFLOAT;
 
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;

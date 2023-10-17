@@ -23,7 +23,7 @@ void ImageDrmTest::InitBasicImageDrm(void *pNextFeatures) {
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features11, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features11));
 }
 
 std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {

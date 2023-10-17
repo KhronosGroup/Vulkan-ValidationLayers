@@ -493,10 +493,9 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
     return sampler_create_info;
 }
 
-void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
-                       const VkCommandPoolCreateFlags flags, void *instance_pnext) {
+void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2, void *instance_pnext) {
     RETURN_IF_SKIP(InitFramework(instance_pnext));
-    RETURN_IF_SKIP(InitState(features, features2, flags));
+    RETURN_IF_SKIP(InitState(features, features2));
 }
 
 vkt::CommandBuffer *VkLayerTest::CommandBuffer() { return m_commandBuffer; }

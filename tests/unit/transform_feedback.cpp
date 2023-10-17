@@ -61,7 +61,7 @@ void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) 
         GTEST_SKIP() << "transformFeedback not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &tf_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &tf_features));
 }
 
 TEST_F(NegativeTransformFeedback, FeatureEnabled) {

@@ -242,7 +242,7 @@ class ViewportInheritanceTestData {
             features2.features.multiViewport = VK_FALSE;
         }
 
-        p_framework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        p_framework->InitState(nullptr, &features2);
         return true;
     }
 

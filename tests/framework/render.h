@@ -109,8 +109,9 @@ class VkRenderFramework : public VkTestFramework {
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);
     VkFormat GetRenderTargetFormat();
+    // default to CommandPool Reset flag to allow recording multiple command buffers simpler
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
-                   const VkCommandPoolCreateFlags flags = 0);
+                   const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 

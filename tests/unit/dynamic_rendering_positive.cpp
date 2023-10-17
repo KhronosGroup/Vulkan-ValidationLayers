@@ -26,7 +26,7 @@ void DynamicRenderingTest::InitBasicDynamicRendering(void* pNextFeatures) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
 }
 
 TEST_F(PositiveDynamicRendering, BasicUsage) {

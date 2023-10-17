@@ -25,8 +25,7 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.disabledValidationFeatureCount = 1;
     features.pDisabledValidationFeatures = disables;
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(Init(nullptr, nullptr, pool_flags, &features));
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &features));
 
     // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error, but this
     // validation was disabled via the features extension, so no errors should be forthcoming.

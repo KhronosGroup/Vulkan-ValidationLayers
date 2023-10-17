@@ -154,7 +154,7 @@ class VkLayerTest : public VkLayerTestBase {
     const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
 
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
-              const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
+              void *instance_pnext = nullptr);
     void AddSurfaceExtension();
     vkt::CommandBuffer *CommandBuffer();
 

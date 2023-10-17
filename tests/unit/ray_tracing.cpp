@@ -52,8 +52,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         }
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
@@ -996,7 +995,7 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -1044,7 +1043,7 @@ TEST_F(NegativeRayTracing, BarrierSync2AccessAccelerationStructureRayQueryDisabl
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -1457,7 +1456,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
         GTEST_SKIP() << "Extensions " << VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME << " and " << VK_NV_RAY_TRACING_EXTENSION_NAME
                      << " are not supported.";
     }
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     if (khr_acceleration_structure) {
         auto cmd_begin_query = [this, ext_transform_feedback](VkQueryType query_type, auto vuid_begin_query,
@@ -1571,7 +1570,7 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // Init a non host visible buffer
     vkt::Buffer buffer;
@@ -2374,7 +2373,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const bool index_type_uint8 = IsExtensionsEnabled(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
 
@@ -2675,7 +2674,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
 
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     constexpr size_t build_info_count = 3;
 
@@ -3043,7 +3042,7 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper(&ray_tracing_features);
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&buffer_addr_features);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // Allocate common buffer memory
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -3135,7 +3134,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
     RETURN_IF_SKIP(InitFramework())
 
     GetPhysicalDeviceFeatures2(ray_query_features);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_query_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_query_features));
     const bool rt_maintenance_1 = IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
@@ -3222,7 +3221,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
     RETURN_IF_SKIP(InitFramework())
 
     GetPhysicalDeviceFeatures2(ray_tracing_maintenance1);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_maintenance1, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_maintenance1));
 
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
@@ -4139,7 +4138,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure copying.");
 
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;

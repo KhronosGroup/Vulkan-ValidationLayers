@@ -72,7 +72,7 @@ TEST_F(NegativeDynamicState, LineStippleNotBound) {
         GTEST_SKIP() << "Stipple Bresenham lines not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -685,7 +685,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
     InitRenderTarget();
 
     {
@@ -2893,9 +2893,7 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferResetBitmask) {
     TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
@@ -2948,10 +2946,7 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferReset) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();

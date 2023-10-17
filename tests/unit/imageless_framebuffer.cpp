@@ -26,7 +26,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -352,10 +352,7 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     TEST_DESCRIPTION("Use imageless framebuffer functionality without enabling the feature");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
@@ -419,7 +416,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
         imageless_features.pNext = &mv_features;
     }
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
     InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
@@ -526,7 +523,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
 
     InitRenderTarget();
 
@@ -669,7 +666,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper(&mv_features);
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
 
     InitRenderTarget();
 
@@ -818,7 +815,7 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper(&mv_features);
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
 
     InitRenderTarget();
 
@@ -1112,7 +1109,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
     VkFormat attachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};

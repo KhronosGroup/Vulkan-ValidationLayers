@@ -169,8 +169,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
 
     struct {
         VkFormat format;
@@ -327,8 +326,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
 
     struct {
         VkFormat format;

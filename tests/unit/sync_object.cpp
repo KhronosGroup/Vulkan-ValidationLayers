@@ -767,7 +767,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     // Add a token self-dependency for this test to avoid unexpected errors
@@ -1230,7 +1230,7 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
 
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
     InitRenderTarget();
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
@@ -1268,7 +1268,7 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
 TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
     SetTargetApiVersion(VK_API_VERSION_1_0);
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
@@ -1386,7 +1386,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     vkt::Buffer buffer(*m_device, 32);
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
@@ -1429,7 +1429,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
@@ -1473,10 +1473,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
 TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    // Check for external memory device extensions
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
@@ -1720,7 +1717,7 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
@@ -1778,7 +1775,7 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -1977,7 +1974,7 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR;
@@ -2693,7 +2690,7 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
     VkPhysicalDeviceVulkan12Features vk12_features = vku::InitStructHelper();
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&vk12_features);
     GetPhysicalDeviceFeatures2(sync2_features);
-    InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    InitState(nullptr, &sync2_features);
 
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
@@ -3205,7 +3202,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     VkPhysicalDeviceVulkan12Features vk12_features = vku::InitStructHelper();
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&vk12_features);
     GetPhysicalDeviceFeatures2(sync2_features);
-    InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    InitState(nullptr, &sync2_features);
 
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
