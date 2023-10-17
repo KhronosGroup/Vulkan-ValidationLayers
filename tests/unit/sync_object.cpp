@@ -3540,3 +3540,48 @@ TEST_F(NegativeSyncObject, InvalidDeviceOnlyEvent) {
     vk::SetEvent(*m_device, ev.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncObject, SetEvent2DependencyFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(sync2_features);
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    m_commandBuffer->begin();
+
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    vkt::Event event(*m_device);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2-dependencyFlags-03825");
+    vk::CmdSetEvent2(m_commandBuffer->handle(), event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, SetEvent2HostStage) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(sync2_features);
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    m_commandBuffer->begin();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    vkt::Event event(*m_device);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2-srcStageMask-09391");  // src
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2-dstStageMask-09392");  // dst
+    vk::CmdSetEvent2(m_commandBuffer->handle(), event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+}

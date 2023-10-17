@@ -870,7 +870,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
 bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList &objlist, const Location &stage_mask_loc,
                                                             VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
-    // these are always allowed.
+    // these are always allowed by queues, calls that restrict them have dedicated VUs.
     stage_mask &= ~(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR |
                     VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR | VK_PIPELINE_STAGE_2_HOST_BIT_KHR);
     if (stage_mask == 0) {
@@ -2433,6 +2433,17 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
     if (!cb_state->IsReleaseOp(barrier)) {
         skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::dstAccessMask), barrier_loc.dot(Field::dstStageMask),
                                    queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
+    }
+
+    if (barrier_loc.function == Func::vkCmdSetEvent2) {
+        if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+            skip |= LogError("VUID-vkCmdSetEvent2-srcStageMask-09391", objects, barrier_loc.dot(Field::srcStageMask),
+                             "is VK_PIPELINE_STAGE_2_HOST_BIT.");
+        }
+        if (barrier.dstStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+            skip |= LogError("VUID-vkCmdSetEvent2-dstStageMask-09392", objects, barrier_loc.dot(Field::dstStageMask),
+                             "is VK_PIPELINE_STAGE_2_HOST_BIT.");
+        }
     }
     return skip;
 }
