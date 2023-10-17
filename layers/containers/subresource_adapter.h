@@ -405,6 +405,7 @@ class ImageRangeEncoder : public RangeEncoder {
 
 class ImageRangeGenerator {
   public:
+    using RangeType = IndexRange;
     ImageRangeGenerator(const ImageRangeGenerator&) = default;
     ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_(), pos_() {}
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,

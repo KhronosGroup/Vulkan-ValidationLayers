@@ -1145,12 +1145,14 @@ class AccessContext {
 
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
 
+    template <typename Detector>
+    HazardResult DetectHazardRange(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const;
     template <typename Detector, typename RangeGen>
-    HazardResult DetectHazard(Detector &detector, RangeGen &range_gen, DetectOptions options) const;
+    HazardResult DetectHazardGeneratedRanges(Detector &detector, RangeGen &range_gen, DetectOptions options) const;
     template <typename Detector, typename RangeGen>
-    HazardResult DetectHazard(Detector &detector, const RangeGen &range_gen, DetectOptions options) const {
+    HazardResult DetectHazardGeneratedRanges(Detector &detector, const RangeGen &range_gen, DetectOptions options) const {
         RangeGen mutable_gen(range_gen);
-        return DetectHazard<Detector, RangeGen>(detector, mutable_gen, options);
+        return DetectHazardGeneratedRanges<Detector, RangeGen>(detector, mutable_gen, options);
     }
 
     HazardResult DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
@@ -1326,9 +1328,12 @@ class AccessContext {
 
   private:
     template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const;
-    template <typename Detector>
-    HazardResult DetectAsyncHazard(const Detector &detector, const ResourceAccessRange &range, ResourceUsageTag async_tag) const;
+    HazardResult DetectHazardOneRange(Detector &detector, bool detect_prev, ResourceAccessRangeMap::const_iterator &pos,
+                                      const ResourceAccessRangeMap::const_iterator &the_end,
+                                      const ResourceAccessRange &range) const;
+
+    template <typename Detector, typename RangeGen>
+    HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag) const;
 
     template <typename NormalizeOp>
     void Trim(NormalizeOp &&normalize);
