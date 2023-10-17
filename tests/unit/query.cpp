@@ -1041,7 +1041,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkQueryPool");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     // Destroy query pool dependency prior to submit to cause ERROR
     vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 

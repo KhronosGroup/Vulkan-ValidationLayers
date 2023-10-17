@@ -26,17 +26,13 @@
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 
-bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, const Location &loc) const {
+bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
     bool skip = false;
     for (const auto &entry : cb_state.broken_bindings) {
         const auto &obj = entry.first;
         const char *cause_str = (obj.type == kVulkanObjectTypeDescriptorSet)   ? " or updated"
                                 : (obj.type == kVulkanObjectTypeCommandBuffer) ? " or rerecorded"
                                                                                : "";
-        std::string vuid;
-        std::ostringstream str;
-        str << kVUID_Core_DrawState_InvalidCommandBuffer << "-" << object_string[obj.type];
-        vuid = str.str();
         auto objlist = entry.second;  // intentional copy
         objlist.add(cb_state.commandBuffer());
         skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because bound %s was destroyed%s.",
@@ -336,7 +332,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
     }
 
     if (cb_state.state == CbState::InvalidComplete || cb_state.state == CbState::InvalidIncomplete) {
-        skip |= ReportInvalidCommandBuffer(cb_state, error_obj.location);
+        skip |= ReportInvalidCommandBuffer(cb_state, error_obj.location, "VUID-vkEndCommandBuffer-commandBuffer-00059");
     } else if (CbState::Recording != cb_state.state) {
         skip |= LogError("VUID-vkEndCommandBuffer-commandBuffer-00059", commandBuffer, error_obj.location,
                          "Cannot call End on %s when not in the RECORDING state. Must first call vkBeginCommandBuffer().",

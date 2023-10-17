@@ -3510,6 +3510,17 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     commandBuffer.end();
 }
 
+TEST_F(NegativeSyncObject, WaitOnNoEvent) {
+    RETURN_IF_SKIP(Init())
+    VkEvent bad_event = CastToHandle<VkEvent, uintptr_t>(0xbaadbeef);
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-pEvents-parameter");
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &bad_event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+                      nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeSyncObject, InvalidDeviceOnlyEvent) {
     TEST_DESCRIPTION("Attempt to use device only event with host commands.");
 

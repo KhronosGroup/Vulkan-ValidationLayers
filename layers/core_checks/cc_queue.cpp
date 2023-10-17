@@ -486,7 +486,7 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
     switch (cb_state.state) {
         case CbState::InvalidIncomplete:
         case CbState::InvalidComplete:
-            skip |= ReportInvalidCommandBuffer(cb_state, loc);
+            skip |= ReportInvalidCommandBuffer(cb_state, loc, vuid);
             break;
 
         case CbState::New:

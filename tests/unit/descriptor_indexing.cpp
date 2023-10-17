@@ -163,8 +163,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
             // generated during vk::EndCommandBuffer
             vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[0], 0, NULL);
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
 
             vk::EndCommandBuffer(m_commandBuffer->handle());
             m_errorMonitor->VerifyFound();
