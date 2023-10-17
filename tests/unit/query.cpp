@@ -2533,14 +2533,10 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
     TEST_DESCRIPTION("Begin a query in secondary command buffer that is already active in primary command buffer");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    RETURN_IF_SKIP(InitFramework())
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.inheritedQueries == VK_FALSE) {
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().inheritedQueries == VK_FALSE) {
         GTEST_SKIP() << "inheritedQueries feature is not supported";
     }
-    RETURN_IF_SKIP(InitState(&features));
 
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;

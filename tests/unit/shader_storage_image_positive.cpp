@@ -19,14 +19,10 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-    if (!available_features.shaderStorageImageExtendedFormats) {
-        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }
-    RETURN_IF_SKIP(InitState(&available_features));
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Rg32ui) uniform uimage2D storageImage;
@@ -104,16 +100,13 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components for Unknown for OpTypeImage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-    if (!available_features.shaderStorageImageExtendedFormats) {
-        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
-    } else if (!available_features.shaderStorageImageWriteWithoutFormat) {
-        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }
-    RETURN_IF_SKIP(InitState(&available_features));
+    if (m_device->phy().features().shaderStorageImageWriteWithoutFormat == VK_FALSE) {
+        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat feature is not supported";
+    }
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Unknown) readonly uniform uimage2D storageImage;
@@ -200,14 +193,10 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-    if (!available_features.shaderStorageImageExtendedFormats) {
-        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }
-    RETURN_IF_SKIP(InitState(&available_features));
 
     // not valid GLSL, but would look like:
     // layout (constant_id = 0) const uint sc = 1;

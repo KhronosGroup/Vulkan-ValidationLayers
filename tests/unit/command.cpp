@@ -4980,17 +4980,10 @@ TEST_F(NegativeCommand, IndirectDraw) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect and vkCmdDrawIndexedIndirect");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    VkPhysicalDeviceFeatures features;
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
-    if (features.multiDrawIndirect == VK_FALSE) {
-        GTEST_SKIP() << "multiDrawIndirect not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().multiDrawIndirect == VK_FALSE) {
+        GTEST_SKIP() << "multiDrawIndirect feature is disabled";
     }
-
-    VkPhysicalDeviceFeatures requiredFeatures{};
-    requiredFeatures.multiDrawIndirect = VK_TRUE;
-    RETURN_IF_SKIP(InitState(&requiredFeatures));
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -5428,16 +5421,10 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     TEST_DESCRIPTION("Verify VK_NV_clip_space_w_scaling");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-
-    if (!device_features.multiViewport) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().multiViewport == VK_FALSE) {
+        GTEST_SKIP() << "multiViewport feature is not supported";
     }
-
-    RETURN_IF_SKIP(InitState(&device_features));
     InitRenderTarget();
 
     const char vs_src[] = R"glsl(
