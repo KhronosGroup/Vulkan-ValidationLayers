@@ -1074,7 +1074,6 @@ TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
         {
             vec4 gl_Position;
             float gl_PointSize;
-            float gl_ClipDistance[];
         } gl_in[];
         void main()
         {
