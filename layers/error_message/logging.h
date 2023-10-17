@@ -283,25 +283,6 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
     }
 }
 
-static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
-                                                                VkDebugUtilsMessageTypeFlagsEXT da_type) {
-    LogMessageTypeFlags msg_type_flags = 0;
-    if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
-        msg_type_flags |= kErrorBit;
-    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
-        if ((da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0) {
-            msg_type_flags |= kPerformanceWarningBit;
-        } else {
-            msg_type_flags |= kWarningBit;
-        }
-    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
-        msg_type_flags |= kInformationBit;
-    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
-        msg_type_flags |= kVerboseBit;
-    }
-    return msg_type_flags;
-}
-
 struct Location;
 VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects, const Location *loc,
                        std::string_view vuid_text, const char *format, va_list argptr);

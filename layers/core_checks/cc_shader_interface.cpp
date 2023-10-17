@@ -642,13 +642,15 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
     const auto &rp_state = pipeline.RenderPassState();
     if (rp_state && !rp_state->UsesDynamicRendering()) {
         const auto rpci = rp_state->createInfo.ptr();
-        const auto subpass = rpci->pSubpasses[subpass_index];
-        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-            auto const &reference = subpass.pColorAttachments[i];
-            location_map[i].reference = &reference;
-            if (reference.attachment != VK_ATTACHMENT_UNUSED &&
-                rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
-                location_map[i].attachment = &rpci->pAttachments[reference.attachment];
+        if (subpass_index < rpci->subpassCount) {
+            const auto subpass = rpci->pSubpasses[subpass_index];
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+                auto const &reference = subpass.pColorAttachments[i];
+                location_map[i].reference = &reference;
+                if (reference.attachment != VK_ATTACHMENT_UNUSED &&
+                    rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
+                    location_map[i].attachment = &rpci->pAttachments[reference.attachment];
+                }
             }
         }
     }
@@ -681,16 +683,16 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
             if (attachment && !output) {
                 const auto &attachments = pipeline.Attachments();
                 if (location < attachments.size() && attachments[location].colorWriteMask != 0) {
-                    skip |= LogWarning("Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
-                                       "Attachment %" PRIu32
-                                       " not written by fragment shader; undefined values will be written to attachment",
-                                       location);
+                    skip |= LogUndefinedValue("Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
+                                              "Attachment %" PRIu32
+                                              " not written by fragment shader; undefined values will be written to attachment",
+                                              location);
                 }
             } else if (!attachment && output) {
                 if (!(alpha_to_coverage_enabled && location == 0)) {
-                    skip |=
-                        LogWarning("Undefined-Value-ShaderOutputNotConsumed", module_state.handle(), create_info_loc,
-                                   "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);
+                    skip |= LogUndefinedValue("Undefined-Value-ShaderOutputNotConsumed", module_state.handle(), create_info_loc,
+                                              "fragment shader writes to output location %" PRIu32 " with no matching attachment",
+                                              location);
                 }
             } else if (attachment && output) {
                 const auto attachment_type = GetFormatType(attachment->format);
@@ -698,7 +700,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
 
                 // Type checking
                 if (!(output_type & attachment_type)) {
-                    skip |= LogWarning(
+                    skip |= LogUndefinedValue(
                         "Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
                         "Attachment %" PRIu32
                         " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
@@ -739,7 +741,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_
         const auto &rp_state = pipeline.RenderPassState();
         const auto &attachments = pipeline.Attachments();
         if (!output && location < attachments.size() && attachments[location].colorWriteMask != 0) {
-            skip |= LogWarning(
+            skip |= LogUndefinedValue(
                 "Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
                 "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment", location);
         } else if (pipeline.fragment_output_state && output &&
@@ -750,11 +752,11 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_
 
             // Type checking
             if (!(output_type & attachment_type)) {
-                skip |=
-                    LogWarning("Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
-                               "Attachment %" PRIu32
-                               " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
-                               location, string_VkFormat(format), module_state.DescribeType(output->type_id).c_str());
+                skip |= LogUndefinedValue(
+                    "Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
+                    "Attachment %" PRIu32
+                    " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                    location, string_VkFormat(format), module_state.DescribeType(output->type_id).c_str());
             }
         }
     }

@@ -30,32 +30,30 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT messag
     return VK_FALSE;
 }
 #else
-static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
-                                                                 VkDebugUtilsMessageTypeFlagsEXT da_type) {
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        return VK_DEBUG_REPORT_ERROR_BIT_EXT;
-    }
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        if (da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
-            return VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        } else {
-            return VK_DEBUG_REPORT_WARNING_BIT_EXT;
-        }
-    }
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-        return VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
-    }
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-        return VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-    }
 
-    return 0;
+static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
+                                                                VkDebugUtilsMessageTypeFlagsEXT da_type) {
+    LogMessageTypeFlags msg_type_flags = 0;
+    if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
+        msg_type_flags |= kErrorBit;
+    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
+        if ((da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0) {
+            msg_type_flags |= kPerformanceWarningBit;
+        } else {
+            msg_type_flags |= kWarningBit;
+        }
+    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
+        msg_type_flags |= kInformationBit;
+    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
+        msg_type_flags |= kVerboseBit;
+    }
+    return msg_type_flags;
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                     VkDebugUtilsMessageTypeFlagsEXT message_types,
                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
-    const auto message_flags = DebugAnnotFlagsToReportFlags(message_severity, message_types);
+    const auto message_flags = DebugAnnotFlagsToMsgTypeFlags(message_severity, message_types);
     const char *message = callback_data->pMessage;
     auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
 

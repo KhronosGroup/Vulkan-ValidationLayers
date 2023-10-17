@@ -548,6 +548,15 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
+                // Currently works like LogWarning, but allows developer to better categorize the warning
+                bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
                 bool DECORATE_PRINTF(5, 6) LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
