@@ -677,3 +677,72 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
     return;
 }
 
+TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
+    TEST_DESCRIPTION("Use a bad vertex shader, but don't select it for validation and make sure we don't get a buffer oob warning");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    const VkBool32 value = true;
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                       &value};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &setting};
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    validation_features.pNext = &layer_settings_create_info;
+    RETURN_IF_SKIP(InitFramework(&validation_features));
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features2);
+    if (!features2.features.robustBufferAccess) {
+        GTEST_SKIP() << "Not safe to write outside of buffer memory";
+    }
+    // Robust buffer access will be on by default
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    InitState(nullptr, nullptr, pool_flags);
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer write_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    static const char vertshader[] =
+        "#version 450\n"
+        "layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;\n"
+        "void main() {\n"
+        "        Data.data[4] = 0xdeadca71;\n"
+        "}\n";
+
+    // Don't instrument buggy vertex shader
+    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+    // Instrument non-buggy fragment shader
+    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeaturesEXT features = vku::InitStructHelper();
+    features.enabledValidationFeatureCount = 1;
+    features.pEnabledValidationFeatures = enabled;
+    VkShaderObj fs(this, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", false,
+                   &features);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_.clear();
+    pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
+    pipe.shader_stages_.push_back(fs.GetStageCreateInfo());
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    // Should not get a warning since buggy vertex shader wasn't instrumented
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+}
