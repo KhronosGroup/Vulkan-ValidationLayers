@@ -1559,7 +1559,7 @@ std::array<std::array<uint32_t, 16>, 16> VkImageObj::Read() {
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage, const spv_target_env env,
-                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *entry_point, bool debug)
+                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *entry_point, bool debug, const void *pNext)
     : m_framework(*framework), m_device(*(framework->DeviceObj())), m_source(source), m_spv_env(env) {
     m_stage_info = vku::InitStructHelper();
     m_stage_info.flags = 0;
@@ -1568,17 +1568,18 @@ VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkSha
     m_stage_info.pName = entry_point;
     m_stage_info.pSpecializationInfo = spec_info;
     if (source_type == SPV_SOURCE_GLSL) {
-        InitFromGLSL(debug);
+        InitFromGLSL(debug, pNext);
     } else if (source_type == SPV_SOURCE_ASM) {
         InitFromASM();
     }
 }
 
-bool VkShaderObj::InitFromGLSL(bool debug) {
+bool VkShaderObj::InitFromGLSL(bool debug, const void *pNext) {
     std::vector<uint32_t> spv;
     m_framework.GLSLtoSPV(&m_device.phy().limits_, m_stage_info.stage, m_source, spv, debug, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
+    moduleCreateInfo.pNext = pNext;
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
