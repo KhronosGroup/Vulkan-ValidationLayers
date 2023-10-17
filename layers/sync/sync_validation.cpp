@@ -1715,9 +1715,7 @@ struct ActionToOpsAdapter {
 template <typename Action, typename RangeGen>
 void UpdateMemoryAccessState(ResourceAccessRangeMap &accesses, const Action &action, RangeGen &range_gen) {
     ActionToOpsAdapter<Action> ops{action};
-    for (; range_gen->non_empty(); ++range_gen) {
-        infill_update_range(accesses, *range_gen, ops);
-    }
+    infill_update_rangegen(accesses, range_gen, ops);
 }
 
 template <typename Action>
