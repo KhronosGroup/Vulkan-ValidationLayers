@@ -256,7 +256,7 @@ TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
     }
 
     // Cause error by submitting command buffer that references destroyed pipeline
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkPipeline");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 }

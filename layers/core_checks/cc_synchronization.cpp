@@ -1001,13 +1001,8 @@ bool CoreChecks::ValidateEventStageMask(const CMD_BUFFER_STATE &cb_state, size_t
             stage_mask |= event_data->second;
         } else {
             auto global_event_data = state_data->Get<EVENT_STATE>(event);
-            if (!global_event_data) {
-                skip |= state_data->LogError(event, kVUID_Core_DrawState_InvalidEvent,
-                                             "%s cannot be waited on if it has never been set.",
-                                             state_data->FormatHandle(event).c_str());
-            } else {
-                stage_mask |= global_event_data->stageMask;
-            }
+            assert(global_event_data);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
+            stage_mask |= global_event_data->stageMask;
         }
     }
     // TODO: Need to validate that host_bit is only set if set event is called

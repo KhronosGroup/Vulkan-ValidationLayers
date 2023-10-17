@@ -164,12 +164,12 @@ class CommandValidationOutputGenerator(BaseGenerator):
                 // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
                 switch (cb_state.state) {
                     case CbState::Recording:
-                        skip |= ValidateCmdSubpassState(cb_state, loc);
+                        skip |= ValidateCmdSubpassState(cb_state, loc, info.recording_vuid);
                         break;
 
                     case CbState::InvalidComplete:
                     case CbState::InvalidIncomplete:
-                        skip |= ReportInvalidCommandBuffer(cb_state, loc);
+                        skip |= ReportInvalidCommandBuffer(cb_state, loc, info.recording_vuid);
                         break;
 
                     default:
