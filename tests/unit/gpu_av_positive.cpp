@@ -545,20 +545,21 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
     void *allocate_pnext = nullptr;
     auto pool_create_flags = 0;
     auto layout_create_flags = 0;
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
     ds_binding_flags[0] = 0;
-    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+    ds_binding_flags[1] = 0;
+    ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
 
     layout_createinfo_binding_flags[0] = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfo>();
-    layout_createinfo_binding_flags[0].bindingCount = 2;
+    layout_createinfo_binding_flags[0].bindingCount = 3;
     layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
     layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
     pool_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
     layout_pnext = layout_createinfo_binding_flags;
 
-    layout_create_flags = 0;
-    pool_create_flags = 0;
+    layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    pool_create_flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 

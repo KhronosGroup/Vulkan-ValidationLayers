@@ -2837,7 +2837,9 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     props.limits.maxComputeWorkGroupCount[2] = 2;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState());
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);
