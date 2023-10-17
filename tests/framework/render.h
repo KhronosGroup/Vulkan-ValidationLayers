@@ -394,10 +394,11 @@ class VkShaderObj : public vkt::ShaderModule {
     // optional arguments listed order of most likely to be changed manually by a test
     VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
                 const spv_target_env env = SPV_ENV_VULKAN_1_0, SpvSourceType source_type = SPV_SOURCE_GLSL,
-                const VkSpecializationInfo *spec_info = nullptr, char const *entry_point = "main", bool debug = false);
+                const VkSpecializationInfo *spec_info = nullptr, char const *entry_point = "main", bool debug = false,
+                const void *pNext = nullptr);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
-    bool InitFromGLSL(bool debug = false);
+    bool InitFromGLSL(bool debug = false, const void *pNext = nullptr);
     VkResult InitFromGLSLTry(bool debug = false, const vkt::Device *custom_device = nullptr);
     bool InitFromASM();
     VkResult InitFromASMTry();
