@@ -1632,12 +1632,11 @@ TEST_F(NegativeDynamicState, DrawNotSetTessellationDomainOrigin) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
-        GTEST_SKIP() << "extendedDynamicState3TessellationDomainOrigin not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state3_features));
+    auto feature_requirements = MakeFeatureRequirementsCollection(FEATURE_REQUIREMENTS(
+        VkPhysicalDeviceExtendedDynamicState3FeaturesEXT, FEATURE_MANDATORY(extendedDynamicState3TessellationDomainOrigin)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -1668,13 +1667,13 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthClampEnable) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3DepthClampEnable) {
-        GTEST_SKIP() << "extendedDynamicState3DepthClampEnable not supported";
-    }
-    features2.features.depthClamp = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    auto feature_requirements =
+        MakeFeatureRequirementsCollection(FEATURE_REQUIREMENTS(VkPhysicalDeviceFeatures2, FEATURE_DISABLED(features.depthClamp)),
+                                          FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT,
+                                                               FEATURE_MANDATORY(extendedDynamicState3DepthClampEnable)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -1699,16 +1698,17 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthClampEnable) {
 
 TEST_F(NegativeDynamicState, DrawNotSetPolygonMode) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
+
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3PolygonMode) {
-        GTEST_SKIP() << "extendedDynamicState3PolygonMode not supported";
-    }
-    features2.features.fillModeNonSolid = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    auto feature_requirements = MakeFeatureRequirementsCollection(
+        FEATURE_REQUIREMENTS(VkPhysicalDeviceFeatures2, FEATURE_DISABLED(features.fillModeNonSolid)),
+        FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT,
+                             FEATURE_MANDATORY(extendedDynamicState3PolygonMode)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -1744,13 +1744,13 @@ TEST_F(NegativeDynamicState, DrawNotSetAlphaToOneEnable) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable) {
-        GTEST_SKIP() << "extendedDynamicState3AlphaToOneEnable not supported";
-    }
-    features2.features.alphaToOne = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    auto feature_requirements =
+        MakeFeatureRequirementsCollection(FEATURE_REQUIREMENTS(VkPhysicalDeviceFeatures2, FEATURE_DISABLED(features.alphaToOne)),
+                                          FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT,
+                                                               FEATURE_MANDATORY(extendedDynamicState3AlphaToOneEnable)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -1777,13 +1777,13 @@ TEST_F(NegativeDynamicState, DrawNotSetLogicOpEnable) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
-        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
-    }
-    features2.features.logicOp = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    auto feature_requirements =
+        MakeFeatureRequirementsCollection(FEATURE_REQUIREMENTS(VkPhysicalDeviceFeatures2, FEATURE_DISABLED(features.logicOp)),
+                                          FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT,
+                                                               FEATURE_MANDATORY(extendedDynamicState3LogicOpEnable)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -1812,13 +1812,13 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
-        GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
-    }
-    features2.features.dualSrcBlend = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    auto feature_requirements =
+        MakeFeatureRequirementsCollection(FEATURE_REQUIREMENTS(VkPhysicalDeviceFeatures2, FEATURE_DISABLED(features.dualSrcBlend)),
+                                          FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT,
+                                                               FEATURE_MANDATORY(extendedDynamicState3ColorBlendEquation)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -2051,18 +2051,13 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnable) {
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceLineRasterizationFeaturesEXT line_raster_features = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
-        vku::InitStructHelper(&line_raster_features);
-    GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3LineStippleEnable) {
-        GTEST_SKIP() << "dynamic state 3 features not supported";
-    }
-    if (!line_raster_features.stippledRectangularLines) {
-        GTEST_SKIP() << "stippledRectangularLines features not supported";
-    }
+    auto feature_requirements = MakeFeatureRequirementsCollection(
+        FEATURE_REQUIREMENTS(VkPhysicalDeviceLineRasterizationFeaturesEXT, FEATURE_MANDATORY(stippledRectangularLines)),
+        FEATURE_REQUIREMENTS(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT,
+                             FEATURE_MANDATORY(extendedDynamicState3LineStippleEnable)));
 
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state3_features));
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
+
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -2086,12 +2081,10 @@ TEST_F(NegativeDynamicState, DrawNotSetColorWriteMask) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
-        GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state3_features));
+    auto feature_requirements = MakeFeatureRequirementsCollection(FEATURE_REQUIREMENTS(
+        VkPhysicalDeviceExtendedDynamicState3FeaturesEXT, FEATURE_MANDATORY(extendedDynamicState3ColorWriteMask)));
+
+    RETURN_IF_SKIP(InitStateWithRequirements(feature_requirements))
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteMaskEXT-pColorWriteMasks-parameter");
