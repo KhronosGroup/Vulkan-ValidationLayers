@@ -1635,29 +1635,45 @@ Iterator split(Iterator in, Map &map, const Range &range) {
 }
 
 // Apply an operation over a range map, infilling where content is absent, updating where content is present.
+// The passed pos must *either* be strictly less than range or *is* lower_bound (which may be end)
 // Trims to range boundaries.
 // infill op doesn't have to alter map, but mustn't invalidate iterators passed to it. (i.e. no erasure)
 // infill data (default mapped value or other initial value) is contained with ops.
 // update allows existing ranges to be updated (merged, whatever) based on data contained in ops.  All iterators
 // passed to update are already trimmed to fit within range.
-template <typename RangeMap, typename InfillUpdateOps>
-void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range, const InfillUpdateOps &ops) {
+template <typename RangeMap, typename InfillUpdateOps, typename Iterator = typename RangeMap::iterator>
+Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMap::key_type &range, const InfillUpdateOps &ops) {
     using KeyType = typename RangeMap::key_type;
     using IndexType = typename RangeMap::index_type;
-    const auto map_end = map.end();
 
-    if (range.empty()) return;
+    const auto end = map.end();
+    assert((pos == end) || (pos == map.lower_bound(range)) || pos->first.strictly_less(range));
 
-    // Starting with
-    auto pos = map.lower_bound(range);
-    if ((pos != map_end) && (range.begin > pos->first.begin)) {
+    if (range.empty()) return pos;
+    if (pos == end) {
+        // Only pass pos == end for range tail after last entry
+        assert(end == map.lower_bound(range));
+    } else if (pos->first.strictly_less(range)) {
+        // pos isn't lower_bound for range (it's less than range), however, if range is monotonically increasing it's likely
+        // the next entry in the map will be the lower bound.
+
+        // If the new (pos + 1) *isn't* stricly_less and pos is,
+        // (pos + 1) must be the lower_bound, otherwise we have to look for it O(log n)
+        ++pos;
+        if (pos->first.strictly_less(range)) {
+            pos = map.lower_bound(range);
+        }
+        assert(pos == map.lower_bound(range));
+    }
+
+    if ((pos != end) && (range.begin > pos->first.begin)) {
         // lower bound starts before the range, trim and advance
         pos = map.split(pos, range.begin, sparse_container::split_op_keep_both());
         ++pos;
     }
 
     IndexType current_begin = range.begin;
-    while ((pos != map_end) && (current_begin < range.end)) {
+    while ((pos != end) && (current_begin < range.end)) {
         // The current_begin is either pointing to the next existing value to update or the beginning of a gap to infill
         assert(pos->first.begin >= current_begin);
 
@@ -1685,6 +1701,23 @@ void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range
     // Fill to the end as needed
     if (current_begin < range.end) {
         ops.infill(map, pos, KeyType(current_begin, range.end));
+    }
+
+    return pos;
+}
+
+template <typename RangeMap, typename InfillUpdateOps>
+void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range, const InfillUpdateOps &ops) {
+    if (range.empty()) return;
+    auto pos = map.lower_bound(range);
+    infill_update_range(map, pos, range, ops);
+}
+
+template <typename RangeMap, typename RangeGen, typename InfillUpdateOps>
+void infill_update_rangegen(RangeMap &map, RangeGen &range_gen, const InfillUpdateOps &ops) {
+    auto pos = map.lower_bound(*range_gen);
+    for (; range_gen->non_empty(); ++range_gen) {
+        pos = infill_update_range(map, pos, *range_gen, ops);
     }
 }
 
