@@ -27,6 +27,7 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/video_session_state.h"
 #include "generated/layer_chassis_dispatch.h"
+#include "generated/state_tracker_helper.h"
 #include "error_message/logging.h"
 #include "vulkan/vk_layer.h"
 #include "containers/custom_containers.h"
@@ -1791,8 +1792,7 @@ class ValidationStateTracker : public ValidationObject {
 
     // Features and properties that depend on platforms being defined
     // They will be false if platform is not defined
-    bool android_external_format_resolve_feature = false;  // VK_ANDROID_external_format_resolve
-    bool android_external_format_resolve_null_color_attachment_prop = false;
+    bool android_external_format_resolve_null_color_attachment_prop = false;  // VK_ANDROID_external_format_resolve
 
     // Queue family extension properties -- storing queue family properties gathered from
     // VkQueueFamilyProperties2::pNext chain

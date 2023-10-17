@@ -23,29 +23,28 @@ static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2KH
 
 VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features) {
     VkPipelineStageFlags2KHR result = 0;
-    if (!features.core.geometryShader) {
+    if (!features.geometryShader) {
         result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
     }
-    if (!features.core.tessellationShader) {
+    if (!features.tessellationShader) {
         result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
     }
-    if (!features.conditional_rendering_features.conditionalRendering) {
+    if (!features.conditionalRendering) {
         result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
     }
-    if (!features.fragment_density_map_features.fragmentDensityMap) {
+    if (!features.fragmentDensityMap) {
         result |= VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
     }
-    if (!features.transform_feedback_features.transformFeedback) {
+    if (!features.transformFeedback) {
         result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
     }
-    if (!features.mesh_shader_features.meshShader) {
+    if (!features.meshShader) {
         result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
     }
-    if (!features.mesh_shader_features.taskShader) {
+    if (!features.taskShader) {
         result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
     }
-    if (!features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
-        !features.shading_rate_image_features.shadingRateImage) {
+    if (!features.attachmentFragmentShadingRate && !features.shadingRateImage) {
         result |= VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     }
     // TODO: VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR

@@ -43,48 +43,6 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
           'FragmentBarycentricNV',
         ]
 
-        # This is a list that maps the Vulkan struct a feature field is with the internal
-        # state tracker's enabled features value
-        #
-        # If a new SPIR-V Capability is added to uses a new feature struct, it will need to be
-        # added here with the name added in 'DeviceFeatures' struct
-        self.featureMap = [
-          # {'vulkan' : <Vulkan Spec Feature Struct Name>, 'layer' : <Name of variable in CoreChecks DeviceFeatures>},
-            {'vulkan' : 'VkPhysicalDeviceFeatures', 'layer' : 'core'},
-            {'vulkan' : 'VkPhysicalDeviceVulkan11Features', 'layer' : 'core11'},
-            {'vulkan' : 'VkPhysicalDeviceVulkan12Features', 'layer' : 'core12'},
-            {'vulkan' : 'VkPhysicalDeviceVulkan13Features', 'layer' : 'core13'},
-            {'vulkan' : 'VkPhysicalDeviceTransformFeedbackFeaturesEXT', 'layer' : 'transform_feedback_features'},
-            {'vulkan' : 'VkPhysicalDeviceCooperativeMatrixFeaturesNV', 'layer' : 'cooperative_matrix_features'},
-            {'vulkan' : 'VkPhysicalDeviceComputeShaderDerivativesFeaturesNV', 'layer' : 'compute_shader_derivatives_features'},
-            {'vulkan' : 'VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV', 'layer' : 'fragment_shader_barycentric_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderImageFootprintFeaturesNV', 'layer' : 'shader_image_footprint_features'},
-            {'vulkan' : 'VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT', 'layer' : 'fragment_shader_interlock_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT', 'layer' : 'demote_to_helper_invocation_features'},
-            {'vulkan' : 'VkPhysicalDeviceRayQueryFeaturesKHR', 'layer' : 'ray_query_features'},
-            {'vulkan' : 'VkPhysicalDeviceRayTracingPipelineFeaturesKHR', 'layer' : 'ray_tracing_pipeline_features'},
-            {'vulkan' : 'VkPhysicalDeviceAccelerationStructureFeaturesKHR', 'layer' : 'ray_tracing_acceleration_structure_features'},
-            {'vulkan' : 'VkPhysicalDeviceFragmentDensityMapFeaturesEXT', 'layer' : 'fragment_density_map_features'},
-            {'vulkan' : 'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT', 'layer' : 'buffer_device_address_ext_features'},
-            {'vulkan' : 'VkPhysicalDeviceFragmentShadingRateFeaturesKHR', 'layer' : 'fragment_shading_rate_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL', 'layer' : 'shader_integer_functions2_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderSMBuiltinsFeaturesNV', 'layer' : 'shader_sm_builtins_features'},
-            {'vulkan' : 'VkPhysicalDeviceShadingRateImageFeaturesNV', 'layer' : 'shading_rate_image_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloatFeaturesEXT', 'layer' : 'shader_atomic_float_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT', 'layer' : 'shader_image_atomic_int64_features'},
-            {'vulkan' : 'VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR', 'layer' : 'workgroup_memory_explicit_layout_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT', 'layer' : 'shader_atomic_float2_features'},
-            {'vulkan' : 'VkPhysicalDeviceRayTracingMotionBlurFeaturesNV', 'layer' : 'ray_tracing_motion_blur_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR', 'layer' : 'shader_integer_dot_product_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR', 'layer' : 'shader_subgroup_uniform_control_flow_features'},
-            {'vulkan' : 'VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR', 'layer' : 'ray_tracing_maintenance1_features'},
-            {'vulkan' : 'VkPhysicalDeviceImageProcessingFeaturesQCOM', 'layer' : 'image_processing_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM', 'layer' : 'shader_core_builtins_features'},
-            {'vulkan' : 'VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR', 'layer' : 'ray_tracing_position_fetch_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderTileImageFeaturesEXT', 'layer': 'shader_tile_image_features'},
-            {'vulkan' : 'VkPhysicalDeviceCooperativeMatrixFeaturesKHR', 'layer': 'cooperative_matrix_features_khr'},
-        ]
-
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
         # but the XML can still list them. This list all promoted structs to ignore since they are aliased.
         # Tried to generate these, but no reliable way from vk.xml
@@ -132,7 +90,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             version = enable.version.replace('VK_VERSION', 'VK_API_VERSION')
             out.append(f'{{{version}, nullptr, nullptr, ""}}')
         elif enable.feature is not None:
-            out.append(f'{{0, &{enable.struct}::{enable.feature}, nullptr, ""}}')
+            out.append(f'{{0, &DeviceFeatures::{enable.feature}, nullptr, ""}}')
         elif enable.extension is not None:
             # All fields in DeviceExtensions should just be the extension name lowercase
             out.append(f'{{0, nullptr, &DeviceExtensions::{enable.extension.lower()}, ""}}')
@@ -198,7 +156,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('''
             struct FeaturePointer {
                 // Callable object to test if this feature is enabled in the given aggregate feature struct
-                const std::function<VkBool32(const DeviceFeatures &)> IsEnabled;
+                const std::function<bool(const DeviceFeatures &)> IsEnabled;
 
                 // Test if feature pointer is populated
                 explicit operator bool() const { return static_cast<bool>(IsEnabled); }
@@ -206,13 +164,10 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
                 // Default and nullptr constructor to create an empty FeaturePointer
                 FeaturePointer() : IsEnabled(nullptr) {}
                 FeaturePointer(std::nullptr_t ptr) : IsEnabled(nullptr) {}
-
-                // Constructors to populate FeaturePointer based on given pointer to member
+                FeaturePointer(bool DeviceFeatures::*ptr)
+                    : IsEnabled([=](const DeviceFeatures &features) { return features.*ptr; }) {}
+            };
             ''')
-        for feature in self.featureMap:
-            out.append('    FeaturePointer(VkBool32 {}::*ptr)\n'.format(feature['vulkan']))
-            out.append('        : IsEnabled([=](const DeviceFeatures &features) {{ return features.{}.*ptr; }}) {{}}\n'.format(feature['layer']))
-        out.append('};')
 
         out.append('''
             // Each instance of the struct will only have a singel field non-null
@@ -282,7 +237,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
         out.append('''
 // clang-format off
-static inline const char* SpvCapabilityRequirments(uint32_t capability) {
+static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     static const vvl::unordered_map<uint32_t, std::string_view> table {
 ''')
         for spirv in [x for x in self.vk.spirv if x.capability and x.name not in self.capabilityExcludeList]:
@@ -409,12 +364,12 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
                 if (has_support == false) {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08740" : "VUID-VkShaderCreateInfoEXT-pCode-08740";
                     skip |= LogError(vuid, device, loc,
-                        "SPIR-V Capability %s was declared, but one of the following requirements is required (%s).", string_SpvCapability(insn.Word(1)), SpvCapabilityRequirments(insn.Word(1)));
+                        "SPIR-V Capability %s was declared, but one of the following requirements is required (%s).", string_SpvCapability(insn.Word(1)), SpvCapabilityRequirements(insn.Word(1)));
                 }
 
                 // Portability checks
                 if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
-                    if ((VK_FALSE == enabled_features.portability_subset_features.shaderSampleRateInterpolationFunctions) &&
+                    if ((VK_FALSE == enabled_features.shaderSampleRateInterpolationFunctions) &&
                         (spv::CapabilityInterpolationFunction == insn.Word(1))) {
                         skip |= LogError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325", device, loc,
                                             "SPIR-V (portability error) InterpolationFunction Capability are not supported "

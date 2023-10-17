@@ -62,7 +62,7 @@ bool CoreChecks::ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELIN
 
 bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, const Location &loc, const char *vuid) const {
     bool skip = false;
-    if (enabled_features.core13.pipelineCreationCacheControl == VK_FALSE) {
+    if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
             VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT;
         if ((flags & invalid_flags) != 0) {
@@ -75,7 +75,7 @@ bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, 
 
 bool CoreChecks::ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags flags, const Location &loc, const char *vuid) const {
     bool skip = false;
-    if (enabled_features.device_generated_commands_compute_features_nv.deviceGeneratedComputePipelines == VK_FALSE) {
+    if (enabled_features.deviceGeneratedComputePipelines == VK_FALSE) {
         if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
             skip |= LogError(vuid, device, loc, "is %s but deviceGeneratedComputePipelines feature was not enabled.",
                              string_VkPipelineCreateFlags(flags).c_str());
@@ -86,7 +86,7 @@ bool CoreChecks::ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags fla
 
 bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, const Location &loc) const {
     bool skip = false;
-    if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess == VK_FALSE) {
+    if (enabled_features.pipelineProtectedAccess == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
             VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
         if ((flags & invalid_flags) != 0) {
@@ -107,7 +107,7 @@ bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPip
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineCache *pPipelineCache,
                                                     const ErrorObject &error_obj) const {
     bool skip = false;
-    if (enabled_features.core13.pipelineCreationCacheControl == VK_FALSE) {
+    if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {
         if ((pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892", device,
                              error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
@@ -125,7 +125,7 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE &pipe
                                                       const Location &loc) const {
     bool skip = false;
 
-    if (!enabled_features.pipeline_robustness_features.pipelineRobustness) {
+    if (!enabled_features.pipelineRobustness) {
         if (create_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfoEXT, Field::storageBuffers),
@@ -176,7 +176,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
                                                 const Location &loc, const char *feature_vuid) const {
     bool skip = false;
 
-    if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
+    if (!enabled_features.pipelineExecutableInfo) {
         skip |= LogError(feature_vuid, device, loc, "called when pipelineExecutableInfo feature is not enabled.");
     }
 
@@ -364,7 +364,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 }
             }
 
-            if (enabled_features.core.variableMultisampleRate == VK_FALSE) {
+            if (enabled_features.variableMultisampleRate == VK_FALSE) {
                 if (const auto *multisample_state = pipeline_state.MultisampleState(); multisample_state) {
                     if (const auto &render_pass = cb_state->activeRenderPass; render_pass) {
                         const uint32_t subpass = cb_state->GetActiveSubpass();
@@ -405,7 +405,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
             skip |= LogError("VUID-vkCmdBindPipeline-None-02323", objlist, error_obj.location, "transform feedback is active.");
         }
-        if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
+        if (enabled_features.pipelineProtectedAccess) {
             if (cb_state->unprotected) {
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
                 if (pipeline_state.create_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
@@ -461,7 +461,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_
         const auto flags = stage_state.pipeline_create_info->flags;
 
         if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
-            !enabled_features.core13.subgroupSizeControl) {
+            !enabled_features.subgroupSizeControl) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-flags-02784", device, loc.dot(Field::flags),
                              "includes "
                              "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, "
@@ -469,7 +469,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_
         }
 
         if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
-            if (!enabled_features.core13.computeFullSubgroups) {
+            if (!enabled_features.computeFullSubgroups) {
                 skip |=
                     LogError("VUID-VkPipelineShaderStageCreateInfo-flags-02785", device, loc.dot(Field::flags),
                              "includes "
@@ -617,7 +617,7 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Lo
         const auto module_create_info = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
         if (module_identifier) {
             if (module_identifier->identifierSize > 0) {
-                if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
+                if (!(enabled_features.shaderModuleIdentifier)) {
                     skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850", device, loc,
                                      "has a "
                                      "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
@@ -654,7 +654,7 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Lo
                                  string_VkShaderStageFlagBits(stage_ci.stage));
             }
         } else {
-            if (enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
+            if (enabled_features.graphicsPipelineLibrary) {
                 if (stage_ci.module == VK_NULL_HANDLE && !module_create_info) {
                     skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06845", device, loc,
                                      "module is not a valid VkShaderModule, but no "
@@ -662,7 +662,7 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Lo
                                      "pNext chain. (stage %s).",
                                      string_VkShaderStageFlagBits(stage_ci.stage));
                 }
-            } else if (stage_ci.module == VK_NULL_HANDLE && !enabled_features.maintenance5_features.maintenance5) {
+            } else if (stage_ci.module == VK_NULL_HANDLE && !enabled_features.maintenance5) {
                 skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-08771", device, loc,
                                  "module is not a valid VkShaderModule and both teh graphicsPipelineLibrary and maintenance5 "
                                  "features were not enabled. (stage %s).",

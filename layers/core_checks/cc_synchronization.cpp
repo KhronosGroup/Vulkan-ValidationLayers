@@ -466,7 +466,7 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     if (sem_type_create_info) {
-        if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE && !enabled_features.core12.timelineSemaphore) {
+        if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE && !enabled_features.timelineSemaphore) {
             skip |= LogError("VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252", device,
                              create_info_loc.dot(Field::semaphoreType),
                              "is VK_SEMAPHORE_TYPE_TIMELINE, but timelineSemaphore feature was not enabled.");
@@ -608,7 +608,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
-    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, enabled_features.core13.synchronization2,
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, enabled_features.synchronization2,
                                          "VUID-vkCmdSetEvent2-synchronization2-03824", "synchronization2");
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
@@ -646,7 +646,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
     const Location stage_mask_loc = error_obj.location.dot(Field::stageMask);
 
     bool skip = false;
-    if (!enabled_features.core13.synchronization2) {
+    if (!enabled_features.synchronization2) {
         skip |= LogError("VUID-vkCmdResetEvent2-synchronization2-03829", commandBuffer, error_obj.location,
                          "the synchronization2 feature was not enabled.");
     }
@@ -917,7 +917,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
 bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlist, const Location &stage_mask_loc,
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
-    if (!enabled_features.core13.synchronization2 && stage_mask == 0) {
+    if (!enabled_features.synchronization2 && stage_mask == 0) {
         const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, 0, device_extensions);
         skip |= LogError(vuid, objlist, stage_mask_loc, "must not be 0 unless synchronization2 is enabled.");
     }
@@ -953,7 +953,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
 
     const auto expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
 
-    if (!enabled_features.ray_query_features.rayQuery && (access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)) {
+    if (!enabled_features.rayQuery && (access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)) {
         const auto illegal_pipeline_stages = allVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
         if (stage_mask & illegal_pipeline_stages) {
             // Select right vuid based on enabled extensions
@@ -1068,7 +1068,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     assert(cb_state);
 
     bool skip = false;
-    if (!enabled_features.core13.synchronization2) {
+    if (!enabled_features.synchronization2) {
         skip |= LogError("VUID-vkCmdWaitEvents2-synchronization2-03836", commandBuffer, error_obj.location,
                          "the synchronization2 feature was not enabled.");
     }
@@ -1211,7 +1211,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
     const LogObjectList objlist(commandBuffer);
 
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
-    if (!enabled_features.core13.synchronization2) {
+    if (!enabled_features.synchronization2) {
         skip |= LogError("VUID-vkCmdPipelineBarrier2-synchronization2-03848", commandBuffer, error_obj.location,
                          "the synchronization2 feature was not enabled.");
     }
@@ -1536,7 +1536,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const CMD
         const bool has_stencil_mask = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 
         if (vkuFormatIsDepthAndStencil(image_format)) {
-            if (enabled_features.core12.separateDepthStencilLayouts) {
+            if (enabled_features.separateDepthStencilLayouts) {
                 if (!has_depth_mask && !has_stencil_mask) {
                     auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotDepthOrStencilAspect);
                     skip |=
@@ -2081,7 +2081,7 @@ static bool Validate(const CoreChecks *device_data, const ValidatorState &val, c
         }
     }
 
-    if (!device_data->enabled_features.core13.synchronization2 && val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
+    if (!device_data->enabled_features.synchronization2 && val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
         if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && src_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
             skip |= val.LogMsg(QueueError::kSync1ConcurrentSrc, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
@@ -2204,7 +2204,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     const VkImageLayout new_layout = mem_barrier.newLayout;
 
     bool is_ilt = true;
-    if (enabled_features.core13.synchronization2) {
+    if (enabled_features.synchronization2) {
         is_ilt = old_layout != new_layout;
     } else {
         if (old_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || old_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
@@ -2227,7 +2227,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     }
 
     if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
-        if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
+        if (!enabled_features.attachmentFeedbackLoopLayout) {
             const auto &vuid =
                 sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadAttFeedbackLoopLayout);
             skip |= LogError(vuid, objects, barrier_loc.dot(Field::newLayout),
@@ -2388,10 +2388,9 @@ bool CoreChecks::ValidateShaderTimeImageCommon(const LogObjectList &objlist, con
     bool skip = false;
 
     // Check shader tile image features
-    const auto &tile_image_features = enabled_features.shader_tile_image_features;
-    const bool features_enabled = tile_image_features.shaderTileImageColorReadAccess ||
-                                  tile_image_features.shaderTileImageDepthReadAccess ||
-                                  tile_image_features.shaderTileImageStencilReadAccess;
+    const bool features_enabled = enabled_features.shaderTileImageColorReadAccess ||
+                                  enabled_features.shaderTileImageDepthReadAccess ||
+                                  enabled_features.shaderTileImageStencilReadAccess;
     if (!features_enabled) {
         const auto &feature_error_vuid =
             sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageFeatureError);

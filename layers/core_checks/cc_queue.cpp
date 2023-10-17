@@ -249,7 +249,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         return true;
     }
 
-    if (!enabled_features.core13.synchronization2) {
+    if (!enabled_features.synchronization2) {
         skip |= LogError("VUID-vkQueueSubmit2-synchronization2-03866", queue, error_obj.location,
                          "synchronization2 feature is not enabled");
     }

@@ -66,7 +66,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                                                  VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
+    if (enabled_features.shaderObject == VK_FALSE) {
         skip |=
             LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
@@ -86,36 +86,36 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         const VkShaderCreateInfoEXT& createInfo = pCreateInfos[i];
         if (createInfo.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
             createInfo.stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-            if (enabled_features.core.tessellationShader == VK_FALSE) {
+            if (enabled_features.tessellationShader == VK_FALSE) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08419", device, create_info_loc.dot(Field::stage),
                                  "is %s, but the tessellationShader feature was not enabled.",
                                  string_VkShaderStageFlagBits(createInfo.stage));
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
-            if (enabled_features.core.geometryShader == VK_FALSE) {
+            if (enabled_features.geometryShader == VK_FALSE) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08420", device, create_info_loc.dot(Field::stage),
                                  "is VK_SHADER_STAGE_GEOMETRY_BIT, but the geometryShader feature was not enabled.");
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
-            if (enabled_features.mesh_shader_features.taskShader == VK_FALSE) {
+            if (enabled_features.taskShader == VK_FALSE) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08421", device, create_info_loc.dot(Field::stage),
                                  "is VK_SHADER_STAGE_TASK_BIT_EXT, but the taskShader feature was not enabled.");
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
-            if (enabled_features.mesh_shader_features.meshShader == VK_FALSE) {
+            if (enabled_features.meshShader == VK_FALSE) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08422", device, create_info_loc.dot(Field::stage),
                                  "is VK_SHADER_STAGE_MESH_BIT_EXT, but the meshShader feature was not enabled.");
             }
         }
 
         if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0 &&
-            enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate == VK_FALSE) {
+            enabled_features.attachmentFragmentShadingRate == VK_FALSE) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08487", device, create_info_loc.dot(Field::flags),
                              "is %s, but the attachmentFragmentShadingRate feature was not enabled.",
                              string_VkShaderCreateFlagsEXT(createInfo.flags).c_str());
         }
         if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT) != 0 &&
-            enabled_features.fragment_density_map_features.fragmentDensityMap == VK_FALSE) {
+            enabled_features.fragmentDensityMap == VK_FALSE) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08489", device, create_info_loc.dot(Field::flags),
                              "is %s, but the fragmentDensityMap feature was not enabled.",
                              string_VkShaderCreateFlagsEXT(createInfo.flags).c_str());
@@ -169,14 +169,14 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             non_linked_task_mesh_stage = i;
         }
 
-        if (enabled_features.core.tessellationShader == VK_FALSE &&
+        if (enabled_features.tessellationShader == VK_FALSE &&
             (createInfo.nextStage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
              createInfo.nextStage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08428", device, create_info_loc.dot(Field::nextStage),
                              "is %s, but tessellationShader feature was not enabled.",
                              string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
-        if (enabled_features.core.geometryShader == VK_FALSE && createInfo.nextStage == VK_SHADER_STAGE_GEOMETRY_BIT) {
+        if (enabled_features.geometryShader == VK_FALSE && createInfo.nextStage == VK_SHADER_STAGE_GEOMETRY_BIT) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08429", device, create_info_loc.dot(Field::nextStage),
                              "is VK_SHADER_STAGE_GEOMETRY_BIT, but tessellationShader feature was not enabled.");
         }
@@ -215,13 +215,13 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         }
 
         if ((createInfo.flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
-            enabled_features.core13.subgroupSizeControl == VK_FALSE) {
+            enabled_features.subgroupSizeControl == VK_FALSE) {
             skip |= LogError(
                 kVUID_Core_Shader_AllowVaryingSubgroupSize, device, create_info_loc.dot(Field::flags),
                 "contains VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, but subgroupSizeControl feature is not enabled.");
         }
         if ((createInfo.flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
-            enabled_features.core13.computeFullSubgroups == VK_FALSE) {
+            enabled_features.computeFullSubgroups == VK_FALSE) {
             skip |= LogError(
                 kVUID_Core_Shader_RequireFullSubgroups, device, create_info_loc.dot(Field::flags),
                 "contains VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but computeFullSubgroups feature is not enabled.");
@@ -340,7 +340,7 @@ bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT sh
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
+    if (enabled_features.shaderObject == VK_FALSE) {
         skip |=
             LogError("VUID-vkDestroyShaderEXT-None-08481", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
@@ -355,7 +355,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
 
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
 
-    if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
+    if (enabled_features.shaderObject == VK_FALSE) {
         skip |= LogError("VUID-vkCmdBindShadersEXT-None-08462", device, error_obj.location,
                          "the shaderObject feature was not enabled.");
     }
@@ -381,14 +381,14 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
             taskStageIndex = i;
         } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && shader != VK_NULL_HANDLE) {
             meshStageIndex = i;
-        } else if (enabled_features.core.tessellationShader == VK_FALSE &&
+        } else if (enabled_features.tessellationShader == VK_FALSE &&
                    (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
                    shader != VK_NULL_HANDLE) {
             skip |=
                 LogError("VUID-vkCmdBindShadersEXT-pShaders-08474", device, stage_loc,
                          "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but tessellationShader feature was not enabled.",
                          string_VkShaderStageFlagBits(stage), i);
-        } else if (enabled_features.core.geometryShader == VK_FALSE && stage == VK_SHADER_STAGE_GEOMETRY_BIT &&
+        } else if (enabled_features.geometryShader == VK_FALSE && stage == VK_SHADER_STAGE_GEOMETRY_BIT &&
                    shader != VK_NULL_HANDLE) {
             skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08475", device, stage_loc,
                              "is VK_SHADER_STAGE_GEOMETRY_BIT and pShaders[%" PRIu32
@@ -426,13 +426,11 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                                  string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
             }
         }
-        if (stage == VK_SHADER_STAGE_TASK_BIT_EXT && enabled_features.mesh_shader_features.taskShader == VK_FALSE &&
-            shader != VK_NULL_HANDLE) {
+        if (stage == VK_SHADER_STAGE_TASK_BIT_EXT && enabled_features.taskShader == VK_FALSE && shader != VK_NULL_HANDLE) {
             skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08490", device, stage_loc,
                              "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but taskShader feature was not enabled.",
                              string_VkShaderStageFlagBits(stage), i);
-        } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && enabled_features.mesh_shader_features.meshShader == VK_FALSE &&
-                   shader != VK_NULL_HANDLE) {
+        } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && enabled_features.meshShader == VK_FALSE && shader != VK_NULL_HANDLE) {
             skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08491", device, stage_loc,
                              "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but meshShader feature was not enabled.",
                              string_VkShaderStageFlagBits(stage), i);
@@ -488,7 +486,7 @@ bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShader
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
+    if (enabled_features.shaderObject == VK_FALSE) {
         skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08461", device, error_obj.location,
                          "the shaderObject feature was not enabled.");
     }

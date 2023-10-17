@@ -61,26 +61,22 @@ struct BindlessStateBuffer {
 
 bool GpuAssisted::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
     bool result =
-        (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing) &&
-         (enabled_features.core12.descriptorIndexing || enabled_features.core12.shaderInputAttachmentArrayDynamicIndexing ||
-          enabled_features.core12.shaderUniformTexelBufferArrayDynamicIndexing ||
-          enabled_features.core12.shaderStorageTexelBufferArrayDynamicIndexing ||
-          enabled_features.core12.shaderUniformBufferArrayNonUniformIndexing ||
-          enabled_features.core12.shaderSampledImageArrayNonUniformIndexing ||
-          enabled_features.core12.shaderStorageBufferArrayNonUniformIndexing ||
-          enabled_features.core12.shaderStorageImageArrayNonUniformIndexing ||
-          enabled_features.core12.shaderInputAttachmentArrayNonUniformIndexing ||
-          enabled_features.core12.shaderUniformTexelBufferArrayNonUniformIndexing ||
-          enabled_features.core12.shaderStorageTexelBufferArrayNonUniformIndexing ||
-          enabled_features.core12.descriptorBindingUniformBufferUpdateAfterBind ||
-          enabled_features.core12.descriptorBindingSampledImageUpdateAfterBind ||
-          enabled_features.core12.descriptorBindingStorageImageUpdateAfterBind ||
-          enabled_features.core12.descriptorBindingStorageBufferUpdateAfterBind ||
-          enabled_features.core12.descriptorBindingUniformTexelBufferUpdateAfterBind ||
-          enabled_features.core12.descriptorBindingStorageTexelBufferUpdateAfterBind ||
-          enabled_features.core12.descriptorBindingUpdateUnusedWhilePending ||
-          enabled_features.core12.descriptorBindingPartiallyBound ||
-          enabled_features.core12.descriptorBindingVariableDescriptorCount || enabled_features.core12.runtimeDescriptorArray));
+        enabled_features.descriptorIndexing || enabled_features.shaderInputAttachmentArrayDynamicIndexing ||
+        enabled_features.shaderUniformTexelBufferArrayDynamicIndexing ||
+        enabled_features.shaderStorageTexelBufferArrayDynamicIndexing ||
+        enabled_features.shaderUniformBufferArrayNonUniformIndexing || enabled_features.shaderSampledImageArrayNonUniformIndexing ||
+        enabled_features.shaderStorageBufferArrayNonUniformIndexing || enabled_features.shaderStorageImageArrayNonUniformIndexing ||
+        enabled_features.shaderInputAttachmentArrayNonUniformIndexing ||
+        enabled_features.shaderUniformTexelBufferArrayNonUniformIndexing ||
+        enabled_features.shaderStorageTexelBufferArrayNonUniformIndexing ||
+        enabled_features.descriptorBindingUniformBufferUpdateAfterBind ||
+        enabled_features.descriptorBindingSampledImageUpdateAfterBind ||
+        enabled_features.descriptorBindingStorageImageUpdateAfterBind ||
+        enabled_features.descriptorBindingStorageBufferUpdateAfterBind ||
+        enabled_features.descriptorBindingUniformTexelBufferUpdateAfterBind ||
+        enabled_features.descriptorBindingStorageTexelBufferUpdateAfterBind ||
+        enabled_features.descriptorBindingUpdateUnusedWhilePending || enabled_features.descriptorBindingPartiallyBound ||
+        enabled_features.descriptorBindingVariableDescriptorCount || enabled_features.runtimeDescriptorArray;
     return result;
 }
 
@@ -180,7 +176,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
     buffer_device_address = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
                               IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                             shaderInt64 && enabled_features.core12.bufferDeviceAddress);
+                             shaderInt64 && enabled_features.bufferDeviceAddress);
 
     if (buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -1137,7 +1133,7 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
 
         if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
              IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-            shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
+            shaderInt64 && enabled_features.bufferDeviceAddress) {
             inst_passes.RegisterPass(CreateInstBuffAddrCheckPass(unique_shader_id));
         }
         if (!inst_passes.Run(binaries[0].data(), binaries[0].size(), &binaries[0], opt_options)) {
@@ -2307,7 +2303,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         memset(data_ptr, 0, output_buffer_size);
         if (gpuav_settings.validate_descriptors) {
             uses_robustness =
-                (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2 ||
+                (enabled_features.robustBufferAccess || enabled_features.robustBufferAccess2 ||
                  (pipeline_state && pipeline_state->uses_pipeline_robustness));
             data_ptr[spvtools::kDebugOutputFlagsOffset] = spvtools::kInstBufferOOBEnable;
         }
@@ -2325,7 +2321,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         ((command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
           command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR) ||
          ((command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) &&
-          !(enabled_features.core.drawIndirectFirstInstance)))) {
+          !(enabled_features.drawIndirectFirstInstance)))) {
         // Insert a draw that can examine some device memory right before the draw we're validating (Pre Draw Validation)
         //
         // NOTE that this validation does not attempt to abort invalid api calls as most other validation does.  A crash
