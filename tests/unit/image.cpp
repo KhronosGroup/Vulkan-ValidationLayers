@@ -3815,12 +3815,7 @@ TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-
-    VkPhysicalDeviceFeatures device_features = {};
-    RETURN_IF_SKIP(InitFramework())
-    GetPhysicalDeviceFeatures(&device_features);
-
-    RETURN_IF_SKIP(InitState(&device_features));
+    RETURN_IF_SKIP(Init())
 
     VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                    nullptr,
@@ -3875,12 +3870,7 @@ TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-
-    VkPhysicalDeviceFeatures device_features = {};
-    RETURN_IF_SKIP(InitFramework())
-    GetPhysicalDeviceFeatures(&device_features);
-
-    RETURN_IF_SKIP(InitState(&device_features));
+    RETURN_IF_SKIP(Init())
 
     const VkFormat depthOnlyFormat = FindSupportedDepthOnlyFormat(gpu());
     const VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());

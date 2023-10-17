@@ -422,16 +422,11 @@ TEST_F(NegativePipeline, SampleRateFeatureDisable) {
 
 TEST_F(NegativePipeline, SampleRateFeatureEnable) {
     // Enable sample shading in pipeline when the feature is disabled.
-    RETURN_IF_SKIP(InitFramework())
-
-    // Require sampleRateShading here
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    if (device_features.sampleRateShading == VK_FALSE) {
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().sampleRateShading == VK_FALSE) {
         GTEST_SKIP() << "SampleRateShading feature is disabled";
     }
 
-    RETURN_IF_SKIP(InitState(&device_features));
     InitRenderTarget();
 
     auto range_test = [this](float value, bool positive_test) {
@@ -585,16 +580,11 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
 TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     TEST_DESCRIPTION("Test pipeline creation VUIDs added with VK_QCOM_render_pass_shader_resolve extension.");
     AddRequiredExtensions(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
 
-    // Require sampleRateShading for these tests
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    if (device_features.sampleRateShading == VK_FALSE) {
-        GTEST_SKIP() << "SampleRateShading feature is disabled -- skipping related checks.";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().sampleRateShading == VK_FALSE) {
+        GTEST_SKIP() << "sampleRateShading feature is not supported";
     }
-
-    RETURN_IF_SKIP(InitState(&device_features));
     InitRenderTarget();
 
     VkDescriptorSetObj descriptorSet(m_device);

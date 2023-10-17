@@ -3742,13 +3742,10 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
 TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
-    RETURN_IF_SKIP(InitFramework())
-    VkPhysicalDeviceFeatures features;
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
-    if (!features.shaderStorageImageWriteWithoutFormat) {
-        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().shaderStorageImageWriteWithoutFormat == VK_FALSE) {
+        GTEST_SKIP() << "multiViewport feature is not supported";
     }
-    RETURN_IF_SKIP(InitState(&features));
     InitRenderTarget();
 
     const uint32_t width = 32;
@@ -4032,14 +4029,10 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
 
 TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     TEST_DESCRIPTION("Validate writting to a descriptor that uses same image view as framebuffer read attachment");
-
-    RETURN_IF_SKIP(InitFramework())
-    VkPhysicalDeviceFeatures features;
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
-    if (!features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "fragmentStoresAndAtomics is not supported";
+    RETURN_IF_SKIP(Init())
+    if (m_device->phy().features().fragmentStoresAndAtomics == VK_FALSE) {
+        GTEST_SKIP() << "fragmentStoresAndAtomics feature is not supported";
     }
-    RETURN_IF_SKIP(InitState(&features));
     InitRenderTarget();
 
     const uint32_t width = 32;
