@@ -130,45 +130,14 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     // Make both bindings valid before binding to the command buffer
     vk::UpdateDescriptorSets(m_device->device(), 2, &descriptor_write[0], 0, NULL);
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    // Invalid to update binding 0 after being bound. But the error is actually
+    // generated during vk::EndCommandBuffer
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[0], 0, NULL);
 
-    // Two subtests. First only updates the update_after_bind binding and expects
-    // no error. Second updates the other binding and expects an error when the
-    // command buffer is ended.
-    for (uint32_t i = 0; i < 2; ++i) {
-        m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
 
-        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds,
-                                  0, NULL);
-
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_commandBuffer->handle(), 0, 0, 0, 0);
-        m_commandBuffer->EndRenderPass();
-
-        // Valid to update binding 1 after being bound
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[1], 0, NULL);
-
-        if (i == 0) {
-            // expect no errors
-            m_commandBuffer->end();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
-            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-            m_errorMonitor->VerifyFound();
-            vk::QueueWaitIdle(m_default_queue);
-        } else {
-            // Invalid to update binding 0 after being bound. But the error is actually
-            // generated during vk::EndCommandBuffer
-            vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[0], 0, NULL);
-
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
-
-            vk::EndCommandBuffer(m_commandBuffer->handle());
-            m_errorMonitor->VerifyFound();
-        }
-    }
+    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
