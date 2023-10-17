@@ -617,7 +617,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
         GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state3_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state3_features));
 
     VkColorBlendEquationEXT color_blend_equation = {
         VK_BLEND_FACTOR_CONSTANT_ALPHA, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE,

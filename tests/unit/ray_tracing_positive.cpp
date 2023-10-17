@@ -251,7 +251,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_feature = vku::InitStructHelper();
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&ray_query_feature);
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -317,7 +317,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_feature = vku::InitStructHelper();
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&ray_query_feature);
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -399,7 +399,7 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
 
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     constexpr size_t build_info_count = 10;
 
@@ -449,7 +449,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     constexpr size_t build_info_count = 3;
 
@@ -509,7 +509,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // Allocate a memory chunk that will be used as backing memory for scratch buffer
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -699,7 +699,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     vkt::CommandBuffer cmd_buffer_frame_0(m_device, m_commandPool);
     vkt::CommandBuffer cmd_buffer_frame_1(m_device, m_commandPool);

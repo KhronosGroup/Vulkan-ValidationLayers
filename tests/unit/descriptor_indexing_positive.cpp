@@ -21,7 +21,7 @@ void DescriptorIndexingTest::InitBasicDescriptorIndexing(void* pNextFeatures) {
 
     descriptor_indexing_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(descriptor_indexing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features));
 }
 
 void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings) {

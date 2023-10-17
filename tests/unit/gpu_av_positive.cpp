@@ -226,8 +226,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     }
     features2.features.robustBufferAccess = VK_FALSE;
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
@@ -523,8 +522,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
         GTEST_SKIP() << "Not all descriptor indexing features supported, skipping descriptor indexing tests";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.

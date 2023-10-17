@@ -1175,7 +1175,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
     create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
-    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     InitRenderTarget();
 
     if (!InitSwapchain()) {
@@ -1483,7 +1483,7 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
     create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
-    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
 
     VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = vku::InitStructHelper();
     dev_grp_cmd_buf_info.deviceMask = 0x1;
@@ -1659,7 +1659,7 @@ TEST_F(NegativeWsi, PresentIdWait) {
         GTEST_SKIP() << "presentWait feature is not available, skipping test.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &present_wait_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &present_wait_features));
 
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
@@ -1749,8 +1749,7 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
     }
@@ -2405,13 +2404,10 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-
+    RETURN_IF_SKIP(Init())
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -2928,10 +2924,7 @@ TEST_F(NegativeWsi, UseSwapchainImageBeforeWait) {
     TEST_DESCRIPTION("Test using a swapchain image that was acquired but not waited on.");
 
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }

@@ -22,7 +22,7 @@ void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
         GTEST_SKIP() << "Test requires (unsupported) descriptorBuffer , skipping.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &descriptor_buffer_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_buffer_features));
 }
 
 TEST_F(PositiveDescriptorBuffer, BasicUsage) {

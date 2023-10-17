@@ -62,8 +62,7 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device, {

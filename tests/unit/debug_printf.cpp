@@ -44,7 +44,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitRenderTarget();
 
@@ -384,7 +384,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     auto features = m_device->phy().features();
     if (!features.vertexPipelineStoresAndAtomics || !features.fragmentStoresAndAtomics) {
@@ -708,7 +708,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -852,7 +852,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -1004,7 +1004,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitDynamicRenderTarget();
 

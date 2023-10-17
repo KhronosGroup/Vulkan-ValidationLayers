@@ -560,7 +560,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
     TEST_DESCRIPTION("Test using VkClearRect with an image that is of a 2D array type.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     for (uint32_t i = 0; i < 2; ++i) {
         VkImageCreateInfo image_ci = vku::InitStructHelper();

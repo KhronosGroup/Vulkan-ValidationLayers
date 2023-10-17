@@ -37,7 +37,7 @@ VkImageCreateInfo ImageTest::DefaultImageInfo() {
 
 TEST_F(PositiveImage, OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx) {
@@ -518,7 +518,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
     create_device_pnext.pNext = &physicalDeviceFeatures2;
 
-    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -930,8 +930,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
 }
 
 TEST_F(PositiveImage, CopyImageSubresource) {
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
 
     VkImageUsageFlags usage =
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -1012,8 +1011,7 @@ TEST_F(PositiveImage, CopyImageSubresource) {
 
 TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1140,10 +1138,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
 TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     TEST_DESCRIPTION("Verify renderpass layout transitions for a 2d ImageView created from a 3d Image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device,

@@ -23,7 +23,7 @@ class NegativeSyncVal : public VkSyncValTest {};
 TEST_F(NegativeSyncVal, BufferCopyHazards) {
     AddOptionalExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
     bool has_amd_buffer_maker = IsExtensionsEnabled(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -211,7 +211,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     RETURN_IF_SKIP(InitSyncValFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -296,7 +296,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     const uint32_t width = 256;
     const uint32_t height = 128;
@@ -522,7 +522,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
 
 TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -743,7 +743,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
     RETURN_IF_SKIP(InitSyncValFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1425,7 +1425,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
             features12.drawIndirectCount = VK_TRUE;
         }
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features12, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
     InitRenderTarget();
 
     VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -1872,7 +1872,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
 TEST_F(NegativeSyncVal, CmdClear) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
     // CmdClearColorImage
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1950,7 +1950,7 @@ TEST_F(NegativeSyncVal, CmdClear) {
 TEST_F(NegativeSyncVal, CmdQuery) {
     // CmdCopyQueryPoolResults
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -1999,7 +1999,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
 
 TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     auto format_ds = FindSupportedDepthStencilFormat(gpu());
 
@@ -3283,7 +3283,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 TEST_F(NegativeSyncVal, EventsBufferCopy) {
     TEST_DESCRIPTION("Check Set/Wait protection for a variety of use cases using buffer copies");
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -3371,7 +3371,7 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
 
 TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3496,7 +3496,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
 TEST_F(NegativeSyncVal, EventsCommandHazards) {
     TEST_DESCRIPTION("Check Set/Reset/Wait command hazard checking");
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Event event;
     event.init(*m_device, vkt::Event::create_info(0));
@@ -4035,7 +4035,7 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
 
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
     const bool copy_commands_2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
     VkFormatProperties format_properties;
@@ -4144,7 +4144,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -4571,7 +4571,7 @@ void QSTestContext::RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::B
 
 TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
@@ -4633,7 +4633,7 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
@@ -4664,7 +4664,7 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
 
 TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
@@ -4704,7 +4704,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
 
 TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
     if (!test.Valid()) {
@@ -4754,7 +4754,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
 
 TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device);
     if (!test.Valid()) {
@@ -4838,7 +4838,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
 
 TEST_F(NegativeSyncVal, QSBufferEvents) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device);
     if (!test.Valid()) {
@@ -4935,7 +4935,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
 TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device);
     if (!test.Valid()) {
@@ -4992,7 +4992,7 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
 
 TEST_F(NegativeSyncVal, QSRenderPass) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     CreateRenderPassHelper rp_helper(m_device);
     rp_helper.InitAllAttachmentsToLayoutGeneral();

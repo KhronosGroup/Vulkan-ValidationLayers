@@ -39,7 +39,7 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
         }
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 }
 
 TEST_F(PositiveYcbcr, PlaneAspectNone) {

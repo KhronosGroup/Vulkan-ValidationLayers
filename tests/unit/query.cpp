@@ -109,9 +109,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     if (!performance_features.performanceCounterQueryPools) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
-
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -276,8 +274,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -376,8 +373,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -539,9 +535,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     VkPhysicalDevicePerformanceQueryPropertiesKHR perf_query_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(perf_query_props);
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features, pool_flags));
-
+    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -794,8 +788,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -1206,7 +1199,7 @@ TEST_F(NegativeQuery, Sizes) {
 
 TEST_F(NegativeQuery, PreciseBit) {
     TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     // These tests require that the device support pipeline statistics query
     VkPhysicalDeviceFeatures device_features = {};
@@ -2147,7 +2140,7 @@ TEST_F(NegativeQuery, MultiviewEndQuery) {
         GTEST_SKIP() << "multiview feature not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2591,7 +2584,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
         GTEST_SKIP() << "Test requires (unsupported) performanceCounterQueryPools";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     uint32_t counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,

@@ -28,7 +28,7 @@ void ShaderObjectTest::InitBasicShaderObject(void *pNextFeatures, APIVersion tar
         GTEST_SKIP() << "Test requires (unsupported) shaderObject , skipping.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 }
 
 void ShaderObjectTest::BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader) {

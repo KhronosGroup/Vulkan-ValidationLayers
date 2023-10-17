@@ -19,7 +19,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
     InitRenderTarget();
 
     uint32_t attachment_width = 512;

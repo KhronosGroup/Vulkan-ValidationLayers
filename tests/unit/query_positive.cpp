@@ -76,9 +76,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
 TEST_F(PositiveQuery, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
-    RETURN_IF_SKIP(InitFramework())
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, pool_flags));
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     uint32_t qfi = 0;
@@ -143,9 +141,7 @@ TEST_F(PositiveQuery, BasicQuery) {
 
 TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     TEST_DESCRIPTION("Destroy a QueryPool based on vkGetQueryPoolResults");
-    RETURN_IF_SKIP(InitFramework())
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, pool_flags));
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     std::array<uint64_t, 4> samples_passed = {};

@@ -44,7 +44,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     const uint32_t width = 256;
     const uint32_t height = 128;

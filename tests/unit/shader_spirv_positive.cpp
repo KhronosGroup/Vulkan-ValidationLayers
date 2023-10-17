@@ -764,7 +764,7 @@ TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
 TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, using COMBINED_IMAGE_SAMPLER, but texelFetch, don't throw error");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.

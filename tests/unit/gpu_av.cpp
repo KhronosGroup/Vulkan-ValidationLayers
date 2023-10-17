@@ -92,8 +92,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         }
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
@@ -548,8 +547,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
         GTEST_SKIP() << "Not all descriptor indexing features supported, skipping descriptor indexing tests";
     }
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
@@ -740,9 +738,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
         !indexing_features.shaderStorageBufferArrayNonUniformIndexing) {
         GTEST_SKIP() << "Not all descriptor indexing features supported, skipping descriptor indexing tests";
     }
-
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
@@ -1003,8 +999,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     }
     features2.features.robustBufferAccess = VK_FALSE;
     robustness2_features.robustBufferAccess2 = VK_FALSE;
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -1389,8 +1384,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     }
     features2.features.robustBufferAccess = VK_FALSE;
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
@@ -1650,8 +1644,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     props.limits.maxDrawIndirectCount = 1;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, features13.dynamicRendering ? (void *)&features13 : nullptr, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, features13.dynamicRendering ? (void *)&features13 : nullptr));
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -1791,9 +1784,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     TEST_DESCRIPTION("GPU validation: Validate Draw*IndirectCount countBuffer contents");
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework())
-
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, pool_flags));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -1913,8 +1904,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     GetPhysicalDeviceFeatures2(features2);
     features2.features.drawIndirectFirstInstance = VK_FALSE;
 
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -2010,9 +2000,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     }
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(inline_uniform_props);
-
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
     if (m_device->compute_queues().empty()) {
         GTEST_SKIP() << "Compute not supported";
@@ -2360,7 +2348,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     props.limits.maxComputeWorkGroupCount[2] = 2;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);
@@ -2464,8 +2452,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     }
     features2.features.robustBufferAccess = VK_FALSE;
     robustness2_features.robustBufferAccess2 = VK_FALSE;
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -2639,8 +2626,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     }
     features2.features.robustBufferAccess = VK_FALSE;
     robustness2_features.robustBufferAccess2 = VK_FALSE;
-    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    RETURN_IF_SKIP(InitState(nullptr, &features2, pool_flags));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -2851,7 +2837,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     props.limits.maxComputeWorkGroupCount[2] = 2;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);

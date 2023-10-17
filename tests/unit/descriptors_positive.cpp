@@ -917,8 +917,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
 
 TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
     TEST_DESCRIPTION("Use descriptor in the draw call and then update descriptor when it is no longer in use");
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     vkt::CommandBuffer cb0(m_device, m_commandPool);

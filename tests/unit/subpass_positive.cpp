@@ -23,7 +23,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     const VkAttachmentDescription attachment = {0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,
@@ -118,7 +118,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     const VkAttachmentDescription attachment = {0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,

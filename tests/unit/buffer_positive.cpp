@@ -16,7 +16,7 @@
 
 TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx) {
@@ -95,7 +95,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_addr_features);
-    RETURN_IF_SKIP(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &buffer_addr_features));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -141,7 +141,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_addr_features);
-    RETURN_IF_SKIP(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &buffer_addr_features));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();

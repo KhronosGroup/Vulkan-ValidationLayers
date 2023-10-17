@@ -1061,9 +1061,8 @@ TEST_F(NegativeRenderPass, BeginRenderArea) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(Init())
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     InitRenderTarget();
 
     // Framebuffer for render target is 256x256, exceed that for INVALID_RENDER_AREA
@@ -1122,7 +1121,7 @@ TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
 TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
     TEST_DESCRIPTION("Test that renderpass begin is compatible with the framebuffer renderpass ");
 
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     // Create a depth stencil image view
     VkImageObj image(m_device);
@@ -1191,9 +1190,9 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
         VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT attachment_feedback_loop_layout_features = vku::InitStructHelper();
         auto features2 = GetPhysicalDeviceFeatures2(attachment_feedback_loop_layout_features);
         attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout = true;
-        RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+        RETURN_IF_SKIP(InitState(nullptr, &features2));
     } else {
-        RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+        RETURN_IF_SKIP(InitState());
     }
 
     // Create an input attachment view
@@ -1361,7 +1360,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
 
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_depth_stencil_layouts_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features));
 
     // Closure to create a render pass with just a depth/stencil image used as an input attachment (not a depth attachment!).
     // This image purposely has not VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.
@@ -1503,9 +1502,8 @@ TEST_F(NegativeRenderPass, BeginClearOpMismatch) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(Init())
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     InitRenderTarget();
 
@@ -1543,10 +1541,7 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
+    RETURN_IF_SKIP(Init())
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(sample_locations_props);
 
@@ -1671,10 +1666,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
@@ -2558,9 +2550,7 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
 
 TEST_F(NegativeRenderPass, RenderPassBeginNullValues) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
-
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     auto rpbi = m_renderPassBeginInfo;
@@ -3035,7 +3025,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     GetPhysicalDeviceProperties2(vulkan_12_features);
 
     ms_render_to_single_sampled_features.multisampledRenderToSingleSampled = true;
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
     InitRenderTarget();
 
     VkAttachmentReference2 attachmentRef = vku::InitStructHelper();

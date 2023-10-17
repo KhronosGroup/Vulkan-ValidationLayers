@@ -506,7 +506,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR pd_imageless_fb_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(pd_imageless_fb_features);
-    RETURN_IF_SKIP(InitState(nullptr, &pd_imageless_fb_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &pd_imageless_fb_features));
 
     constexpr uint32_t width = 512;
     constexpr uint32_t height = 1;
@@ -1556,7 +1556,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
 
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(separate_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &separate_features));
 
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
     VkFormatProperties props;

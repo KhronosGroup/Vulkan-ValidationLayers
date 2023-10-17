@@ -141,7 +141,7 @@ TEST_F(NegativeCommand, IndexBufferNotBound) {
 
 TEST_F(NegativeCommand, IndexBufferSizeOffset) {
     TEST_DESCRIPTION("Run bind index buffer with an offset greater than the size of the index buffer.");
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
@@ -233,7 +233,7 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
 
@@ -290,7 +290,7 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     RETURN_IF_SKIP(InitFramework())
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
     InitRenderTarget();
@@ -567,7 +567,8 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     // which CBs were allocated. Note that this bit is off by default.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00049");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
 
     // Calls AllocateCommandBuffers
     vkt::CommandBuffer commandBuffer(m_device, m_commandPool);
@@ -3192,7 +3193,7 @@ TEST_F(NegativeCommand, CopyImageFormatSizeMismatch) {
     VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR mp_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(mp_features);
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4594,8 +4595,7 @@ TEST_F(NegativeCommand, ExecuteUnrecordedSecondaryCB) {
 TEST_F(NegativeCommand, ExecuteSecondaryCBWithLayoutMismatch) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB with incorrect initial layout.");
 
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init())
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -5541,9 +5541,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -5637,9 +5635,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     TEST_DESCRIPTION("Verify if sampler is filter cubic with the VK_IMG_filter cubic extension that it's a valid ImageViewType.");
 
     AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -7380,7 +7376,7 @@ TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
 TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
     TEST_DESCRIPTION("Attempt to clear color aspect of depth/stencil image.");
 
-    RETURN_IF_SKIP(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    RETURN_IF_SKIP(Init());
 
     for (uint32_t i = 0; i < 2; ++i) {
         bool missing_depth = i == 0;
