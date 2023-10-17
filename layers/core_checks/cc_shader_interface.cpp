@@ -346,12 +346,12 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
             }
             // Portability validation
             if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
-                if (is_iso_lines && (VK_FALSE == enabled_features.portability_subset_features.tessellationIsolines)) {
+                if (is_iso_lines && (VK_FALSE == enabled_features.tessellationIsolines)) {
                     skip |= LogError("VUID-RuntimeSpirv-tessellationShader-06326", module_state.handle(), loc,
                                      "(portability error) SPIR-V (Tessellation evaluation stage)"
                                      " is using abstract patch type IsoLines, but this is not supported on this platform.");
                 }
-                if (is_point_mode && (VK_FALSE == enabled_features.portability_subset_features.tessellationPointMode)) {
+                if (is_point_mode && (VK_FALSE == enabled_features.tessellationPointMode)) {
                     skip |= LogError("VUID-RuntimeSpirv-tessellationShader-06327", module_state.handle(), loc,
                                      "(portability error) SPIR-V (Tessellation evaluation stage)"
                                      " is using abstract patch type PointMode, but this is not supported on this platform.");
@@ -522,7 +522,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                 }
 
                 // If using maintenance4 need to check Vectors incase different sizes
-                if (!enabled_features.core13.maintenance4 && (output_var->base_type.Opcode() == spv::OpTypeVector) &&
+                if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() == spv::OpTypeVector) &&
                     (input_var->base_type.Opcode() == spv::OpTypeVector)) {
                     // Note the "Component Count" in the VU refers to OpTypeVector's operand and NOT the "Component slot"
                     const uint32_t output_vec_size = output_var->base_type.Word(3);
@@ -544,7 +544,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                 // It is not an error if a stage does not consume all outputs from the previous stage
                 // The values will be undefined, but still legal
                 // Don't give any warning if maintenance4 with vectors
-                if (!enabled_features.core13.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
+                if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
                     skip |= LogPerformanceWarning(kVUID_Core_Shader_OutputNotConsumed, objlist, create_info_loc,
                                                   "(SPIR-V Interface) %s declared to output location %" PRIu32 " Component %" PRIu32

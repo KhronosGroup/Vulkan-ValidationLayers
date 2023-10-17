@@ -20,6 +20,7 @@
 #include "shader_utils.h"
 
 #include "state_tracker/device_state.h"
+#include "generated/state_tracker_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/shader_module.h"
 
@@ -51,19 +52,19 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     // The rest of the settings are controlled from a feature bit, which are set correctly in the state tracking. Regardless of
     // Vulkan version used, the feature bit is needed (also described in the spec).
 
-    if (enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
+    if (enabled_features.uniformBufferStandardLayout == VK_TRUE) {
         // --uniform-buffer-standard-layout
         options.SetUniformBufferStandardLayout(true);
     }
-    if (enabled_features.core12.scalarBlockLayout == VK_TRUE) {
+    if (enabled_features.scalarBlockLayout == VK_TRUE) {
         // --scalar-block-layout
         options.SetScalarBlockLayout(true);
     }
-    if (enabled_features.workgroup_memory_explicit_layout_features.workgroupMemoryExplicitLayoutScalarBlockLayout) {
+    if (enabled_features.workgroupMemoryExplicitLayoutScalarBlockLayout) {
         // --workgroup-scalar-block-layout
         options.SetWorkgroupScalarBlockLayout(true);
     }
-    if (enabled_features.core13.maintenance4) {
+    if (enabled_features.maintenance4) {
         // --allow-localsizeid
         options.SetAllowLocalSizeId(true);
     }

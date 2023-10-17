@@ -4402,7 +4402,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint3
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
 
     // Verify maxMultiviewInstanceIndex
-    if (cb_state.activeRenderPass && enabled_features.core11.multiview &&
+    if (cb_state.activeRenderPass && enabled_features.multiview &&
         ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
          static_cast<uint64_t>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -4475,7 +4475,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
-    if (!enabled_features.multi_draw_features.multiDraw) {
+    if (!enabled_features.multiDraw) {
         skip |= LogError("VUID-vkCmdDrawMultiEXT-None-04933", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location, "The multiDraw feature was not enabled.");
     }
@@ -4503,7 +4503,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_state, uint32_t indexCount, uint32_t firstIndex,
                                                   const Location &loc, const char *first_index_vuid) const {
     bool skip = false;
-    if (!enabled_features.robustness2_features.robustBufferAccess2 && cb_state.index_buffer_binding.bound()) {
+    if (!enabled_features.robustBufferAccess2 && cb_state.index_buffer_binding.bound()) {
         const auto &index_buffer_binding = cb_state.index_buffer_binding;
         const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
         // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
@@ -4551,7 +4551,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
-    if (!enabled_features.multi_draw_features.multiDraw) {
+    if (!enabled_features.multiDraw) {
         skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-None-04937", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location, "multiDraw feature was not enabled.");
     }
@@ -4598,7 +4598,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
-    if (!enabled_features.core.multiDrawIndirect && ((drawCount > 1))) {
+    if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-02718", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::drawCount),
                          "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
@@ -4646,7 +4646,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
-    if (!enabled_features.core.multiDrawIndirect && ((drawCount > 1))) {
+    if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-02718", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::drawCount),
                          "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
@@ -4836,7 +4836,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
     }
 
     if ((device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
-        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE))) {
+        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.drawIndirectCount == VK_FALSE))) {
         skip |= LogError("VUID-vkCmdDrawIndirectCount-None-04445", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location,
                          "Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
@@ -4885,7 +4885,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                          "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
     }
     if ((device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
-        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE))) {
+        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.drawIndirectCount == VK_FALSE))) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-None-04445", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location,
                          "Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
@@ -4927,7 +4927,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
-    if (!enabled_features.transform_feedback_features.transformFeedback) {
+    if (!enabled_features.transformFeedback) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
                          "transformFeedback feature is not enabled.");
@@ -5365,7 +5365,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
-    if (!enabled_features.ray_tracing_pipeline_features.rayTracingPipelineTraceRaysIndirect) {
+    if (!enabled_features.rayTracingPipelineTraceRaysIndirect) {
         skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-rayTracingPipelineTraceRaysIndirect-03637",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), error_obj.location,
                          "rayTracingPipelineTraceRaysIndirect feature must be enabled.");
@@ -5494,7 +5494,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer command
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
-    if (!enabled_features.ray_tracing_maintenance1_features.rayTracingPipelineTraceRaysIndirect2) {
+    if (!enabled_features.rayTracingPipelineTraceRaysIndirect2) {
         skip |= LogError("VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), error_obj.location,
                          "rayTracingPipelineTraceRaysIndirect2 feature was not enabled.");
@@ -5547,7 +5547,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 drawCount, offset, buffer_state.get(), error_obj.location);
-        if (!enabled_features.core.multiDrawIndirect) {
+        if (!enabled_features.multiDrawIndirect) {
             skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
                              cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
                              "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
@@ -5711,7 +5711,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
     }
     // TODO: vkMapMemory() and check the contents of buffer at offset
     // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
-    if (!enabled_features.core.multiDrawIndirect && ((drawCount > 1))) {
+    if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
                          "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
@@ -5772,7 +5772,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
     bool skip = false;
 
     if (!last_pipeline || !last_pipeline->pipeline()) {
-        if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
+        if (enabled_features.shaderObject == VK_FALSE) {
             return LogError(vuid.pipeline_bound_08606, cb_state.GetObjectList(bind_point), loc,
                             "A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.",
                             string_VkPipelineBindPoint(bind_point));
@@ -5788,13 +5788,13 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
         skip |= ValidateDrawDynamicState(last_bound_state, loc);
         skip |= ValidatePipelineDrawtimeState(last_bound_state, loc);
 
-        if (enabled_features.shader_object_features.shaderObject && !has_last_pipeline) {
+        if (enabled_features.shaderObject && !has_last_pipeline) {
             skip |= ValidateShaderObjectDrawtimeState(last_bound_state, loc);
         }
 
         if (cb_state.activeFramebuffer) {
             // Verify attachments for unprotected/protected command buffer.
-            if (enabled_features.core11.protectedMemory == VK_TRUE && cb_state.active_attachments) {
+            if (enabled_features.protectedMemory == VK_TRUE && cb_state.active_attachments) {
                 uint32_t i = 0;
                 for (const auto &view_state : *cb_state.active_attachments.get()) {
                     const auto &subpass = cb_state.active_subpasses->at(i);
@@ -6051,7 +6051,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                 }
 
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                if (!cb_state.push_constant_data_ranges && !enabled_features.core13.maintenance4) {
+                if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline_layout->layout(), pipeline->pipeline());
                     skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
@@ -6068,7 +6068,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                     continue;
                 }
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                if (!cb_state.push_constant_data_ranges && !enabled_features.core13.maintenance4) {
+                if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.commandBuffer(), stage->shader());
                     skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",

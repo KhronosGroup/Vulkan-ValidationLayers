@@ -27,8 +27,7 @@
 // The implicit check is done in format utils, while feature checks are done here in CoreChecks
 bool CoreChecks::FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const {
     // VK_EXT_rgba10x6_formats
-    if (format == VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16 &&
-        enabled_features.rgba10x6_formats_features.formatRgba10x6WithoutYCbCrSampler) {
+    if (format == VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16 && enabled_features.formatRgba10x6WithoutYCbCrSampler) {
         return false;
     }
     return vkuFormatRequiresYcbcrConversion(format);

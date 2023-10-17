@@ -68,6 +68,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
+    from generators.state_tracker_helper_generator import StateTrackerHelperOutputGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -266,6 +267,14 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'pnext_chain_extraction.cpp' : {
             'generator' : PnextChainExtractionGenerator,
+            'genCombined': True,
+        },
+        'state_tracker_helper.h' : {
+            'generator' : StateTrackerHelperOutputGenerator,
+            'genCombined': True,
+        },
+        'state_tracker_helper.cpp' : {
+            'generator' : StateTrackerHelperOutputGenerator,
             'genCombined': True,
         },
     }

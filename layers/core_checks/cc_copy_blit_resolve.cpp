@@ -1090,7 +1090,7 @@ bool CoreChecks::ValidateImageSubresourceLayers(HandleT handle, const VkImageSub
     bool skip = false;
     const VkImageAspectFlags aspect_mask = subresource_layers->aspectMask;
     if (subresource_layers->layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        if (!enabled_features.maintenance5_features.maintenance5) {
+        if (!enabled_features.maintenance5) {
             skip |= LogError("VUID-VkImageSubresourceLayers-layerCount-09243", handle, subresource_loc.dot(Field::layerCount),
                              "is VK_REMAINING_ARRAY_LAYERS.");
         }
@@ -1902,8 +1902,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
             if (src_image_type != dst_image_type) {
                 // if different, one must be 3D and the other 2D
-                const bool valid =
-                    (src_is_2d && dst_is_3d) || (src_is_3d && dst_is_2d) || enabled_features.maintenance5_features.maintenance5;
+                const bool valid = (src_is_2d && dst_is_3d) || (src_is_3d && dst_is_2d) || enabled_features.maintenance5;
                 if (!valid) {
                     const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-07743" : "VUID-vkCmdCopyImage-srcImage-07743";
@@ -2827,7 +2826,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     const char *image_layout_vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09064"
                                                : "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059";
 
-    if (!(enabled_features.host_image_copy_features.hostImageCopy)) {
+    if (!(enabled_features.hostImageCopy)) {
         const char *vuid =
             from_image ? "VUID-vkCopyImageToMemoryEXT-hostImageCopy-09063" : "VUID-vkCopyMemoryToImageEXT-hostImageCopy-09058";
         skip |= LogError(vuid, device, loc, "the hostImageCopy feature was not enabled");
@@ -3148,7 +3147,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     auto regionCount = info_ptr->regionCount;
     auto pRegions = info_ptr->pRegions;
 
-    if (!(enabled_features.host_image_copy_features.hostImageCopy)) {
+    if (!(enabled_features.hostImageCopy)) {
         skip |= LogError("VUID-vkCopyImageToImageEXT-hostImageCopy-09068", device, error_obj.location,
                          "the hostImageCopy feature was not enabled");
     }

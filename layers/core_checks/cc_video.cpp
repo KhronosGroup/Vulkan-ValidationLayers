@@ -796,7 +796,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
     if (profile_caps.supported) {
         if (pCreateInfo->flags & VK_VIDEO_SESSION_CREATE_PROTECTED_CONTENT_BIT_KHR) {
             const char *error_msg = nullptr;
-            if (enabled_features.core11.protectedMemory == VK_FALSE) {
+            if (enabled_features.protectedMemory == VK_FALSE) {
                 error_msg = "the protectedMemory feature is not enabled";
             } else if ((profile_caps.base.flags & VK_VIDEO_CAPABILITY_PROTECTED_CONTENT_BIT_KHR) == 0) {
                 error_msg = "protected content is not supported for the video profile";

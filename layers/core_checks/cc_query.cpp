@@ -246,12 +246,12 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     switch (pCreateInfo->queryType) {
         case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
-            if (!enabled_features.core.pipelineStatisticsQuery) {
+            if (!enabled_features.pipelineStatisticsQuery) {
                 skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00791", device, create_info_loc.dot(Field::queryType),
                                  "is VK_QUERY_TYPE_PIPELINE_STATISTICS but pipelineStatisticsQuery feature was not enabled.");
             } else if ((pCreateInfo->pipelineStatistics & (VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT |
                                                            VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT)) &&
-                       !enabled_features.mesh_shader_features.meshShaderQueries) {
+                       !enabled_features.meshShaderQueries) {
                 skip |= LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069", device,
                                  create_info_loc.dot(Field::pipelineStatistics),
                                  "(%s) contains mesh/task shader bit, but "
@@ -261,7 +261,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             break;
         }
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
-            if (!enabled_features.performance_query_features.performanceCounterQueryPools) {
+            if (!enabled_features.performanceCounterQueryPools) {
                 skip |=
                     LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-performanceCounterQueryPools-03237", device,
                              create_info_loc.dot(Field::queryType),
@@ -302,7 +302,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             break;
         }
         case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT: {
-            if (!enabled_features.mesh_shader_features.meshShaderQueries) {
+            if (!enabled_features.meshShaderQueries) {
                 skip |=
                     LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068", device, create_info_loc.dot(Field::queryType),
                              "is VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT but meshShaderQueries feature was not enabled.");
@@ -518,7 +518,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
     }
 
     if (flags & VK_QUERY_CONTROL_PRECISE_BIT) {
-        if (!enabled_features.core.occlusionQueryPrecise) {
+        if (!enabled_features.occlusionQueryPrecise) {
             skip |= LogError(vuids->vuid_precise, cb_state.commandBuffer(), loc.dot(Field::flags),
                              "includes VK_QUERY_CONTROL_PRECISE_BIT, but occlusionQueryPrecise feature was not enabled.");
         }
@@ -600,7 +600,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     QueryObject query_obj = {queryPool, slot};
     auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
     if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-        if (!enabled_features.primitives_generated_query_features.primitivesGeneratedQuery) {
+        if (!enabled_features.primitivesGeneratedQuery) {
             skip |= LogError("VUID-vkCmdBeginQuery-queryType-06688", device, error_obj.location.dot(Field::queryPool),
                              "was created with a queryType VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
                              "primitivesGeneratedQuery feature was not enabled.");
@@ -710,8 +710,7 @@ bool CoreChecks::ValidatePerformanceQuery(const CMD_BUFFER_STATE &cb_state, cons
     }
 
     if (firstPerfQueryPool != VK_NULL_HANDLE) {
-        if (firstPerfQueryPool != query_obj.pool &&
-            !state_data->enabled_features.performance_query_features.performanceCounterMultipleQueryPools) {
+        if (firstPerfQueryPool != query_obj.pool && !state_data->enabled_features.performanceCounterMultipleQueryPools) {
             const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
             skip |= state_data->LogError(
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
@@ -1122,7 +1121,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer
     bool skip = false;
     skip |= ValidateCmdWriteTimestamp(*cb_state, queryPool, slot, error_obj.location);
 
-    if (!enabled_features.core13.synchronization2) {
+    if (!enabled_features.synchronization2) {
         skip |= LogError("VUID-vkCmdWriteTimestamp2-synchronization2-03858", commandBuffer, error_obj.location,
                          "Synchronization2 feature is not enabled.");
     }
@@ -1208,7 +1207,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     const auto &query_pool_state = *Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state.createInfo;
     if (query_pool_ci.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-        if (!enabled_features.primitives_generated_query_features.primitivesGeneratedQuery) {
+        if (!enabled_features.primitivesGeneratedQuery) {
             const LogObjectList objlist(commandBuffer, query_pool_state.pool());
             skip |= LogError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06693", objlist, error_obj.location.dot(Field::queryPool),
                              "was created with queryType of VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, "
@@ -1223,7 +1222,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
                              "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ")",
                              index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
         }
-        if ((index != 0) && (!enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithNonZeroStreams)) {
+        if ((index != 0) && (!enabled_features.primitivesGeneratedQueryWithNonZeroStreams)) {
             const LogObjectList objlist(commandBuffer, query_pool_state.pool());
             skip |= LogError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06691", objlist, error_obj.location.dot(Field::queryPool),
                              "was created with queryType of VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
@@ -1332,7 +1331,7 @@ bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool quer
 
     bool skip = false;
 
-    if (!enabled_features.core12.hostQueryReset) {
+    if (!enabled_features.hostQueryReset) {
         skip |= LogError("VUID-vkResetQueryPool-None-02665", device, error_obj.location, "hostQueryReset feature was not enabled.");
     }
 

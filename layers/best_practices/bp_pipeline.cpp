@@ -513,7 +513,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        uint32_t descriptor_size = enabled_features.core.robustBufferAccess ? 4 : 2;
+        uint32_t descriptor_size = enabled_features.robustBufferAccess ? 4 : 2;
         // Descriptor sets cost 1 DWORD each.
         // Dynamic buffers cost 2 DWORDs each when robust buffer access is OFF.
         // Dynamic buffers cost 4 DWORDs each when robust buffer access is ON.

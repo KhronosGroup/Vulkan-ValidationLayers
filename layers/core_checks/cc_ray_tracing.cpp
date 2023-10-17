@@ -1372,7 +1372,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
     }
     const PIPELINE_STATE &pipeline_state = *pPipeline;
     if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
-        if (!enabled_features.pipeline_library_group_handles_features.pipelineLibraryGroupHandles) {
+        if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828", pipeline,
                              error_obj.location.dot(Field::pipeline),
                              "was created with %s, but the pipelineLibraryGroupHandles feature was not enabled.",
@@ -1424,7 +1424,7 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     }
     const auto &create_info = pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
     if (create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
-        if (!enabled_features.pipeline_library_group_handles_features.pipelineLibraryGroupHandles) {
+        if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829", pipeline,
                              error_obj.location.dot(Field::pipeline),
                              "was created with %s, but the pipelineLibraryGroupHandles feature was not enabled.",

@@ -151,6 +151,8 @@ core_validation_sources = [
   "layers/vulkan/generated/spirv_grammar_helper.h",
   "layers/vulkan/generated/spirv_tools_commit_id.h",
   "layers/vulkan/generated/spirv_validation_helper.cpp",
+  "layers/vulkan/generated/state_tracker_helper.cpp",
+  "layers/vulkan/generated/state_tracker_helper.h",
   "layers/vulkan/generated/sync_validation_types.cpp",
   "layers/vulkan/generated/sync_validation_types.h",
   "layers/gpu_shaders/gpu_shaders_constants.h",

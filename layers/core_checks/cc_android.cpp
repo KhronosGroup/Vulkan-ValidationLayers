@@ -486,7 +486,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
         // only SAMPLED is allowed, but format_resolve allowed INPUT as well
         if (0 != (~VK_IMAGE_USAGE_SAMPLED_BIT & create_info->usage)) {
             if (((VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT & create_info->usage) == VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) ||
-                !android_external_format_resolve_feature) {
+                !enabled_features.externalFormatResolve) {
                 skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
                                  create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                                  "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,

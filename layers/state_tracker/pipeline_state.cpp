@@ -927,22 +927,15 @@ bool LAST_BOUND_STATE::ValidShaderObjectCombination(const VkPipelineBindPoint bi
             return false;
     } else {
         if (!IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) return false;
-        if (device_features.core.tessellationShader &&
-            !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL))
+        if (device_features.tessellationShader && !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) return false;
+        if (device_features.tessellationShader && !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION))
             return false;
-        if (device_features.core.tessellationShader &&
-            !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION))
-            return false;
-        if (device_features.core.geometryShader && !IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY))
-            return false;
+        if (device_features.geometryShader && !IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) return false;
         if (!IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) return false;
-        if (device_features.mesh_shader_features.taskShader && !IsValidShaderOrNullBound(ShaderObjectStage::TASK))
-            return false;
-        if (device_features.mesh_shader_features.meshShader && !IsValidShaderOrNullBound(ShaderObjectStage::MESH))
-            return false;
+        if (device_features.taskShader && !IsValidShaderOrNullBound(ShaderObjectStage::TASK)) return false;
+        if (device_features.meshShader && !IsValidShaderOrNullBound(ShaderObjectStage::MESH)) return false;
         if (GetShader(ShaderObjectStage::VERTEX) == VK_NULL_HANDLE &&
-            (!device_features.mesh_shader_features.meshShader ||
-             GetShader(ShaderObjectStage::MESH) == VK_NULL_HANDLE))
+            (!device_features.meshShader || GetShader(ShaderObjectStage::MESH) == VK_NULL_HANDLE))
             return false;
     }
     return true;
