@@ -2889,3 +2889,65 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
     vk::GetCalibratedTimestampsEXT(device(), 1, &timestamp_info, &timestamp, &max_deviation);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, RequiredMeshShaderFeatures) {
+    TEST_DESCRIPTION("Create device with missing required features");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (!mesh_shader_features.multiviewMeshShader && !mesh_shader_features.primitiveFragmentShadingRateMeshShader) {
+        GTEST_SKIP() << "None of tested features are supported";
+    }
+
+    if (mesh_shader_features.multiviewMeshShader) {
+        float priorities[] = {1.0f};
+        VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+        queue_info.flags = 0;
+        queue_info.queueFamilyIndex = 0;
+        queue_info.queueCount = 1;
+        queue_info.pQueuePriorities = &priorities[0];
+
+        VkPhysicalDeviceMeshShaderFeaturesEXT tested_features = vku::InitStructHelper();
+        tested_features.multiviewMeshShader = VK_TRUE;
+        VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&tested_features);
+
+        VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&features2);
+        device_create_info.queueCreateInfoCount = 1;
+        device_create_info.pQueueCreateInfos = &queue_info;
+        device_create_info.enabledLayerCount = 0;
+        device_create_info.ppEnabledLayerNames = NULL;
+
+        VkDevice device;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-multiviewMeshShader-07032");
+        vk::CreateDevice(gpu(), &device_create_info, nullptr, &device);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (mesh_shader_features.primitiveFragmentShadingRateMeshShader) {
+        float priorities[] = {1.0f};
+        VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+        queue_info.flags = 0;
+        queue_info.queueFamilyIndex = 0;
+        queue_info.queueCount = 1;
+        queue_info.pQueuePriorities = &priorities[0];
+
+        VkPhysicalDeviceMeshShaderFeaturesEXT tested_features = vku::InitStructHelper();
+        tested_features.primitiveFragmentShadingRateMeshShader = VK_TRUE;
+        VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&tested_features);
+
+        VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&features2);
+        device_create_info.queueCreateInfoCount = 1;
+        device_create_info.pQueueCreateInfos = &queue_info;
+        device_create_info.enabledLayerCount = 0;
+        device_create_info.ppEnabledLayerNames = NULL;
+
+        VkDevice device;
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033");
+        vk::CreateDevice(gpu(), &device_create_info, nullptr, &device);
+        m_errorMonitor->VerifyFound();
+    }
+}
