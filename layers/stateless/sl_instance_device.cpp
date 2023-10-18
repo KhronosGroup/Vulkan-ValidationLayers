@@ -695,6 +695,21 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         skip |= LogError("VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581", physicalDevice,
                          error_obj.location, "If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
     }
+    const auto *fsr_features = vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+    const auto *mesh_shader_features = vku::FindStructInPNextChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
+    if (mesh_shader_features) {
+        if ((multiview == VK_FALSE) && (mesh_shader_features->multiviewMeshShader)) {
+            skip |= LogError("VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-multiviewMeshShader-07032", physicalDevice,
+                             error_obj.location, "If multiviewMeshShader is VK_TRUE then multiview also needs to be VK_TRUE");
+        }
+        if ((!fsr_features || !fsr_features->primitiveFragmentShadingRate) &&
+            (mesh_shader_features->primitiveFragmentShadingRateMeshShader)) {
+            skip |= LogError(
+                "VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033", physicalDevice,
+                error_obj.location,
+                "If primitiveFragmentShadingRateMeshShader is VK_TRUE then primitiveFragmentShadingRate also needs to be VK_TRUE");
+        }
+    }
 
     return skip;
 }
