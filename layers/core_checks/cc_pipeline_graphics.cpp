@@ -2404,14 +2404,20 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
         if ((discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) ||
             (pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
             if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
+                std::stringstream msg;
+                if (discard_rectangle_state) {
+                    msg << "VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount = "
+                        << discard_rectangle_state->discardRectangleCount;
+                } else {
+                    msg << "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT";
+                }
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline.pipeline());
-                skip |= LogError("VUID-vkCmdBindPipeline-commandBuffer-04809", objlist, loc.dot(Field::commandBuffer),
-                                 "is a secondary command buffer with "
-                                 "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled, pipelineBindPoint is "
-                                 "VK_PIPELINE_BIND_POINT_GRAPHICS and pipeline was created with "
-                                 "VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount = %" PRIu32
-                                 ", but without VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT.",
-                                 discard_rectangle_state->discardRectangleCount);
+                skip |= LogError(
+                    "VUID-vkCmdBindPipeline-commandBuffer-04809", objlist, loc.dot(Field::commandBuffer),
+                    "is a secondary command buffer with VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D "
+                    "enabled, pipelineBindPoint is VK_PIPELINE_BIND_POINT_GRAPHICS and pipeline was created with %s, but without "
+                    "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT.",
+                    msg.str().c_str());
             }
         }
     }
