@@ -65,23 +65,23 @@ TEST_F(NegativeSubpass, InputAttachmentParameters) {
     // Valid
     PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
 
-    attach_desc.format = VK_FORMAT_UNDEFINED;
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     reference.aspectMask = 0;
     // Test for aspect mask of 0
-    m_errorMonitor->SetUnexpectedError("VUID-VkAttachmentDescription2-format-09334");
+    m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
     TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02800"});
 
     // Test for invalid aspect mask bits
     reference.aspectMask = 0x40000000;  // invalid VkImageAspectFlagBits value
-    m_errorMonitor->SetUnexpectedError("VUID-VkAttachmentDescription2-format-09334");
+    m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
     TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02799"});
 
     // Test for invalid use of VK_IMAGE_ASPECT_METADATA_BIT
     reference.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetUnexpectedError("VUID-VkAttachmentDescription2-format-09334");
+    m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
     TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02801"});
 }

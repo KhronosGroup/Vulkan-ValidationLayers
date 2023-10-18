@@ -74,6 +74,67 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionSample) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeAndroidExternalResolve, AttachmentDescriptionZeroExternalFormat) {
+    TEST_DESCRIPTION("invalid samples for VkSubpassDescription");
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+
+    if (nullColorAttachmentWithExternalFormatResolve) {
+        GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
+    }
+
+    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, 64, 64);
+    if (!ahb.handle()) {
+        GTEST_SKIP() << "could not allocate AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420";
+    }
+
+    VkAndroidHardwareBufferFormatResolvePropertiesANDROID format_resolve_prop = vku::InitStructHelper();
+
+    VkExternalFormatANDROID external_format = vku::InitStructHelper();
+    ahb.GetExternalFormat(*m_device, &format_resolve_prop);
+    external_format.externalFormat = 0;  // bad
+
+    // index 0 = color | index 1 = resolve
+    VkAttachmentDescription2 attachment_desc[2];
+    attachment_desc[0] = vku::InitStructHelper(&external_format);
+    attachment_desc[0].format = format_resolve_prop.colorAttachmentFormat;
+    attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    attachment_desc[1] = attachment_desc[0];
+    attachment_desc[1].format = VK_FORMAT_UNDEFINED;
+
+    VkAttachmentReference2 color_attachment_ref = vku::InitStructHelper();
+    color_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment_ref.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment_ref.attachment = 0;
+
+    VkAttachmentReference2 resolve_attachment_ref = vku::InitStructHelper();
+    resolve_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_attachment_ref.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolve_attachment_ref.attachment = 1;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_attachment_ref;
+    subpass.pResolveAttachments = &resolve_attachment_ref;
+
+    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 2;
+    render_pass_ci.pAttachments = attachment_desc;
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-format-09334");
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionViewMask) {
     TEST_DESCRIPTION("invalid ViewMask for VkSubpassDescription");
     RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
