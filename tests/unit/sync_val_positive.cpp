@@ -674,7 +674,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
         void main() {
-           imageStore(image_array[int(gl_FragCoord.x) % 2], ivec2(1, 1), vec4(1.0, 0.5, 0.2, 1.0));
+           imageStore(image_array[nonuniformEXT(int(gl_FragCoord.x) % 2)], ivec2(1, 1), vec4(1.0, 0.5, 0.2, 1.0));
         }
     )glsl";
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -689,7 +689,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
         void main() {
-            vec4 data = imageLoad(image_array[2 + (gl_LocalInvocationID.x % 2)], ivec2(1, 1));
+            vec4 data = imageLoad(image_array[nonuniformEXT(2 + (gl_LocalInvocationID.x % 2))], ivec2(1, 1));
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
@@ -720,8 +720,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
-// TODO: enable this test when syncval can track array accesses for constant indices
-TEST_F(PositiveSyncVal, DISABLED_ImageArrayConstantIndexing) {
+TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using constant indices. There should be no hazards");
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
@@ -791,8 +790,7 @@ TEST_F(PositiveSyncVal, DISABLED_ImageArrayConstantIndexing) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
-// TODO: enable this test when syncval can track array accesses for constant indices
-TEST_F(PositiveSyncVal, DISABLED_TexelBufferArrayConstantIndexing) {
+TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the texel buffer array using constant indices. There should be no hazards");
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
