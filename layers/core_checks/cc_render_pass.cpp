@@ -2436,6 +2436,12 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         bool all_zero = true;
         bool all_not_zero = true;
         for (uint32_t i = 0; i < multiview_info->subpassCount; ++i) {
+            if (!enabled_features.multiview && multiview_info->pViewMasks[i] != 0) {
+                skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-multiview-06555", device, error_obj.location,
+                                 "multiview feature is not enabled, but "
+                                 "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] is 0x%" PRIx32 ".",
+                                 i, multiview_info->pViewMasks[i]);
+            }
             all_zero &= multiview_info->pViewMasks[i] == 0;
             all_not_zero &= multiview_info->pViewMasks[i] != 0;
             if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
