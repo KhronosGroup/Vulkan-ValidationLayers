@@ -1985,8 +1985,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             // (e.g. read access, when both reads and writes are allowed) or for an array of descriptors, not all
             // elements are accessed in the general case.
             //
-            // This workaround disables validation for the runtime descriptor array case.
-            if (binding->count > 1 && stage_state.spirv_state->static_data_.has_capability_runtime_descriptor_array) {
+            // This workaround disables validation for the descriptor array case.
+            if (binding->count > 1) {
                 continue;
             }
 
@@ -2126,8 +2126,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             SyncStageAccessIndex sync_index =
                 GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
 
-            // Do not update state for runtime descriptor array (the same as in Validate function)
-            if (binding->count > 1 && stage_state.spirv_state->static_data_.has_capability_runtime_descriptor_array) {
+            // Do not update state for descriptor array (the same as in Validate function).
+            if (binding->count > 1) {
                 continue;
             }
 
