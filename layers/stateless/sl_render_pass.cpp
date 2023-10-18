@@ -88,6 +88,16 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
             synchronization2 = synchronization2_features->synchronization2;
         }
     }
+
+    VkBool32 android_external_format_resolve_feature = false;
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    const auto *external_format_resolve_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceExternalFormatResolveFeaturesANDROID>(device_createinfo_pnext);
+    if (external_format_resolve_features) {
+        android_external_format_resolve_feature = external_format_resolve_features->externalFormatResolve;
+    }
+#endif
+
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
 
@@ -100,9 +110,16 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         const VkFormat attachment_format = pCreateInfo->pAttachments[i].format;
         const VkImageLayout initial_layout = pCreateInfo->pAttachments[i].initialLayout;
         const VkImageLayout final_layout = pCreateInfo->pAttachments[i].finalLayout;
-        if (attachment_format == VK_FORMAT_UNDEFINED && GetExternalFormat(pNext) == 0) {
-            vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-09334" : "VUID-VkAttachmentDescription-format-06698";
-            skip |= LogError(vuid, device, attachment_loc.dot(Field::format), "is VK_FORMAT_UNDEFINED.");
+        if (attachment_format == VK_FORMAT_UNDEFINED) {
+            if (use_rp2 && android_external_format_resolve_feature) {
+                if (GetExternalFormat(pNext) == 0) {
+                    skip |= LogError("VUID-VkAttachmentDescription2-format-09334", device, attachment_loc.dot(Field::format),
+                                     "is VK_FORMAT_UNDEFINED.");
+                }
+            } else {
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-09332" : "VUID-VkAttachmentDescription-format-06698";
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::format), "is VK_FORMAT_UNDEFINED.");
+            }
         }
         if (final_layout == VK_IMAGE_LAYOUT_UNDEFINED || final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             vuid = use_rp2 ? "VUID-VkAttachmentDescription2-finalLayout-00843" : "VUID-VkAttachmentDescription-finalLayout-00843";
