@@ -334,14 +334,22 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             //
             // TODO: This code implements the VUID's meaning, but it seems likely that the spec text is actually correct.
             // Clarification requested.
-            if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) && (ici->mipLevels != 1) &&
-                (ici->mipLevels != FullMipChainLevels(ici->extent))) {
-                skip |= LogError(
-                    "VUID-VkMemoryAllocateInfo-pNext-02389", mem_ded_alloc_info->image, ahb_loc,
-                    "AHardwareBuffer_Desc's usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE but %s mipLevels (%" PRIu32
-                    ") is neither 1 nor full mip "
-                    "chain levels (%" PRIu32 "). (AHB = %p).",
-                    dedicated_image_loc.Fields().c_str(), ici->mipLevels, FullMipChainLevels(ici->extent), import_ahb_info->buffer);
+            if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) != 0) {
+                if ((ici->mipLevels != 1) && (ici->mipLevels != FullMipChainLevels(ici->extent))) {
+                    skip |= LogError(
+                        "VUID-VkMemoryAllocateInfo-pNext-02389", mem_ded_alloc_info->image, ahb_loc,
+                        "AHardwareBuffer_Desc's usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE but %s mipLevels (%" PRIu32
+                        ") is neither 1 nor full mip "
+                        "chain levels (%" PRIu32 "). (AHB = %p).",
+                        dedicated_image_loc.Fields().c_str(), ici->mipLevels, FullMipChainLevels(ici->extent),
+                        import_ahb_info->buffer);
+                }
+            } else {
+                if (ici->mipLevels != 1) {
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02586", mem_ded_alloc_info->image, ahb_loc,
+                                     "AHardwareBuffer_Desc's  usage is 0x%" PRIx64 " but %s mipLevels is %" PRIu32 ". (AHB = %p).",
+                                     ahb_desc.usage, dedicated_image_loc.Fields().c_str(), ici->mipLevels, import_ahb_info->buffer);
+                }
             }
 
             // each bit set in the usage of image must be listed in AHardwareBuffer Usage Equivalence, and if there is a
@@ -372,21 +380,27 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             }
         }
     } else {  // Not an import
-        if ((exp_mem_alloc_info) && (mem_ded_alloc_info) &&
-            (0 != (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID & exp_mem_alloc_info->handleTypes)) &&
-            (VK_NULL_HANDLE != mem_ded_alloc_info->image)) {
-            // This is an Android HW Buffer export
-            if (0 != allocate_info->allocationSize) {
-                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-01874", device, allocate_info_loc,
-                                 "vkAllocateMemory: pNext chain indicates a dedicated Android Hardware Buffer export allocation, "
-                                 "but allocationSize is non-zero.");
+              // auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info->pNext);
+              // auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info->pNext);
+
+        if (exp_mem_alloc_info &&
+            (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID & exp_mem_alloc_info->handleTypes)) {
+            if (mem_ded_alloc_info) {
+                if (mem_ded_alloc_info->image != VK_NULL_HANDLE && allocate_info->allocationSize != 0) {
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-01874", mem_ded_alloc_info->image,
+                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                     "is %s but allocationSize is %" PRIu64 ".", FormatHandle(mem_ded_alloc_info->image).c_str(),
+                                     allocate_info->allocationSize);
+                }
+                if (mem_ded_alloc_info->buffer != VK_NULL_HANDLE && allocate_info->allocationSize == 0) {
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-07901", mem_ded_alloc_info->buffer,
+                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                     "is %s but allocationSize is 0.", FormatHandle(mem_ded_alloc_info->buffer).c_str());
+                }
+            } else if (0 == allocate_info->allocationSize) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-07900", device, allocate_info_loc,
+                                 "pNext chain does not include VkMemoryDedicatedAllocateInfo, but allocationSize is 0.");
             }
-        } else {
-            if (0 == allocate_info->allocationSize) {
-                skip |= LogError(
-                    "VUID-VkMemoryAllocateInfo-pNext-01874", device, allocate_info_loc,
-                    "vkAllocateMemory: pNext chain does not indicate a dedicated export allocation, but allocationSize is 0.");
-            };
         }
     }
     return skip;
