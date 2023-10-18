@@ -4286,6 +4286,47 @@ TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRenderPass, ViewMaskWithoutFeature) {
+    TEST_DESCRIPTION("Create render pass using view masks with multiview disabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0u;
+
+    attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_description.colorAttachmentCount = 1u;
+    subpass_description.pColorAttachments = &attachment_reference;
+
+    VkAttachmentDescription attachment_description = {};
+    attachment_description.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    uint32_t view_mask = 0x1;
+
+    VkRenderPassMultiviewCreateInfo render_pass_multiview_ci = vku::InitStructHelper();
+    render_pass_multiview_ci.subpassCount = 1u;
+    render_pass_multiview_ci.pViewMasks = &view_mask;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&render_pass_multiview_ci);
+    render_pass_ci.attachmentCount = 1u;
+    render_pass_ci.pAttachments = &attachment_description;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass_description;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassMultiviewCreateInfo-multiview-06555");
+    vk::CreateRenderPass(*m_device, &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRenderPass, AttachmentLayout) {
     TEST_DESCRIPTION("Test attachment descriptions with layouts other than undefined");
     RETURN_IF_SKIP(Init());
