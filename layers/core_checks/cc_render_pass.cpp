@@ -1278,9 +1278,10 @@ bool CoreChecks::ValidateAttachmentReference(VkAttachmentReference2 reference, c
         case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
             // First need to make sure feature bit is enabled and the format is actually a depth and/or stencil
             if (!enabled_features.core12.separateDepthStencilLayouts) {
-                skip |=
-                    LogError("VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313", device, loc,
-                             "is %s (and separateDepthStencilLayouts was not enabled).", string_VkImageLayout(reference.layout));
+                vuid = (use_rp2) ? "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313"
+                                 : "VUID-VkAttachmentReference-separateDepthStencilLayouts-03313";
+                skip |= LogError(vuid, device, loc, "is %s (and separateDepthStencilLayouts was not enabled).",
+                                 string_VkImageLayout(reference.layout));
             } else if (IsImageLayoutDepthOnly(reference.layout)) {
                 if (attachment_reference_stencil_layout) {
                     // This check doesn't rely on the aspect mask value

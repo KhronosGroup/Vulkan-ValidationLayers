@@ -743,8 +743,6 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {
         // set valid values to start
         rpci2.pSubpasses[0].pColorAttachments[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         rpci2.pSubpasses[0].pColorAttachments[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        rpci2.pSubpasses[0].pDepthStencilAttachment->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        rpci2.pSubpasses[0].pDepthStencilAttachment->layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
 
         rpci2.pSubpasses[0].pDepthStencilAttachment->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         rpci2.pSubpasses[0].pDepthStencilAttachment->layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
@@ -766,6 +764,13 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {
             *m_errorMonitor, *m_device, *rpci2.ptr(),
             {"VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313", "VUID-VkRenderPassCreateInfo2-attachment-06245"});
     }
+
+    // test RenderPass 1
+    refs[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    refs[1].layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-attachment-06244");
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkAttachmentReference-separateDepthStencilLayouts-03313",
+                         nullptr);
 }
 
 TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsFeature) {
