@@ -678,21 +678,23 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
             LayoutUseCheckAndMessage layout_check(check_layout, test_aspect);
 
             skip |= subresource_map->AnyInRange(
-                normalized_range,
-                [this, &layout_check, i, cb = cb_state.commandBuffer(), render_pass = pRenderPassBegin->renderPass,
-                 framebuffer = framebuffer_state.framebuffer(), image = view_state->image_state->image(),
-                 image_view = view_state->image_view(), attachment_loc](const LayoutRange &range, const LayoutEntry &state) {
+                normalized_range, [this, &layout_check, i, cb = cb_state.commandBuffer(),
+                                   render_pass = pRenderPassBegin->renderPass, framebuffer = framebuffer_state.framebuffer(),
+                                   image = view_state->image_state->image(), image_view = view_state->image_view(), attachment_loc,
+                                   rp_begin_loc](const LayoutRange &range, const LayoutEntry &state) {
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
                         const LogObjectList objlist(cb, render_pass, framebuffer, image, image_view);
-                        subres_skip = LogError(kVUID_Core_DrawState_InvalidRenderpass, objlist, attachment_loc,
-                                               "You cannot start a render pass using attachment %" PRIu32
-                                               " where the render pass initial "
-                                               "layout is %s "
-                                               "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                                               "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED.",
-                                               i, string_VkImageLayout(layout_check.expected_layout), layout_check.message,
-                                               string_VkImageLayout(layout_check.layout));
+                        const char *vuid = rp_begin_loc.function != Func::vkCmdBeginRenderPass
+                                               ? "VUID-vkCmdBeginRenderPass2-initialLayout-03100"
+                                               : "VUID-vkCmdBeginRenderPass-initialLayout-00900";
+                        subres_skip = LogError(
+                            vuid, objlist, attachment_loc,
+                            "You cannot start a render pass using attachment %" PRIu32
+                            " where the render pass initial layout is %s and the %s layout of the attachment is %s. The layouts "
+                            "must match, or the render pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED.",
+                            i, string_VkImageLayout(layout_check.expected_layout), layout_check.message,
+                            string_VkImageLayout(layout_check.layout));
                     }
                     return subres_skip;
                 });
