@@ -60,6 +60,7 @@ struct BindlessStateBuffer {
 } // namespace gpuav_glsl
 
 bool GpuAssisted::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
+    // If no features are enabled, descriptor indexing is not being used actually
     bool result =
         enabled_features.descriptorIndexing || enabled_features.shaderInputAttachmentArrayDynamicIndexing ||
         enabled_features.shaderUniformTexelBufferArrayDynamicIndexing ||

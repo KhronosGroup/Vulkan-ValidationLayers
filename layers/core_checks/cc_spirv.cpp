@@ -2275,8 +2275,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
         skip |= ValidateShaderResolveQCOM(module_state, stage, stage_create_info, loc);
     }
-    if (stage_create_info.pipeline && IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
-        IsExtEnabled(device_extensions.vk_khr_multiview)) {
+    if (stage_create_info.pipeline) {
         if (stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
             stage_create_info.pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE &&
             module_state.HasCapability(spv::CapabilityInputAttachment)) {
