@@ -2652,16 +2652,6 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
 
     RETURN_IF_SKIP(Init())
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
-        layout(location=0) out vec4 color;
-        void main() {
-           color = subpassLoad(x);
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
     const vkt::PipelineLayout pl(*m_device, {&dsl});
@@ -2670,7 +2660,6 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
