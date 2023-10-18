@@ -351,8 +351,10 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
     switch (query_pool_ci.queryType) {
         case VK_QUERY_TYPE_TIMESTAMP: {
             const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
-            skip |= LogError("VUID-vkCmdBeginQuery-queryType-02804", objlist, loc.dot(Field::queryPool),
-                             "(%s) was created with VK_QUERY_TYPE_TIMESTAMP.", FormatHandle(query_obj.pool).c_str());
+            const char *vuid = loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-02804"
+                                                                               : "VUID-vkCmdBeginQuery-queryType-02804";
+            skip |= LogError(vuid, objlist, loc.dot(Field::queryPool), "(%s) was created with VK_QUERY_TYPE_TIMESTAMP.",
+                             FormatHandle(query_obj.pool).c_str());
             break;
         }
         case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT: {
