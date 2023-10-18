@@ -1825,9 +1825,10 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandB
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
                 for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
-                    skip |= ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
-                                           "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter", kVUIDUndefined,
-                                           pNext_loc.dot(Field::pAttachments, index2));
+                    skip |=
+                        ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
+                                       "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter",
+                                       "VUID-VkRenderPassBeginInfo-framebuffer-02780", pNext_loc.dot(Field::pAttachments, index2));
                 }
             }
         }
@@ -2146,9 +2147,10 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer command
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
                 for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
-                    skip |= ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
-                                           "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter", kVUIDUndefined,
-                                           pNext_loc.dot(Field::pAttachments, index2));
+                    skip |=
+                        ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
+                                       "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter",
+                                       "VUID-VkRenderPassBeginInfo-framebuffer-02780", pNext_loc.dot(Field::pAttachments, index2));
                 }
             }
         }

@@ -183,6 +183,101 @@ TEST_F(NegativeParent, BindPipeline) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeParent, RenderPassFramebuffer) {
+    TEST_DESCRIPTION("Test RenderPass and Framebuffer");
+
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget(); // Renderpass created on first device
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
+    fb_info.renderPass = m_renderPass;
+    fb_info.attachmentCount = 0;
+    fb_info.width = m_width;
+    fb_info.height = m_height;
+    fb_info.layers = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-commonparent");
+    vkt::Framebuffer fb(*m_second_device, fb_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
+    TEST_DESCRIPTION("Test RenderPass and Imageless Framebuffer");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(imageless_framebuffer);
+    RETURN_IF_SKIP(InitState(nullptr, &imageless_framebuffer));
+
+    InitRenderTarget();
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();
+    framebuffer_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    framebuffer_attachment_image_info.width = 256;
+    framebuffer_attachment_image_info.height = 256;
+    framebuffer_attachment_image_info.layerCount = 1;
+    framebuffer_attachment_image_info.viewFormatCount = 1;
+    framebuffer_attachment_image_info.pViewFormats = &format;
+
+    VkFramebufferAttachmentsCreateInfo framebuffer_attachments = vku::InitStructHelper();
+    framebuffer_attachments.attachmentImageInfoCount = 1;
+    framebuffer_attachments.pAttachmentImageInfos = &framebuffer_attachment_image_info;
+
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&framebuffer_attachments);
+    fb_info.renderPass = m_renderPass;
+    fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    fb_info.attachmentCount = 1;
+    fb_info.width = m_width;
+    fb_info.height = m_height;
+    fb_info.layers = 1;
+    vkt::Framebuffer fb(*m_device, fb_info);
+
+    VkImageObj image(m_second_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL);
+    image.Init(image_ci);
+    VkImageView image_view = image.targetView(format);
+
+    VkRenderPassAttachmentBeginInfo render_pass_attachment_bi = vku::InitStructHelper();
+    render_pass_attachment_bi.attachmentCount = 1;
+    render_pass_attachment_bi.pAttachments = &image_view;
+
+    m_renderPassBeginInfo.pNext = &render_pass_attachment_bi;
+    m_renderPassBeginInfo.framebuffer = fb.handle();
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-framebuffer-02780");
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeParent, RenderPassCommandBuffer) {
+    TEST_DESCRIPTION("Test RenderPass and Framebuffer");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();  // Renderpass created on first device
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::CommandPool command_pool(*m_second_device, m_device->graphics_queue_node_index_, 0);
+    vkt::CommandBuffer command_buffer(m_second_device, &command_pool);
+
+    command_buffer.begin();
+    // one for each the framebuffer and renderpass being different from the CommandBuffer
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-commonparent");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-commonparent");
+    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass2(command_buffer.handle(), &m_renderPassBeginInfo, &subpass_begin_info);
+    m_errorMonitor->VerifyFound();
+    command_buffer.end();
+}
+
 TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetPhysicalDeviceSurfaceSupportKHR");
     AddSurfaceExtension();

@@ -258,7 +258,6 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'VkShaderModuleValidationCacheCreateInfoEXT',
             'VkGraphicsPipelineShaderGroupsCreateInfoNV',
             'VkSubpassShadingPipelineCreateInfoHUAWEI',
-            'VkRenderPassAttachmentBeginInfo',
             'VkBindImageMemorySwapchainInfoKHR',
             'VkRenderingFragmentDensityMapAttachmentInfoEXT',
             'VkRenderingFragmentShadingRateAttachmentInfoKHR',
@@ -604,9 +603,12 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         if not self.hasFieldParentVUID(member, structName):
             return 'kVUIDUndefined'
 
-        # Special case
+        # Special cases
+        # Make sure function is not in 'structs_that_forgot_about_parent_vuids'
         if commandName == 'vkCreateImageView' and member.name == 'image':
             return "\"VUID-vkCreateImageView-image-09179\""
+        if 'vkCmdBeginRenderPass' in commandName and member.name == 'pAttachments':
+            return "\"VUID-VkRenderPassBeginInfo-framebuffer-02780\""
 
         if singleParentVuid:
             return getVUID(self.valid_vuids, f'VUID-{structName}-{member.name}-parent')
