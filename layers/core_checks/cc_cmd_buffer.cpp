@@ -269,7 +269,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                     if (info->renderPass == VK_NULL_HANDLE) {
                         skip |=
-                            LogError("VUID-VkCommandBufferBeginInfo-flags-06000", commandBuffer, begin_info_loc.dot(Field::flags),
+                            LogError("VUID-VkCommandBufferBeginInfo-flags-09240", commandBuffer, begin_info_loc.dot(Field::flags),
                                      "includes VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
                                      "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLE.");
                     }
