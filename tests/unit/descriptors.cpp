@@ -5252,3 +5252,67 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
     vk::AllocateDescriptorSets(*m_device, &allocate_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
+    TEST_DESCRIPTION("Test the maxInlineUniformTotalSize limit");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceVulkan13Features vulkan_13_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(vulkan_13_features);
+    if (!vulkan_13_features.inlineUniformBlock) {
+        GTEST_SKIP() << "inlineUniformBlock not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &vulkan_13_features));
+    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().tessellationShader)) {
+        GTEST_SKIP() << "Device does not support the geometry or tessellation shaders";
+    }
+
+    VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_properties = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan13Properties properties13 = vku::InitStructHelper(&inline_uniform_block_properties);
+    GetPhysicalDeviceProperties2(properties13);
+    const uint32_t limit = properties13.maxInlineUniformTotalSize;
+
+    if (limit == std::numeric_limits<uint32_t>::max()) {
+        GTEST_SKIP() << "maxInlineUniformTotalSize is too large";
+    }
+
+    const uint32_t binding_count = limit / inline_uniform_block_properties.maxInlineUniformBlockSize + 1;
+    std::vector<VkDescriptorSetLayoutBinding> bindings(binding_count);
+    const VkShaderStageFlags stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                         VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                         VK_SHADER_STAGE_FRAGMENT_BIT};
+    for (uint32_t i = 0; i < binding_count; ++i) {
+        bindings[i].binding = i;
+        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
+        bindings[i].descriptorCount = inline_uniform_block_properties.maxInlineUniformBlockSize;
+        bindings[i].stageFlags = stages[i % 5];
+        bindings[i].pImmutableSamplers = nullptr;
+    }
+
+    VkDescriptorSetLayoutCreateInfo set_layout_ci = vku::InitStructHelper();
+    set_layout_ci.bindingCount = binding_count;
+    set_layout_ci.pBindings = bindings.data();
+    vkt::DescriptorSetLayout set_layout(*m_device, set_layout_ci);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1u;
+    pipeline_layout_ci.pSetLayouts = &set_layout.handle();
+
+    VkPipelineLayout pipeline_layout;
+    if (binding_count > inline_uniform_block_properties.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
+    }
+    if (binding_count / 5 > inline_uniform_block_properties.maxPerStageDescriptorInlineUniformBlocks) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214");
+    }
+    if (binding_count / 5 > inline_uniform_block_properties.maxPerStageDescriptorInlineUniformBlocks) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");
+    }
+    if (binding_count > inline_uniform_block_properties.maxDescriptorSetInlineUniformBlocks) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216");
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-06531");
+    vk::CreatePipelineLayout(*m_device, &pipeline_layout_ci, nullptr, &pipeline_layout);
+    m_errorMonitor->VerifyFound();
+}
