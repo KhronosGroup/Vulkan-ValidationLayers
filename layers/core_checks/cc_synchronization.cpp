@@ -1054,6 +1054,11 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                              pImageMemoryBarriers[i].srcQueueFamilyIndex, pImageMemoryBarriers[i].dstQueueFamilyIndex);
         }
     }
+
+    if (cb_state->activeRenderPass && ((srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0)) {
+        skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-07308", commandBuffer, error_obj.location.dot(Field::srcStageMask),
+                         "is %s.", sync_utils::StringPipelineStageFlags(srcStageMask).c_str());
+    }
     return skip;
 }
 
