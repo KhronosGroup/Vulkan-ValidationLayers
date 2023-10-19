@@ -2014,10 +2014,10 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     VkCommandBuffer unused_command_buffer;
     VkDescriptorSet unused_descriptor_set;
 
-    VkDescriptorSetObj descriptor_set_obj(m_device);
-    descriptor_set_obj.AppendDummy();
-    descriptor_set_obj.CreateVKDescriptorSet(m_commandBuffer);
-    VkDescriptorSet descriptor_set = descriptor_set_obj.GetDescriptorSetHandle();
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vkt::Fence fence(*m_device, fence_create_info);
@@ -2042,11 +2042,10 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     // len='descriptorSetCount' for anyone relying on it
     m_errorMonitor->SetUnexpectedError("VUID_Undefined");
     {
-        VkDescriptorSetLayout set_layout = descriptor_set_obj.GetDescriptorSetLayout();
         VkDescriptorSetAllocateInfo info = vku::InitStructHelper();
-        info.descriptorPool = descriptor_set_obj.handle();
+        info.descriptorPool = descriptor_set.pool_;
         info.descriptorSetCount = 0;  // invalid
-        info.pSetLayouts = &set_layout;
+        info.pSetLayouts = &descriptor_set.layout_.handle();
         vk::AllocateDescriptorSets(device(), &info, &unused_descriptor_set);
     }
     m_errorMonitor->VerifyFound();
@@ -2056,7 +2055,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-descriptorSetCount-arraylength");
-    vk::FreeDescriptorSets(device(), descriptor_set_obj.handle(), 0, &descriptor_set);
+    vk::FreeDescriptorSets(device(), descriptor_set.pool_, 0, &descriptor_set.set_);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetFences-fenceCount-arraylength");
@@ -2071,8 +2070,8 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");
-    vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_set_obj.GetPipelineLayout(), 0,
-                              0, &(descriptor_set), 0, nullptr);
+    vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 0,
+                              &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");

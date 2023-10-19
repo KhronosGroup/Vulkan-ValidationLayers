@@ -110,10 +110,6 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     features.independentBlend = VK_FALSE;
     RETURN_IF_SKIP(Init(&features));
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
     // Create a renderPass with two color attachments
     VkAttachmentReference attachments[2] = {};
     attachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -146,7 +142,6 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
 
     CreatePipelineHelper pipe(*this, 2);
     pipe.InitState();
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.gp_ci_.renderPass = renderpass.handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_TRUE;
@@ -180,10 +175,6 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
         GTEST_SKIP() << "Unable to find a color attachment format with no blending support";
     }
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
     // Create a renderPass with two color attachments
     VkAttachmentReference attachment = {};
     attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -209,7 +200,6 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_TRUE;
@@ -537,21 +527,15 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     framebuffer_info.pAttachments = &render_target_view;
     vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
     CreatePipelineHelper pipeline_1(*this);
     pipeline_1.InitState();
     pipeline_1.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    pipeline_1.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipeline_1.gp_ci_.renderPass = renderpass.handle();
     pipeline_1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipeline_2(*this);
     pipeline_2.InitState();
     pipeline_2.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
-    pipeline_2.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipeline_2.gp_ci_.renderPass = renderpass.handle();
     pipeline_2.CreateGraphicsPipeline();
 
@@ -586,10 +570,6 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
         GTEST_SKIP() << "sampleRateShading feature is not supported";
     }
     InitRenderTarget();
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     // Create a renderPass with two attachments (0=Color, 1=Input)
     VkAttachmentReference attachmentRefs[2] = {};
@@ -655,7 +635,6 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.gp_ci_.renderPass = renderpass.handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_TRUE;
@@ -1078,10 +1057,6 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
     VkAttachmentDescription attachments[] = {
         {
             0,
@@ -1116,7 +1091,6 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 

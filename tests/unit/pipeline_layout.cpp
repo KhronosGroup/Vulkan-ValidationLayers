@@ -944,10 +944,10 @@ TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    OneOffDescriptorSet descriptor_set(m_device, {});  // no descriptor in layout
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();

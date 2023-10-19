@@ -244,8 +244,6 @@ class VkRenderFramework : public VkTestFramework {
     bool CanEnableDeviceExtension(const std::string &dev_ext_name) const;
 };
 
-class VkDescriptorSetObj;
-
 class VkImageObj : public vkt::Image {
   public:
     VkImageObj(vkt::Device *dev);
@@ -351,33 +349,6 @@ class VkImageObj : public vkt::Image {
     VkDescriptorImageInfo m_descriptorImageInfo;
     uint32_t m_mipLevels;
     uint32_t m_arrayLayers;
-};
-
-class VkDescriptorSetObj : public vkt::DescriptorPool {
-  public:
-    VkDescriptorSetObj(vkt::Device *device);
-    ~VkDescriptorSetObj() noexcept;
-
-    int AppendDummy();
-    int AppendSamplerTexture(VkDescriptorImageInfo &image_info);
-    void CreateVKDescriptorSet(vkt::CommandBuffer *commandBuffer);
-
-    VkDescriptorSet GetDescriptorSetHandle() const { return m_set ? m_set->handle() : VK_NULL_HANDLE; }
-    VkPipelineLayout GetPipelineLayout() const { return m_pipeline_layout.handle(); }
-    VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_layout.handle(); }
-
-  protected:
-    vkt::Device *m_device;
-    std::vector<VkDescriptorSetLayoutBinding> m_layout_bindings;
-    std::map<VkDescriptorType, int> m_type_counts;
-    int m_nextSlot;
-
-    std::vector<VkDescriptorImageInfo> m_imageSamplerDescriptors;
-    std::vector<VkWriteDescriptorSet> m_writes;
-
-    vkt::DescriptorSetLayout m_layout;
-    vkt::PipelineLayout m_pipeline_layout;
-    vkt::DescriptorSet *m_set = NULL;
 };
 
 // What is the incoming source to be turned into VkShaderModuleCreateInfo::pCode

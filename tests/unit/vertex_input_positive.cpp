@@ -357,10 +357,6 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
     // Create a renderPass with two color attachments
     VkAttachmentReference attachments[2] = {};
     attachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -394,7 +390,6 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     CreatePipelineHelper pipe(*this, 2);
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.gp_ci_.renderPass = renderpass.handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_FALSE;

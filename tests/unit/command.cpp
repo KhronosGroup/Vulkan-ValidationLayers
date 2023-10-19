@@ -1043,15 +1043,18 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendSamplerTexture(image_info);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
+    descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1059,9 +1062,8 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    VkDescriptorSet set_obj = descriptorSet.GetDescriptorSetHandle();
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0, 1,
-                              &set_obj, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewType-07752");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -1169,24 +1171,26 @@ TEST_F(NegativeCommand, DrawTimeImageMultisampleMismatchWithPipeline) {
     VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendSamplerTexture(image_info);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
+    descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    VkDescriptorSet set_obj = descriptorSet.GetDescriptorSetHandle();
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0, 1,
-                              &set_obj, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-samples-08726");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -1218,24 +1222,26 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo image_info = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_GENERAL};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendSamplerTexture(image_info);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
+    descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    VkDescriptorSet set_obj = descriptorSet.GetDescriptorSetHandle();
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0, 1,
-                              &set_obj, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-format-07753");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

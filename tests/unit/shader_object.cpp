@@ -3698,15 +3698,13 @@ TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
     RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkDescriptorSetLayout descriptorSetLayoutHandle = descriptorSet.GetDescriptorSetLayout();
-    VkDescriptorSet descriptorSetHandle = descriptorSet.GetDescriptorSetHandle();
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl),
-                                 &descriptorSetLayoutHandle, nullptr);
+                                 &descriptor_set.layout_.handle(), nullptr);
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
@@ -3714,8 +3712,8 @@ TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0u, 1u,
-                              &descriptorSetHandle, 0u, nullptr);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+                              &descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
