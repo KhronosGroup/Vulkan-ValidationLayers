@@ -395,6 +395,12 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                     }
                 }
             }
+        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+            if (!cb_state->unprotected) {
+                const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
+                skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-06721", objlist, error_obj.location,
+                                 "Binding pipeline to VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR in a protected command buffer.");
+            }
         }
         if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
