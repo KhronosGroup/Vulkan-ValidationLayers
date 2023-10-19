@@ -425,16 +425,30 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
-        !pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
         cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT]) {
-        if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
-            pipeline.MultisampleState()->rasterizationSamples) {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
-            skip |= LogError(vuid.sample_locations_07482, objlist, loc,
-                             "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
-                             "VkPipelineMultisampleStateCreateInfo::rasterizationSamples from the pipeline was %s.",
-                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
-                             string_VkSampleCountFlagBits(pipeline.MultisampleState()->rasterizationSamples));
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
+                pipeline.MultisampleState()->rasterizationSamples) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(
+                    vuid.sample_locations_07482, objlist, loc,
+                    "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
+                    "VkPipelineMultisampleStateCreateInfo::rasterizationSamples from the pipeline was %s.",
+                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
+                    string_VkSampleCountFlagBits(pipeline.MultisampleState()->rasterizationSamples));
+            }
+        } else {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT] &&
+                cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
+                    cb_state.dynamic_state_value.rasterization_samples) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(
+                    vuid.sample_locations_07483, objlist, loc,
+                    "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
+                    "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() was %s.",
+                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
+                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+            }
         }
     }
 
