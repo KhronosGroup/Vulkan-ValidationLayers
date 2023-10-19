@@ -201,8 +201,9 @@ class VkRenderFramework : public VkTestFramework {
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
     VkImageLayout m_depth_stencil_layout;
+    VkImageLayout m_color_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkClearColorValue m_clear_color;
-    bool m_clear_via_load_op;
+    bool m_load_op_clear;
     float m_depth_clear_color;
     uint32_t m_stencil_clear_color;
     VkImageObj *m_depthStencil;

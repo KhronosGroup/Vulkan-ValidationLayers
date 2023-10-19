@@ -325,7 +325,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     RETURN_IF_SKIP(InitBasicExtendedDynamicState())
 
     m_depth_stencil_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    m_clear_via_load_op = false;
+    m_load_op_clear = false;
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageObj ds_image(m_device);
     ds_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
@@ -358,7 +358,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     RETURN_IF_SKIP(InitBasicExtendedDynamicState())
 
     m_depth_stencil_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    m_clear_via_load_op = false;
+    m_load_op_clear = false;
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageObj ds_image(m_device);
     ds_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,

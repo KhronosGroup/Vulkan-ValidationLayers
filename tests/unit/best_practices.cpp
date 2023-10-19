@@ -744,7 +744,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     RETURN_IF_SKIP(InitBestPracticesFramework())
     InitState();
 
-    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    m_load_op_clear = false;  // Force LOAD_OP_LOAD
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
@@ -779,7 +779,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     RETURN_IF_SKIP(InitBestPracticesFramework())
     InitState();
 
-    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    m_load_op_clear = false;  // Force LOAD_OP_LOAD
     InitRenderTarget();
 
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
