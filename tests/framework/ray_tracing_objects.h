@@ -60,6 +60,7 @@ class GeometryKHR {
     GeometryKHR& operator=(const GeometryKHR&) = delete;
 
     // Common methods for all types
+    GeometryKHR& SetFlags(VkGeometryFlagsKHR flags);
     GeometryKHR& SetType(Type type);
     GeometryKHR& SetPrimitiveCount(uint32_t primitiveCount);
     GeometryKHR& SetStride(VkDeviceSize stride);
@@ -72,9 +73,13 @@ class GeometryKHR {
     GeometryKHR& SetTrianglesDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32);
     GeometryKHR& SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer);
     GeometryKHR& SetTrianglesIndexType(VkIndexType index_type);
+    GeometryKHR& SetTrianglesVertexFormat(VkFormat vertex_format);
+    GeometryKHR& SetTrianglesMaxVertex(uint32_t max_vertex);
+    GeometryKHR& SetTrianglesTransformatData(VkDeviceAddress address);
     // AABB
     GeometryKHR& SetAABBsDeviceBuffer(vkt::Buffer&& buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
     GeometryKHR& SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
+    GeometryKHR& SetAABBsStride(VkDeviceSize stride);
     // Instance
     GeometryKHR& SetInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR bottom_level_as);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR bottom_level_as);
