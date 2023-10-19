@@ -235,21 +235,54 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: macos-${{matrix.os}}
+          key: ${{matrix.os}}-cache
       - name: Configure
         run: |
           cmake -S . -B build/ \
-          -D BUILD_TESTS=OFF \
           -D BUILD_WERROR=ON \
           -D UPDATE_DEPS=ON \
           -D CMAKE_BUILD_TYPE=Debug
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          LDFLAGS: -Wl,-fatal_warnings
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
       # Helps verify install location and prints the exported symbols
       - run: nm -gU /tmp/lib/libVkLayer_khronos_validation.dylib
+      # Helps verify useful details about the dylib (platform, minos, sdk)
+      - run: vtool -show-build /tmp/lib/libVkLayer_khronos_validation.dylib
+
+  iOS:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: iOS-cache
+      - uses: lukka/get-cmake@latest
+      - name: Configure for iOS
+        run: |
+          cmake -S . -B build/ \
+          -D CMAKE_SYSTEM_NAME=iOS \
+          -D CMAKE_OSX_ARCHITECTURES=arm64 \
+          -D BUILD_WERROR=ON \
+          -D UPDATE_DEPS=ON \
+          -D CMAKE_BUILD_TYPE=Debug
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          LDFLAGS: -Wl,-fatal_warnings
+      - run: cmake --build build
+      - run: cmake --install build --prefix /tmp
+      # Helps verify install location and prints the exported symbols.
+      - run: nm -gU /tmp/lib/libVkLayer_khronos_validation.dylib
+      # Helps verify useful details about the dylib (platform, minos, sdk)
+      - run: vtool -show-build /tmp/lib/libVkLayer_khronos_validation.dylib
 
   mingw:
     env:
