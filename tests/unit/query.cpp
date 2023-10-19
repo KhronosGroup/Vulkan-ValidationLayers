@@ -1688,7 +1688,7 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
         GTEST_SKIP() << "Test requires VkPhysicalDeviceVulkan11Features::multiview feature.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
