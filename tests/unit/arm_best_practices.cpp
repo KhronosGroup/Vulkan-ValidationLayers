@@ -249,7 +249,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation))
     InitState();
 
-    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    m_load_op_clear = false;  // Force LOAD_OP_LOAD
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
@@ -1407,7 +1407,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     InitState();
 
-    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    m_load_op_clear = false;  // Force LOAD_OP_LOAD
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
@@ -1541,7 +1541,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
 
     auto ds = CreateImage(ds_format, m_width, m_height, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-    m_clear_via_load_op = true;
+    m_load_op_clear = true;
     m_depth_stencil_fmt = ds_format;
     auto ds_view = ds->targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(1, &ds_view);

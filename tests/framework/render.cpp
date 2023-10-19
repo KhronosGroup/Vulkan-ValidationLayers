@@ -50,7 +50,7 @@ VkRenderFramework::VkRenderFramework()
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
       m_depth_stencil_fmt(VK_FORMAT_UNDEFINED),
       m_depth_stencil_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
-      m_clear_via_load_op(true),
+      m_load_op_clear(true),
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
       m_depthStencil(NULL) {
@@ -825,15 +825,18 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     VkAttachmentDescription att = {};
     att.format = m_render_target_fmt;
     att.samples = VK_SAMPLE_COUNT_1_BIT;
-    att.loadOp = (m_clear_via_load_op) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+    att.loadOp = m_load_op_clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
     att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    att.initialLayout = (m_clear_via_load_op) ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    att.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    const bool has_color_layout = m_color_layout != VK_IMAGE_LAYOUT_UNDEFINED;
+    const auto color_layout = has_color_layout ? m_color_layout : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    att.initialLayout = m_load_op_clear ? VK_IMAGE_LAYOUT_UNDEFINED : color_layout;
+    att.finalLayout = color_layout;
 
     VkAttachmentReference ref = {};
-    ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    ref.layout = color_layout;
 
     m_renderPassClearValues.clear();
     VkClearValue clear = {};
@@ -883,9 +886,9 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     VkAttachmentReference ds_reference;
     if (dsBinding) {
         att.format = m_depth_stencil_fmt;
-        att.loadOp = (m_clear_via_load_op) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+        att.loadOp = (m_load_op_clear) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        att.stencilLoadOp = (m_clear_via_load_op) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+        att.stencilLoadOp = (m_load_op_clear) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
         att.initialLayout = m_depth_stencil_layout;
         att.finalLayout = m_depth_stencil_layout;
