@@ -49,11 +49,6 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
 
     RETURN_IF_SKIP(InitFramework())
 
-    // Crashes without any warnings
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test does not run on AMD proprietary driver";
-    }
-
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(accel_struct_features);
     RETURN_IF_SKIP(InitState(nullptr, &accel_struct_features));

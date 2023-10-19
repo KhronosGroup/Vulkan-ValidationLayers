@@ -232,7 +232,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         }
 
         // Bind while transform feedback is active.
-        if (!IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+        {
             vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
 
             VkDeviceSize const offsets[1]{};
@@ -353,7 +353,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     }
 
     // Begin while transform feedback is active.
-    if (!IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+    {
         vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-02367");
@@ -380,79 +380,77 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
     m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    if (!IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+    {
+        // Activate transform feedback.
+        vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+
         {
-            // Activate transform feedback.
-            vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+            VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
+            GetPhysicalDeviceProperties2(tf_properties);
 
+            // Request a firstCounterBuffer that is too large.
             {
-                VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
-                GetPhysicalDeviceProperties2(tf_properties);
+                auto const firstCounterBuffer = tf_properties.maxTransformFeedbackBuffers;
 
-                // Request a firstCounterBuffer that is too large.
-                {
-                    auto const firstCounterBuffer = tf_properties.maxTransformFeedbackBuffers;
-
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02376");
-                    m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377");
-                    vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), firstCounterBuffer, 1, nullptr, nullptr);
-                    m_errorMonitor->VerifyFound();
-                }
-
-                // Request too many buffers.
-                if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
-                    auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
-
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377");
-                    vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, counterBufferCount, nullptr, nullptr);
-                    m_errorMonitor->VerifyFound();
-                }
-            }
-
-            // Request an out-of-bounds location.
-            {
-                VkBufferCreateInfo info = vku::InitStructHelper();
-                info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
-                info.size = 4;
-                vkt::Buffer const buffer_obj(*m_device, info);
-
-                VkDeviceSize const offsets[1]{1};
-
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-02378");
-                vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), offsets);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02376");
+                m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377");
+                vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), firstCounterBuffer, 1, nullptr, nullptr);
                 m_errorMonitor->VerifyFound();
             }
 
-            // Request specific offsets without specifying buffers.
-            {
-                VkDeviceSize const offsets[1]{};
+            // Request too many buffers.
+            if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+                auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
 
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379");
-                vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, offsets);
-                m_errorMonitor->VerifyFound();
-            }
-
-            // Don't set VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT.
-            {
-                VkBufferCreateInfo info = vku::InitStructHelper();
-                info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-                info.size = 4;
-                vkt::Buffer const buffer_obj(*m_device, info);
-
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380");
-                vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), nullptr);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377");
+                vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, counterBufferCount, nullptr, nullptr);
                 m_errorMonitor->VerifyFound();
             }
         }
 
-        // End while transform feedback is inactive.
+        // Request an out-of-bounds location.
         {
-            vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+            VkBufferCreateInfo info = vku::InitStructHelper();
+            info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
+            info.size = 4;
+            vkt::Buffer const buffer_obj(*m_device, info);
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-None-02375");
-            vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+            VkDeviceSize const offsets[1]{1};
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-02378");
+            vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), offsets);
             m_errorMonitor->VerifyFound();
         }
+
+        // Request specific offsets without specifying buffers.
+        {
+            VkDeviceSize const offsets[1]{};
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379");
+            vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, offsets);
+            m_errorMonitor->VerifyFound();
+        }
+
+        // Don't set VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT.
+        {
+            VkBufferCreateInfo info = vku::InitStructHelper();
+            info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            info.size = 4;
+            vkt::Buffer const buffer_obj(*m_device, info);
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380");
+            vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), nullptr);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // End while transform feedback is inactive.
+    {
+        vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-None-02375");
+        vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -673,12 +671,6 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
-
-    // Test currently crashes with valid SPIR-V
-    // Using EmitStreamVertex() with transfer_feedback_props.maxTransformFeedbackStreams
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test does not run on AMD proprietary driver";
-    }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
         vku::InitStructHelper();

@@ -1836,9 +1836,6 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework())
-    if (IsDriver(VK_DRIVER_ID_GOOGLE_SWIFTSHADER)) {
-        GTEST_SKIP() << "This test hangs on SwiftShader.";
-    }
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
@@ -2096,10 +2093,6 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework())
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        // Older AMD driver does not like timeline + export properties combo
-        GTEST_SKIP() << "Please update AMD drivers at least to Adrenalin 23.5.2 to run this test. Then remove this check.";
-    }
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }

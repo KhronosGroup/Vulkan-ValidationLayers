@@ -192,8 +192,6 @@ class VkLayerTest : public VkLayerTestBase {
         return proc;
     }
 
-    bool IsDriver(VkDriverId driver_id);
-
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);
     APIVersion DeviceValidationVersion() const;

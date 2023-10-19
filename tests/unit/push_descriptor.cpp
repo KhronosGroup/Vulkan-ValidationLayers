@@ -464,14 +464,11 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00353");
 
     // Bad descriptorSetLayout handle, to be ignored if templateType is PUSH_DESCRIPTORS
-    // NOTE: AMD's Windows proprietary driver doesn't seem to ignore this handle
     create_info.set = 2;
     create_info.descriptorSetLayout = CastFromUint64<VkDescriptorSetLayout>(badhandle);
-    if (!IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-            vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
-        }
+    VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
+    if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+        vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
     }
     // Bad descriptorSetLayout handle
     create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
@@ -790,10 +787,6 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init())
 
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test crashes on AMD.";
-    }
-
     const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx_qfi.has_value()) {
         GTEST_SKIP() << "Required queue family capabilities not found.";
@@ -856,12 +849,7 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
-
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test crashes on AMD.";
-    }
+    RETURN_IF_SKIP(Init())
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -917,12 +905,7 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
-
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test crashes on AMD.";
-    }
+    RETURN_IF_SKIP(Init())
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;

@@ -933,10 +933,6 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "This test is crashing on some AMD + Windows platforms without any validation errors getting hit; requires "
-                        "investigation.";
-    }
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);

@@ -1295,11 +1295,6 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitBasicYcbcr())
 
-    // This test hits a bug in the driver, CTS was written, but incase using an old driver
-    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
-        GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
-    }
-
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
