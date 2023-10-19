@@ -21,7 +21,8 @@
 #include "best_practices/best_practices_error_enums.h"
 
 void BestPractices::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
+                                                const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                                const RecordObject& record_obj) {
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         WriteLockGuard guard{memory_free_events_lock_};
 
@@ -109,7 +110,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     return skip;
 }
 
-void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
+void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {
     if (memory != VK_NULL_HANDLE && VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
 
@@ -125,7 +127,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
         }
     }
 
-    ValidationStateTracker::PreCallRecordFreeMemory(device, memory, pAllocator);
+    ValidationStateTracker::PreCallRecordFreeMemory(device, memory, pAllocator, record_obj);
 }
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
@@ -272,7 +274,8 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
     return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
 }
 
-void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
+void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
+                                                            const RecordObject& record_obj) {
     auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
     mem_info->dynamic_priority.emplace(priority);
 }

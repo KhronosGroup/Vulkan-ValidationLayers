@@ -721,7 +721,7 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
 }
 
 void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                  const VkAllocationCallbacks *pAllocator) {
+                                                  const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (swapchain) {
         auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
         if (swapchain_data) {
@@ -731,7 +731,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
             }
         }
     }
-    StateTracker::PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
+    StateTracker::PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator, record_obj);
 }
 
 void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,

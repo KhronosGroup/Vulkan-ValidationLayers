@@ -56,8 +56,9 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
     return skip;
 }
 
-void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
-    StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
+void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
+                                                    const RecordObject& record_obj) {
+    StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
 
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (!cb) return;
@@ -141,8 +142,9 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
-    StateTracker::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
+                                                      const RecordObject& record_obj) {
+    StateTracker::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
@@ -152,12 +154,14 @@ void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuf
     }
 }
 
-void BestPractices::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
-    PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+void BestPractices::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
+                                                         const RecordObject& record_obj) {
+    PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 }
 
-void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
-    StateTracker::PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
+                                                       const RecordObject& record_obj) {
+    StateTracker::PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
@@ -167,8 +171,9 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBu
     }
 }
 
-void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
-    PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
+                                                          const RecordObject& record_obj) {
+    PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 }
 
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
@@ -214,8 +219,8 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 }
 
 void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                    const VkCommandBuffer* pCommandBuffers) {
-    ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+                                                    const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
+    ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
 
     auto primary = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (!primary) {

@@ -345,7 +345,8 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDevices(VkInstance instance
     }
 }
 
-void ObjectLifetimes::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+void ObjectLifetimes::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
+                                                   const RecordObject &record_obj) {
     // Destroy physical devices
     auto snapshot = object_map[kVulkanObjectTypePhysicalDevice].snapshot();
     for (const auto &iit : snapshot) {
@@ -384,7 +385,8 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
     return skip;
 }
 
-void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                                 const RecordObject &record_obj) {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physical_device), layer_data_map);
     auto object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
     object_lifetimes->RecordDestroyObject(device, kVulkanObjectTypeDevice);
@@ -472,7 +474,7 @@ bool ObjectLifetimes::PreCallValidateResetDescriptorPool(VkDevice device, VkDesc
 }
 
 void ObjectLifetimes::PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                       VkDescriptorPoolResetFlags flags) {
+                                                       VkDescriptorPoolResetFlags flags, const RecordObject &record_obj) {
     auto lock = WriteSharedLock();
     // A DescriptorPool's descriptor sets are implicitly deleted when the pool is reset. Remove this pool's descriptor sets from
     // our descriptorSet map.
@@ -705,7 +707,7 @@ bool ObjectLifetimes::PreCallValidateFreeCommandBuffers(VkDevice device, VkComma
 }
 
 void ObjectLifetimes::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                      const VkCommandBuffer *pCommandBuffers) {
+                                                      const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         RecordDestroyObject(pCommandBuffers[i], kVulkanObjectTypeCommandBuffer);
     }
@@ -724,7 +726,7 @@ bool ObjectLifetimes::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwap
 }
 
 void ObjectLifetimes::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                       const VkAllocationCallbacks *pAllocator) {
+                                                       const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     RecordDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR);
 
     auto snapshot = swapchainImageMap.snapshot(
@@ -754,7 +756,7 @@ bool ObjectLifetimes::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescr
     return skip;
 }
 void ObjectLifetimes::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                      const VkDescriptorSet *pDescriptorSets) {
+                                                      const VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj) {
     auto lock = WriteSharedLock();
     std::shared_ptr<ObjTrackState> pool_node = nullptr;
     auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
@@ -794,7 +796,7 @@ bool ObjectLifetimes::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDe
     return skip;
 }
 void ObjectLifetimes::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                         const VkAllocationCallbacks *pAllocator) {
+                                                         const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     auto lock = WriteSharedLock();
     auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
     if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
@@ -831,7 +833,7 @@ bool ObjectLifetimes::PreCallValidateDestroyCommandPool(VkDevice device, VkComma
 }
 
 void ObjectLifetimes::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                      const VkAllocationCallbacks *pAllocator) {
+                                                      const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     auto snapshot = object_map[kVulkanObjectTypeCommandBuffer].snapshot(
         [commandPool](const std::shared_ptr<ObjTrackState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
     // A CommandPool's cmd buffers are implicitly deleted when pool is deleted. Remove this pool's cmdBuffers from cmd buffer map.

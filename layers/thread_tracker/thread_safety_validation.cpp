@@ -24,7 +24,7 @@ ReadLockGuard ThreadSafety::ReadLock() const { return ReadLockGuard(validation_o
 WriteLockGuard ThreadSafety::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
 void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                       VkCommandBuffer* pCommandBuffers) {
+                                                       VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkAllocateCommandBuffers);
     StartWriteObject(pAllocateInfo->commandPool, vvl::Func::vkAllocateCommandBuffers);
 }
@@ -48,7 +48,7 @@ void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const V
 
 void ThreadSafety::PreCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
-                                                          VkDescriptorSetLayout* pSetLayout) {
+                                                          VkDescriptorSetLayout* pSetLayout, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkCreateDescriptorSetLayout);
 }
 
@@ -77,7 +77,7 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(VkDevice device, cons
 }
 
 void ThreadSafety::PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                       VkDescriptorSet* pDescriptorSets) {
+                                                       VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkAllocateDescriptorSets);
     StartWriteObject(pAllocateInfo->descriptorPool, vvl::Func::vkAllocateDescriptorSets);
     // Host access to pAllocateInfo::descriptorPool must be externally synchronized
@@ -106,7 +106,7 @@ void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const V
 }
 
 void ThreadSafety::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                   const VkDescriptorSet* pDescriptorSets) {
+                                                   const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkFreeDescriptorSets);
     StartWriteObject(descriptorPool, vvl::Func::vkFreeDescriptorSets);
     if (pDescriptorSets) {
@@ -143,7 +143,7 @@ void ThreadSafety::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescripto
 }
 
 void ThreadSafety::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                      const VkAllocationCallbacks* pAllocator) {
+                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkDestroyDescriptorPool);
     StartWriteObject(descriptorPool, vvl::Func::vkDestroyDescriptorPool);
     // Host access to descriptorPool must be externally synchronized
@@ -177,7 +177,7 @@ void ThreadSafety::PostCallRecordDestroyDescriptorPool(VkDevice device, VkDescri
 }
 
 void ThreadSafety::PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                    VkDescriptorPoolResetFlags flags) {
+                                                    VkDescriptorPoolResetFlags flags, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkResetDescriptorPool);
     StartWriteObject(descriptorPool, vvl::Func::vkResetDescriptorPool);
     // Host access to descriptorPool must be externally synchronized
@@ -220,7 +220,7 @@ bool ThreadSafety::DsReadOnly(VkDescriptorSet set) const {
 
 void ThreadSafety::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                      const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                     const VkCopyDescriptorSet* pDescriptorCopies) {
+                                                     const VkCopyDescriptorSet* pDescriptorCopies, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkUpdateDescriptorSets);
     if (pDescriptorWrites) {
         for (uint32_t index = 0; index < descriptorWriteCount; index++) {
@@ -283,7 +283,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSets(VkDevice device, uint32_t 
 
 void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                                const void* pData) {
+                                                                const void* pData, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkUpdateDescriptorSetWithTemplate);
     StartReadObject(descriptorUpdateTemplate, vvl::Func::vkUpdateDescriptorSetWithTemplate);
 
@@ -313,7 +313,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplate(VkDevice device
 
 void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                                   const void* pData) {
+                                                                   const void* pData, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkUpdateDescriptorSetWithTemplateKHR);
     StartReadObject(descriptorUpdateTemplate, vvl::Func::vkUpdateDescriptorSetWithTemplateKHR);
 
@@ -342,7 +342,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice dev
 }
 
 void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                   const VkCommandBuffer* pCommandBuffers) {
+                                                   const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     const bool lockCommandPool = false;  // pool is already directly locked
     StartReadObjectParentInstance(device, vvl::Func::vkFreeCommandBuffers);
     StartWriteObject(commandPool, vvl::Func::vkFreeCommandBuffers);
@@ -370,7 +370,8 @@ void ThreadSafety::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPo
 }
 
 void ThreadSafety::PreCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                                  const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
+                                                  const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
+                                                  const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkCreateCommandPool);
 }
 
@@ -384,7 +385,8 @@ void ThreadSafety::PostCallRecordCreateCommandPool(VkDevice device, const VkComm
     }
 }
 
-void ThreadSafety::PreCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+void ThreadSafety::PreCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
+                                                 const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkResetCommandPool);
     StartWriteObject(commandPool, vvl::Func::vkResetCommandPool);
     // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
@@ -401,7 +403,7 @@ void ThreadSafety::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool
 }
 
 void ThreadSafety::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                   const VkAllocationCallbacks* pAllocator) {
+                                                   const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkDestroyCommandPool);
     StartWriteObject(commandPool, vvl::Func::vkDestroyCommandPool);
     // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
@@ -431,7 +433,7 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
 // GetSwapchainImages can return a non-zero count with a NULL pSwapchainImages pointer.  Let's avoid crashes by ignoring
 // pSwapchainImages.
 void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
-                                                      VkImage* pSwapchainImages) {
+                                                      VkImage* pSwapchainImages, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetSwapchainImagesKHR);
     StartReadObject(swapchain, vvl::Func::vkGetSwapchainImagesKHR);
 }
@@ -451,7 +453,7 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
 }
 
 void ThreadSafety::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                    const VkAllocationCallbacks* pAllocator) {
+                                                    const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkDestroySwapchainKHR);
     StartWriteObject(swapchain, vvl::Func::vkDestroySwapchainKHR);
     // Host access to swapchain must be externally synchronized
@@ -475,7 +477,8 @@ void ThreadSafety::PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchai
     swapchain_wrapped_image_handle_map.erase(swapchain);
 }
 
-void ThreadSafety::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
+void ThreadSafety::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
+                                              const RecordObject& record_obj) {
     StartWriteObjectParentInstance(device, vvl::Func::vkDestroyDevice);
     // Host access to device must be externally synchronized
 }
@@ -492,7 +495,8 @@ void ThreadSafety::PostCallRecordDestroyDevice(VkDevice device, const VkAllocati
     device_queues_map[device].clear();
 }
 
-void ThreadSafety::PreCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
+void ThreadSafety::PreCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
+                                               const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetDeviceQueue);
 }
 
@@ -504,7 +508,8 @@ void ThreadSafety::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueF
     device_queues_map[device].insert(*pQueue);
 }
 
-void ThreadSafety::PreCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
+void ThreadSafety::PreCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
+                                                const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetDeviceQueue2);
 }
 
@@ -563,7 +568,8 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkP
 }
 
 void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                    uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
+                                                                    uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
+                                                                    const RecordObject& record_obj) {
     // Nothing to do for this pre-call function
 }
 
@@ -579,7 +585,8 @@ void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalD
 }
 
 void ThreadSafety::PreCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                            uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties) {
+                                                            uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
+                                                            const RecordObject& record_obj) {
     StartReadObjectParentInstance(display, vvl::Func::vkGetDisplayModePropertiesKHR);
 }
 
@@ -596,7 +603,8 @@ void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice ph
 }
 
 void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                             uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties) {
+                                                             uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
+                                                             const RecordObject& record_obj) {
     StartReadObjectParentInstance(display, vvl::Func::vkGetDisplayModeProperties2KHR);
 }
 
@@ -614,7 +622,8 @@ void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice p
 
 void ThreadSafety::PreCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                 const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
-                                                                VkDisplayPlaneCapabilities2KHR* pCapabilities) {
+                                                                VkDisplayPlaneCapabilities2KHR* pCapabilities,
+                                                                const RecordObject& record_obj) {
     StartWriteObject(pDisplayPlaneInfo->mode, vvl::Func::vkGetDisplayPlaneCapabilities2KHR);
 }
 
@@ -643,7 +652,8 @@ void ThreadSafety::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevic
 
 void ThreadSafety::PreCallRecordRegisterDisplayEventEXT(VkDevice device, VkDisplayKHR display,
                                                         const VkDisplayEventInfoEXT* pDisplayEventInfo,
-                                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
+                                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence,
+                                                        const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkRegisterDisplayEventEXT);
     StartReadObjectParentInstance(display, vvl::Func::vkRegisterDisplayEventEXT);
 }
@@ -659,7 +669,7 @@ void ThreadSafety::PostCallRecordRegisterDisplayEventEXT(VkDevice device, VkDisp
     }
 }
 
-void ThreadSafety::PreCallRecordDeviceWaitIdle(VkDevice device) {
+void ThreadSafety::PreCallRecordDeviceWaitIdle(VkDevice device, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkDeviceWaitIdle);
     auto lock = ReadLockGuard(thread_safety_lock);
     const auto& queue_set = device_queues_map[device];
@@ -680,7 +690,8 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObj
 void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                              const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
-                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                             const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkCreateRayTracingPipelinesKHR);
     StartReadObject(deferredOperation, vvl::Func::vkCreateRayTracingPipelinesKHR);
     StartReadObject(pipelineCache, vvl::Func::vkCreateRayTracingPipelinesKHR);
@@ -741,7 +752,8 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
     }
 }
 
-void ThreadSafety::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+void ThreadSafety::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
+                                                const RecordObject& record_obj) {
     StartWriteObject(queue, vvl::Func::vkQueuePresentKHR);
     uint32_t waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
     if (pPresentInfo->pWaitSemaphores != nullptr) {

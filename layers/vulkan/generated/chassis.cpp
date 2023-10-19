@@ -424,9 +424,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
             return VK_ERROR_VALIDATION_FAILED_EXT;
         }
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateInstance);
     for (ValidationObject* intercept : local_object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
+        intercept->PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
     }
 
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
@@ -434,6 +436,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
         cleanup_allocations();
         return result;
     }
+    record_obj.result = result;
     auto framework = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
 
     framework->object_dispatch = local_object_dispatch;
@@ -464,7 +467,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
         intercept->instance = *pInstance;
     }
 
-    RecordObject record_obj(vvl::Func::vkCreateInstance, result);
     for (ValidationObject* intercept : framework->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
@@ -485,14 +487,15 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         auto lock = intercept->ReadLock();
         intercept->PreCallValidateDestroyInstance(instance, pAllocator, error_obj);
     }
+
+    RecordObject record_obj(vvl::Func::vkDestroyInstance);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyInstance(instance, pAllocator);
+        intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
     layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
 
-    RecordObject record_obj(vvl::Func::vkDestroyInstance);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
@@ -545,15 +548,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         skip |= intercept->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateDevice);
     for (ValidationObject* intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, &modified_create_info);
+        intercept->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, &modified_create_info);
     }
 
     VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
     if (result != VK_SUCCESS) {
         return result;
     }
+    record_obj.result = result;
 
     auto device_interceptor = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     device_interceptor->container_type = LayerObjectTypeDevice;
@@ -592,7 +598,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->device_extensions = device_interceptor->device_extensions;
     }
 
-    RecordObject record_obj(vvl::Func::vkCreateDevice, result);
     for (ValidationObject* intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj);
@@ -617,14 +622,15 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         auto lock = intercept->ReadLock();
         intercept->PreCallValidateDestroyDevice(device, pAllocator, error_obj);
     }
+
+    RecordObject record_obj(vvl::Func::vkDestroyDevice);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDevice(device, pAllocator);
+        intercept->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
     layer_data->device_dispatch_table.DestroyDevice(device, pAllocator);
 
-    RecordObject record_obj(vvl::Func::vkDestroyDevice);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDevice(device, pAllocator, record_obj);
@@ -657,10 +663,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
                                                                   pPipelines, error_obj, &(cgpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateGraphicsPipelines);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                        pPipelines, &(cgpl_state[intercept->container_type]));
+                                                        pPipelines, record_obj, &(cgpl_state[intercept->container_type]));
     }
 
     auto usepCreateInfos =
@@ -669,8 +677,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
 
     VkResult result =
         DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
+    record_obj.result = result;
 
-    RecordObject record_obj(vvl::Func::vkCreateGraphicsPipelines, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
@@ -696,10 +704,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
                                                                  pPipelines, error_obj, &(ccpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateComputePipelines);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                       &(ccpl_state[intercept->container_type]));
+                                                       record_obj, &(ccpl_state[intercept->container_type]));
     }
 
     auto usepCreateInfos =
@@ -708,8 +718,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
 
     VkResult result =
         DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
+    record_obj.result = result;
 
-    RecordObject record_obj(vvl::Func::vkCreateComputePipelines, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
@@ -735,16 +745,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
                                                                   pPipelines, error_obj, &(crtpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                            pPipelines, &(crtpl_state[intercept->container_type]));
+                                                            pPipelines, record_obj, &(crtpl_state[intercept->container_type]));
     }
 
     VkResult result =
         DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    record_obj.result = result;
 
-    RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesNV, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
@@ -771,10 +783,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
                                                                        &(crtpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
-                                                             pCreateInfos, pAllocator, pPipelines,
+                                                             pCreateInfos, pAllocator, pPipelines, record_obj,
                                                              &(crtpl_state[intercept->container_type]));
     }
 
@@ -786,8 +800,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
 
     VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                            usepCreateInfos, pAllocator, pPipelines);
+    record_obj.result = result;
 
-    RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
@@ -812,12 +826,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
         skip |= intercept->PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreatePipelineLayout);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, &cpl_state);
+        intercept->PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, &cpl_state);
     }
+
     VkResult result = DispatchCreatePipelineLayout(device, &cpl_state.modified_create_info, pAllocator, pPipelineLayout);
-    RecordObject record_obj(vvl::Func::vkCreatePipelineLayout, result);
+    record_obj.result = result;
+
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
@@ -840,16 +858,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
         skip |= intercept->PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateShaderModule);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
+        intercept->PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, &csm_state);
     }
 
     // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
     if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = DispatchCreateShaderModule(device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
-    RecordObject record_obj(vvl::Func::vkCreateShaderModule, result);
+    record_obj.result = result;
+
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, &csm_state);
@@ -872,16 +893,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
                                                            pShaders, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateShadersEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, &csm_state);
+        intercept->PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                                 &csm_state);
     }
 
     // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
     if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = DispatchCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
-    RecordObject record_obj(vvl::Func::vkCreateShadersEXT, result);
+    record_obj.result = result;
+
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
@@ -905,12 +930,16 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
                                                                  &(ads_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkAllocateDescriptorSets);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+        intercept->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj);
     }
+
     VkResult result = DispatchAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
-    RecordObject record_obj(vvl::Func::vkAllocateDescriptorSets, result);
+    record_obj.result = result;
+
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj,
@@ -934,12 +963,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
         skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    RecordObject record_obj(vvl::Func::vkCreateBuffer);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, &cb_state);
+        intercept->PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, &cb_state);
     }
+
     VkResult result = DispatchCreateBuffer(device, &cb_state.modified_create_info, pAllocator, pBuffer);
-    RecordObject record_obj(vvl::Func::vkCreateBuffer, result);
+    record_obj.result = result;
+
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
@@ -981,19 +1014,20 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+        intercept->PreCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
 
     VkResult result = DispatchGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+    record_obj.result = result;
 
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
     (*pToolCount)++;
 
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, record_obj);
@@ -1052,12 +1086,13 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
         skip |= intercept->PreCallValidateEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+        intercept->PreCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
     }
     VkResult result = DispatchEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
@@ -1075,12 +1110,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
         skip |= intercept->PreCallValidateGetPhysicalDeviceFeatures(physicalDevice, pFeatures, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFeatures);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures);
+        intercept->PreCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
     }
     DispatchGetPhysicalDeviceFeatures(physicalDevice, pFeatures);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFeatures);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
@@ -1098,12 +1133,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
         skip |= intercept->PreCallValidateGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties);
+        intercept->PreCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, record_obj);
     }
     DispatchGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, record_obj);
@@ -1124,14 +1159,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
                                                                                  pImageFormatProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
-                                                                       pImageFormatProperties);
+                                                                       pImageFormatProperties, record_obj);
     }
     VkResult result =
         DispatchGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags, pImageFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
@@ -1150,12 +1186,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physical
         skip |= intercept->PreCallValidateGetPhysicalDeviceProperties(physicalDevice, pProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties, record_obj);
     }
     DispatchGetPhysicalDeviceProperties(physicalDevice, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties, record_obj);
@@ -1175,13 +1211,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
                                                                                  pQueueFamilyProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
-                                                                       pQueueFamilyProperties);
+                                                                       pQueueFamilyProperties, record_obj);
     }
     DispatchGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
@@ -1200,12 +1236,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
         skip |= intercept->PreCallValidateGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties);
+        intercept->PreCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, record_obj);
     }
     DispatchGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, record_obj);
@@ -1221,12 +1257,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyI
         skip |= intercept->PreCallValidateGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceQueue);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceQueue]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
+        intercept->PreCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue, record_obj);
     }
     DispatchGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
-    RecordObject record_obj(vvl::Func::vkGetDeviceQueue);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceQueue]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue, record_obj);
@@ -1242,12 +1278,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
         skip |= intercept->PreCallValidateQueueSubmit(queue, submitCount, pSubmits, fence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueueSubmit);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSubmit]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
+        intercept->PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
     }
     VkResult result = DispatchQueueSubmit(queue, submitCount, pSubmits, fence);
-    RecordObject record_obj(vvl::Func::vkQueueSubmit, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
@@ -1264,12 +1301,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
         skip |= intercept->PreCallValidateQueueWaitIdle(queue, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueueWaitIdle);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueWaitIdle]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueWaitIdle(queue);
+        intercept->PreCallRecordQueueWaitIdle(queue, record_obj);
     }
     VkResult result = DispatchQueueWaitIdle(queue);
-    RecordObject record_obj(vvl::Func::vkQueueWaitIdle, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueWaitIdle]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueWaitIdle(queue, record_obj);
@@ -1286,12 +1324,13 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
         skip |= intercept->PreCallValidateDeviceWaitIdle(device, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkDeviceWaitIdle);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDeviceWaitIdle]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDeviceWaitIdle(device);
+        intercept->PreCallRecordDeviceWaitIdle(device, record_obj);
     }
     VkResult result = DispatchDeviceWaitIdle(device);
-    RecordObject record_obj(vvl::Func::vkDeviceWaitIdle, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDeviceWaitIdle]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDeviceWaitIdle(device, record_obj);
@@ -1309,12 +1348,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAll
         skip |= intercept->PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAllocateMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAllocateMemory]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+        intercept->PreCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
     }
     VkResult result = DispatchAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
-    RecordObject record_obj(vvl::Func::vkAllocateMemory, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAllocateMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
@@ -1331,12 +1371,12 @@ VKAPI_ATTR void VKAPI_CALL FreeMemory(VkDevice device, VkDeviceMemory memory, co
         skip |= intercept->PreCallValidateFreeMemory(device, memory, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkFreeMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordFreeMemory]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordFreeMemory(device, memory, pAllocator);
+        intercept->PreCallRecordFreeMemory(device, memory, pAllocator, record_obj);
     }
     DispatchFreeMemory(device, memory, pAllocator);
-    RecordObject record_obj(vvl::Func::vkFreeMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFreeMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeMemory(device, memory, pAllocator, record_obj);
@@ -1353,12 +1393,13 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory memory,
         skip |= intercept->PreCallValidateMapMemory(device, memory, offset, size, flags, ppData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkMapMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordMapMemory]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordMapMemory(device, memory, offset, size, flags, ppData);
+        intercept->PreCallRecordMapMemory(device, memory, offset, size, flags, ppData, record_obj);
     }
     VkResult result = DispatchMapMemory(device, memory, offset, size, flags, ppData);
-    RecordObject record_obj(vvl::Func::vkMapMemory, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMapMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordMapMemory(device, memory, offset, size, flags, ppData, record_obj);
@@ -1375,12 +1416,12 @@ VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory memory) {
         skip |= intercept->PreCallValidateUnmapMemory(device, memory, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkUnmapMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUnmapMemory]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordUnmapMemory(device, memory);
+        intercept->PreCallRecordUnmapMemory(device, memory, record_obj);
     }
     DispatchUnmapMemory(device, memory);
-    RecordObject record_obj(vvl::Func::vkUnmapMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUnmapMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUnmapMemory(device, memory, record_obj);
@@ -1397,12 +1438,13 @@ VKAPI_ATTR VkResult VKAPI_CALL FlushMappedMemoryRanges(VkDevice device, uint32_t
         skip |= intercept->PreCallValidateFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkFlushMappedMemoryRanges);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordFlushMappedMemoryRanges]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+        intercept->PreCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
     }
     VkResult result = DispatchFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
-    RecordObject record_obj(vvl::Func::vkFlushMappedMemoryRanges, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFlushMappedMemoryRanges]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
@@ -1421,12 +1463,13 @@ VKAPI_ATTR VkResult VKAPI_CALL InvalidateMappedMemoryRanges(VkDevice device, uin
         skip |= intercept->PreCallValidateInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkInvalidateMappedMemoryRanges);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordInvalidateMappedMemoryRanges]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+        intercept->PreCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
     }
     VkResult result = DispatchInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
-    RecordObject record_obj(vvl::Func::vkInvalidateMappedMemoryRanges, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordInvalidateMappedMemoryRanges]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
@@ -1444,12 +1487,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMemoryCommitment(VkDevice device, VkDeviceMe
         skip |= intercept->PreCallValidateGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceMemoryCommitment);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMemoryCommitment]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
+        intercept->PreCallRecordGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes, record_obj);
     }
     DispatchGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
-    RecordObject record_obj(vvl::Func::vkGetDeviceMemoryCommitment);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryCommitment]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes, record_obj);
@@ -1466,12 +1509,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(VkDevice device, VkBuffer buffer
         skip |= intercept->PreCallValidateBindBufferMemory(device, buffer, memory, memoryOffset, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindBufferMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindBufferMemory]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindBufferMemory(device, buffer, memory, memoryOffset);
+        intercept->PreCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, record_obj);
     }
     VkResult result = DispatchBindBufferMemory(device, buffer, memory, memoryOffset);
-    RecordObject record_obj(vvl::Func::vkBindBufferMemory, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindBufferMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, record_obj);
@@ -1488,12 +1532,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(VkDevice device, VkImage image, V
         skip |= intercept->PreCallValidateBindImageMemory(device, image, memory, memoryOffset, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindImageMemory);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindImageMemory]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindImageMemory(device, image, memory, memoryOffset);
+        intercept->PreCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
     }
     VkResult result = DispatchBindImageMemory(device, image, memory, memoryOffset);
-    RecordObject record_obj(vvl::Func::vkBindImageMemory, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindImageMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
@@ -1511,12 +1556,12 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer
         skip |= intercept->PreCallValidateGetBufferMemoryRequirements(device, buffer, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferMemoryRequirements]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
+        intercept->PreCallRecordGetBufferMemoryRequirements(device, buffer, pMemoryRequirements, record_obj);
     }
     DispatchGetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetBufferMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferMemoryRequirements(device, buffer, pMemoryRequirements, record_obj);
@@ -1532,12 +1577,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage i
         skip |= intercept->PreCallValidateGetImageMemoryRequirements(device, image, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageMemoryRequirements]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements);
+        intercept->PreCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements, record_obj);
     }
     DispatchGetImageMemoryRequirements(device, image, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetImageMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements, record_obj);
@@ -1556,13 +1601,13 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
                                                                            pSparseMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageSparseMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSparseMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
-                                                                 pSparseMemoryRequirements);
+                                                                 pSparseMemoryRequirements, record_obj);
     }
     DispatchGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetImageSparseMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSparseMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
@@ -1585,14 +1630,14 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
             physicalDevice, format, type, samples, usage, tiling, pPropertyCount, pProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
-                                                                             pPropertyCount, pProperties);
+                                                                             pPropertyCount, pProperties, record_obj);
     }
     DispatchGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling, pPropertyCount,
                                                          pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
@@ -1610,12 +1655,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
         skip |= intercept->PreCallValidateQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueueBindSparse);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueBindSparse]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
+        intercept->PreCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
     }
     VkResult result = DispatchQueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
-    RecordObject record_obj(vvl::Func::vkQueueBindSparse, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueBindSparse]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
@@ -1633,12 +1679,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateI
         skip |= intercept->PreCallValidateCreateFence(device, pCreateInfo, pAllocator, pFence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateFence);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateFence]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence);
+        intercept->PreCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, record_obj);
     }
     VkResult result = DispatchCreateFence(device, pCreateInfo, pAllocator, pFence);
-    RecordObject record_obj(vvl::Func::vkCreateFence, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateFence]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, record_obj);
@@ -1655,12 +1702,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyFence(VkDevice device, VkFence fence, const Vk
         skip |= intercept->PreCallValidateDestroyFence(device, fence, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyFence);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyFence]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyFence(device, fence, pAllocator);
+        intercept->PreCallRecordDestroyFence(device, fence, pAllocator, record_obj);
     }
     DispatchDestroyFence(device, fence, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyFence);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyFence]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyFence(device, fence, pAllocator, record_obj);
@@ -1676,12 +1723,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount,
         skip |= intercept->PreCallValidateResetFences(device, fenceCount, pFences, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkResetFences);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetFences]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetFences(device, fenceCount, pFences);
+        intercept->PreCallRecordResetFences(device, fenceCount, pFences, record_obj);
     }
     VkResult result = DispatchResetFences(device, fenceCount, pFences);
-    RecordObject record_obj(vvl::Func::vkResetFences, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetFences]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetFences(device, fenceCount, pFences, record_obj);
@@ -1698,12 +1746,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
         skip |= intercept->PreCallValidateGetFenceStatus(device, fence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetFenceStatus);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFenceStatus]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetFenceStatus(device, fence);
+        intercept->PreCallRecordGetFenceStatus(device, fence, record_obj);
     }
     VkResult result = DispatchGetFenceStatus(device, fence);
-    RecordObject record_obj(vvl::Func::vkGetFenceStatus, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceStatus]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFenceStatus(device, fence, record_obj);
@@ -1721,12 +1770,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
         skip |= intercept->PreCallValidateWaitForFences(device, fenceCount, pFences, waitAll, timeout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkWaitForFences);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordWaitForFences]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout);
+        intercept->PreCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
     }
     VkResult result = DispatchWaitForFences(device, fenceCount, pFences, waitAll, timeout);
-    RecordObject record_obj(vvl::Func::vkWaitForFences, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitForFences]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
@@ -1744,12 +1794,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphor
         skip |= intercept->PreCallValidateCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateSemaphore);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSemaphore]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
+        intercept->PreCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
     }
     VkResult result = DispatchCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
-    RecordObject record_obj(vvl::Func::vkCreateSemaphore, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSemaphore]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
@@ -1766,12 +1817,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySemaphore(VkDevice device, VkSemaphore semapho
         skip |= intercept->PreCallValidateDestroySemaphore(device, semaphore, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroySemaphore);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroySemaphore]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroySemaphore(device, semaphore, pAllocator);
+        intercept->PreCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
     }
     DispatchDestroySemaphore(device, semaphore, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroySemaphore);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySemaphore]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
@@ -1788,12 +1839,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
         skip |= intercept->PreCallValidateCreateEvent(device, pCreateInfo, pAllocator, pEvent, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateEvent]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent);
+        intercept->PreCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, record_obj);
     }
     VkResult result = DispatchCreateEvent(device, pCreateInfo, pAllocator, pEvent);
-    RecordObject record_obj(vvl::Func::vkCreateEvent, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, record_obj);
@@ -1810,12 +1862,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyEvent(VkDevice device, VkEvent event, const Vk
         skip |= intercept->PreCallValidateDestroyEvent(device, event, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyEvent]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyEvent(device, event, pAllocator);
+        intercept->PreCallRecordDestroyEvent(device, event, pAllocator, record_obj);
     }
     DispatchDestroyEvent(device, event, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyEvent(device, event, pAllocator, record_obj);
@@ -1831,12 +1883,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
         skip |= intercept->PreCallValidateGetEventStatus(device, event, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetEventStatus);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetEventStatus]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetEventStatus(device, event);
+        intercept->PreCallRecordGetEventStatus(device, event, record_obj);
     }
     VkResult result = DispatchGetEventStatus(device, event);
-    RecordObject record_obj(vvl::Func::vkGetEventStatus, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetEventStatus]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetEventStatus(device, event, record_obj);
@@ -1853,12 +1906,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
         skip |= intercept->PreCallValidateSetEvent(device, event, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetEvent]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetEvent(device, event);
+        intercept->PreCallRecordSetEvent(device, event, record_obj);
     }
     VkResult result = DispatchSetEvent(device, event);
-    RecordObject record_obj(vvl::Func::vkSetEvent, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetEvent(device, event, record_obj);
@@ -1875,12 +1929,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetEvent(VkDevice device, VkEvent event) {
         skip |= intercept->PreCallValidateResetEvent(device, event, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkResetEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetEvent]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetEvent(device, event);
+        intercept->PreCallRecordResetEvent(device, event, record_obj);
     }
     VkResult result = DispatchResetEvent(device, event);
-    RecordObject record_obj(vvl::Func::vkResetEvent, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetEvent(device, event, record_obj);
@@ -1898,12 +1953,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
         skip |= intercept->PreCallValidateCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateQueryPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
+        intercept->PreCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, record_obj);
     }
     VkResult result = DispatchCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
-    RecordObject record_obj(vvl::Func::vkCreateQueryPool, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, record_obj);
@@ -1920,12 +1976,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyQueryPool(VkDevice device, VkQueryPool queryPo
         skip |= intercept->PreCallValidateDestroyQueryPool(device, queryPool, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyQueryPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyQueryPool(device, queryPool, pAllocator);
+        intercept->PreCallRecordDestroyQueryPool(device, queryPool, pAllocator, record_obj);
     }
     DispatchDestroyQueryPool(device, queryPool, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyQueryPool(device, queryPool, pAllocator, record_obj);
@@ -1943,12 +1999,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
                                                               flags, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetQueryPoolResults);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetQueryPoolResults]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
+        intercept->PreCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags,
+                                                    record_obj);
     }
     VkResult result = DispatchGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
-    RecordObject record_obj(vvl::Func::vkGetQueryPoolResults, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueryPoolResults]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags,
@@ -1966,12 +2024,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyBuffer(VkDevice device, VkBuffer buffer, const
         skip |= intercept->PreCallValidateDestroyBuffer(device, buffer, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyBuffer(device, buffer, pAllocator);
+        intercept->PreCallRecordDestroyBuffer(device, buffer, pAllocator, record_obj);
     }
     DispatchDestroyBuffer(device, buffer, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyBuffer(device, buffer, pAllocator, record_obj);
@@ -1988,12 +2046,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferV
         skip |= intercept->PreCallValidateCreateBufferView(device, pCreateInfo, pAllocator, pView, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateBufferView);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateBufferView]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView);
+        intercept->PreCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, record_obj);
     }
     VkResult result = DispatchCreateBufferView(device, pCreateInfo, pAllocator, pView);
-    RecordObject record_obj(vvl::Func::vkCreateBufferView, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBufferView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, record_obj);
@@ -2010,12 +2069,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferView(VkDevice device, VkBufferView buffe
         skip |= intercept->PreCallValidateDestroyBufferView(device, bufferView, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyBufferView);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyBufferView]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyBufferView(device, bufferView, pAllocator);
+        intercept->PreCallRecordDestroyBufferView(device, bufferView, pAllocator, record_obj);
     }
     DispatchDestroyBufferView(device, bufferView, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyBufferView);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBufferView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyBufferView(device, bufferView, pAllocator, record_obj);
@@ -2032,12 +2091,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateI
         skip |= intercept->PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateImage]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage);
+        intercept->PreCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     }
     VkResult result = DispatchCreateImage(device, pCreateInfo, pAllocator, pImage);
-    RecordObject record_obj(vvl::Func::vkCreateImage, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
@@ -2054,12 +2114,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyImage(VkDevice device, VkImage image, const Vk
         skip |= intercept->PreCallValidateDestroyImage(device, image, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyImage]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyImage(device, image, pAllocator);
+        intercept->PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
     }
     DispatchDestroyImage(device, image, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyImage(device, image, pAllocator, record_obj);
@@ -2076,12 +2136,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout(VkDevice device, VkImage im
         skip |= intercept->PreCallValidateGetImageSubresourceLayout(device, image, pSubresource, pLayout, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageSubresourceLayout(device, image, pSubresource, pLayout);
+        intercept->PreCallRecordGetImageSubresourceLayout(device, image, pSubresource, pLayout, record_obj);
     }
     DispatchGetImageSubresourceLayout(device, image, pSubresource, pLayout);
-    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSubresourceLayout(device, image, pSubresource, pLayout, record_obj);
@@ -2098,12 +2158,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
         skip |= intercept->PreCallValidateCreateImageView(device, pCreateInfo, pAllocator, pView, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateImageView);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateImageView]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView);
+        intercept->PreCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, record_obj);
     }
     VkResult result = DispatchCreateImageView(device, pCreateInfo, pAllocator, pView);
-    RecordObject record_obj(vvl::Func::vkCreateImageView, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateImageView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, record_obj);
@@ -2120,12 +2181,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageVi
         skip |= intercept->PreCallValidateDestroyImageView(device, imageView, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyImageView);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyImageView]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyImageView(device, imageView, pAllocator);
+        intercept->PreCallRecordDestroyImageView(device, imageView, pAllocator, record_obj);
     }
     DispatchDestroyImageView(device, imageView, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyImageView);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyImageView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyImageView(device, imageView, pAllocator, record_obj);
@@ -2142,12 +2203,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyShaderModule(VkDevice device, VkShaderModule s
         skip |= intercept->PreCallValidateDestroyShaderModule(device, shaderModule, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyShaderModule);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyShaderModule]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyShaderModule(device, shaderModule, pAllocator);
+        intercept->PreCallRecordDestroyShaderModule(device, shaderModule, pAllocator, record_obj);
     }
     DispatchDestroyShaderModule(device, shaderModule, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyShaderModule);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyShaderModule]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyShaderModule(device, shaderModule, pAllocator, record_obj);
@@ -2164,12 +2225,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineCache(VkDevice device, const VkPipe
         skip |= intercept->PreCallValidateCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreatePipelineCache);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreatePipelineCache]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
+        intercept->PreCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, record_obj);
     }
     VkResult result = DispatchCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
-    RecordObject record_obj(vvl::Func::vkCreatePipelineCache, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePipelineCache]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, record_obj);
@@ -2187,12 +2249,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineCache(VkDevice device, VkPipelineCache
         skip |= intercept->PreCallValidateDestroyPipelineCache(device, pipelineCache, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyPipelineCache);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyPipelineCache]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyPipelineCache(device, pipelineCache, pAllocator);
+        intercept->PreCallRecordDestroyPipelineCache(device, pipelineCache, pAllocator, record_obj);
     }
     DispatchDestroyPipelineCache(device, pipelineCache, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyPipelineCache);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipelineCache]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPipelineCache(device, pipelineCache, pAllocator, record_obj);
@@ -2209,12 +2271,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineCacheData(VkDevice device, VkPipelineC
         skip |= intercept->PreCallValidateGetPipelineCacheData(device, pipelineCache, pDataSize, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelineCacheData);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineCacheData]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData);
+        intercept->PreCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, record_obj);
     }
     VkResult result = DispatchGetPipelineCacheData(device, pipelineCache, pDataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetPipelineCacheData, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineCacheData]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, record_obj);
@@ -2232,12 +2295,13 @@ VKAPI_ATTR VkResult VKAPI_CALL MergePipelineCaches(VkDevice device, VkPipelineCa
         skip |= intercept->PreCallValidateMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkMergePipelineCaches);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordMergePipelineCaches]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
+        intercept->PreCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, record_obj);
     }
     VkResult result = DispatchMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
-    RecordObject record_obj(vvl::Func::vkMergePipelineCaches, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMergePipelineCaches]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, record_obj);
@@ -2254,12 +2318,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipeline(VkDevice device, VkPipeline pipeline,
         skip |= intercept->PreCallValidateDestroyPipeline(device, pipeline, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyPipeline);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyPipeline]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
+        intercept->PreCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
     }
     DispatchDestroyPipeline(device, pipeline, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyPipeline);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipeline]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
@@ -2276,12 +2340,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineLayout(VkDevice device, VkPipelineLayo
         skip |= intercept->PreCallValidateDestroyPipelineLayout(device, pipelineLayout, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyPipelineLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyPipelineLayout]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyPipelineLayout(device, pipelineLayout, pAllocator);
+        intercept->PreCallRecordDestroyPipelineLayout(device, pipelineLayout, pAllocator, record_obj);
     }
     DispatchDestroyPipelineLayout(device, pipelineLayout, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyPipelineLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipelineLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPipelineLayout(device, pipelineLayout, pAllocator, record_obj);
@@ -2298,12 +2362,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCre
         skip |= intercept->PreCallValidateCreateSampler(device, pCreateInfo, pAllocator, pSampler, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateSampler);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSampler]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler);
+        intercept->PreCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, record_obj);
     }
     VkResult result = DispatchCreateSampler(device, pCreateInfo, pAllocator, pSampler);
-    RecordObject record_obj(vvl::Func::vkCreateSampler, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSampler]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, record_obj);
@@ -2320,12 +2385,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySampler(VkDevice device, VkSampler sampler, co
         skip |= intercept->PreCallValidateDestroySampler(device, sampler, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroySampler);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroySampler]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroySampler(device, sampler, pAllocator);
+        intercept->PreCallRecordDestroySampler(device, sampler, pAllocator, record_obj);
     }
     DispatchDestroySampler(device, sampler, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroySampler);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySampler]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySampler(device, sampler, pAllocator, record_obj);
@@ -2343,12 +2408,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const 
         skip |= intercept->PreCallValidateCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDescriptorSetLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateDescriptorSetLayout]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
+        intercept->PreCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, record_obj);
     }
     VkResult result = DispatchCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
-    RecordObject record_obj(vvl::Func::vkCreateDescriptorSetLayout, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorSetLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, record_obj);
@@ -2366,12 +2432,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorSetLayout(VkDevice device, VkDescrip
         skip |= intercept->PreCallValidateDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDescriptorSetLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyDescriptorSetLayout]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
+        intercept->PreCallRecordDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator, record_obj);
     }
     DispatchDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyDescriptorSetLayout);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorSetLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator, record_obj);
@@ -2388,12 +2454,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
         skip |= intercept->PreCallValidateCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDescriptorPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateDescriptorPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
+        intercept->PreCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, record_obj);
     }
     VkResult result = DispatchCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
-    RecordObject record_obj(vvl::Func::vkCreateDescriptorPool, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, record_obj);
@@ -2411,12 +2478,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPo
         skip |= intercept->PreCallValidateDestroyDescriptorPool(device, descriptorPool, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDescriptorPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyDescriptorPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDescriptorPool(device, descriptorPool, pAllocator);
+        intercept->PreCallRecordDestroyDescriptorPool(device, descriptorPool, pAllocator, record_obj);
     }
     DispatchDestroyDescriptorPool(device, descriptorPool, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyDescriptorPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorPool(device, descriptorPool, pAllocator, record_obj);
@@ -2433,12 +2500,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
         skip |= intercept->PreCallValidateResetDescriptorPool(device, descriptorPool, flags, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkResetDescriptorPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetDescriptorPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetDescriptorPool(device, descriptorPool, flags);
+        intercept->PreCallRecordResetDescriptorPool(device, descriptorPool, flags, record_obj);
     }
     VkResult result = DispatchResetDescriptorPool(device, descriptorPool, flags);
-    RecordObject record_obj(vvl::Func::vkResetDescriptorPool, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetDescriptorPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetDescriptorPool(device, descriptorPool, flags, record_obj);
@@ -2457,12 +2525,13 @@ VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorP
             intercept->PreCallValidateFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkFreeDescriptorSets);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordFreeDescriptorSets]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
+        intercept->PreCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, record_obj);
     }
     VkResult result = DispatchFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
-    RecordObject record_obj(vvl::Func::vkFreeDescriptorSets, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFreeDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, record_obj);
@@ -2482,13 +2551,13 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descri
                                                                pDescriptorCopies, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkUpdateDescriptorSets);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUpdateDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                                     pDescriptorCopies);
+                                                     pDescriptorCopies, record_obj);
     }
     DispatchUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
-    RecordObject record_obj(vvl::Func::vkUpdateDescriptorSets);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
@@ -2506,12 +2575,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFrameb
         skip |= intercept->PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateFramebuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateFramebuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
+        intercept->PreCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, record_obj);
     }
     VkResult result = DispatchCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
-    RecordObject record_obj(vvl::Func::vkCreateFramebuffer, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateFramebuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, record_obj);
@@ -2528,12 +2598,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyFramebuffer(VkDevice device, VkFramebuffer fra
         skip |= intercept->PreCallValidateDestroyFramebuffer(device, framebuffer, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyFramebuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyFramebuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyFramebuffer(device, framebuffer, pAllocator);
+        intercept->PreCallRecordDestroyFramebuffer(device, framebuffer, pAllocator, record_obj);
     }
     DispatchDestroyFramebuffer(device, framebuffer, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyFramebuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyFramebuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyFramebuffer(device, framebuffer, pAllocator, record_obj);
@@ -2550,12 +2620,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
         skip |= intercept->PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateRenderPass]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
+        intercept->PreCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
     VkResult result = DispatchCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
-    RecordObject record_obj(vvl::Func::vkCreateRenderPass, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
@@ -2572,12 +2643,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyRenderPass(VkDevice device, VkRenderPass rende
         skip |= intercept->PreCallValidateDestroyRenderPass(device, renderPass, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyRenderPass]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyRenderPass(device, renderPass, pAllocator);
+        intercept->PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
     }
     DispatchDestroyRenderPass(device, renderPass, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
@@ -2593,12 +2664,12 @@ VKAPI_ATTR void VKAPI_CALL GetRenderAreaGranularity(VkDevice device, VkRenderPas
         skip |= intercept->PreCallValidateGetRenderAreaGranularity(device, renderPass, pGranularity, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetRenderAreaGranularity);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetRenderAreaGranularity]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRenderAreaGranularity(device, renderPass, pGranularity);
+        intercept->PreCallRecordGetRenderAreaGranularity(device, renderPass, pGranularity, record_obj);
     }
     DispatchGetRenderAreaGranularity(device, renderPass, pGranularity);
-    RecordObject record_obj(vvl::Func::vkGetRenderAreaGranularity);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRenderAreaGranularity]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRenderAreaGranularity(device, renderPass, pGranularity, record_obj);
@@ -2615,12 +2686,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
         skip |= intercept->PreCallValidateCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateCommandPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateCommandPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
+        intercept->PreCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, record_obj);
     }
     VkResult result = DispatchCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-    RecordObject record_obj(vvl::Func::vkCreateCommandPool, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, record_obj);
@@ -2637,12 +2709,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
         skip |= intercept->PreCallValidateDestroyCommandPool(device, commandPool, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyCommandPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyCommandPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyCommandPool(device, commandPool, pAllocator);
+        intercept->PreCallRecordDestroyCommandPool(device, commandPool, pAllocator, record_obj);
     }
     DispatchDestroyCommandPool(device, commandPool, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyCommandPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCommandPool(device, commandPool, pAllocator, record_obj);
@@ -2658,12 +2730,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool c
         skip |= intercept->PreCallValidateResetCommandPool(device, commandPool, flags, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkResetCommandPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetCommandPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetCommandPool(device, commandPool, flags);
+        intercept->PreCallRecordResetCommandPool(device, commandPool, flags, record_obj);
     }
     VkResult result = DispatchResetCommandPool(device, commandPool, flags);
-    RecordObject record_obj(vvl::Func::vkResetCommandPool, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetCommandPool(device, commandPool, flags, record_obj);
@@ -2681,12 +2754,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
         skip |= intercept->PreCallValidateAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAllocateCommandBuffers);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAllocateCommandBuffers]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
+        intercept->PreCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, record_obj);
     }
     VkResult result = DispatchAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
-    RecordObject record_obj(vvl::Func::vkAllocateCommandBuffers, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAllocateCommandBuffers]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, record_obj);
@@ -2704,12 +2778,12 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
         skip |= intercept->PreCallValidateFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkFreeCommandBuffers);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordFreeCommandBuffers]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+        intercept->PreCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers, record_obj);
     }
     DispatchFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
-    RecordObject record_obj(vvl::Func::vkFreeCommandBuffers);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFreeCommandBuffers]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers, record_obj);
@@ -2725,12 +2799,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBeginCommandBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBeginCommandBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
+        intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
     }
     VkResult result = DispatchBeginCommandBuffer(commandBuffer, pBeginInfo);
-    RecordObject record_obj(vvl::Func::vkBeginCommandBuffer, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBeginCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
@@ -2747,12 +2822,13 @@ VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
         skip |= intercept->PreCallValidateEndCommandBuffer(commandBuffer, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkEndCommandBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordEndCommandBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordEndCommandBuffer(commandBuffer);
+        intercept->PreCallRecordEndCommandBuffer(commandBuffer, record_obj);
     }
     VkResult result = DispatchEndCommandBuffer(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkEndCommandBuffer, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordEndCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEndCommandBuffer(commandBuffer, record_obj);
@@ -2769,12 +2845,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateResetCommandBuffer(commandBuffer, flags, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkResetCommandBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetCommandBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetCommandBuffer(commandBuffer, flags);
+        intercept->PreCallRecordResetCommandBuffer(commandBuffer, flags, record_obj);
     }
     VkResult result = DispatchResetCommandBuffer(commandBuffer, flags);
-    RecordObject record_obj(vvl::Func::vkResetCommandBuffer, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetCommandBuffer(commandBuffer, flags, record_obj);
@@ -2792,12 +2869,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
         skip |= intercept->PreCallValidateCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindPipeline);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindPipeline]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+        intercept->PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     }
     DispatchCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-    RecordObject record_obj(vvl::Func::vkCmdBindPipeline);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindPipeline]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
@@ -2814,12 +2891,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_
         skip |= intercept->PreCallValidateCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewport);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewport]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+        intercept->PreCallRecordCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports, record_obj);
     }
     DispatchCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewport);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewport]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports, record_obj);
@@ -2836,12 +2913,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
         skip |= intercept->PreCallValidateCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetScissor);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetScissor]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+        intercept->PreCallRecordCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors, record_obj);
     }
     DispatchCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
-    RecordObject record_obj(vvl::Func::vkCmdSetScissor);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetScissor]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors, record_obj);
@@ -2857,12 +2934,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float 
         skip |= intercept->PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetLineWidth);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetLineWidth]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetLineWidth(commandBuffer, lineWidth);
+        intercept->PreCallRecordCmdSetLineWidth(commandBuffer, lineWidth, record_obj);
     }
     DispatchCmdSetLineWidth(commandBuffer, lineWidth);
-    RecordObject record_obj(vvl::Func::vkCmdSetLineWidth);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineWidth]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineWidth(commandBuffer, lineWidth, record_obj);
@@ -2880,12 +2957,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float 
                                                           depthBiasSlopeFactor, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBias);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBias]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+        intercept->PreCallRecordCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor,
+                                                record_obj);
     }
     DispatchCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBias);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBias]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor,
@@ -2902,12 +2980,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, c
         skip |= intercept->PreCallValidateCmdSetBlendConstants(commandBuffer, blendConstants, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetBlendConstants);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetBlendConstants]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetBlendConstants(commandBuffer, blendConstants);
+        intercept->PreCallRecordCmdSetBlendConstants(commandBuffer, blendConstants, record_obj);
     }
     DispatchCmdSetBlendConstants(commandBuffer, blendConstants);
-    RecordObject record_obj(vvl::Func::vkCmdSetBlendConstants);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetBlendConstants]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetBlendConstants(commandBuffer, blendConstants, record_obj);
@@ -2923,12 +3001,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, floa
         skip |= intercept->PreCallValidateCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBounds);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBounds]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
+        intercept->PreCallRecordCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds, record_obj);
     }
     DispatchCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBounds);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBounds]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds, record_obj);
@@ -2945,12 +3023,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilCompareMask);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilCompareMask]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
+        intercept->PreCallRecordCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask, record_obj);
     }
     DispatchCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilCompareMask);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilCompareMask]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask, record_obj);
@@ -2966,12 +3044,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilWriteMask);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilWriteMask]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
+        intercept->PreCallRecordCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask, record_obj);
     }
     DispatchCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilWriteMask);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilWriteMask]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask, record_obj);
@@ -2987,12 +3065,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdSetStencilReference(commandBuffer, faceMask, reference, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilReference);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilReference]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilReference(commandBuffer, faceMask, reference);
+        intercept->PreCallRecordCmdSetStencilReference(commandBuffer, faceMask, reference, record_obj);
     }
     DispatchCmdSetStencilReference(commandBuffer, faceMask, reference);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilReference);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilReference]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilReference(commandBuffer, faceMask, reference, record_obj);
@@ -3013,14 +3091,14 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, 
                                                             pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorSets);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
-                                                      pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+                                                      pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, record_obj);
     }
     DispatchCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets,
                                   dynamicOffsetCount, pDynamicOffsets);
-    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorSets);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
@@ -3038,12 +3116,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
         skip |= intercept->PreCallValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindIndexBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindIndexBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
+        intercept->PreCallRecordCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, record_obj);
     }
     DispatchCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
-    RecordObject record_obj(vvl::Func::vkCmdBindIndexBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, record_obj);
@@ -3061,12 +3139,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
                                                                error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindVertexBuffers);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindVertexBuffers]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+        intercept->PreCallRecordCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, record_obj);
     }
     DispatchCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
-    RecordObject record_obj(vvl::Func::vkCmdBindVertexBuffers);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindVertexBuffers]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, record_obj);
@@ -3083,12 +3161,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t verte
         skip |= intercept->PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDraw);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDraw]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+        intercept->PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
     }
     DispatchCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
-    RecordObject record_obj(vvl::Func::vkCmdDraw);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDraw]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
@@ -3106,12 +3184,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_
                                                          firstInstance, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexed);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndexed]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        intercept->PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
+                                               record_obj);
     }
     DispatchCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndexed);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexed]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
@@ -3129,12 +3208,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuff
         skip |= intercept->PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirect);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndirect]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
+        intercept->PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
     DispatchCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndirect);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirect]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
@@ -3151,12 +3230,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirect);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndexedIndirect]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+        intercept->PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
     DispatchCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirect);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirect]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
@@ -3173,12 +3252,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t g
         skip |= intercept->PreCallValidateCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatch);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatch]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+        intercept->PreCallRecordCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
     DispatchCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
-    RecordObject record_obj(vvl::Func::vkCmdDispatch);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatch]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
@@ -3194,12 +3273,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, Vk
         skip |= intercept->PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchIndirect);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchIndirect]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset);
+        intercept->PreCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset, record_obj);
     }
     DispatchCmdDispatchIndirect(commandBuffer, buffer, offset);
-    RecordObject record_obj(vvl::Func::vkCmdDispatchIndirect);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchIndirect]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset, record_obj);
@@ -3216,12 +3295,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer
         skip |= intercept->PreCallValidateCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+        intercept->PreCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj);
     }
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
-    RecordObject record_obj(vvl::Func::vkCmdCopyBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj);
@@ -3240,13 +3319,13 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage(VkCommandBuffer commandBuffer, VkImage s
                                                        regionCount, pRegions, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyImage]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                             pRegions);
+                                             pRegions, record_obj);
     }
     DispatchCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
-    RecordObject record_obj(vvl::Func::vkCmdCopyImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
@@ -3266,13 +3345,13 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage(VkCommandBuffer commandBuffer, VkImage s
                                                        regionCount, pRegions, filter, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBlitImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBlitImage]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                             pRegions, filter);
+                                             pRegions, filter, record_obj);
     }
     DispatchCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
-    RecordObject record_obj(vvl::Func::vkCmdBlitImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBlitImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
@@ -3292,12 +3371,13 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(VkCommandBuffer commandBuffer, V
                                                                pRegions, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyBufferToImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyBufferToImage]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+        intercept->PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
+                                                     record_obj);
     }
     DispatchCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
-    RecordObject record_obj(vvl::Func::vkCmdCopyBufferToImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBufferToImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
@@ -3316,12 +3396,13 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, V
                                                                pRegions, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyImageToBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyImageToBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+        intercept->PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
+                                                     record_obj);
     }
     DispatchCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
-    RecordObject record_obj(vvl::Func::vkCmdCopyImageToBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImageToBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
@@ -3339,12 +3420,12 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuff
         skip |= intercept->PreCallValidateCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdUpdateBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdUpdateBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
+        intercept->PreCallRecordCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData, record_obj);
     }
     DispatchCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
-    RecordObject record_obj(vvl::Func::vkCmdUpdateBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdUpdateBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData, record_obj);
@@ -3361,12 +3442,12 @@ VKAPI_ATTR void VKAPI_CALL CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer
         skip |= intercept->PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdFillBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdFillBuffer]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+        intercept->PreCallRecordCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, record_obj);
     }
     DispatchCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
-    RecordObject record_obj(vvl::Func::vkCmdFillBuffer);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdFillBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, record_obj);
@@ -3385,12 +3466,12 @@ VKAPI_ATTR void VKAPI_CALL CmdClearColorImage(VkCommandBuffer commandBuffer, VkI
             intercept->PreCallValidateCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdClearColorImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdClearColorImage]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+        intercept->PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
     }
     DispatchCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
-    RecordObject record_obj(vvl::Func::vkCmdClearColorImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdClearColorImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
@@ -3409,12 +3490,13 @@ VKAPI_ATTR void VKAPI_CALL CmdClearDepthStencilImage(VkCommandBuffer commandBuff
                                                                     pRanges, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdClearDepthStencilImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdClearDepthStencilImage]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+        intercept->PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
+                                                          record_obj);
     }
     DispatchCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
-    RecordObject record_obj(vvl::Func::vkCmdClearDepthStencilImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdClearDepthStencilImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
@@ -3434,12 +3516,12 @@ VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(VkCommandBuffer commandBuffer, ui
                                                               error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdClearAttachments);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdClearAttachments]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+        intercept->PreCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects, record_obj);
     }
     DispatchCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
-    RecordObject record_obj(vvl::Func::vkCmdClearAttachments);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdClearAttachments]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects, record_obj);
@@ -3458,13 +3540,13 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage(VkCommandBuffer commandBuffer, VkImag
                                                           regionCount, pRegions, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResolveImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResolveImage]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                                pRegions);
+                                                pRegions, record_obj);
     }
     DispatchCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
-    RecordObject record_obj(vvl::Func::vkCmdResolveImage);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResolveImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
@@ -3481,12 +3563,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent ev
         skip |= intercept->PreCallValidateCmdSetEvent(commandBuffer, event, stageMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetEvent]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetEvent(commandBuffer, event, stageMask);
+        intercept->PreCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
     }
     DispatchCmdSetEvent(commandBuffer, event, stageMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
@@ -3502,12 +3584,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent 
         skip |= intercept->PreCallValidateCmdResetEvent(commandBuffer, event, stageMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResetEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResetEvent]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdResetEvent(commandBuffer, event, stageMask);
+        intercept->PreCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
     }
     DispatchCmdResetEvent(commandBuffer, event, stageMask);
-    RecordObject record_obj(vvl::Func::vkCmdResetEvent);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
@@ -3529,15 +3611,15 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
             bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWaitEvents);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWaitEvents]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
                                               pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                              imageMemoryBarrierCount, pImageMemoryBarriers);
+                                              imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
     }
     DispatchCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    RecordObject record_obj(vvl::Func::vkCmdWaitEvents);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWaitEvents]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
@@ -3561,15 +3643,15 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkP
             bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPipelineBarrier);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPipelineBarrier]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                                                    pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                                   imageMemoryBarrierCount, pImageMemoryBarriers);
+                                                   imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
     }
     DispatchCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                                bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    RecordObject record_obj(vvl::Func::vkCmdPipelineBarrier);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPipelineBarrier]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
@@ -3588,12 +3670,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryP
         skip |= intercept->PreCallValidateCmdBeginQuery(commandBuffer, queryPool, query, flags, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginQuery);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginQuery]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginQuery(commandBuffer, queryPool, query, flags);
+        intercept->PreCallRecordCmdBeginQuery(commandBuffer, queryPool, query, flags, record_obj);
     }
     DispatchCmdBeginQuery(commandBuffer, queryPool, query, flags);
-    RecordObject record_obj(vvl::Func::vkCmdBeginQuery);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginQuery]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginQuery(commandBuffer, queryPool, query, flags, record_obj);
@@ -3609,12 +3691,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPoo
         skip |= intercept->PreCallValidateCmdEndQuery(commandBuffer, queryPool, query, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndQuery);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndQuery]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndQuery(commandBuffer, queryPool, query);
+        intercept->PreCallRecordCmdEndQuery(commandBuffer, queryPool, query, record_obj);
     }
     DispatchCmdEndQuery(commandBuffer, queryPool, query);
-    RecordObject record_obj(vvl::Func::vkCmdEndQuery);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndQuery]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndQuery(commandBuffer, queryPool, query, record_obj);
@@ -3631,12 +3713,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQu
         skip |= intercept->PreCallValidateCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResetQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResetQueryPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+        intercept->PreCallRecordCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, record_obj);
     }
     DispatchCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
-    RecordObject record_obj(vvl::Func::vkCmdResetQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, record_obj);
@@ -3653,12 +3735,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
         skip |= intercept->PreCallValidateCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteTimestamp);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteTimestamp]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
+        intercept->PreCallRecordCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query, record_obj);
     }
     DispatchCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
-    RecordObject record_obj(vvl::Func::vkCmdWriteTimestamp);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteTimestamp]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query, record_obj);
@@ -3677,13 +3759,13 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer
                                                                   dstOffset, stride, flags, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyQueryPoolResults);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyQueryPoolResults]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
-                                                        stride, flags);
+                                                        stride, flags, record_obj);
     }
     DispatchCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
-    RecordObject record_obj(vvl::Func::vkCmdCopyQueryPoolResults);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyQueryPoolResults]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
@@ -3701,12 +3783,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
         skip |= intercept->PreCallValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPushConstants);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPushConstants]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+        intercept->PreCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
     }
     DispatchCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
-    RecordObject record_obj(vvl::Func::vkCmdPushConstants);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushConstants]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
@@ -3723,12 +3805,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
         skip |= intercept->PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginRenderPass]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+        intercept->PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     }
     DispatchCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
-    RecordObject record_obj(vvl::Func::vkCmdBeginRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
@@ -3744,12 +3826,12 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
         skip |= intercept->PreCallValidateCmdNextSubpass(commandBuffer, contents, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdNextSubpass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdNextSubpass]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdNextSubpass(commandBuffer, contents);
+        intercept->PreCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
     }
     DispatchCmdNextSubpass(commandBuffer, contents);
-    RecordObject record_obj(vvl::Func::vkCmdNextSubpass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdNextSubpass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
@@ -3765,12 +3847,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
         skip |= intercept->PreCallValidateCmdEndRenderPass(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndRenderPass]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndRenderPass(commandBuffer);
+        intercept->PreCallRecordCmdEndRenderPass(commandBuffer, record_obj);
     }
     DispatchCmdEndRenderPass(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdEndRenderPass);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderPass(commandBuffer, record_obj);
@@ -3787,12 +3869,12 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
         skip |= intercept->PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdExecuteCommands);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdExecuteCommands]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+        intercept->PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
     }
     DispatchCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
-    RecordObject record_obj(vvl::Func::vkCmdExecuteCommands);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdExecuteCommands]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
@@ -3809,12 +3891,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(VkDevice device, uint32_t bindI
         skip |= intercept->PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindBufferMemory2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindBufferMemory2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos);
+        intercept->PreCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
     }
     VkResult result = DispatchBindBufferMemory2(device, bindInfoCount, pBindInfos);
-    RecordObject record_obj(vvl::Func::vkBindBufferMemory2, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindBufferMemory2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
@@ -3831,12 +3914,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2(VkDevice device, uint32_t bindIn
         skip |= intercept->PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindImageMemory2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindImageMemory2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos);
+        intercept->PreCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
     }
     VkResult result = DispatchBindImageMemory2(device, bindInfoCount, pBindInfos);
-    RecordObject record_obj(vvl::Func::vkBindImageMemory2, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindImageMemory2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
@@ -3857,13 +3941,13 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeatures(VkDevice device, uin
                                                                            pPeerMemoryFeatures, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeatures);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceGroupPeerMemoryFeatures]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
-                                                                 pPeerMemoryFeatures);
+                                                                 pPeerMemoryFeatures, record_obj);
     }
     DispatchGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex, pPeerMemoryFeatures);
-    RecordObject record_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeatures);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupPeerMemoryFeatures]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
@@ -3880,12 +3964,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint3
         skip |= intercept->PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDeviceMask);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDeviceMask]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDeviceMask(commandBuffer, deviceMask);
+        intercept->PreCallRecordCmdSetDeviceMask(commandBuffer, deviceMask, record_obj);
     }
     DispatchCmdSetDeviceMask(commandBuffer, deviceMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetDeviceMask);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDeviceMask]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDeviceMask(commandBuffer, deviceMask, record_obj);
@@ -3903,13 +3987,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBase(VkCommandBuffer commandBuffer, uint32
                                                           groupCountY, groupCountZ, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchBase);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchBase]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
-                                                groupCountZ);
+                                                groupCountZ, record_obj);
     }
     DispatchCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
-    RecordObject record_obj(vvl::Func::vkCmdDispatchBase);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchBase]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
@@ -3928,12 +4012,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
                                                                         pPhysicalDeviceGroupProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceGroups);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+        intercept->PreCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
+                                                              record_obj);
     }
     VkResult result = DispatchEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceGroups, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
@@ -3952,12 +4038,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const Vk
         skip |= intercept->PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageMemoryRequirements2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetImageMemoryRequirements2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
@@ -3975,12 +4061,12 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const V
         skip |= intercept->PreCallValidateGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferMemoryRequirements2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetBufferMemoryRequirements2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
@@ -4000,13 +4086,13 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, co
                                                                             pSparseMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageSparseMemoryRequirements2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSparseMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
-                                                                  pSparseMemoryRequirements);
+                                                                  pSparseMemoryRequirements, record_obj);
     }
     DispatchGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetImageSparseMemoryRequirements2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSparseMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
@@ -4024,12 +4110,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalD
         skip |= intercept->PreCallValidateGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFeatures2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
+        intercept->PreCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
     }
     DispatchGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFeatures2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
@@ -4046,12 +4132,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physica
         skip |= intercept->PreCallValidateGetPhysicalDeviceProperties2(physicalDevice, pProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties, record_obj);
     }
     DispatchGetPhysicalDeviceProperties2(physicalDevice, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties, record_obj);
@@ -4069,12 +4155,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
         skip |= intercept->PreCallValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
+        intercept->PreCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, record_obj);
     }
     DispatchGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, record_obj);
@@ -4094,12 +4180,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
                                                                                   pImageFormatProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+        intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                                        record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
@@ -4121,13 +4209,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDev
                                                                                   pQueueFamilyProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
-                                                                        pQueueFamilyProperties);
+                                                                        pQueueFamilyProperties, record_obj);
     }
     DispatchGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
@@ -4146,12 +4234,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice p
         skip |= intercept->PreCallValidateGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
+        intercept->PreCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, record_obj);
     }
     DispatchGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, record_obj);
@@ -4172,13 +4260,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
                                                                                         pProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
-                                                                              pProperties);
+                                                                              pProperties, record_obj);
     }
     DispatchGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
@@ -4195,12 +4283,12 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool comman
         skip |= intercept->PreCallValidateTrimCommandPool(device, commandPool, flags, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkTrimCommandPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordTrimCommandPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordTrimCommandPool(device, commandPool, flags);
+        intercept->PreCallRecordTrimCommandPool(device, commandPool, flags, record_obj);
     }
     DispatchTrimCommandPool(device, commandPool, flags);
-    RecordObject record_obj(vvl::Func::vkTrimCommandPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTrimCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordTrimCommandPool(device, commandPool, flags, record_obj);
@@ -4216,12 +4304,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, const VkDeviceQueueI
         skip |= intercept->PreCallValidateGetDeviceQueue2(device, pQueueInfo, pQueue, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceQueue2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceQueue2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceQueue2(device, pQueueInfo, pQueue);
+        intercept->PreCallRecordGetDeviceQueue2(device, pQueueInfo, pQueue, record_obj);
     }
     DispatchGetDeviceQueue2(device, pQueueInfo, pQueue);
-    RecordObject record_obj(vvl::Func::vkGetDeviceQueue2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceQueue2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceQueue2(device, pQueueInfo, pQueue, record_obj);
@@ -4241,12 +4329,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversion(VkDevice device, con
             intercept->PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateSamplerYcbcrConversion);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSamplerYcbcrConversion]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+        intercept->PreCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
     }
     VkResult result = DispatchCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
-    RecordObject record_obj(vvl::Func::vkCreateSamplerYcbcrConversion, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSamplerYcbcrConversion]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
@@ -4265,12 +4354,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversion(VkDevice device, VkSamp
         skip |= intercept->PreCallValidateDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroySamplerYcbcrConversion);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroySamplerYcbcrConversion]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+        intercept->PreCallRecordDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator, record_obj);
     }
     DispatchDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroySamplerYcbcrConversion);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySamplerYcbcrConversion]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator, record_obj);
@@ -4291,12 +4380,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
                                                                          error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDescriptorUpdateTemplate);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateDescriptorUpdateTemplate]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+        intercept->PreCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
+                                                               record_obj);
     }
     VkResult result = DispatchCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
-    RecordObject record_obj(vvl::Func::vkCreateDescriptorUpdateTemplate, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorUpdateTemplate]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
@@ -4316,12 +4407,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDe
         skip |= intercept->PreCallValidateDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDescriptorUpdateTemplate);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyDescriptorUpdateTemplate]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
+        intercept->PreCallRecordDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator, record_obj);
     }
     DispatchDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyDescriptorUpdateTemplate);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorUpdateTemplate]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator, record_obj);
@@ -4340,12 +4431,12 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDe
                                                                           error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkUpdateDescriptorSetWithTemplate);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUpdateDescriptorSetWithTemplate]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
+        intercept->PreCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData, record_obj);
     }
     DispatchUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
-    RecordObject record_obj(vvl::Func::vkUpdateDescriptorSetWithTemplate);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateDescriptorSetWithTemplate]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData,
@@ -4366,13 +4457,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalD
                                                                                     pExternalBufferProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
-                                                                          pExternalBufferProperties);
+                                                                          pExternalBufferProperties, record_obj);
     }
     DispatchGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
@@ -4393,13 +4484,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDe
                                                                                    pExternalFenceProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalFenceProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
-                                                                         pExternalFenceProperties);
+                                                                         pExternalFenceProperties, record_obj);
     }
     DispatchGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalFenceProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
@@ -4420,13 +4511,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
                                                                                        pExternalSemaphoreProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphoreProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
-                                                                             pExternalSemaphoreProperties);
+                                                                             pExternalSemaphoreProperties, record_obj);
     }
     DispatchGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphoreProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
@@ -4445,12 +4536,12 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupport(VkDevice device, const 
         skip |= intercept->PreCallValidateGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutSupport);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetLayoutSupport]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
+        intercept->PreCallRecordGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, record_obj);
     }
     DispatchGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutSupport);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutSupport]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, record_obj);
@@ -4469,13 +4560,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount(VkCommandBuffer commandBuffer, V
                                                                maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndirectCount]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                     stride);
+                                                     stride, record_obj);
     }
     DispatchCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
@@ -4496,13 +4587,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount(VkCommandBuffer commandBu
                                                                       maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndexedIndirectCount]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                            maxDrawCount, stride);
+                                                            maxDrawCount, stride, record_obj);
     }
     DispatchCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
@@ -4520,12 +4611,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2(VkDevice device, const VkRender
         skip |= intercept->PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateRenderPass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateRenderPass2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+        intercept->PreCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
     VkResult result = DispatchCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
-    RecordObject record_obj(vvl::Func::vkCreateRenderPass2, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
@@ -4543,12 +4635,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2(VkCommandBuffer commandBuffer, co
         skip |= intercept->PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginRenderPass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginRenderPass2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+        intercept->PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     }
     DispatchCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBeginRenderPass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderPass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
@@ -4565,12 +4657,12 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2(VkCommandBuffer commandBuffer, const 
         skip |= intercept->PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdNextSubpass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdNextSubpass2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+        intercept->PreCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     }
     DispatchCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordObject record_obj(vvl::Func::vkCmdNextSubpass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdNextSubpass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
@@ -4586,12 +4678,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2(VkCommandBuffer commandBuffer, cons
         skip |= intercept->PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndRenderPass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndRenderPass2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
+        intercept->PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
     }
     DispatchCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
-    RecordObject record_obj(vvl::Func::vkCmdEndRenderPass2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderPass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
@@ -4607,12 +4699,12 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPool(VkDevice device, VkQueryPool queryPool
         skip |= intercept->PreCallValidateResetQueryPool(device, queryPool, firstQuery, queryCount, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkResetQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetQueryPool]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetQueryPool(device, queryPool, firstQuery, queryCount);
+        intercept->PreCallRecordResetQueryPool(device, queryPool, firstQuery, queryCount, record_obj);
     }
     DispatchResetQueryPool(device, queryPool, firstQuery, queryCount);
-    RecordObject record_obj(vvl::Func::vkResetQueryPool);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetQueryPool(device, queryPool, firstQuery, queryCount, record_obj);
@@ -4628,12 +4720,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
         skip |= intercept->PreCallValidateGetSemaphoreCounterValue(device, semaphore, pValue, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSemaphoreCounterValue);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSemaphoreCounterValue]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSemaphoreCounterValue(device, semaphore, pValue);
+        intercept->PreCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
     }
     VkResult result = DispatchGetSemaphoreCounterValue(device, semaphore, pValue);
-    RecordObject record_obj(vvl::Func::vkGetSemaphoreCounterValue, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValue]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
         intercept->PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
@@ -4650,12 +4743,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
         skip |= intercept->PreCallValidateWaitSemaphores(device, pWaitInfo, timeout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkWaitSemaphores);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordWaitSemaphores]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordWaitSemaphores(device, pWaitInfo, timeout);
+        intercept->PreCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
     }
     VkResult result = DispatchWaitSemaphores(device, pWaitInfo, timeout);
-    RecordObject record_obj(vvl::Func::vkWaitSemaphores, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitSemaphores]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
         intercept->PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
@@ -4672,12 +4766,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphore(VkDevice device, const VkSemaphor
         skip |= intercept->PreCallValidateSignalSemaphore(device, pSignalInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSignalSemaphore);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSignalSemaphore]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSignalSemaphore(device, pSignalInfo);
+        intercept->PreCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
     }
     VkResult result = DispatchSignalSemaphore(device, pSignalInfo);
-    RecordObject record_obj(vvl::Func::vkSignalSemaphore, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSignalSemaphore]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
@@ -4694,12 +4789,13 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddress(VkDevice device, co
         skip |= intercept->PreCallValidateGetBufferDeviceAddress(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddress);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferDeviceAddress]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferDeviceAddress(device, pInfo);
+        intercept->PreCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
     }
     VkDeviceAddress result = DispatchGetBufferDeviceAddress(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddress, result);
+    record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddress]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
@@ -4717,12 +4813,12 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddress(VkDevice device, co
         skip |= intercept->PreCallValidateGetBufferOpaqueCaptureAddress(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferOpaqueCaptureAddress);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferOpaqueCaptureAddress(device, pInfo);
+        intercept->PreCallRecordGetBufferOpaqueCaptureAddress(device, pInfo, record_obj);
     }
     uint64_t result = DispatchGetBufferOpaqueCaptureAddress(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetBufferOpaqueCaptureAddress);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferOpaqueCaptureAddress(device, pInfo, record_obj);
@@ -4741,12 +4837,12 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddress(VkDevice devi
         skip |= intercept->PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddress);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMemoryOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
+        intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, record_obj);
     }
     uint64_t result = DispatchGetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddress);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
@@ -4766,12 +4862,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
         skip |= intercept->PreCallValidateGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolProperties);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
+        intercept->PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolProperties, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
@@ -4789,12 +4886,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlot(VkDevice device, const VkPr
         skip |= intercept->PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreatePrivateDataSlot);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreatePrivateDataSlot]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+        intercept->PreCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
     }
     VkResult result = DispatchCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
-    RecordObject record_obj(vvl::Func::vkCreatePrivateDataSlot, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePrivateDataSlot]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
@@ -4812,12 +4910,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlot(VkDevice device, VkPrivateData
         skip |= intercept->PreCallValidateDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyPrivateDataSlot);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyPrivateDataSlot]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
+        intercept->PreCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, record_obj);
     }
     DispatchDestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyPrivateDataSlot);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPrivateDataSlot]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, record_obj);
@@ -4834,12 +4932,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateData(VkDevice device, VkObjectType obje
         skip |= intercept->PreCallValidateSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetPrivateData);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetPrivateData]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+        intercept->PreCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
     }
     VkResult result = DispatchSetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
-    RecordObject record_obj(vvl::Func::vkSetPrivateData, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetPrivateData]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
@@ -4857,12 +4956,12 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateData(VkDevice device, VkObjectType objectTy
         skip |= intercept->PreCallValidateGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPrivateData);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPrivateData]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+        intercept->PreCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
     }
     DispatchGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
-    RecordObject record_obj(vvl::Func::vkGetPrivateData);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPrivateData]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
@@ -4878,12 +4977,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent e
         skip |= intercept->PreCallValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetEvent2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetEvent2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo);
+        intercept->PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
     }
     DispatchCmdSetEvent2(commandBuffer, event, pDependencyInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetEvent2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetEvent2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
@@ -4899,12 +4998,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent
         skip |= intercept->PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResetEvent2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResetEvent2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask);
+        intercept->PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
     }
     DispatchCmdResetEvent2(commandBuffer, event, stageMask);
-    RecordObject record_obj(vvl::Func::vkCmdResetEvent2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetEvent2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
@@ -4921,12 +5020,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_
         skip |= intercept->PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWaitEvents2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWaitEvents2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+        intercept->PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     }
     DispatchCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    RecordObject record_obj(vvl::Func::vkCmdWaitEvents2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWaitEvents2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
@@ -4942,12 +5041,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2(VkCommandBuffer commandBuffer, co
         skip |= intercept->PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPipelineBarrier2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPipelineBarrier2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+        intercept->PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
     }
     DispatchCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
-    RecordObject record_obj(vvl::Func::vkCmdPipelineBarrier2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPipelineBarrier2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
@@ -4964,12 +5063,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkP
         skip |= intercept->PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteTimestamp2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteTimestamp2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
+        intercept->PreCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, record_obj);
     }
     DispatchCmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
-    RecordObject record_obj(vvl::Func::vkCmdWriteTimestamp2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteTimestamp2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, record_obj);
@@ -4985,12 +5084,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
         skip |= intercept->PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueueSubmit2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSubmit2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence);
+        intercept->PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     }
     VkResult result = DispatchQueueSubmit2(queue, submitCount, pSubmits, fence);
-    RecordObject record_obj(vvl::Func::vkQueueSubmit2, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
@@ -5007,12 +5107,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2(VkCommandBuffer commandBuffer, const V
         skip |= intercept->PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyBuffer2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyBuffer2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
+        intercept->PreCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
     }
     DispatchCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyBuffer2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBuffer2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
@@ -5028,12 +5128,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2(VkCommandBuffer commandBuffer, const Vk
         skip |= intercept->PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyImage2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
+        intercept->PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
     }
     DispatchCmdCopyImage2(commandBuffer, pCopyImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
@@ -5050,12 +5150,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyBufferToImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyBufferToImage2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
+        intercept->PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
     }
     DispatchCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyBufferToImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBufferToImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
@@ -5072,12 +5172,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyImageToBuffer2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyImageToBuffer2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+        intercept->PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
     }
     DispatchCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyImageToBuffer2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImageToBuffer2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
@@ -5093,12 +5193,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2(VkCommandBuffer commandBuffer, const Vk
         skip |= intercept->PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBlitImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBlitImage2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo);
+        intercept->PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
     }
     DispatchCmdBlitImage2(commandBuffer, pBlitImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBlitImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBlitImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
@@ -5114,12 +5214,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2(VkCommandBuffer commandBuffer, const
         skip |= intercept->PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResolveImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResolveImage2]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo);
+        intercept->PreCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
     }
     DispatchCmdResolveImage2(commandBuffer, pResolveImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdResolveImage2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResolveImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
@@ -5135,12 +5235,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(VkCommandBuffer commandBuffer, cons
         skip |= intercept->PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginRendering);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginRendering]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo);
+        intercept->PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
     }
     DispatchCmdBeginRendering(commandBuffer, pRenderingInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBeginRendering);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRendering]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
@@ -5156,12 +5256,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering(VkCommandBuffer commandBuffer) {
         skip |= intercept->PreCallValidateCmdEndRendering(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndRendering);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndRendering]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndRendering(commandBuffer);
+        intercept->PreCallRecordCmdEndRendering(commandBuffer, record_obj);
     }
     DispatchCmdEndRendering(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdEndRendering);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRendering]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRendering(commandBuffer, record_obj);
@@ -5177,12 +5277,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullM
         skip |= intercept->PreCallValidateCmdSetCullMode(commandBuffer, cullMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCullMode);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCullMode]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCullMode(commandBuffer, cullMode);
+        intercept->PreCallRecordCmdSetCullMode(commandBuffer, cullMode, record_obj);
     }
     DispatchCmdSetCullMode(commandBuffer, cullMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetCullMode);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCullMode]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCullMode(commandBuffer, cullMode, record_obj);
@@ -5198,12 +5298,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFron
         skip |= intercept->PreCallValidateCmdSetFrontFace(commandBuffer, frontFace, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetFrontFace);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetFrontFace]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetFrontFace(commandBuffer, frontFace);
+        intercept->PreCallRecordCmdSetFrontFace(commandBuffer, frontFace, record_obj);
     }
     DispatchCmdSetFrontFace(commandBuffer, frontFace);
-    RecordObject record_obj(vvl::Func::vkCmdSetFrontFace);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFrontFace]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFrontFace(commandBuffer, frontFace, record_obj);
@@ -5219,12 +5319,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveTopology);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPrimitiveTopology]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
+        intercept->PreCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, record_obj);
     }
     DispatchCmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
-    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveTopology);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveTopology]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, record_obj);
@@ -5241,12 +5341,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCount(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewportWithCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewportWithCount]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
+        intercept->PreCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, record_obj);
     }
     DispatchCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewportWithCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWithCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, record_obj);
@@ -5262,12 +5362,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCount(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetScissorWithCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetScissorWithCount]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
+        intercept->PreCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, record_obj);
     }
     DispatchCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
-    RecordObject record_obj(vvl::Func::vkCmdSetScissorWithCount);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetScissorWithCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, record_obj);
@@ -5286,13 +5386,13 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, 
                                                                 pSizes, pStrides, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindVertexBuffers2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindVertexBuffers2]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
-                                                      pStrides);
+                                                      pStrides, record_obj);
     }
     DispatchCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
-    RecordObject record_obj(vvl::Func::vkCmdBindVertexBuffers2);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindVertexBuffers2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
@@ -5309,12 +5409,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, 
         skip |= intercept->PreCallValidateCmdSetDepthTestEnable(commandBuffer, depthTestEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthTestEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthTestEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+        intercept->PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
     }
     DispatchCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthTestEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthTestEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
@@ -5330,12 +5430,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthWriteEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthWriteEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
+        intercept->PreCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, record_obj);
     }
     DispatchCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthWriteEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthWriteEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, record_obj);
@@ -5351,12 +5451,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, V
         skip |= intercept->PreCallValidateCmdSetDepthCompareOp(commandBuffer, depthCompareOp, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthCompareOp);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthCompareOp]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+        intercept->PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
     }
     DispatchCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthCompareOp);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthCompareOp]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
@@ -5373,12 +5473,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBu
         skip |= intercept->PreCallValidateCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBoundsTestEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBoundsTestEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
+        intercept->PreCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, record_obj);
     }
     DispatchCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBoundsTestEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBoundsTestEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, record_obj);
@@ -5394,12 +5494,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnable(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilTestEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilTestEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
+        intercept->PreCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, record_obj);
     }
     DispatchCmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilTestEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilTestEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, record_obj);
@@ -5417,12 +5517,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOp(VkCommandBuffer commandBuffer, VkSten
             intercept->PreCallValidateCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilOp);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilOp]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+        intercept->PreCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
     }
     DispatchCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilOp);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilOp]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
@@ -5440,12 +5540,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnable(VkCommandBuffer command
         skip |= intercept->PreCallValidateCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetRasterizerDiscardEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRasterizerDiscardEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
+        intercept->PreCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, record_obj);
     }
     DispatchCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetRasterizerDiscardEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizerDiscardEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, record_obj);
@@ -5461,12 +5561,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, 
         skip |= intercept->PreCallValidateCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBiasEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBiasEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
+        intercept->PreCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, record_obj);
     }
     DispatchCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBiasEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBiasEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, record_obj);
@@ -5484,12 +5584,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnable(VkCommandBuffer commandB
         skip |= intercept->PreCallValidateCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveRestartEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPrimitiveRestartEnable]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
+        intercept->PreCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, record_obj);
     }
     DispatchCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveRestartEnable);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveRestartEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, record_obj);
@@ -5507,12 +5607,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirements(VkDevice device, co
         skip |= intercept->PreCallValidateGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceBufferMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceBufferMemoryRequirements]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetDeviceBufferMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceBufferMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
@@ -5530,12 +5630,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirements(VkDevice device, con
         skip |= intercept->PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceImageMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageMemoryRequirements]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetDeviceImageMemoryRequirements);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
@@ -5555,14 +5655,14 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirements(VkDevice devic
                                                                                  pSparseMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirements);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageSparseMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
-                                                                       pSparseMemoryRequirements);
+                                                                       pSparseMemoryRequirements, record_obj);
     }
     DispatchGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirements);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSparseMemoryRequirements]) {
         auto lock = intercept->WriteLock();
@@ -5580,12 +5680,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR s
         skip |= intercept->PreCallValidateDestroySurfaceKHR(instance, surface, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroySurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroySurfaceKHR(instance, surface, pAllocator);
+        intercept->PreCallRecordDestroySurfaceKHR(instance, surface, pAllocator, record_obj);
     }
     DispatchDestroySurfaceKHR(instance, surface, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroySurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySurfaceKHR(instance, surface, pAllocator, record_obj);
@@ -5604,12 +5704,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
                                                                              error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
+        intercept->PreCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported,
+                                                                   record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceSupportKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported,
@@ -5630,12 +5732,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysica
                                                                                   error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
+        intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
@@ -5656,12 +5759,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
                                                                              pSurfaceFormats, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
+        intercept->PreCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
+                                                                   record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
@@ -5683,12 +5788,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
                                                                                   pPresentModes, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
+        intercept->PreCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
+                                                                        record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
@@ -5707,12 +5814,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
         skip |= intercept->PreCallValidateCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateSwapchainKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSwapchainKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+        intercept->PreCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
     }
     VkResult result = DispatchCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-    RecordObject record_obj(vvl::Func::vkCreateSwapchainKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSwapchainKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
@@ -5729,12 +5837,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
         skip |= intercept->PreCallValidateDestroySwapchainKHR(device, swapchain, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroySwapchainKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroySwapchainKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
+        intercept->PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator, record_obj);
     }
     DispatchDestroySwapchainKHR(device, swapchain, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroySwapchainKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySwapchainKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySwapchainKHR(device, swapchain, pAllocator, record_obj);
@@ -5752,12 +5860,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
             intercept->PreCallValidateGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSwapchainImagesKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSwapchainImagesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
+        intercept->PreCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     }
     VkResult result = DispatchGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
-    RecordObject record_obj(vvl::Func::vkGetSwapchainImagesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainImagesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
@@ -5775,12 +5884,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
         skip |= intercept->PreCallValidateAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireNextImageKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAcquireNextImageKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
+        intercept->PreCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
     }
     VkResult result = DispatchAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
-    RecordObject record_obj(vvl::Func::vkAcquireNextImageKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireNextImageKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
@@ -5797,12 +5907,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
         skip |= intercept->PreCallValidateQueuePresentKHR(queue, pPresentInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueuePresentKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueuePresentKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueuePresentKHR(queue, pPresentInfo);
+        intercept->PreCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
     }
     VkResult result = DispatchQueuePresentKHR(queue, pPresentInfo);
-    RecordObject record_obj(vvl::Func::vkQueuePresentKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
@@ -5821,13 +5932,14 @@ GetDeviceGroupPresentCapabilitiesKHR(VkDevice device, VkDeviceGroupPresentCapabi
         skip |= intercept->PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceGroupPresentCapabilitiesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceGroupPresentCapabilitiesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities);
+        intercept->PreCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, record_obj);
     }
     VkResult result = DispatchGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetDeviceGroupPresentCapabilitiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupPresentCapabilitiesKHR]) {
         auto lock = intercept->WriteLock();
@@ -5847,13 +5959,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModesKHR(VkDevice dev
         skip |= intercept->PreCallValidateGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceGroupSurfacePresentModesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
+        intercept->PreCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, record_obj);
     }
     VkResult result = DispatchGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
-    RecordObject record_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupSurfacePresentModesKHR]) {
         auto lock = intercept->WriteLock();
@@ -5874,12 +5987,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalD
             intercept->PreCallValidateGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDevicePresentRectanglesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
+        intercept->PreCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
     }
     VkResult result = DispatchGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDevicePresentRectanglesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
@@ -5897,12 +6011,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcq
         skip |= intercept->PreCallValidateAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireNextImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAcquireNextImage2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
+        intercept->PreCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
     }
     VkResult result = DispatchAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
-    RecordObject record_obj(vvl::Func::vkAcquireNextImage2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireNextImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
@@ -5922,12 +6037,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
             intercept->PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayPropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayPropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
@@ -5947,12 +6063,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
                                                                                      error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties,
@@ -5973,12 +6090,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
                                                                               error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDisplayPlaneSupportedDisplaysKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+        intercept->PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays,
+                                                                    record_obj);
     }
     VkResult result = DispatchGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
-    RecordObject record_obj(vvl::Func::vkGetDisplayPlaneSupportedDisplaysKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays,
@@ -5999,12 +6118,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
             intercept->PreCallValidateGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDisplayModePropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
     }
     VkResult result = DispatchGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetDisplayModePropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
@@ -6023,12 +6143,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDev
         skip |= intercept->PreCallValidateCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDisplayModeKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
+        intercept->PreCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
     }
     VkResult result = DispatchCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
-    RecordObject record_obj(vvl::Func::vkCreateDisplayModeKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
@@ -6048,12 +6169,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
             intercept->PreCallValidateGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDisplayPlaneCapabilitiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
+        intercept->PreCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
     }
     VkResult result = DispatchGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetDisplayPlaneCapabilitiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
@@ -6071,12 +6193,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance,
         skip |= intercept->PreCallValidateCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDisplayPlaneSurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateDisplayPlaneSurfaceKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -6096,12 +6219,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
                                                                     error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateSharedSwapchainsKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSharedSwapchainsKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
+        intercept->PreCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains,
+                                                          record_obj);
     }
     VkResult result = DispatchCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
-    RecordObject record_obj(vvl::Func::vkCreateSharedSwapchainsKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSharedSwapchainsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains,
@@ -6121,12 +6246,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
         skip |= intercept->PreCallValidateCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateXlibSurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateXlibSurfaceKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -6149,12 +6275,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
                                                                                       visualID, error_obj);
         if (skip) return VK_FALSE;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceXlibPresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID);
+        intercept->PreCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
+                                                                            record_obj);
     }
     VkBool32 result = DispatchGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceXlibPresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
@@ -6175,12 +6302,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
         skip |= intercept->PreCallValidateCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateXcbSurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateXcbSurfaceKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -6203,12 +6331,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
                                                                                      visual_id, error_obj);
         if (skip) return VK_FALSE;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceXcbPresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
+        intercept->PreCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id,
+                                                                           record_obj);
     }
     VkBool32 result = DispatchGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceXcbPresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id,
@@ -6229,12 +6358,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
         skip |= intercept->PreCallValidateCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateWaylandSurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateWaylandSurfaceKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -6257,12 +6387,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
                                                                                          error_obj);
         if (skip) return VK_FALSE;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceWaylandPresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
+        intercept->PreCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display,
+                                                                               record_obj);
     }
     VkBool32 result = DispatchGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceWaylandPresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display,
@@ -6283,12 +6414,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
         skip |= intercept->PreCallValidateCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateAndroidSurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateAndroidSurfaceKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -6308,12 +6440,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
         skip |= intercept->PreCallValidateCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateWin32SurfaceKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateWin32SurfaceKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -6334,12 +6467,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
         skip |= intercept->PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, error_obj);
         if (skip) return VK_FALSE;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceWin32PresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
+        intercept->PreCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, record_obj);
     }
     VkBool32 result = DispatchGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceWin32PresentationSupportKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, record_obj);
@@ -6361,12 +6494,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalD
                                                                                 error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceVideoCapabilitiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities);
+        intercept->PreCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceVideoCapabilitiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
@@ -6388,14 +6522,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
             physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceVideoFormatPropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo,
-                                                                          pVideoFormatPropertyCount, pVideoFormatProperties);
+        intercept->PreCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
+            physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount,
                                                                         pVideoFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceVideoFormatPropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
@@ -6414,12 +6549,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionKHR(VkDevice device, const VkVi
         skip |= intercept->PreCallValidateCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateVideoSessionKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateVideoSessionKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
+        intercept->PreCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, record_obj);
     }
     VkResult result = DispatchCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
-    RecordObject record_obj(vvl::Func::vkCreateVideoSessionKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateVideoSessionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, record_obj);
@@ -6437,12 +6573,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionKHR(VkDevice device, VkVideoSessio
         skip |= intercept->PreCallValidateDestroyVideoSessionKHR(device, videoSession, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyVideoSessionKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyVideoSessionKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyVideoSessionKHR(device, videoSession, pAllocator);
+        intercept->PreCallRecordDestroyVideoSessionKHR(device, videoSession, pAllocator, record_obj);
     }
     DispatchDestroyVideoSessionKHR(device, videoSession, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyVideoSessionKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyVideoSessionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyVideoSessionKHR(device, videoSession, pAllocator, record_obj);
@@ -6462,15 +6598,16 @@ VKAPI_ATTR VkResult VKAPI_CALL GetVideoSessionMemoryRequirementsKHR(VkDevice dev
                                                                                pMemoryRequirements, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetVideoSessionMemoryRequirementsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetVideoSessionMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount,
-                                                                     pMemoryRequirements);
+                                                                     pMemoryRequirements, record_obj);
     }
     VkResult result =
         DispatchGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetVideoSessionMemoryRequirementsKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetVideoSessionMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
@@ -6492,13 +6629,14 @@ VKAPI_ATTR VkResult VKAPI_CALL BindVideoSessionMemoryKHR(VkDevice device, VkVide
                                                                     pBindSessionMemoryInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindVideoSessionMemoryKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindVideoSessionMemoryKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount,
-                                                          pBindSessionMemoryInfos);
+        intercept->PreCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos,
+                                                          record_obj);
     }
     VkResult result = DispatchBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos);
-    RecordObject record_obj(vvl::Func::vkBindVideoSessionMemoryKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindVideoSessionMemoryKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount,
@@ -6521,12 +6659,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionParametersKHR(VkDevice device,
                                                                           error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateVideoSessionParametersKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
+        intercept->PreCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters,
+                                                                record_obj);
     }
     VkResult result = DispatchCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
-    RecordObject record_obj(vvl::Func::vkCreateVideoSessionParametersKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters,
@@ -6546,12 +6686,13 @@ VKAPI_ATTR VkResult VKAPI_CALL UpdateVideoSessionParametersKHR(VkDevice device, 
         skip |= intercept->PreCallValidateUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkUpdateVideoSessionParametersKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUpdateVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo);
+        intercept->PreCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, record_obj);
     }
     VkResult result = DispatchUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo);
-    RecordObject record_obj(vvl::Func::vkUpdateVideoSessionParametersKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, record_obj);
@@ -6570,12 +6711,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionParametersKHR(VkDevice device, VkV
         skip |= intercept->PreCallValidateDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyVideoSessionParametersKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
+        intercept->PreCallRecordDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator, record_obj);
     }
     DispatchDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyVideoSessionParametersKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator, record_obj);
@@ -6591,12 +6732,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginVideoCodingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
+        intercept->PreCallRecordCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo, record_obj);
     }
     DispatchCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBeginVideoCodingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo, record_obj);
@@ -6612,12 +6753,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, c
         skip |= intercept->PreCallValidateCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndVideoCodingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
+        intercept->PreCallRecordCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo, record_obj);
     }
     DispatchCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
-    RecordObject record_obj(vvl::Func::vkCmdEndVideoCodingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo, record_obj);
@@ -6634,12 +6775,12 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdControlVideoCodingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdControlVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
+        intercept->PreCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo, record_obj);
     }
     DispatchCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
-    RecordObject record_obj(vvl::Func::vkCmdControlVideoCodingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdControlVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo, record_obj);
@@ -6655,12 +6796,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, cons
         skip |= intercept->PreCallValidateCmdDecodeVideoKHR(commandBuffer, pDecodeInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDecodeVideoKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDecodeVideoKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
+        intercept->PreCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo, record_obj);
     }
     DispatchCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
-    RecordObject record_obj(vvl::Func::vkCmdDecodeVideoKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecodeVideoKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo, record_obj);
@@ -6676,12 +6817,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, c
         skip |= intercept->PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginRenderingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginRenderingKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+        intercept->PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, record_obj);
     }
     DispatchCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBeginRenderingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, record_obj);
@@ -6697,12 +6838,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
         skip |= intercept->PreCallValidateCmdEndRenderingKHR(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndRenderingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndRenderingKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndRenderingKHR(commandBuffer);
+        intercept->PreCallRecordCmdEndRenderingKHR(commandBuffer, record_obj);
     }
     DispatchCmdEndRenderingKHR(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdEndRenderingKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderingKHR(commandBuffer, record_obj);
@@ -6719,12 +6860,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physic
         skip |= intercept->PreCallValidateGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFeatures2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
+        intercept->PreCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
     }
     DispatchGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFeatures2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
@@ -6742,12 +6883,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice phys
         skip |= intercept->PreCallValidateGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, record_obj);
     }
     DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, record_obj);
@@ -6766,12 +6907,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevic
             intercept->PreCallValidateGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
+        intercept->PreCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, record_obj);
     }
     DispatchGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, record_obj);
@@ -6791,13 +6932,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
                                                                                      pImageFormatProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
-                                                                           pImageFormatProperties);
+        intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                                           record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
@@ -6819,13 +6961,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
                                                                                      pQueueFamilyProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
-                                                                           pQueueFamilyProperties);
+                                                                           pQueueFamilyProperties, record_obj);
     }
     DispatchGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
@@ -6844,12 +6986,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevic
         skip |= intercept->PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
+        intercept->PreCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, record_obj);
     }
     DispatchGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, record_obj);
@@ -6869,13 +7011,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
                                                                                            pPropertyCount, pProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
-                                                                                 pProperties);
+                                                                                 pProperties, record_obj);
     }
     DispatchGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
@@ -6896,13 +7038,13 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, 
                                                                               remoteDeviceIndex, pPeerMemoryFeatures, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeaturesKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
-                                                                    pPeerMemoryFeatures);
+                                                                    pPeerMemoryFeatures, record_obj);
     }
     DispatchGetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex, pPeerMemoryFeatures);
-    RecordObject record_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeaturesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR]) {
         auto lock = intercept->WriteLock();
@@ -6920,12 +7062,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, ui
         skip |= intercept->PreCallValidateCmdSetDeviceMaskKHR(commandBuffer, deviceMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDeviceMaskKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDeviceMaskKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
+        intercept->PreCallRecordCmdSetDeviceMaskKHR(commandBuffer, deviceMask, record_obj);
     }
     DispatchCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetDeviceMaskKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDeviceMaskKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDeviceMaskKHR(commandBuffer, deviceMask, record_obj);
@@ -6944,13 +7086,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uin
                                                              groupCountY, groupCountZ, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchBaseKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchBaseKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
-                                                   groupCountZ);
+                                                   groupCountZ, record_obj);
     }
     DispatchCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
-    RecordObject record_obj(vvl::Func::vkCmdDispatchBaseKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchBaseKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
@@ -6967,12 +7109,12 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPoolKHR(VkDevice device, VkCommandPool com
         skip |= intercept->PreCallValidateTrimCommandPoolKHR(device, commandPool, flags, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkTrimCommandPoolKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordTrimCommandPoolKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordTrimCommandPoolKHR(device, commandPool, flags);
+        intercept->PreCallRecordTrimCommandPoolKHR(device, commandPool, flags, record_obj);
     }
     DispatchTrimCommandPoolKHR(device, commandPool, flags);
-    RecordObject record_obj(vvl::Func::vkTrimCommandPoolKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTrimCommandPoolKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordTrimCommandPoolKHR(device, commandPool, flags, record_obj);
@@ -6990,13 +7132,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance insta
                                                                            pPhysicalDeviceGroupProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceGroupsKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
-                                                                 pPhysicalDeviceGroupProperties);
+                                                                 pPhysicalDeviceGroupProperties, record_obj);
     }
     VkResult result = DispatchEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceGroupsKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
@@ -7018,13 +7161,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
                                                                                        pExternalBufferProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferPropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
-                                                                             pExternalBufferProperties);
+                                                                             pExternalBufferProperties, record_obj);
     }
     DispatchGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferPropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
@@ -7043,12 +7186,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(VkDevice device, const Vk
         skip |= intercept->PreCallValidateGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryWin32HandleKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+        intercept->PreCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
     VkResult result = DispatchGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
-    RecordObject record_obj(vvl::Func::vkGetMemoryWin32HandleKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
@@ -7071,12 +7215,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device
                                                                             pMemoryWin32HandleProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryWin32HandlePropertiesKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryWin32HandlePropertiesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties);
+        intercept->PreCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties,
+                                                                  record_obj);
     }
     VkResult result = DispatchGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties);
-    RecordObject record_obj(vvl::Func::vkGetMemoryWin32HandlePropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryWin32HandlePropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties,
@@ -7095,12 +7241,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(VkDevice device, const VkMemoryGet
         skip |= intercept->PreCallValidateGetMemoryFdKHR(device, pGetFdInfo, pFd, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryFdKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryFdKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd);
+        intercept->PreCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
     VkResult result = DispatchGetMemoryFdKHR(device, pGetFdInfo, pFd);
-    RecordObject record_obj(vvl::Func::vkGetMemoryFdKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, record_obj);
@@ -7118,12 +7265,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdPropertiesKHR(VkDevice device, VkExter
         skip |= intercept->PreCallValidateGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryFdPropertiesKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryFdPropertiesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties);
+        intercept->PreCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, record_obj);
     }
     VkResult result = DispatchGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties);
-    RecordObject record_obj(vvl::Func::vkGetMemoryFdPropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryFdPropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, record_obj);
@@ -7144,13 +7292,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
                                                                                           pExternalSemaphoreProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphorePropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
-                                                                                pExternalSemaphoreProperties);
+                                                                                pExternalSemaphoreProperties, record_obj);
     }
     DispatchGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphorePropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
@@ -7170,12 +7318,13 @@ ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32Handl
         skip |= intercept->PreCallValidateImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkImportSemaphoreWin32HandleKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportSemaphoreWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
+        intercept->PreCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, record_obj);
     }
     VkResult result = DispatchImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
-    RecordObject record_obj(vvl::Func::vkImportSemaphoreWin32HandleKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, record_obj);
@@ -7196,12 +7345,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
         skip |= intercept->PreCallValidateGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSemaphoreWin32HandleKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSemaphoreWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+        intercept->PreCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
     VkResult result = DispatchGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
-    RecordObject record_obj(vvl::Func::vkGetSemaphoreWin32HandleKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
@@ -7219,12 +7369,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImp
         skip |= intercept->PreCallValidateImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkImportSemaphoreFdKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportSemaphoreFdKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
+        intercept->PreCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, record_obj);
     }
     VkResult result = DispatchImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
-    RecordObject record_obj(vvl::Func::vkImportSemaphoreFdKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, record_obj);
@@ -7241,12 +7392,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(VkDevice device, const VkSemaph
         skip |= intercept->PreCallValidateGetSemaphoreFdKHR(device, pGetFdInfo, pFd, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSemaphoreFdKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSemaphoreFdKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd);
+        intercept->PreCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
     VkResult result = DispatchGetSemaphoreFdKHR(device, pGetFdInfo, pFd);
-    RecordObject record_obj(vvl::Func::vkGetSemaphoreFdKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, record_obj);
@@ -7266,13 +7418,13 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer
                                                                   descriptorWriteCount, pDescriptorWrites, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSetKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPushDescriptorSetKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                        pDescriptorWrites);
+                                                        pDescriptorWrites, record_obj);
     }
     DispatchCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
-    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSetKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
@@ -7294,12 +7446,13 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
                                                                               pData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPushDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
+        intercept->PreCallRecordCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
+                                                                    record_obj);
     }
     DispatchCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
-    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplateKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->WriteLock();
@@ -7322,12 +7475,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
                                                                             pDescriptorUpdateTemplate, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDescriptorUpdateTemplateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateDescriptorUpdateTemplateKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+        intercept->PreCallRecordCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
+                                                                  record_obj);
     }
     VkResult result = DispatchCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
-    RecordObject record_obj(vvl::Func::vkCreateDescriptorUpdateTemplateKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorUpdateTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
@@ -7348,12 +7503,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device, V
             intercept->PreCallValidateDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDescriptorUpdateTemplateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyDescriptorUpdateTemplateKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
+        intercept->PreCallRecordDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator, record_obj);
     }
     DispatchDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyDescriptorUpdateTemplateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorUpdateTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator, record_obj);
@@ -7373,12 +7528,13 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
                                                                              error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkUpdateDescriptorSetWithTemplateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUpdateDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
+        intercept->PreCallRecordUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData,
+                                                                   record_obj);
     }
     DispatchUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
-    RecordObject record_obj(vvl::Func::vkUpdateDescriptorSetWithTemplateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData,
@@ -7396,12 +7552,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRen
         skip |= intercept->PreCallValidateCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateRenderPass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
+        intercept->PreCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
     VkResult result = DispatchCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
-    RecordObject record_obj(vvl::Func::vkCreateRenderPass2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
@@ -7419,12 +7576,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginRenderPass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+        intercept->PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     }
     DispatchCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBeginRenderPass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
@@ -7441,12 +7598,12 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, con
         skip |= intercept->PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdNextSubpass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdNextSubpass2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+        intercept->PreCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     }
     DispatchCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordObject record_obj(vvl::Func::vkCmdNextSubpass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdNextSubpass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
@@ -7462,12 +7619,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, c
         skip |= intercept->PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndRenderPass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
+        intercept->PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, record_obj);
     }
     DispatchCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
-    RecordObject record_obj(vvl::Func::vkCmdEndRenderPass2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, record_obj);
@@ -7483,12 +7640,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchai
         skip |= intercept->PreCallValidateGetSwapchainStatusKHR(device, swapchain, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSwapchainStatusKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSwapchainStatusKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSwapchainStatusKHR(device, swapchain);
+        intercept->PreCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
     }
     VkResult result = DispatchGetSwapchainStatusKHR(device, swapchain);
-    RecordObject record_obj(vvl::Func::vkGetSwapchainStatusKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainStatusKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
@@ -7509,13 +7667,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
                                                                                       pExternalFenceProperties, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalFencePropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
-                                                                            pExternalFenceProperties);
+                                                                            pExternalFenceProperties, record_obj);
     }
     DispatchGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalFencePropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
@@ -7534,12 +7692,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
         skip |= intercept->PreCallValidateImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkImportFenceWin32HandleKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportFenceWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
+        intercept->PreCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, record_obj);
     }
     VkResult result = DispatchImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
-    RecordObject record_obj(vvl::Func::vkImportFenceWin32HandleKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportFenceWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, record_obj);
@@ -7559,12 +7718,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkF
         skip |= intercept->PreCallValidateGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetFenceWin32HandleKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFenceWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+        intercept->PreCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
     VkResult result = DispatchGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
-    RecordObject record_obj(vvl::Func::vkGetFenceWin32HandleKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
@@ -7582,12 +7742,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportF
         skip |= intercept->PreCallValidateImportFenceFdKHR(device, pImportFenceFdInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkImportFenceFdKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportFenceFdKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordImportFenceFdKHR(device, pImportFenceFdInfo);
+        intercept->PreCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, record_obj);
     }
     VkResult result = DispatchImportFenceFdKHR(device, pImportFenceFdInfo);
-    RecordObject record_obj(vvl::Func::vkImportFenceFdKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportFenceFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, record_obj);
@@ -7604,12 +7765,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFd
         skip |= intercept->PreCallValidateGetFenceFdKHR(device, pGetFdInfo, pFd, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetFenceFdKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFenceFdKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd);
+        intercept->PreCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
     VkResult result = DispatchGetFenceFdKHR(device, pGetFdInfo, pFd);
-    RecordObject record_obj(vvl::Func::vkGetFenceFdKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, record_obj);
@@ -7630,14 +7792,15 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
             physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
-            physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+            physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
     }
     VkResult result = DispatchEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
         physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
-    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
@@ -7658,13 +7821,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
             physicalDevice, pPerformanceQueryCreateInfo, pNumPasses, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
-                                                                                      pNumPasses);
+                                                                                      pNumPasses, record_obj);
     }
     DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo, pNumPasses);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
@@ -7681,12 +7844,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireProfilingLockKHR(VkDevice device, const Vk
         skip |= intercept->PreCallValidateAcquireProfilingLockKHR(device, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireProfilingLockKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAcquireProfilingLockKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireProfilingLockKHR(device, pInfo);
+        intercept->PreCallRecordAcquireProfilingLockKHR(device, pInfo, record_obj);
     }
     VkResult result = DispatchAcquireProfilingLockKHR(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkAcquireProfilingLockKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireProfilingLockKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireProfilingLockKHR(device, pInfo, record_obj);
@@ -7703,12 +7867,12 @@ VKAPI_ATTR void VKAPI_CALL ReleaseProfilingLockKHR(VkDevice device) {
         skip |= intercept->PreCallValidateReleaseProfilingLockKHR(device, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkReleaseProfilingLockKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordReleaseProfilingLockKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordReleaseProfilingLockKHR(device);
+        intercept->PreCallRecordReleaseProfilingLockKHR(device, record_obj);
     }
     DispatchReleaseProfilingLockKHR(device);
-    RecordObject record_obj(vvl::Func::vkReleaseProfilingLockKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseProfilingLockKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseProfilingLockKHR(device, record_obj);
@@ -7728,12 +7892,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysic
                                                                                    pSurfaceCapabilities, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities);
+        intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
+                                                                         record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
@@ -7756,14 +7922,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
                                                                               pSurfaceFormats, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormats2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
-                                                                    pSurfaceFormats);
+                                                                    pSurfaceFormats, record_obj);
     }
     VkResult result =
         DispatchGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormats2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
@@ -7784,12 +7951,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
                                                                                  error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayProperties2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
@@ -7810,12 +7978,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
                                                                                       error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties,
+                                                                            record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties,
@@ -7836,12 +8006,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
             intercept->PreCallValidateGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDisplayModeProperties2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
     }
     VkResult result = DispatchGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetDisplayModeProperties2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
@@ -7862,12 +8033,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
             intercept->PreCallValidateGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDisplayPlaneCapabilities2KHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
+        intercept->PreCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
     }
     VkResult result = DispatchGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetDisplayPlaneCapabilities2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
@@ -7886,12 +8058,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const
         skip |= intercept->PreCallValidateGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageMemoryRequirements2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetImageMemoryRequirements2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
@@ -7909,12 +8081,12 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, cons
         skip |= intercept->PreCallValidateGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferMemoryRequirements2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetBufferMemoryRequirements2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
@@ -7934,14 +8106,14 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
                                                                                pSparseMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageSparseMemoryRequirements2KHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSparseMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
-                                                                     pSparseMemoryRequirements);
+                                                                     pSparseMemoryRequirements, record_obj);
     }
     DispatchGetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetImageSparseMemoryRequirements2KHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSparseMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
@@ -7964,12 +8136,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(VkDevice device,
             intercept->PreCallValidateCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateSamplerYcbcrConversionKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSamplerYcbcrConversionKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
+        intercept->PreCallRecordCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
     }
     VkResult result = DispatchCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
-    RecordObject record_obj(vvl::Func::vkCreateSamplerYcbcrConversionKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSamplerYcbcrConversionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
@@ -7988,12 +8161,12 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(VkDevice device, VkS
         skip |= intercept->PreCallValidateDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroySamplerYcbcrConversionKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroySamplerYcbcrConversionKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
+        intercept->PreCallRecordDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator, record_obj);
     }
     DispatchDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroySamplerYcbcrConversionKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySamplerYcbcrConversionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator, record_obj);
@@ -8010,12 +8183,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bi
         skip |= intercept->PreCallValidateBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindBufferMemory2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindBufferMemory2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
+        intercept->PreCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     }
     VkResult result = DispatchBindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
-    RecordObject record_obj(vvl::Func::vkBindBufferMemory2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindBufferMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
@@ -8033,12 +8207,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bin
         skip |= intercept->PreCallValidateBindImageMemory2KHR(device, bindInfoCount, pBindInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindImageMemory2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindImageMemory2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos);
+        intercept->PreCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     }
     VkResult result = DispatchBindImageMemory2KHR(device, bindInfoCount, pBindInfos);
-    RecordObject record_obj(vvl::Func::vkBindImageMemory2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindImageMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
@@ -8057,12 +8232,12 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupportKHR(VkDevice device, con
         skip |= intercept->PreCallValidateGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutSupportKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetLayoutSupportKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
+        intercept->PreCallRecordGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport, record_obj);
     }
     DispatchGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutSupportKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutSupportKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport, record_obj);
@@ -8081,13 +8256,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
                                                                   maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCountKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndirectCountKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                        stride);
+                                                        stride, record_obj);
     }
     DispatchCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCountKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCountKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
@@ -8109,13 +8284,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer comman
                                                                          countBufferOffset, maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCountKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndexedIndirectCountKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                               maxDrawCount, stride);
+                                                               maxDrawCount, stride, record_obj);
     }
     DispatchCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCountKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCountKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
@@ -8132,12 +8307,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
         skip |= intercept->PreCallValidateGetSemaphoreCounterValueKHR(device, semaphore, pValue, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSemaphoreCounterValueKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSemaphoreCounterValueKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue);
+        intercept->PreCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, record_obj);
     }
     VkResult result = DispatchGetSemaphoreCounterValueKHR(device, semaphore, pValue);
-    RecordObject record_obj(vvl::Func::vkGetSemaphoreCounterValueKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValueKHR]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
         intercept->PostCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, record_obj);
@@ -8154,12 +8330,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
         skip |= intercept->PreCallValidateWaitSemaphoresKHR(device, pWaitInfo, timeout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkWaitSemaphoresKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordWaitSemaphoresKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout);
+        intercept->PreCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, record_obj);
     }
     VkResult result = DispatchWaitSemaphoresKHR(device, pWaitInfo, timeout);
-    RecordObject record_obj(vvl::Func::vkWaitSemaphoresKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitSemaphoresKHR]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
         intercept->PostCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, record_obj);
@@ -8176,12 +8353,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(VkDevice device, const VkSemap
         skip |= intercept->PreCallValidateSignalSemaphoreKHR(device, pSignalInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSignalSemaphoreKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSignalSemaphoreKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSignalSemaphoreKHR(device, pSignalInfo);
+        intercept->PreCallRecordSignalSemaphoreKHR(device, pSignalInfo, record_obj);
     }
     VkResult result = DispatchSignalSemaphoreKHR(device, pSignalInfo);
-    RecordObject record_obj(vvl::Func::vkSignalSemaphoreKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSignalSemaphoreKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSignalSemaphoreKHR(device, pSignalInfo, record_obj);
@@ -8202,14 +8380,15 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
                                                                                    pFragmentShadingRates, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFragmentShadingRatesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
-                                                                         pFragmentShadingRates);
+                                                                         pFragmentShadingRates, record_obj);
     }
     VkResult result =
         DispatchGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount, pFragmentShadingRates);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceFragmentShadingRatesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
@@ -8230,12 +8409,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(VkCommandBuffer commandB
         skip |= intercept->PreCallValidateCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetFragmentShadingRateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetFragmentShadingRateKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
+        intercept->PreCallRecordCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps, record_obj);
     }
     DispatchCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
-    RecordObject record_obj(vvl::Func::vkCmdSetFragmentShadingRateKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFragmentShadingRateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps, record_obj);
@@ -8251,12 +8430,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
         skip |= intercept->PreCallValidateWaitForPresentKHR(device, swapchain, presentId, timeout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkWaitForPresentKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordWaitForPresentKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout);
+        intercept->PreCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
     }
     VkResult result = DispatchWaitForPresentKHR(device, swapchain, presentId, timeout);
-    RecordObject record_obj(vvl::Func::vkWaitForPresentKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitForPresentKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
@@ -8273,12 +8453,13 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(VkDevice device,
         skip |= intercept->PreCallValidateGetBufferDeviceAddressKHR(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddressKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferDeviceAddressKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferDeviceAddressKHR(device, pInfo);
+        intercept->PreCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
     }
     VkDeviceAddress result = DispatchGetBufferDeviceAddressKHR(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddressKHR, result);
+    record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddressKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
@@ -8296,12 +8477,12 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(VkDevice device,
         skip |= intercept->PreCallValidateGetBufferOpaqueCaptureAddressKHR(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferOpaqueCaptureAddressKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferOpaqueCaptureAddressKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+        intercept->PreCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo, record_obj);
     }
     uint64_t result = DispatchGetBufferOpaqueCaptureAddressKHR(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetBufferOpaqueCaptureAddressKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferOpaqueCaptureAddressKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo, record_obj);
@@ -8320,13 +8501,13 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice d
         skip |= intercept->PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddressKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+        intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo, record_obj);
     }
     uint64_t result = DispatchGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddressKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR]) {
         auto lock = intercept->WriteLock();
@@ -8345,12 +8526,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDeferredOperationKHR(VkDevice device, const
         skip |= intercept->PreCallValidateCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDeferredOperationKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateDeferredOperationKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation);
+        intercept->PreCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, record_obj);
     }
     VkResult result = DispatchCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation);
-    RecordObject record_obj(vvl::Func::vkCreateDeferredOperationKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDeferredOperationKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, record_obj);
@@ -8368,12 +8550,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDeferredOperationKHR(VkDevice device, VkDeferr
         skip |= intercept->PreCallValidateDestroyDeferredOperationKHR(device, operation, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDeferredOperationKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyDeferredOperationKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDeferredOperationKHR(device, operation, pAllocator);
+        intercept->PreCallRecordDestroyDeferredOperationKHR(device, operation, pAllocator, record_obj);
     }
     DispatchDestroyDeferredOperationKHR(device, operation, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyDeferredOperationKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDeferredOperationKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDeferredOperationKHR(device, operation, pAllocator, record_obj);
@@ -8390,13 +8572,13 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetDeferredOperationMaxConcurrencyKHR(VkDevice de
         skip |= intercept->PreCallValidateGetDeferredOperationMaxConcurrencyKHR(device, operation, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeferredOperationMaxConcurrencyKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeferredOperationMaxConcurrencyKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeferredOperationMaxConcurrencyKHR(device, operation);
+        intercept->PreCallRecordGetDeferredOperationMaxConcurrencyKHR(device, operation, record_obj);
     }
     uint32_t result = DispatchGetDeferredOperationMaxConcurrencyKHR(device, operation);
-    RecordObject record_obj(vvl::Func::vkGetDeferredOperationMaxConcurrencyKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeferredOperationMaxConcurrencyKHR]) {
         auto lock = intercept->WriteLock();
@@ -8415,12 +8597,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeferredOperationResultKHR(VkDevice device, Vk
         skip |= intercept->PreCallValidateGetDeferredOperationResultKHR(device, operation, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeferredOperationResultKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeferredOperationResultKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeferredOperationResultKHR(device, operation);
+        intercept->PreCallRecordGetDeferredOperationResultKHR(device, operation, record_obj);
     }
     VkResult result = DispatchGetDeferredOperationResultKHR(device, operation);
-    RecordObject record_obj(vvl::Func::vkGetDeferredOperationResultKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeferredOperationResultKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeferredOperationResultKHR(device, operation, record_obj);
@@ -8437,12 +8620,13 @@ VKAPI_ATTR VkResult VKAPI_CALL DeferredOperationJoinKHR(VkDevice device, VkDefer
         skip |= intercept->PreCallValidateDeferredOperationJoinKHR(device, operation, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkDeferredOperationJoinKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDeferredOperationJoinKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDeferredOperationJoinKHR(device, operation);
+        intercept->PreCallRecordDeferredOperationJoinKHR(device, operation, record_obj);
     }
     VkResult result = DispatchDeferredOperationJoinKHR(device, operation);
-    RecordObject record_obj(vvl::Func::vkDeferredOperationJoinKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDeferredOperationJoinKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDeferredOperationJoinKHR(device, operation, record_obj);
@@ -8463,12 +8647,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(VkDevice devic
                                                                              error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelineExecutablePropertiesKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineExecutablePropertiesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
+        intercept->PreCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties,
+                                                                   record_obj);
     }
     VkResult result = DispatchGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPipelineExecutablePropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineExecutablePropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties,
@@ -8491,12 +8677,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableStatisticsKHR(VkDevice devic
                                                                              error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelineExecutableStatisticsKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineExecutableStatisticsKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
+        intercept->PreCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics,
+                                                                   record_obj);
     }
     VkResult result = DispatchGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
-    RecordObject record_obj(vvl::Func::vkGetPipelineExecutableStatisticsKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineExecutableStatisticsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics,
@@ -8519,15 +8707,16 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
             device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelineExecutableInternalRepresentationsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineExecutableInternalRepresentationsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPipelineExecutableInternalRepresentationsKHR(
-            device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
+            device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations, record_obj);
     }
     VkResult result = DispatchGetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount,
                                                                               pInternalRepresentations);
-    RecordObject record_obj(vvl::Func::vkGetPipelineExecutableInternalRepresentationsKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineExecutableInternalRepresentationsKHR]) {
         auto lock = intercept->WriteLock();
@@ -8546,12 +8735,13 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapI
         skip |= intercept->PreCallValidateMapMemory2KHR(device, pMemoryMapInfo, ppData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkMapMemory2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordMapMemory2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData);
+        intercept->PreCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, record_obj);
     }
     VkResult result = DispatchMapMemory2KHR(device, pMemoryMapInfo, ppData);
-    RecordObject record_obj(vvl::Func::vkMapMemory2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMapMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, record_obj);
@@ -8568,12 +8758,13 @@ VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUn
         skip |= intercept->PreCallValidateUnmapMemory2KHR(device, pMemoryUnmapInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkUnmapMemory2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUnmapMemory2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo);
+        intercept->PreCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, record_obj);
     }
     VkResult result = DispatchUnmapMemory2KHR(device, pMemoryUnmapInfo);
-    RecordObject record_obj(vvl::Func::vkUnmapMemory2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUnmapMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, record_obj);
@@ -8595,14 +8786,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
                                                                                                 pQualityLevelProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
-                                                                                      pQualityLevelProperties);
+                                                                                      pQualityLevelProperties, record_obj);
     }
     VkResult result =
         DispatchGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo, pQualityLevelProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
@@ -8626,14 +8818,15 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
                                                                               pDataSize, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetEncodedVideoSessionParametersKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetEncodedVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize,
-                                                                    pData);
+                                                                    pData, record_obj);
     }
     VkResult result =
         DispatchGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetEncodedVideoSessionParametersKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetEncodedVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
@@ -8654,12 +8847,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, cons
         skip |= intercept->PreCallValidateCmdEncodeVideoKHR(commandBuffer, pEncodeInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEncodeVideoKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEncodeVideoKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEncodeVideoKHR(commandBuffer, pEncodeInfo);
+        intercept->PreCallRecordCmdEncodeVideoKHR(commandBuffer, pEncodeInfo, record_obj);
     }
     DispatchCmdEncodeVideoKHR(commandBuffer, pEncodeInfo);
-    RecordObject record_obj(vvl::Func::vkCmdEncodeVideoKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEncodeVideoKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEncodeVideoKHR(commandBuffer, pEncodeInfo, record_obj);
@@ -8676,12 +8869,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEven
         skip |= intercept->PreCallValidateCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetEvent2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetEvent2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
+        intercept->PreCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, record_obj);
     }
     DispatchCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetEvent2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetEvent2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, record_obj);
@@ -8697,12 +8890,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEv
         skip |= intercept->PreCallValidateCmdResetEvent2KHR(commandBuffer, event, stageMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResetEvent2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResetEvent2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
+        intercept->PreCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask, record_obj);
     }
     DispatchCmdResetEvent2KHR(commandBuffer, event, stageMask);
-    RecordObject record_obj(vvl::Func::vkCmdResetEvent2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetEvent2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask, record_obj);
@@ -8719,12 +8912,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint
         skip |= intercept->PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWaitEvents2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWaitEvents2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+        intercept->PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     }
     DispatchCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    RecordObject record_obj(vvl::Func::vkCmdWaitEvents2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWaitEvents2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
@@ -8740,12 +8933,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPipelineBarrier2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPipelineBarrier2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
+        intercept->PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
     }
     DispatchCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
-    RecordObject record_obj(vvl::Func::vkCmdPipelineBarrier2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPipelineBarrier2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
@@ -8762,12 +8955,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, 
         skip |= intercept->PreCallValidateCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteTimestamp2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteTimestamp2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
+        intercept->PreCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query, record_obj);
     }
     DispatchCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
-    RecordObject record_obj(vvl::Func::vkCmdWriteTimestamp2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteTimestamp2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query, record_obj);
@@ -8783,12 +8976,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
         skip |= intercept->PreCallValidateQueueSubmit2KHR(queue, submitCount, pSubmits, fence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueueSubmit2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSubmit2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
+        intercept->PreCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
     }
     VkResult result = DispatchQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
-    RecordObject record_obj(vvl::Func::vkQueueSubmit2KHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
@@ -8806,12 +9000,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteBufferMarker2AMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteBufferMarker2AMD]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
+        intercept->PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
     }
     DispatchCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
-    RecordObject record_obj(vvl::Func::vkCmdWriteBufferMarker2AMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteBufferMarker2AMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
@@ -8828,12 +9022,12 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
         skip |= intercept->PreCallValidateGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetQueueCheckpointData2NV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetQueueCheckpointData2NV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
+        intercept->PreCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
     }
     DispatchGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
-    RecordObject record_obj(vvl::Func::vkGetQueueCheckpointData2NV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointData2NV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
@@ -8849,12 +9043,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, cons
         skip |= intercept->PreCallValidateCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyBuffer2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyBuffer2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
+        intercept->PreCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo, record_obj);
     }
     DispatchCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyBuffer2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBuffer2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo, record_obj);
@@ -8870,12 +9064,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const
         skip |= intercept->PreCallValidateCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyImage2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
+        intercept->PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, record_obj);
     }
     DispatchCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, record_obj);
@@ -8892,12 +9086,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyBufferToImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyBufferToImage2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
+        intercept->PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, record_obj);
     }
     DispatchCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyBufferToImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBufferToImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, record_obj);
@@ -8914,12 +9108,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyImageToBuffer2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyImageToBuffer2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+        intercept->PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, record_obj);
     }
     DispatchCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyImageToBuffer2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImageToBuffer2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, record_obj);
@@ -8935,12 +9129,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const
         skip |= intercept->PreCallValidateCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBlitImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBlitImage2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
+        intercept->PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
     }
     DispatchCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBlitImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBlitImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
@@ -8956,12 +9150,12 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(VkCommandBuffer commandBuffer, co
         skip |= intercept->PreCallValidateCmdResolveImage2KHR(commandBuffer, pResolveImageInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdResolveImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdResolveImage2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+        intercept->PreCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo, record_obj);
     }
     DispatchCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
-    RecordObject record_obj(vvl::Func::vkCmdResolveImage2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResolveImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo, record_obj);
@@ -8977,12 +9171,12 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdTraceRaysIndirect2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdTraceRaysIndirect2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+        intercept->PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, record_obj);
     }
     DispatchCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
-    RecordObject record_obj(vvl::Func::vkCmdTraceRaysIndirect2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysIndirect2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, record_obj);
@@ -9000,13 +9194,13 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(VkDevice device,
         skip |= intercept->PreCallValidateGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceBufferMemoryRequirementsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceBufferMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetDeviceBufferMemoryRequirementsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceBufferMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
@@ -9025,12 +9219,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(VkDevice device, 
         skip |= intercept->PreCallValidateGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceImageMemoryRequirementsKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetDeviceImageMemoryRequirementsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
@@ -9052,14 +9246,14 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(VkDevice de
                                                                                     pSparseMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirementsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageSparseMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount,
-                                                                          pSparseMemoryRequirements);
+                                                                          pSparseMemoryRequirements, record_obj);
     }
     DispatchGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirementsKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSparseMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
@@ -9078,12 +9272,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindIndexBuffer2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindIndexBuffer2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+        intercept->PreCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType, record_obj);
     }
     DispatchCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
-    RecordObject record_obj(vvl::Func::vkCmdBindIndexBuffer2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType, record_obj);
@@ -9101,12 +9295,12 @@ VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const
         skip |= intercept->PreCallValidateGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetRenderingAreaGranularityKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetRenderingAreaGranularityKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+        intercept->PreCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity, record_obj);
     }
     DispatchGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
-    RecordObject record_obj(vvl::Func::vkGetRenderingAreaGranularityKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRenderingAreaGranularityKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity, record_obj);
@@ -9124,12 +9318,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, c
         skip |= intercept->PreCallValidateGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceImageSubresourceLayoutKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageSubresourceLayoutKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+        intercept->PreCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout, record_obj);
     }
     DispatchGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
-    RecordObject record_obj(vvl::Func::vkGetDeviceImageSubresourceLayoutKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSubresourceLayoutKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout, record_obj);
@@ -9147,12 +9341,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImag
         skip |= intercept->PreCallValidateGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2KHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+        intercept->PreCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout, record_obj);
     }
     DispatchGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
-    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout2KHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout, record_obj);
@@ -9172,12 +9366,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
                                                                                           pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
+                                                                                record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
@@ -9198,13 +9394,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
         skip |= intercept->PreCallValidateCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDebugReportCallbackEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+        intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
     }
     VkResult result = DispatchCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     LayerCreateReportCallback(layer_data->report_data, false, pCreateInfo, pCallback);
-    RecordObject record_obj(vvl::Func::vkCreateDebugReportCallbackEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
@@ -9222,13 +9419,13 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
         skip |= intercept->PreCallValidateDestroyDebugReportCallbackEXT(instance, callback, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDebugReportCallbackEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+        intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
     }
     DispatchDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     LayerDestroyCallback(layer_data->report_data, callback);
-    RecordObject record_obj(vvl::Func::vkDestroyDebugReportCallbackEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
@@ -9247,13 +9444,13 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
                                                                 pLayerPrefix, pMessage, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDebugReportMessageEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
-                                                      pMessage);
+                                                      pMessage, record_obj);
     }
     DispatchDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix, pMessage);
-    RecordObject record_obj(vvl::Func::vkDebugReportMessageEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
@@ -9270,12 +9467,13 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const
         skip |= intercept->PreCallValidateDebugMarkerSetObjectTagEXT(device, pTagInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkDebugMarkerSetObjectTagEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDebugMarkerSetObjectTagEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo);
+        intercept->PreCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, record_obj);
     }
     VkResult result = DispatchDebugMarkerSetObjectTagEXT(device, pTagInfo);
-    RecordObject record_obj(vvl::Func::vkDebugMarkerSetObjectTagEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDebugMarkerSetObjectTagEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, record_obj);
@@ -9292,13 +9490,14 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, cons
         skip |= intercept->PreCallValidateDebugMarkerSetObjectNameEXT(device, pNameInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkDebugMarkerSetObjectNameEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDebugMarkerSetObjectNameEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo);
+        intercept->PreCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
     }
     layer_data->report_data->DebugReportSetMarkerObjectName(pNameInfo);
     VkResult result = DispatchDebugMarkerSetObjectNameEXT(device, pNameInfo);
-    RecordObject record_obj(vvl::Func::vkDebugMarkerSetObjectNameEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDebugMarkerSetObjectNameEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
@@ -9315,12 +9514,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDebugMarkerBeginEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDebugMarkerBeginEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
+        intercept->PreCallRecordCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo, record_obj);
     }
     DispatchCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
-    RecordObject record_obj(vvl::Func::vkCmdDebugMarkerBeginEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDebugMarkerBeginEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo, record_obj);
@@ -9336,12 +9535,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
         skip |= intercept->PreCallValidateCmdDebugMarkerEndEXT(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDebugMarkerEndEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDebugMarkerEndEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDebugMarkerEndEXT(commandBuffer);
+        intercept->PreCallRecordCmdDebugMarkerEndEXT(commandBuffer, record_obj);
     }
     DispatchCmdDebugMarkerEndEXT(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdDebugMarkerEndEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDebugMarkerEndEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDebugMarkerEndEXT(commandBuffer, record_obj);
@@ -9357,12 +9556,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDebugMarkerInsertEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDebugMarkerInsertEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
+        intercept->PreCallRecordCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo, record_obj);
     }
     DispatchCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
-    RecordObject record_obj(vvl::Func::vkCmdDebugMarkerInsertEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDebugMarkerInsertEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo, record_obj);
@@ -9383,13 +9582,13 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer co
                                                                              pOffsets, pSizes, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindTransformFeedbackBuffersEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindTransformFeedbackBuffersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets,
-                                                                   pSizes);
+                                                                   pSizes, record_obj);
     }
     DispatchCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes);
-    RecordObject record_obj(vvl::Func::vkCmdBindTransformFeedbackBuffersEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindTransformFeedbackBuffersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets,
@@ -9411,14 +9610,14 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedbackEXT(VkCommandBuffer commandB
                                                                        pCounterBuffers, pCounterBufferOffsets, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginTransformFeedbackEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginTransformFeedbackEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
-                                                             pCounterBufferOffsets);
+                                                             pCounterBufferOffsets, record_obj);
     }
     DispatchCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                          pCounterBufferOffsets);
-    RecordObject record_obj(vvl::Func::vkCmdBeginTransformFeedbackEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginTransformFeedbackEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount,
@@ -9439,14 +9638,14 @@ VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuf
                                                                      pCounterBuffers, pCounterBufferOffsets, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndTransformFeedbackEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndTransformFeedbackEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
-                                                           pCounterBufferOffsets);
+                                                           pCounterBufferOffsets, record_obj);
     }
     DispatchCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                        pCounterBufferOffsets);
-    RecordObject record_obj(vvl::Func::vkCmdEndTransformFeedbackEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndTransformFeedbackEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
@@ -9464,12 +9663,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginQueryIndexedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginQueryIndexedEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
+        intercept->PreCallRecordCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index, record_obj);
     }
     DispatchCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
-    RecordObject record_obj(vvl::Func::vkCmdBeginQueryIndexedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginQueryIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index, record_obj);
@@ -9486,12 +9685,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, 
         skip |= intercept->PreCallValidateCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndQueryIndexedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndQueryIndexedEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
+        intercept->PreCallRecordCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index, record_obj);
     }
     DispatchCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
-    RecordObject record_obj(vvl::Func::vkCmdEndQueryIndexedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndQueryIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index, record_obj);
@@ -9512,14 +9711,14 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBu
                                                                       counterBufferOffset, counterOffset, vertexStride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectByteCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndirectByteCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
-                                                            counterBufferOffset, counterOffset, vertexStride);
+                                                            counterBufferOffset, counterOffset, vertexStride, record_obj);
     }
     DispatchCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset,
                                         counterOffset, vertexStride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectByteCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectByteCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
@@ -9537,12 +9736,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(VkDevice device, const VkCuModu
         skip |= intercept->PreCallValidateCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateCuModuleNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateCuModuleNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
+        intercept->PreCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, record_obj);
     }
     VkResult result = DispatchCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
-    RecordObject record_obj(vvl::Func::vkCreateCuModuleNVX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCuModuleNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, record_obj);
@@ -9560,12 +9760,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(VkDevice device, const VkCuFu
         skip |= intercept->PreCallValidateCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateCuFunctionNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateCuFunctionNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
+        intercept->PreCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, record_obj);
     }
     VkResult result = DispatchCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
-    RecordObject record_obj(vvl::Func::vkCreateCuFunctionNVX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCuFunctionNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, record_obj);
@@ -9582,12 +9783,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX mod
         skip |= intercept->PreCallValidateDestroyCuModuleNVX(device, module, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyCuModuleNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyCuModuleNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyCuModuleNVX(device, module, pAllocator);
+        intercept->PreCallRecordDestroyCuModuleNVX(device, module, pAllocator, record_obj);
     }
     DispatchDestroyCuModuleNVX(device, module, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyCuModuleNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCuModuleNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCuModuleNVX(device, module, pAllocator, record_obj);
@@ -9604,12 +9805,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX
         skip |= intercept->PreCallValidateDestroyCuFunctionNVX(device, function, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyCuFunctionNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyCuFunctionNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyCuFunctionNVX(device, function, pAllocator);
+        intercept->PreCallRecordDestroyCuFunctionNVX(device, function, pAllocator, record_obj);
     }
     DispatchDestroyCuFunctionNVX(device, function, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyCuFunctionNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCuFunctionNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCuFunctionNVX(device, function, pAllocator, record_obj);
@@ -9625,12 +9826,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, c
         skip |= intercept->PreCallValidateCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCuLaunchKernelNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCuLaunchKernelNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
+        intercept->PreCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo, record_obj);
     }
     DispatchCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCuLaunchKernelNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCuLaunchKernelNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo, record_obj);
@@ -9646,12 +9847,12 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkIm
         skip |= intercept->PreCallValidateGetImageViewHandleNVX(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageViewHandleNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageViewHandleNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageViewHandleNVX(device, pInfo);
+        intercept->PreCallRecordGetImageViewHandleNVX(device, pInfo, record_obj);
     }
     uint32_t result = DispatchGetImageViewHandleNVX(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetImageViewHandleNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewHandleNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageViewHandleNVX(device, pInfo, record_obj);
@@ -9669,12 +9870,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageVi
         skip |= intercept->PreCallValidateGetImageViewAddressNVX(device, imageView, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageViewAddressNVX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageViewAddressNVX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageViewAddressNVX(device, imageView, pProperties);
+        intercept->PreCallRecordGetImageViewAddressNVX(device, imageView, pProperties, record_obj);
     }
     VkResult result = DispatchGetImageViewAddressNVX(device, imageView, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetImageViewAddressNVX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewAddressNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, record_obj);
@@ -9694,13 +9896,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer
                                                                   maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCountAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndirectCountAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                        stride);
+                                                        stride, record_obj);
     }
     DispatchCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCountAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCountAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
@@ -9722,13 +9924,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(VkCommandBuffer comman
                                                                          countBufferOffset, maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCountAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawIndexedIndirectCountAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                               maxDrawCount, stride);
+                                                               maxDrawCount, stride, record_obj);
     }
     DispatchCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCountAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCountAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
@@ -9746,12 +9948,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(VkDevice device, VkPipeline pipe
         skip |= intercept->PreCallValidateGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetShaderInfoAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetShaderInfoAMD]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
+        intercept->PreCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, record_obj);
     }
     VkResult result = DispatchGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetShaderInfoAMD, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderInfoAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, record_obj);
@@ -9771,12 +9974,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
         skip |= intercept->PreCallValidateCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateStreamDescriptorSurfaceGGP);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateStreamDescriptorSurfaceGGP, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -9799,14 +10003,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
             physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalImageFormatPropertiesNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
-            physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties);
+            physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceExternalImageFormatPropertiesNV(physicalDevice, format, type, tiling, usage, flags,
                                                                                externalHandleType, pExternalImageFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceExternalImageFormatPropertiesNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
@@ -9826,12 +10031,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceM
         skip |= intercept->PreCallValidateGetMemoryWin32HandleNV(device, memory, handleType, pHandle, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryWin32HandleNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryWin32HandleNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle);
+        intercept->PreCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, record_obj);
     }
     VkResult result = DispatchGetMemoryWin32HandleNV(device, memory, handleType, pHandle);
-    RecordObject record_obj(vvl::Func::vkGetMemoryWin32HandleNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryWin32HandleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, record_obj);
@@ -9851,12 +10057,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
         skip |= intercept->PreCallValidateCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateViSurfaceNN);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateViSurfaceNN, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -9877,12 +10084,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer comma
         skip |= intercept->PreCallValidateCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginConditionalRenderingEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginConditionalRenderingEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
+        intercept->PreCallRecordCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin, record_obj);
     }
     DispatchCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
-    RecordObject record_obj(vvl::Func::vkCmdBeginConditionalRenderingEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginConditionalRenderingEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin, record_obj);
@@ -9900,12 +10107,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(VkCommandBuffer command
         skip |= intercept->PreCallValidateCmdEndConditionalRenderingEXT(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndConditionalRenderingEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndConditionalRenderingEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndConditionalRenderingEXT(commandBuffer);
+        intercept->PreCallRecordCmdEndConditionalRenderingEXT(commandBuffer, record_obj);
     }
     DispatchCmdEndConditionalRenderingEXT(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdEndConditionalRenderingEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndConditionalRenderingEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndConditionalRenderingEXT(commandBuffer, record_obj);
@@ -9923,12 +10130,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(VkCommandBuffer commandBuffe
                                                                    error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewportWScalingNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewportWScalingNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings);
+        intercept->PreCallRecordCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings,
+                                                         record_obj);
     }
     DispatchCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewportWScalingNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWScalingNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings,
@@ -9945,12 +10153,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
         skip |= intercept->PreCallValidateReleaseDisplayEXT(physicalDevice, display, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkReleaseDisplayEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordReleaseDisplayEXT(physicalDevice, display);
+        intercept->PreCallRecordReleaseDisplayEXT(physicalDevice, display, record_obj);
     }
     VkResult result = DispatchReleaseDisplayEXT(physicalDevice, display);
-    RecordObject record_obj(vvl::Func::vkReleaseDisplayEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseDisplayEXT(physicalDevice, display, record_obj);
@@ -9968,12 +10177,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDe
         skip |= intercept->PreCallValidateAcquireXlibDisplayEXT(physicalDevice, dpy, display, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireXlibDisplayEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display);
+        intercept->PreCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
     }
     VkResult result = DispatchAcquireXlibDisplayEXT(physicalDevice, dpy, display);
-    RecordObject record_obj(vvl::Func::vkAcquireXlibDisplayEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
@@ -9994,12 +10204,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
         skip |= intercept->PreCallValidateGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetRandROutputDisplayEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
+        intercept->PreCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
     }
     VkResult result = DispatchGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
-    RecordObject record_obj(vvl::Func::vkGetRandROutputDisplayEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
@@ -10020,12 +10231,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
                                                                                    error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2EXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities);
+        intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2EXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities,
@@ -10044,12 +10256,13 @@ VKAPI_ATTR VkResult VKAPI_CALL DisplayPowerControlEXT(VkDevice device, VkDisplay
         skip |= intercept->PreCallValidateDisplayPowerControlEXT(device, display, pDisplayPowerInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkDisplayPowerControlEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDisplayPowerControlEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo);
+        intercept->PreCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, record_obj);
     }
     VkResult result = DispatchDisplayPowerControlEXT(device, display, pDisplayPowerInfo);
-    RecordObject record_obj(vvl::Func::vkDisplayPowerControlEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDisplayPowerControlEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, record_obj);
@@ -10067,12 +10280,13 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDeviceEventEXT(VkDevice device, const VkD
         skip |= intercept->PreCallValidateRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkRegisterDeviceEventEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordRegisterDeviceEventEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
+        intercept->PreCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, record_obj);
     }
     VkResult result = DispatchRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
-    RecordObject record_obj(vvl::Func::vkRegisterDeviceEventEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordRegisterDeviceEventEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, record_obj);
@@ -10092,12 +10306,13 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDisplayEventEXT(VkDevice device, VkDispla
             intercept->PreCallValidateRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkRegisterDisplayEventEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordRegisterDisplayEventEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
+        intercept->PreCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, record_obj);
     }
     VkResult result = DispatchRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
-    RecordObject record_obj(vvl::Func::vkRegisterDisplayEventEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordRegisterDisplayEventEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, record_obj);
@@ -10115,12 +10330,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapcha
         skip |= intercept->PreCallValidateGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSwapchainCounterEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSwapchainCounterEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
+        intercept->PreCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
     }
     VkResult result = DispatchGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
-    RecordObject record_obj(vvl::Func::vkGetSwapchainCounterEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainCounterEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
@@ -10139,12 +10355,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, Vk
         skip |= intercept->PreCallValidateGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetRefreshCycleDurationGOOGLE);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetRefreshCycleDurationGOOGLE]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
+        intercept->PreCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
     }
     VkResult result = DispatchGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
-    RecordObject record_obj(vvl::Func::vkGetRefreshCycleDurationGOOGLE, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRefreshCycleDurationGOOGLE]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
@@ -10165,12 +10382,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, 
                                                                           pPresentationTimings, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPastPresentationTimingGOOGLE);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPastPresentationTimingGOOGLE]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings);
+        intercept->PreCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings,
+                                                                record_obj);
     }
     VkResult result = DispatchGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings);
-    RecordObject record_obj(vvl::Func::vkGetPastPresentationTimingGOOGLE, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPastPresentationTimingGOOGLE]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings,
@@ -10190,13 +10409,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuff
                                                                     pDiscardRectangles, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDiscardRectangleEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDiscardRectangleEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount,
-                                                          pDiscardRectangles);
+                                                          pDiscardRectangles, record_obj);
     }
     DispatchCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles);
-    RecordObject record_obj(vvl::Func::vkCmdSetDiscardRectangleEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount,
@@ -10215,12 +10434,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEnableEXT(VkCommandBuffer comma
         skip |= intercept->PreCallValidateCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDiscardRectangleEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDiscardRectangleEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
+        intercept->PreCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, record_obj);
     }
     DispatchCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDiscardRectangleEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, record_obj);
@@ -10239,12 +10458,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleModeEXT(VkCommandBuffer command
         skip |= intercept->PreCallValidateCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDiscardRectangleModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDiscardRectangleModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
+        intercept->PreCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode, record_obj);
     }
     DispatchCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetDiscardRectangleModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode, record_obj);
@@ -10261,12 +10480,12 @@ VKAPI_ATTR void VKAPI_CALL SetHdrMetadataEXT(VkDevice device, uint32_t swapchain
         skip |= intercept->PreCallValidateSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkSetHdrMetadataEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetHdrMetadataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata);
+        intercept->PreCallRecordSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata, record_obj);
     }
     DispatchSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata);
-    RecordObject record_obj(vvl::Func::vkSetHdrMetadataEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetHdrMetadataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata, record_obj);
@@ -10284,12 +10503,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
         skip |= intercept->PreCallValidateCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateIOSSurfaceMVK);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateIOSSurfaceMVK, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -10309,12 +10529,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
         skip |= intercept->PreCallValidateCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateMacOSSurfaceMVK);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateMacOSSurfaceMVK, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -10332,13 +10553,14 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
         skip |= intercept->PreCallValidateSetDebugUtilsObjectNameEXT(device, pNameInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetDebugUtilsObjectNameEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetDebugUtilsObjectNameEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo);
+        intercept->PreCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
     }
     layer_data->report_data->DebugReportSetUtilsObjectName(pNameInfo);
     VkResult result = DispatchSetDebugUtilsObjectNameEXT(device, pNameInfo);
-    RecordObject record_obj(vvl::Func::vkSetDebugUtilsObjectNameEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDebugUtilsObjectNameEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
@@ -10355,12 +10577,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
         skip |= intercept->PreCallValidateSetDebugUtilsObjectTagEXT(device, pTagInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetDebugUtilsObjectTagEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetDebugUtilsObjectTagEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo);
+        intercept->PreCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, record_obj);
     }
     VkResult result = DispatchSetDebugUtilsObjectTagEXT(device, pTagInfo);
-    RecordObject record_obj(vvl::Func::vkSetDebugUtilsObjectTagEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDebugUtilsObjectTagEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, record_obj);
@@ -10378,13 +10601,13 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkD
         skip |= intercept->PreCallValidateQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkQueueBeginDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+        intercept->PreCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
     BeginQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);
     DispatchQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
-    RecordObject record_obj(vvl::Func::vkQueueBeginDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
@@ -10400,13 +10623,13 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
         skip |= intercept->PreCallValidateQueueEndDebugUtilsLabelEXT(queue, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkQueueEndDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueEndDebugUtilsLabelEXT(queue);
+        intercept->PreCallRecordQueueEndDebugUtilsLabelEXT(queue, record_obj);
     }
     DispatchQueueEndDebugUtilsLabelEXT(queue);
     EndQueueDebugUtilsLabel(layer_data->report_data, queue);
-    RecordObject record_obj(vvl::Func::vkQueueEndDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueEndDebugUtilsLabelEXT(queue, record_obj);
@@ -10423,13 +10646,13 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
         skip |= intercept->PreCallValidateQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkQueueInsertDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+        intercept->PreCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
     InsertQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);
     DispatchQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
-    RecordObject record_obj(vvl::Func::vkQueueInsertDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
@@ -10446,12 +10669,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBeginDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+        intercept->PreCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
     }
     DispatchCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
-    RecordObject record_obj(vvl::Func::vkCmdBeginDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
@@ -10467,12 +10690,12 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdEndDebugUtilsLabelEXT(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdEndDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer);
+        intercept->PreCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer, record_obj);
     }
     DispatchCmdEndDebugUtilsLabelEXT(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdEndDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer, record_obj);
@@ -10489,12 +10712,12 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBu
         skip |= intercept->PreCallValidateCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdInsertDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+        intercept->PreCallRecordCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
     }
     DispatchCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
-    RecordObject record_obj(vvl::Func::vkCmdInsertDebugUtilsLabelEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
@@ -10513,13 +10736,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
         skip |= intercept->PreCallValidateCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDebugUtilsMessengerEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+        intercept->PreCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
     }
     VkResult result = DispatchCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
     LayerCreateMessengerCallback(layer_data->report_data, false, pCreateInfo, pMessenger);
-    RecordObject record_obj(vvl::Func::vkCreateDebugUtilsMessengerEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
@@ -10537,13 +10761,13 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
         skip |= intercept->PreCallValidateDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyDebugUtilsMessengerEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+        intercept->PreCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
     }
     DispatchDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
     LayerDestroyCallback(layer_data->report_data, messenger);
-    RecordObject record_obj(vvl::Func::vkDestroyDebugUtilsMessengerEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
@@ -10562,12 +10786,12 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
             intercept->PreCallValidateSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkSubmitDebugUtilsMessageEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
+        intercept->PreCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, record_obj);
     }
     DispatchSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
-    RecordObject record_obj(vvl::Func::vkSubmitDebugUtilsMessageEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, record_obj);
@@ -10587,13 +10811,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevic
         skip |= intercept->PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetAndroidHardwareBufferPropertiesANDROID);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetAndroidHardwareBufferPropertiesANDROID]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
+        intercept->PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, record_obj);
     }
     VkResult result = DispatchGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetAndroidHardwareBufferPropertiesANDROID, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAndroidHardwareBufferPropertiesANDROID]) {
         auto lock = intercept->WriteLock();
@@ -10616,13 +10841,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice de
         skip |= intercept->PreCallValidateGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryAndroidHardwareBufferANDROID);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryAndroidHardwareBufferANDROID]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
+        intercept->PreCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, record_obj);
     }
     VkResult result = DispatchGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
-    RecordObject record_obj(vvl::Func::vkGetMemoryAndroidHardwareBufferANDROID, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryAndroidHardwareBufferANDROID]) {
         auto lock = intercept->WriteLock();
@@ -10647,14 +10873,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device
                                                                             pAllocator, pPipelines, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateExecutionGraphPipelinesAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateExecutionGraphPipelinesAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines);
+                                                                  pPipelines, record_obj);
     }
     VkResult result =
         DispatchCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
-    RecordObject record_obj(vvl::Func::vkCreateExecutionGraphPipelinesAMDX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateExecutionGraphPipelinesAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
@@ -10677,13 +10904,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice
         skip |= intercept->PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetExecutionGraphPipelineScratchSizeAMDX);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetExecutionGraphPipelineScratchSizeAMDX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
+        intercept->PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, record_obj);
     }
     VkResult result = DispatchGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
-    RecordObject record_obj(vvl::Func::vkGetExecutionGraphPipelineScratchSizeAMDX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetExecutionGraphPipelineScratchSizeAMDX]) {
         auto lock = intercept->WriteLock();
@@ -10707,13 +10935,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice d
                                                                                  error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetExecutionGraphPipelineNodeIndexAMDX);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetExecutionGraphPipelineNodeIndexAMDX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
+        intercept->PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, record_obj);
     }
     VkResult result = DispatchGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
-    RecordObject record_obj(vvl::Func::vkGetExecutionGraphPipelineNodeIndexAMDX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetExecutionGraphPipelineNodeIndexAMDX]) {
         auto lock = intercept->WriteLock();
@@ -10735,12 +10964,12 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer c
         skip |= intercept->PreCallValidateCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+        intercept->PreCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, record_obj);
     }
     DispatchCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
-    RecordObject record_obj(vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
         auto lock = intercept->WriteLock();
@@ -10760,12 +10989,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, V
         skip |= intercept->PreCallValidateCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchGraphAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphAMDX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+        intercept->PreCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, record_obj);
     }
     DispatchCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
-    RecordObject record_obj(vvl::Func::vkCmdDispatchGraphAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, record_obj);
@@ -10786,12 +11015,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandB
         skip |= intercept->PreCallValidateCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchGraphIndirectAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphIndirectAMDX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+        intercept->PreCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, record_obj);
     }
     DispatchCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
-    RecordObject record_obj(vvl::Func::vkCmdDispatchGraphIndirectAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, record_obj);
@@ -10812,12 +11041,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
         skip |= intercept->PreCallValidateCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchGraphIndirectCountAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphIndirectCountAMDX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+        intercept->PreCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, record_obj);
     }
     DispatchCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
-    RecordObject record_obj(vvl::Func::vkCmdDispatchGraphIndirectCountAMDX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectCountAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, record_obj);
@@ -10835,12 +11064,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetSampleLocationsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetSampleLocationsEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
+        intercept->PreCallRecordCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo, record_obj);
     }
     DispatchCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetSampleLocationsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetSampleLocationsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo, record_obj);
@@ -10859,12 +11088,13 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalD
                                                                                     error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMultisamplePropertiesEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties);
+        intercept->PreCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties,
+                                                                          record_obj);
     }
     DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceMultisamplePropertiesEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties,
@@ -10883,13 +11113,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageDrmFormatModifierPropertiesEXT(VkDevice d
         skip |= intercept->PreCallValidateGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageDrmFormatModifierPropertiesEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageDrmFormatModifierPropertiesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
+        intercept->PreCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, record_obj);
     }
     VkResult result = DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetImageDrmFormatModifierPropertiesEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageDrmFormatModifierPropertiesEXT]) {
         auto lock = intercept->WriteLock();
@@ -10908,12 +11139,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuff
         skip |= intercept->PreCallValidateCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindShadingRateImageNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindShadingRateImageNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
+        intercept->PreCallRecordCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout, record_obj);
     }
     DispatchCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
-    RecordObject record_obj(vvl::Func::vkCmdBindShadingRateImageNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindShadingRateImageNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout, record_obj);
@@ -10934,13 +11165,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer co
                                                                              pShadingRatePalettes, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewportShadingRatePaletteNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewportShadingRatePaletteNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount,
-                                                                   pShadingRatePalettes);
+                                                                   pShadingRatePalettes, record_obj);
     }
     DispatchCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewportShadingRatePaletteNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportShadingRatePaletteNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount,
@@ -10960,13 +11191,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuff
                                                                     pCustomSampleOrders, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoarseSampleOrderNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoarseSampleOrderNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount,
-                                                          pCustomSampleOrders);
+                                                          pCustomSampleOrders, record_obj);
     }
     DispatchCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoarseSampleOrderNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoarseSampleOrderNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount,
@@ -10988,12 +11219,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(VkDevice device,
                                                                         error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
+        intercept->PreCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
     }
     VkResult result = DispatchCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
-    RecordObject record_obj(vvl::Func::vkCreateAccelerationStructureNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
@@ -11012,12 +11244,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(VkDevice device, VkAcc
         skip |= intercept->PreCallValidateDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
+        intercept->PreCallRecordDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator, record_obj);
     }
     DispatchDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator, record_obj);
@@ -11037,13 +11269,13 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
             intercept->PreCallValidateGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureMemoryRequirementsNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetAccelerationStructureMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureMemoryRequirementsNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
@@ -11062,12 +11294,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryNV(VkDevice device
         skip |= intercept->PreCallValidateBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindAccelerationStructureMemoryNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindAccelerationStructureMemoryNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos);
+        intercept->PreCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
     }
     VkResult result = DispatchBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos);
-    RecordObject record_obj(vvl::Func::vkBindAccelerationStructureMemoryNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindAccelerationStructureMemoryNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
@@ -11091,14 +11324,14 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(VkCommandBuffer comma
                                                                           update, dst, src, scratch, scratchOffset, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBuildAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst,
-                                                                src, scratch, scratchOffset);
+                                                                src, scratch, scratchOffset, record_obj);
     }
     DispatchCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch,
                                             scratchOffset);
-    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst,
@@ -11118,12 +11351,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
+        intercept->PreCallRecordCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode, record_obj);
     }
     DispatchCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
-    RecordObject record_obj(vvl::Func::vkCmdCopyAccelerationStructureNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode, record_obj);
@@ -11149,19 +11382,19 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffe
             width, height, depth, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdTraceRaysNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdTraceRaysNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset,
                                                missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride,
                                                hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride,
                                                callableShaderBindingTableBuffer, callableShaderBindingOffset,
-                                               callableShaderBindingStride, width, height, depth);
+                                               callableShaderBindingStride, width, height, depth, record_obj);
     }
     DispatchCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer,
                            missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset,
                            hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset,
                            callableShaderBindingStride, width, height, depth);
-    RecordObject record_obj(vvl::Func::vkCmdTraceRaysNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset,
@@ -11184,12 +11417,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(VkDevice devic
                                                                              pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetRayTracingShaderGroupHandlesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
+        intercept->PreCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData,
+                                                                   record_obj);
     }
     VkResult result = DispatchGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingShaderGroupHandlesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData,
@@ -11210,12 +11445,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(VkDevice device
                                                                             pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetRayTracingShaderGroupHandlesNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
+        intercept->PreCallRecordGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData,
+                                                                  record_obj);
     }
     VkResult result = DispatchGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingShaderGroupHandlesNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData,
@@ -11236,12 +11473,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(VkDevice device,
             intercept->PreCallValidateGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureHandleNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetAccelerationStructureHandleNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
+        intercept->PreCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, record_obj);
     }
     VkResult result = DispatchGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureHandleNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureHandleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, record_obj);
@@ -11265,15 +11503,15 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(VkCommandB
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteAccelerationStructuresPropertiesNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
-            commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+            commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, record_obj);
     }
     DispatchCmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, pAccelerationStructures,
                                                        queryType, queryPool, firstQuery);
-    RecordObject record_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteAccelerationStructuresPropertiesNV]) {
         auto lock = intercept->WriteLock();
@@ -11291,12 +11529,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CompileDeferredNV(VkDevice device, VkPipeline pip
         skip |= intercept->PreCallValidateCompileDeferredNV(device, pipeline, shader, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCompileDeferredNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCompileDeferredNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCompileDeferredNV(device, pipeline, shader);
+        intercept->PreCallRecordCompileDeferredNV(device, pipeline, shader, record_obj);
     }
     VkResult result = DispatchCompileDeferredNV(device, pipeline, shader);
-    RecordObject record_obj(vvl::Func::vkCompileDeferredNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCompileDeferredNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCompileDeferredNV(device, pipeline, shader, record_obj);
@@ -11317,12 +11556,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryHostPointerPropertiesEXT(VkDevice device
                                                                             pMemoryHostPointerProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryHostPointerPropertiesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryHostPointerPropertiesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties);
+        intercept->PreCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties,
+                                                                  record_obj);
     }
     VkResult result = DispatchGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties);
-    RecordObject record_obj(vvl::Func::vkGetMemoryHostPointerPropertiesEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryHostPointerPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties,
@@ -11342,12 +11583,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer
                                                                   error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteBufferMarkerAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteBufferMarkerAMD]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+        intercept->PreCallRecordCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, record_obj);
     }
     DispatchCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
-    RecordObject record_obj(vvl::Func::vkCmdWriteBufferMarkerAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteBufferMarkerAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, record_obj);
@@ -11367,12 +11608,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
                                                                                        pTimeDomains, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains);
+        intercept->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
+                                                                             record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
@@ -11393,12 +11636,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(VkDevice device, uint3
                                                                      pMaxDeviation, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetCalibratedTimestampsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetCalibratedTimestampsEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
+        intercept->PreCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                           record_obj);
     }
     VkResult result = DispatchGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
-    RecordObject record_obj(vvl::Func::vkGetCalibratedTimestampsEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetCalibratedTimestampsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
@@ -11416,12 +11661,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uin
         skip |= intercept->PreCallValidateCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+        intercept->PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     }
     DispatchCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
@@ -11439,12 +11684,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksIndirectNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+        intercept->PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
     DispatchCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
@@ -11465,13 +11710,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comma
                                                                           countBufferOffset, maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksIndirectCountNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                                maxDrawCount, stride);
+                                                                maxDrawCount, stride, record_obj);
     }
     DispatchCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
@@ -11493,13 +11738,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorEnableNV(VkCommandBuffer comman
             commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetExclusiveScissorEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetExclusiveScissorEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
-                                                               pExclusiveScissorEnables);
+                                                               pExclusiveScissorEnables, record_obj);
     }
     DispatchCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
-    RecordObject record_obj(vvl::Func::vkCmdSetExclusiveScissorEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExclusiveScissorEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
@@ -11518,13 +11763,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffe
                                                                    pExclusiveScissors, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetExclusiveScissorNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetExclusiveScissorNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
-                                                         pExclusiveScissors);
+                                                         pExclusiveScissors, record_obj);
     }
     DispatchCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
-    RecordObject record_obj(vvl::Func::vkCmdSetExclusiveScissorNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExclusiveScissorNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
@@ -11541,12 +11786,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(VkCommandBuffer commandBuffer, con
         skip |= intercept->PreCallValidateCmdSetCheckpointNV(commandBuffer, pCheckpointMarker, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCheckpointNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCheckpointNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
+        intercept->PreCallRecordCmdSetCheckpointNV(commandBuffer, pCheckpointMarker, record_obj);
     }
     DispatchCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
-    RecordObject record_obj(vvl::Func::vkCmdSetCheckpointNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCheckpointNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCheckpointNV(commandBuffer, pCheckpointMarker, record_obj);
@@ -11563,12 +11808,12 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCh
         skip |= intercept->PreCallValidateGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetQueueCheckpointDataNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetQueueCheckpointDataNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
+        intercept->PreCallRecordGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
     }
     DispatchGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
-    RecordObject record_obj(vvl::Func::vkGetQueueCheckpointDataNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointDataNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
@@ -11586,12 +11831,13 @@ VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
         skip |= intercept->PreCallValidateInitializePerformanceApiINTEL(device, pInitializeInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkInitializePerformanceApiINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordInitializePerformanceApiINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo);
+        intercept->PreCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, record_obj);
     }
     VkResult result = DispatchInitializePerformanceApiINTEL(device, pInitializeInfo);
-    RecordObject record_obj(vvl::Func::vkInitializePerformanceApiINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordInitializePerformanceApiINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, record_obj);
@@ -11609,12 +11855,12 @@ VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(VkDevice device) {
         skip |= intercept->PreCallValidateUninitializePerformanceApiINTEL(device, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkUninitializePerformanceApiINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUninitializePerformanceApiINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordUninitializePerformanceApiINTEL(device);
+        intercept->PreCallRecordUninitializePerformanceApiINTEL(device, record_obj);
     }
     DispatchUninitializePerformanceApiINTEL(device);
-    RecordObject record_obj(vvl::Func::vkUninitializePerformanceApiINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUninitializePerformanceApiINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUninitializePerformanceApiINTEL(device, record_obj);
@@ -11633,12 +11879,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceMarkerINTEL(VkCommandBuffer comm
         skip |= intercept->PreCallValidateCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPerformanceMarkerINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPerformanceMarkerINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo);
+        intercept->PreCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
     }
     VkResult result = DispatchCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetPerformanceMarkerINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPerformanceMarkerINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
@@ -11658,12 +11905,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceStreamMarkerINTEL(VkCommandBuffe
         skip |= intercept->PreCallValidateCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPerformanceStreamMarkerINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPerformanceStreamMarkerINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo);
+        intercept->PreCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
     }
     VkResult result = DispatchCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetPerformanceStreamMarkerINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPerformanceStreamMarkerINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
@@ -11683,12 +11931,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceOverrideINTEL(VkCommandBuffer co
         skip |= intercept->PreCallValidateCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPerformanceOverrideINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPerformanceOverrideINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo);
+        intercept->PreCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, record_obj);
     }
     VkResult result = DispatchCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetPerformanceOverrideINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPerformanceOverrideINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, record_obj);
@@ -11708,13 +11957,14 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquirePerformanceConfigurationINTEL(VkDevice dev
         skip |= intercept->PreCallValidateAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquirePerformanceConfigurationINTEL);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordAcquirePerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
+        intercept->PreCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, record_obj);
     }
     VkResult result = DispatchAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
-    RecordObject record_obj(vvl::Func::vkAcquirePerformanceConfigurationINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordAcquirePerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
@@ -11734,13 +11984,14 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleasePerformanceConfigurationINTEL(VkDevice dev
         skip |= intercept->PreCallValidateReleasePerformanceConfigurationINTEL(device, configuration, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkReleasePerformanceConfigurationINTEL);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordReleasePerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordReleasePerformanceConfigurationINTEL(device, configuration);
+        intercept->PreCallRecordReleasePerformanceConfigurationINTEL(device, configuration, record_obj);
     }
     VkResult result = DispatchReleasePerformanceConfigurationINTEL(device, configuration);
-    RecordObject record_obj(vvl::Func::vkReleasePerformanceConfigurationINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordReleasePerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
@@ -11759,13 +12010,14 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSetPerformanceConfigurationINTEL(VkQueue que
         skip |= intercept->PreCallValidateQueueSetPerformanceConfigurationINTEL(queue, configuration, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkQueueSetPerformanceConfigurationINTEL);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSetPerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration);
+        intercept->PreCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration, record_obj);
     }
     VkResult result = DispatchQueueSetPerformanceConfigurationINTEL(queue, configuration);
-    RecordObject record_obj(vvl::Func::vkQueueSetPerformanceConfigurationINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSetPerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
@@ -11785,12 +12037,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPerformanceParameterINTEL(VkDevice device, VkP
         skip |= intercept->PreCallValidateGetPerformanceParameterINTEL(device, parameter, pValue, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPerformanceParameterINTEL);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPerformanceParameterINTEL]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPerformanceParameterINTEL(device, parameter, pValue);
+        intercept->PreCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, record_obj);
     }
     VkResult result = DispatchGetPerformanceParameterINTEL(device, parameter, pValue);
-    RecordObject record_obj(vvl::Func::vkGetPerformanceParameterINTEL, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPerformanceParameterINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, record_obj);
@@ -11807,12 +12060,12 @@ VKAPI_ATTR void VKAPI_CALL SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR sw
         skip |= intercept->PreCallValidateSetLocalDimmingAMD(device, swapChain, localDimmingEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkSetLocalDimmingAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetLocalDimmingAMD]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetLocalDimmingAMD(device, swapChain, localDimmingEnable);
+        intercept->PreCallRecordSetLocalDimmingAMD(device, swapChain, localDimmingEnable, record_obj);
     }
     DispatchSetLocalDimmingAMD(device, swapChain, localDimmingEnable);
-    RecordObject record_obj(vvl::Func::vkSetLocalDimmingAMD);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLocalDimmingAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetLocalDimmingAMD(device, swapChain, localDimmingEnable, record_obj);
@@ -11831,12 +12084,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
         skip |= intercept->PreCallValidateCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateImagePipeSurfaceFUCHSIA);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateImagePipeSurfaceFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -11856,12 +12110,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
         skip |= intercept->PreCallValidateCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateMetalSurfaceEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateMetalSurfaceEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -11879,12 +12134,13 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device,
         skip |= intercept->PreCallValidateGetBufferDeviceAddressEXT(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddressEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferDeviceAddressEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferDeviceAddressEXT(device, pInfo);
+        intercept->PreCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
     }
     VkDeviceAddress result = DispatchGetBufferDeviceAddressEXT(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddressEXT, result);
+    record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddressEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
@@ -11905,12 +12161,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(Vk
                                                                                          pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties);
+        intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
+                                                                               record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
@@ -11931,14 +12189,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
             physicalDevice, pCombinationCount, pCombinations, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
-                                                                                                pCombinations);
+                                                                                                pCombinations, record_obj);
     }
     VkResult result =
         DispatchGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount, pCombinations);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
@@ -11962,14 +12221,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
                                                                                    pPresentModes, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModes2EXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
-                                                                         pPresentModes);
+                                                                         pPresentModes, record_obj);
     }
     VkResult result =
         DispatchGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount, pPresentModes);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModes2EXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
@@ -11990,12 +12250,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device
         skip |= intercept->PreCallValidateAcquireFullScreenExclusiveModeEXT(device, swapchain, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAcquireFullScreenExclusiveModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain);
+        intercept->PreCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
     }
     VkResult result = DispatchAcquireFullScreenExclusiveModeEXT(device, swapchain);
-    RecordObject record_obj(vvl::Func::vkAcquireFullScreenExclusiveModeEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireFullScreenExclusiveModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
@@ -12015,12 +12276,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device
         skip |= intercept->PreCallValidateReleaseFullScreenExclusiveModeEXT(device, swapchain, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordReleaseFullScreenExclusiveModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain);
+        intercept->PreCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
     }
     VkResult result = DispatchReleaseFullScreenExclusiveModeEXT(device, swapchain);
-    RecordObject record_obj(vvl::Func::vkReleaseFullScreenExclusiveModeEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseFullScreenExclusiveModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
@@ -12042,13 +12304,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice de
         skip |= intercept->PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModes2EXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceGroupSurfacePresentModes2EXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
+        intercept->PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, record_obj);
     }
     VkResult result = DispatchGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
-    RecordObject record_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModes2EXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupSurfacePresentModes2EXT]) {
         auto lock = intercept->WriteLock();
@@ -12068,12 +12331,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, con
         skip |= intercept->PreCallValidateCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateHeadlessSurfaceEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateHeadlessSurfaceEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -12091,12 +12355,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, u
         skip |= intercept->PreCallValidateCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetLineStippleEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetLineStippleEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
+        intercept->PreCallRecordCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
     }
     DispatchCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
-    RecordObject record_obj(vvl::Func::vkCmdSetLineStippleEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineStippleEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
@@ -12112,12 +12376,12 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(VkDevice device, VkQueryPool queryP
         skip |= intercept->PreCallValidateResetQueryPoolEXT(device, queryPool, firstQuery, queryCount, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkResetQueryPoolEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordResetQueryPoolEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
+        intercept->PreCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount, record_obj);
     }
     DispatchResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
-    RecordObject record_obj(vvl::Func::vkResetQueryPoolEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetQueryPoolEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount, record_obj);
@@ -12133,12 +12397,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCu
         skip |= intercept->PreCallValidateCmdSetCullModeEXT(commandBuffer, cullMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCullModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCullModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCullModeEXT(commandBuffer, cullMode);
+        intercept->PreCallRecordCmdSetCullModeEXT(commandBuffer, cullMode, record_obj);
     }
     DispatchCmdSetCullModeEXT(commandBuffer, cullMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetCullModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCullModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCullModeEXT(commandBuffer, cullMode, record_obj);
@@ -12154,12 +12418,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkF
         skip |= intercept->PreCallValidateCmdSetFrontFaceEXT(commandBuffer, frontFace, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetFrontFaceEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetFrontFaceEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace);
+        intercept->PreCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace, record_obj);
     }
     DispatchCmdSetFrontFaceEXT(commandBuffer, frontFace);
-    RecordObject record_obj(vvl::Func::vkCmdSetFrontFaceEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFrontFaceEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace, record_obj);
@@ -12176,12 +12440,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveTopologyEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPrimitiveTopologyEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+        intercept->PreCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology, record_obj);
     }
     DispatchCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
-    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveTopologyEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveTopologyEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology, record_obj);
@@ -12199,12 +12463,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewportWithCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewportWithCountEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+        intercept->PreCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, record_obj);
     }
     DispatchCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewportWithCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWithCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, record_obj);
@@ -12221,12 +12485,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(VkCommandBuffer commandBuff
         skip |= intercept->PreCallValidateCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetScissorWithCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetScissorWithCountEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+        intercept->PreCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors, record_obj);
     }
     DispatchCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
-    RecordObject record_obj(vvl::Func::vkCmdSetScissorWithCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetScissorWithCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors, record_obj);
@@ -12245,13 +12509,13 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffe
                                                                    pSizes, pStrides, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindVertexBuffers2EXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindVertexBuffers2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
-                                                         pStrides);
+                                                         pStrides, record_obj);
     }
     DispatchCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
-    RecordObject record_obj(vvl::Func::vkCmdBindVertexBuffers2EXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindVertexBuffers2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
@@ -12268,12 +12532,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthTestEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthTestEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+        intercept->PreCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable, record_obj);
     }
     DispatchCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthTestEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthTestEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable, record_obj);
@@ -12289,12 +12553,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuff
         skip |= intercept->PreCallValidateCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthWriteEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthWriteEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+        intercept->PreCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable, record_obj);
     }
     DispatchCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthWriteEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthWriteEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable, record_obj);
@@ -12310,12 +12574,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthCompareOpEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthCompareOpEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+        intercept->PreCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp, record_obj);
     }
     DispatchCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthCompareOpEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthCompareOpEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp, record_obj);
@@ -12333,12 +12597,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBoundsTestEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBoundsTestEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+        intercept->PreCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable, record_obj);
     }
     DispatchCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBoundsTestEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBoundsTestEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable, record_obj);
@@ -12355,12 +12619,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilTestEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilTestEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+        intercept->PreCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable, record_obj);
     }
     DispatchCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilTestEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilTestEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable, record_obj);
@@ -12378,12 +12642,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkS
                                                              error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetStencilOpEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetStencilOpEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+        intercept->PreCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
     }
     DispatchCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
-    RecordObject record_obj(vvl::Func::vkCmdSetStencilOpEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilOpEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
@@ -12399,12 +12663,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCop
         skip |= intercept->PreCallValidateCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyMemoryToImageEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyMemoryToImageEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
+        intercept->PreCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, record_obj);
     }
     VkResult result = DispatchCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
-    RecordObject record_obj(vvl::Func::vkCopyMemoryToImageEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToImageEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, record_obj);
@@ -12421,12 +12686,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCop
         skip |= intercept->PreCallValidateCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyImageToMemoryEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyImageToMemoryEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
+        intercept->PreCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, record_obj);
     }
     VkResult result = DispatchCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
-    RecordObject record_obj(vvl::Func::vkCopyImageToMemoryEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyImageToMemoryEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, record_obj);
@@ -12443,12 +12709,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopy
         skip |= intercept->PreCallValidateCopyImageToImageEXT(device, pCopyImageToImageInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyImageToImageEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyImageToImageEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo);
+        intercept->PreCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, record_obj);
     }
     VkResult result = DispatchCopyImageToImageEXT(device, pCopyImageToImageInfo);
-    RecordObject record_obj(vvl::Func::vkCopyImageToImageEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyImageToImageEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, record_obj);
@@ -12466,12 +12733,13 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(VkDevice device, uint32_
         skip |= intercept->PreCallValidateTransitionImageLayoutEXT(device, transitionCount, pTransitions, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkTransitionImageLayoutEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordTransitionImageLayoutEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions);
+        intercept->PreCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
     }
     VkResult result = DispatchTransitionImageLayoutEXT(device, transitionCount, pTransitions);
-    RecordObject record_obj(vvl::Func::vkTransitionImageLayoutEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTransitionImageLayoutEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
@@ -12490,12 +12758,12 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImag
         skip |= intercept->PreCallValidateGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout2EXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2EXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+        intercept->PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout, record_obj);
     }
     DispatchGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
-    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout2EXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout, record_obj);
@@ -12511,12 +12779,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(VkDevice device, const 
         skip |= intercept->PreCallValidateReleaseSwapchainImagesEXT(device, pReleaseInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkReleaseSwapchainImagesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordReleaseSwapchainImagesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo);
+        intercept->PreCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, record_obj);
     }
     VkResult result = DispatchReleaseSwapchainImagesEXT(device, pReleaseInfo);
-    RecordObject record_obj(vvl::Func::vkReleaseSwapchainImagesEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseSwapchainImagesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, record_obj);
@@ -12537,13 +12806,13 @@ VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(VkDevice dev
         skip |= intercept->PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetGeneratedCommandsMemoryRequirementsNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetGeneratedCommandsMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetGeneratedCommandsMemoryRequirementsNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetGeneratedCommandsMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
@@ -12563,12 +12832,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsNV(VkCommandBuffer comm
         skip |= intercept->PreCallValidateCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdPreprocessGeneratedCommandsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdPreprocessGeneratedCommandsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
+        intercept->PreCallRecordCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo, record_obj);
     }
     DispatchCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
-    RecordObject record_obj(vvl::Func::vkCmdPreprocessGeneratedCommandsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPreprocessGeneratedCommandsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo, record_obj);
@@ -12588,12 +12857,12 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsNV(VkCommandBuffer command
                                                                         error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdExecuteGeneratedCommandsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdExecuteGeneratedCommandsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
+        intercept->PreCallRecordCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, record_obj);
     }
     DispatchCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
-    RecordObject record_obj(vvl::Func::vkCmdExecuteGeneratedCommandsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdExecuteGeneratedCommandsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, record_obj);
@@ -12613,12 +12882,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipelineShaderGroupNV(VkCommandBuffer commandB
                                                                        error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindPipelineShaderGroupNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindPipelineShaderGroupNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
+        intercept->PreCallRecordCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex, record_obj);
     }
     DispatchCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
-    RecordObject record_obj(vvl::Func::vkCmdBindPipelineShaderGroupNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindPipelineShaderGroupNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex, record_obj);
@@ -12639,12 +12908,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutNV(VkDevice device,
                                                                          error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateIndirectCommandsLayoutNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateIndirectCommandsLayoutNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
+        intercept->PreCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
+                                                               record_obj);
     }
     VkResult result = DispatchCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
-    RecordObject record_obj(vvl::Func::vkCreateIndirectCommandsLayoutNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateIndirectCommandsLayoutNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
@@ -12664,12 +12935,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(VkDevice device, VkIn
         skip |= intercept->PreCallValidateDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyIndirectCommandsLayoutNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyIndirectCommandsLayoutNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
+        intercept->PreCallRecordDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator, record_obj);
     }
     DispatchDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyIndirectCommandsLayoutNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyIndirectCommandsLayoutNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator, record_obj);
@@ -12685,12 +12956,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, co
         skip |= intercept->PreCallValidateCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBias2EXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBias2EXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+        intercept->PreCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo, record_obj);
     }
     DispatchCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBias2EXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBias2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo, record_obj);
@@ -12706,12 +12977,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDev
         skip |= intercept->PreCallValidateAcquireDrmDisplayEXT(physicalDevice, drmFd, display, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireDrmDisplayEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display);
+        intercept->PreCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
     }
     VkResult result = DispatchAcquireDrmDisplayEXT(physicalDevice, drmFd, display);
-    RecordObject record_obj(vvl::Func::vkAcquireDrmDisplayEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
@@ -12729,12 +13001,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
         skip |= intercept->PreCallValidateGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDrmDisplayEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
+        intercept->PreCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
     }
     VkResult result = DispatchGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-    RecordObject record_obj(vvl::Func::vkGetDrmDisplayEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
@@ -12753,12 +13026,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(VkDevice device, const V
         skip |= intercept->PreCallValidateCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreatePrivateDataSlotEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreatePrivateDataSlotEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+        intercept->PreCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
     }
     VkResult result = DispatchCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
-    RecordObject record_obj(vvl::Func::vkCreatePrivateDataSlotEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePrivateDataSlotEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
@@ -12776,12 +13050,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateD
         skip |= intercept->PreCallValidateDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyPrivateDataSlotEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyPrivateDataSlotEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+        intercept->PreCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator, record_obj);
     }
     DispatchDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyPrivateDataSlotEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPrivateDataSlotEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator, record_obj);
@@ -12798,12 +13072,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(VkDevice device, VkObjectType o
         skip |= intercept->PreCallValidateSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetPrivateDataEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetPrivateDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+        intercept->PreCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, record_obj);
     }
     VkResult result = DispatchSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
-    RecordObject record_obj(vvl::Func::vkSetPrivateDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetPrivateDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, record_obj);
@@ -12821,12 +13096,12 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objec
         skip |= intercept->PreCallValidateGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPrivateDataEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPrivateDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+        intercept->PreCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
     }
     DispatchGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
-    RecordObject record_obj(vvl::Func::vkGetPrivateDataEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPrivateDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
@@ -12843,12 +13118,12 @@ VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalO
         skip |= intercept->PreCallValidateExportMetalObjectsEXT(device, pMetalObjectsInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkExportMetalObjectsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordExportMetalObjectsEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo);
+        intercept->PreCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo, record_obj);
     }
     DispatchExportMetalObjectsEXT(device, pMetalObjectsInfo);
-    RecordObject record_obj(vvl::Func::vkExportMetalObjectsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordExportMetalObjectsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo, record_obj);
@@ -12867,12 +13142,12 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDesc
         skip |= intercept->PreCallValidateGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutSizeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetLayoutSizeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
+        intercept->PreCallRecordGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes, record_obj);
     }
     DispatchGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutSizeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutSizeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes, record_obj);
@@ -12890,13 +13165,13 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutBindingOffsetEXT(VkDevice devic
         skip |= intercept->PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutBindingOffsetEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetLayoutBindingOffsetEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
+        intercept->PreCallRecordGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset, record_obj);
     }
     DispatchGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutBindingOffsetEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutBindingOffsetEXT]) {
         auto lock = intercept->WriteLock();
@@ -12914,12 +13189,12 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorEXT(VkDevice device, const VkDescriptorG
         skip |= intercept->PreCallValidateGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
+        intercept->PreCallRecordGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, record_obj);
     }
     DispatchGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, record_obj);
@@ -12937,12 +13212,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBu
         skip |= intercept->PreCallValidateCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorBuffersEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindDescriptorBuffersEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
+        intercept->PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
     }
     DispatchCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
-    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorBuffersEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorBuffersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
@@ -12963,14 +13238,14 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer comm
                                                                            setCount, pBufferIndices, pOffsets, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDescriptorBufferOffsetsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDescriptorBufferOffsetsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
-                                                                 pBufferIndices, pOffsets);
+                                                                 pBufferIndices, pOffsets, record_obj);
     }
     DispatchCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pBufferIndices,
                                              pOffsets);
-    RecordObject record_obj(vvl::Func::vkCmdSetDescriptorBufferOffsetsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDescriptorBufferOffsetsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
@@ -12992,13 +13267,14 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandB
                                                                                      error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
+        intercept->PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set,
+                                                                           record_obj);
     }
     DispatchCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
-    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT]) {
         auto lock = intercept->WriteLock();
@@ -13019,13 +13295,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice 
         skip |= intercept->PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferOpaqueCaptureDescriptorDataEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+        intercept->PreCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
     VkResult result = DispatchGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
-    RecordObject record_obj(vvl::Func::vkGetBufferOpaqueCaptureDescriptorDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
@@ -13046,13 +13323,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDescriptorDataEXT(VkDevice d
         skip |= intercept->PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageOpaqueCaptureDescriptorDataEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+        intercept->PreCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
     VkResult result = DispatchGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
-    RecordObject record_obj(vvl::Func::vkGetImageOpaqueCaptureDescriptorDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
@@ -13074,13 +13352,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevi
         skip |= intercept->PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetImageViewOpaqueCaptureDescriptorDataEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+        intercept->PreCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
     VkResult result = DispatchGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
-    RecordObject record_obj(vvl::Func::vkGetImageViewOpaqueCaptureDescriptorDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
@@ -13102,13 +13381,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice
         skip |= intercept->PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSamplerOpaqueCaptureDescriptorDataEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+        intercept->PreCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
     VkResult result = DispatchGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
-    RecordObject record_obj(vvl::Func::vkGetSamplerOpaqueCaptureDescriptorDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
@@ -13129,13 +13409,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureOpaqueCaptureDescriptorDa
         skip |= intercept->PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+        intercept->PreCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
     VkResult result = DispatchGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
-    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
@@ -13156,12 +13437,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(VkCommandBuffer comma
         skip |= intercept->PreCallValidateCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetFragmentShadingRateEnumNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetFragmentShadingRateEnumNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+        intercept->PreCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps, record_obj);
     }
     DispatchCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
-    RecordObject record_obj(vvl::Func::vkCmdSetFragmentShadingRateEnumNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps, record_obj);
@@ -13178,12 +13459,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFa
         skip |= intercept->PreCallValidateGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceFaultInfoEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceFaultInfoEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo);
+        intercept->PreCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, record_obj);
     }
     VkResult result = DispatchGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo);
-    RecordObject record_obj(vvl::Func::vkGetDeviceFaultInfoEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceFaultInfoEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, record_obj);
@@ -13201,12 +13483,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
         skip |= intercept->PreCallValidateAcquireWinrtDisplayNV(physicalDevice, display, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkAcquireWinrtDisplayNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordAcquireWinrtDisplayNV(physicalDevice, display);
+        intercept->PreCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
     }
     VkResult result = DispatchAcquireWinrtDisplayNV(physicalDevice, display);
-    RecordObject record_obj(vvl::Func::vkAcquireWinrtDisplayNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
@@ -13226,12 +13509,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
         skip |= intercept->PreCallValidateGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetWinrtDisplayNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
+        intercept->PreCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
     }
     VkResult result = DispatchGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
-    RecordObject record_obj(vvl::Func::vkGetWinrtDisplayNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
@@ -13251,12 +13535,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
         skip |= intercept->PreCallValidateCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateDirectFBSurfaceEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateDirectFBSurfaceEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -13278,12 +13563,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
                                                                                           error_obj);
         if (skip) return VK_FALSE;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDirectFBPresentationSupportEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb);
+        intercept->PreCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb, record_obj);
     }
     VkBool32 result = DispatchGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceDirectFBPresentationSupportEXT);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb, record_obj);
@@ -13306,14 +13591,14 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, u
                                                                pVertexAttributeDescriptions, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetVertexInputEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetVertexInputEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
-                                                     vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
+                                                     vertexAttributeDescriptionCount, pVertexAttributeDescriptions, record_obj);
     }
     DispatchCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
                                  vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
-    RecordObject record_obj(vvl::Func::vkCmdSetVertexInputEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetVertexInputEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
@@ -13334,12 +13619,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(VkDevice device,
         skip |= intercept->PreCallValidateGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryZirconHandleFUCHSIA);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
+        intercept->PreCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
     }
     VkResult result = DispatchGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
-    RecordObject record_obj(vvl::Func::vkGetMemoryZirconHandleFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
@@ -13362,15 +13648,16 @@ GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTy
                                                                                  pMemoryZirconHandleProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryZirconHandlePropertiesFUCHSIA);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle,
-                                                                       pMemoryZirconHandleProperties);
+                                                                       pMemoryZirconHandleProperties, record_obj);
     }
     VkResult result =
         DispatchGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle, pMemoryZirconHandleProperties);
-    RecordObject record_obj(vvl::Func::vkGetMemoryZirconHandlePropertiesFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA]) {
         auto lock = intercept->WriteLock();
@@ -13393,12 +13680,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
         skip |= intercept->PreCallValidateImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkImportSemaphoreZirconHandleFUCHSIA);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportSemaphoreZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo);
+        intercept->PreCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, record_obj);
     }
     VkResult result = DispatchImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo);
-    RecordObject record_obj(vvl::Func::vkImportSemaphoreZirconHandleFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, record_obj);
@@ -13420,12 +13708,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
         skip |= intercept->PreCallValidateGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetSemaphoreZirconHandleFUCHSIA);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSemaphoreZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
+        intercept->PreCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
     }
     VkResult result = DispatchGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
-    RecordObject record_obj(vvl::Func::vkGetSemaphoreZirconHandleFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
@@ -13448,12 +13737,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
         skip |= intercept->PreCallValidateCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateBufferCollectionFUCHSIA);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateBufferCollectionFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+        intercept->PreCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, record_obj);
     }
     VkResult result = DispatchCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
-    RecordObject record_obj(vvl::Func::vkCreateBufferCollectionFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBufferCollectionFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, record_obj);
@@ -13476,13 +13766,14 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
                                                                                      error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetBufferCollectionImageConstraintsFUCHSIA);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordSetBufferCollectionImageConstraintsFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+        intercept->PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, record_obj);
     }
     VkResult result = DispatchSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
-    RecordObject record_obj(vvl::Func::vkSetBufferCollectionImageConstraintsFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordSetBufferCollectionImageConstraintsFUCHSIA]) {
         auto lock = intercept->WriteLock();
@@ -13506,13 +13797,14 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
                                                                                       error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetBufferCollectionBufferConstraintsFUCHSIA);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+        intercept->PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo, record_obj);
     }
     VkResult result = DispatchSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
-    RecordObject record_obj(vvl::Func::vkSetBufferCollectionBufferConstraintsFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA]) {
         auto lock = intercept->WriteLock();
@@ -13535,12 +13827,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBuf
         skip |= intercept->PreCallValidateDestroyBufferCollectionFUCHSIA(device, collection, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyBufferCollectionFUCHSIA);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyBufferCollectionFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+        intercept->PreCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator, record_obj);
     }
     DispatchDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyBufferCollectionFUCHSIA);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBufferCollectionFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator, record_obj);
@@ -13560,13 +13852,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice dev
         skip |= intercept->PreCallValidateGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetBufferCollectionPropertiesFUCHSIA);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferCollectionPropertiesFUCHSIA]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+        intercept->PreCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, record_obj);
     }
     VkResult result = DispatchGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetBufferCollectionPropertiesFUCHSIA, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferCollectionPropertiesFUCHSIA]) {
         auto lock = intercept->WriteLock();
@@ -13589,13 +13882,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkD
                                                                                         error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
+        intercept->PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize, record_obj);
     }
     VkResult result = DispatchGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
-    RecordObject record_obj(vvl::Func::vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI]) {
         auto lock = intercept->WriteLock();
@@ -13613,12 +13907,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdSubpassShadingHUAWEI(commandBuffer, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSubpassShadingHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSubpassShadingHUAWEI]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSubpassShadingHUAWEI(commandBuffer);
+        intercept->PreCallRecordCmdSubpassShadingHUAWEI(commandBuffer, record_obj);
     }
     DispatchCmdSubpassShadingHUAWEI(commandBuffer);
-    RecordObject record_obj(vvl::Func::vkCmdSubpassShadingHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSubpassShadingHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSubpassShadingHUAWEI(commandBuffer, record_obj);
@@ -13636,12 +13930,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBu
         skip |= intercept->PreCallValidateCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindInvocationMaskHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindInvocationMaskHUAWEI]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+        intercept->PreCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout, record_obj);
     }
     DispatchCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
-    RecordObject record_obj(vvl::Func::vkCmdBindInvocationMaskHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindInvocationMaskHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout, record_obj);
@@ -13659,12 +13953,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(VkDevice device,
         skip |= intercept->PreCallValidateGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetMemoryRemoteAddressNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryRemoteAddressNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
+        intercept->PreCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, record_obj);
     }
     VkResult result = DispatchGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
-    RecordObject record_obj(vvl::Func::vkGetMemoryRemoteAddressNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryRemoteAddressNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, record_obj);
@@ -13682,12 +13977,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(VkDevice device, const V
         skip |= intercept->PreCallValidateGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelinePropertiesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelinePropertiesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+        intercept->PreCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, record_obj);
     }
     VkResult result = DispatchGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
-    RecordObject record_obj(vvl::Func::vkGetPipelinePropertiesEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelinePropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, record_obj);
@@ -13705,12 +14001,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(VkCommandBuffer commandBu
         skip |= intercept->PreCallValidateCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPatchControlPointsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPatchControlPointsEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints);
+        intercept->PreCallRecordCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints, record_obj);
     }
     DispatchCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints);
-    RecordObject record_obj(vvl::Func::vkCmdSetPatchControlPointsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPatchControlPointsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints, record_obj);
@@ -13728,12 +14024,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer comm
         skip |= intercept->PreCallValidateCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetRasterizerDiscardEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRasterizerDiscardEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable);
+        intercept->PreCallRecordCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable, record_obj);
     }
     DispatchCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetRasterizerDiscardEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizerDiscardEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable, record_obj);
@@ -13749,12 +14045,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthBiasEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBiasEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable);
+        intercept->PreCallRecordCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable, record_obj);
     }
     DispatchCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthBiasEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBiasEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable, record_obj);
@@ -13770,12 +14066,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLog
         skip |= intercept->PreCallValidateCmdSetLogicOpEXT(commandBuffer, logicOp, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetLogicOpEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetLogicOpEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetLogicOpEXT(commandBuffer, logicOp);
+        intercept->PreCallRecordCmdSetLogicOpEXT(commandBuffer, logicOp, record_obj);
     }
     DispatchCmdSetLogicOpEXT(commandBuffer, logicOp);
-    RecordObject record_obj(vvl::Func::vkCmdSetLogicOpEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLogicOpEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLogicOpEXT(commandBuffer, logicOp, record_obj);
@@ -13793,12 +14089,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer comma
         skip |= intercept->PreCallValidateCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveRestartEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPrimitiveRestartEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable);
+        intercept->PreCallRecordCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable, record_obj);
     }
     DispatchCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetPrimitiveRestartEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveRestartEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable, record_obj);
@@ -13816,12 +14112,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
         skip |= intercept->PreCallValidateCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateScreenSurfaceQNX);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+        intercept->PreCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
     VkResult result = DispatchCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
-    RecordObject record_obj(vvl::Func::vkCreateScreenSurfaceQNX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
@@ -13844,12 +14141,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
                                                                                         error_obj);
         if (skip) return VK_FALSE;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceScreenPresentationSupportQNX);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+        intercept->PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window, record_obj);
     }
     VkBool32 result = DispatchGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceScreenPresentationSupportQNX);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window,
@@ -13869,12 +14166,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuff
         skip |= intercept->PreCallValidateCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetColorWriteEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetColorWriteEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
+        intercept->PreCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables, record_obj);
     }
     DispatchCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
-    RecordObject record_obj(vvl::Func::vkCmdSetColorWriteEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorWriteEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables, record_obj);
@@ -13892,12 +14189,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32
                                                           stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMultiEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMultiEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
+        intercept->PreCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
+                                                record_obj);
     }
     DispatchCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMultiEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMultiEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
@@ -13917,13 +14215,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer,
                                                                  stride, pVertexOffset, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMultiIndexedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMultiIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
-                                                       pVertexOffset);
+                                                       pVertexOffset, record_obj);
     }
     DispatchCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMultiIndexedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMultiIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
@@ -13941,12 +14239,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(VkDevice device, const VkMicrom
         skip |= intercept->PreCallValidateCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateMicromapEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
+        intercept->PreCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, record_obj);
     }
     VkResult result = DispatchCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
-    RecordObject record_obj(vvl::Func::vkCreateMicromapEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, record_obj);
@@ -13963,12 +14262,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyMicromapEXT(VkDevice device, VkMicromapEXT mic
         skip |= intercept->PreCallValidateDestroyMicromapEXT(device, micromap, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyMicromapEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyMicromapEXT(device, micromap, pAllocator);
+        intercept->PreCallRecordDestroyMicromapEXT(device, micromap, pAllocator, record_obj);
     }
     DispatchDestroyMicromapEXT(device, micromap, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyMicromapEXT(device, micromap, pAllocator, record_obj);
@@ -13985,12 +14284,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, u
         skip |= intercept->PreCallValidateCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBuildMicromapsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBuildMicromapsEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos);
+        intercept->PreCallRecordCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, record_obj);
     }
     DispatchCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos);
-    RecordObject record_obj(vvl::Func::vkCmdBuildMicromapsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildMicromapsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, record_obj);
@@ -14007,12 +14306,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BuildMicromapsEXT(VkDevice device, VkDeferredOper
         skip |= intercept->PreCallValidateBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBuildMicromapsEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBuildMicromapsEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos);
+        intercept->PreCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, record_obj);
     }
     VkResult result = DispatchBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos);
-    RecordObject record_obj(vvl::Func::vkBuildMicromapsEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBuildMicromapsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, record_obj);
@@ -14030,12 +14330,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapEXT(VkDevice device, VkDeferredOperat
         skip |= intercept->PreCallValidateCopyMicromapEXT(device, deferredOperation, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyMicromapEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyMicromapEXT(device, deferredOperation, pInfo);
+        intercept->PreCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, record_obj);
     }
     VkResult result = DispatchCopyMicromapEXT(device, deferredOperation, pInfo);
-    RecordObject record_obj(vvl::Func::vkCopyMicromapEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, record_obj);
@@ -14053,12 +14354,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapToMemoryEXT(VkDevice device, VkDeferr
         skip |= intercept->PreCallValidateCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyMicromapToMemoryEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyMicromapToMemoryEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo);
+        intercept->PreCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, record_obj);
     }
     VkResult result = DispatchCopyMicromapToMemoryEXT(device, deferredOperation, pInfo);
-    RecordObject record_obj(vvl::Func::vkCopyMicromapToMemoryEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMicromapToMemoryEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, record_obj);
@@ -14076,12 +14378,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToMicromapEXT(VkDevice device, VkDeferr
         skip |= intercept->PreCallValidateCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyMemoryToMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyMemoryToMicromapEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo);
+        intercept->PreCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, record_obj);
     }
     VkResult result = DispatchCopyMemoryToMicromapEXT(device, deferredOperation, pInfo);
-    RecordObject record_obj(vvl::Func::vkCopyMemoryToMicromapEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, record_obj);
@@ -14100,12 +14403,14 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteMicromapsPropertiesEXT(VkDevice device, uint
                                                                       stride, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkWriteMicromapsPropertiesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride);
+        intercept->PreCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride,
+                                                            record_obj);
     }
     VkResult result = DispatchWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride);
-    RecordObject record_obj(vvl::Func::vkWriteMicromapsPropertiesEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride,
@@ -14123,12 +14428,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, con
         skip |= intercept->PreCallValidateCmdCopyMicromapEXT(commandBuffer, pInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMicromapEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyMicromapEXT(commandBuffer, pInfo);
+        intercept->PreCallRecordCmdCopyMicromapEXT(commandBuffer, pInfo, record_obj);
     }
     DispatchCmdCopyMicromapEXT(commandBuffer, pInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMicromapEXT(commandBuffer, pInfo, record_obj);
@@ -14145,12 +14450,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMicromapToMemoryEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMicromapToMemoryEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo);
+        intercept->PreCallRecordCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, record_obj);
     }
     DispatchCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyMicromapToMemoryEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMicromapToMemoryEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, record_obj);
@@ -14167,12 +14472,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryToMicromapEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo);
+        intercept->PreCallRecordCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, record_obj);
     }
     DispatchCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToMicromapEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, record_obj);
@@ -14193,13 +14498,13 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(VkCommandBuffer comman
                                                                          queryPool, firstQuery, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteMicromapsPropertiesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool,
-                                                               firstQuery);
+                                                               firstQuery, record_obj);
     }
     DispatchCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery);
-    RecordObject record_obj(vvl::Func::vkCmdWriteMicromapsPropertiesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool,
@@ -14218,12 +14523,12 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMicromapCompatibilityEXT(VkDevice device, co
         skip |= intercept->PreCallValidateGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceMicromapCompatibilityEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMicromapCompatibilityEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility);
+        intercept->PreCallRecordGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility, record_obj);
     }
     DispatchGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility);
-    RecordObject record_obj(vvl::Func::vkGetDeviceMicromapCompatibilityEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMicromapCompatibilityEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility, record_obj);
@@ -14241,12 +14546,12 @@ VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(VkDevice device, VkAccelerat
         skip |= intercept->PreCallValidateGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetMicromapBuildSizesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMicromapBuildSizesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo);
+        intercept->PreCallRecordGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo, record_obj);
     }
     DispatchGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo);
-    RecordObject record_obj(vvl::Func::vkGetMicromapBuildSizesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMicromapBuildSizesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo, record_obj);
@@ -14263,12 +14568,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, u
         skip |= intercept->PreCallValidateCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawClusterHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawClusterHUAWEI]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+        intercept->PreCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
     DispatchCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
-    RecordObject record_obj(vvl::Func::vkCmdDrawClusterHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawClusterHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
@@ -14286,12 +14591,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandB
         skip |= intercept->PreCallValidateCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawClusterIndirectHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawClusterIndirectHUAWEI]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+        intercept->PreCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset, record_obj);
     }
     DispatchCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
-    RecordObject record_obj(vvl::Func::vkCmdDrawClusterIndirectHUAWEI);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawClusterIndirectHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset, record_obj);
@@ -14307,12 +14612,12 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceM
         skip |= intercept->PreCallValidateSetDeviceMemoryPriorityEXT(device, memory, priority, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkSetDeviceMemoryPriorityEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetDeviceMemoryPriorityEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority);
+        intercept->PreCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority, record_obj);
     }
     DispatchSetDeviceMemoryPriorityEXT(device, memory, priority);
-    RecordObject record_obj(vvl::Func::vkSetDeviceMemoryPriorityEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDeviceMemoryPriorityEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority, record_obj);
@@ -14333,13 +14638,13 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice d
                                                                                      error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutHostMappingInfoVALVE);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+        intercept->PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping, record_obj);
     }
     DispatchGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorSetLayoutHostMappingInfoVALVE);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE]) {
         auto lock = intercept->WriteLock();
@@ -14357,12 +14662,12 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(VkDevice device, VkD
         skip |= intercept->PreCallValidateGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDescriptorSetHostMappingVALVE);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetHostMappingVALVE]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+        intercept->PreCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData, record_obj);
     }
     DispatchGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
-    RecordObject record_obj(vvl::Func::vkGetDescriptorSetHostMappingVALVE);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetHostMappingVALVE]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData, record_obj);
@@ -14379,12 +14684,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryIndirectNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryIndirectNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride);
+        intercept->PreCallRecordCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
     }
     DispatchCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryIndirectNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
@@ -14406,14 +14711,14 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(VkCommandBuffer comman
                                                                          dstImage, dstImageLayout, pImageSubresources, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryToImageIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
-                                                               dstImageLayout, pImageSubresources);
+                                                               dstImageLayout, pImageSubresources, record_obj);
     }
     DispatchCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout,
                                            pImageSubresources);
-    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToImageIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
@@ -14432,12 +14737,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, 
                                                                 error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDecompressMemoryNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDecompressMemoryNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions);
+        intercept->PreCallRecordCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions, record_obj);
     }
     DispatchCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions);
-    RecordObject record_obj(vvl::Func::vkCmdDecompressMemoryNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecompressMemoryNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions, record_obj);
@@ -14458,13 +14763,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(VkCommandBuffer co
                                                                              indirectCommandsCountAddress, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDecompressMemoryIndirectCountNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDecompressMemoryIndirectCountNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress,
-                                                                   indirectCommandsCountAddress, stride);
+                                                                   indirectCommandsCountAddress, stride, record_obj);
     }
     DispatchCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDecompressMemoryIndirectCountNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecompressMemoryIndirectCountNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress,
@@ -14484,13 +14789,13 @@ VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(VkDevice devi
             intercept->PreCallValidateGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelineIndirectMemoryRequirementsNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineIndirectMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
+        intercept->PreCallRecordGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements, record_obj);
     }
     DispatchGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
-    RecordObject record_obj(vvl::Func::vkGetPipelineIndirectMemoryRequirementsNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineIndirectMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
@@ -14510,12 +14815,12 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer com
         skip |= intercept->PreCallValidateCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdUpdatePipelineIndirectBufferNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdUpdatePipelineIndirectBufferNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
+        intercept->PreCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     }
     DispatchCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
-    RecordObject record_obj(vvl::Func::vkCmdUpdatePipelineIndirectBufferNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdUpdatePipelineIndirectBufferNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline, record_obj);
@@ -14533,12 +14838,13 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(VkDevic
         skip |= intercept->PreCallValidateGetPipelineIndirectDeviceAddressNV(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetPipelineIndirectDeviceAddressNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineIndirectDeviceAddressNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo);
+        intercept->PreCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo, record_obj);
     }
     VkDeviceAddress result = DispatchGetPipelineIndirectDeviceAddressNV(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetPipelineIndirectDeviceAddressNV, result);
+    record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineIndirectDeviceAddressNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo, record_obj);
@@ -14558,12 +14864,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(VkCommandBuffer com
         skip |= intercept->PreCallValidateCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetTessellationDomainOriginEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetTessellationDomainOriginEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
+        intercept->PreCallRecordCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin, record_obj);
     }
     DispatchCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
-    RecordObject record_obj(vvl::Func::vkCmdSetTessellationDomainOriginEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetTessellationDomainOriginEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin, record_obj);
@@ -14579,12 +14885,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuff
         skip |= intercept->PreCallValidateCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthClampEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthClampEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable);
+        intercept->PreCallRecordCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable, record_obj);
     }
     DispatchCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthClampEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthClampEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable, record_obj);
@@ -14600,12 +14906,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, V
         skip |= intercept->PreCallValidateCmdSetPolygonModeEXT(commandBuffer, polygonMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetPolygonModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetPolygonModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetPolygonModeEXT(commandBuffer, polygonMode);
+        intercept->PreCallRecordCmdSetPolygonModeEXT(commandBuffer, polygonMode, record_obj);
     }
     DispatchCmdSetPolygonModeEXT(commandBuffer, polygonMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetPolygonModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPolygonModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPolygonModeEXT(commandBuffer, polygonMode, record_obj);
@@ -14624,12 +14930,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(VkCommandBuffer command
         skip |= intercept->PreCallValidateCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetRasterizationSamplesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRasterizationSamplesEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples);
+        intercept->PreCallRecordCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples, record_obj);
     }
     DispatchCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples);
-    RecordObject record_obj(vvl::Func::vkCmdSetRasterizationSamplesEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizationSamplesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples, record_obj);
@@ -14646,12 +14952,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, Vk
         skip |= intercept->PreCallValidateCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetSampleMaskEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetSampleMaskEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask);
+        intercept->PreCallRecordCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask, record_obj);
     }
     DispatchCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetSampleMaskEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetSampleMaskEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask, record_obj);
@@ -14669,12 +14975,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetAlphaToCoverageEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable);
+        intercept->PreCallRecordCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable, record_obj);
     }
     DispatchCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAlphaToCoverageEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable, record_obj);
@@ -14690,12 +14996,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuff
         skip |= intercept->PreCallValidateCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetAlphaToOneEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetAlphaToOneEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable);
+        intercept->PreCallRecordCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable, record_obj);
     }
     DispatchCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetAlphaToOneEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAlphaToOneEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable, record_obj);
@@ -14711,12 +15017,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer,
         skip |= intercept->PreCallValidateCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetLogicOpEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetLogicOpEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable);
+        intercept->PreCallRecordCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable, record_obj);
     }
     DispatchCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetLogicOpEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLogicOpEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable, record_obj);
@@ -14734,12 +15040,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuff
                                                                     pColorBlendEnables, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetColorBlendEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetColorBlendEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables);
+        intercept->PreCallRecordCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables,
+                                                          record_obj);
     }
     DispatchCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables);
-    RecordObject record_obj(vvl::Func::vkCmdSetColorBlendEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorBlendEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables,
@@ -14760,12 +15067,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEquationEXT(VkCommandBuffer commandBu
                                                                       pColorBlendEquations, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetColorBlendEquationEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetColorBlendEquationEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations);
+        intercept->PreCallRecordCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations,
+                                                            record_obj);
     }
     DispatchCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations);
-    RecordObject record_obj(vvl::Func::vkCmdSetColorBlendEquationEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorBlendEquationEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations,
@@ -14784,12 +15092,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer
                                                                   error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetColorWriteMaskEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetColorWriteMaskEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
+        intercept->PreCallRecordCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks,
+                                                        record_obj);
     }
     DispatchCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
-    RecordObject record_obj(vvl::Func::vkCmdSetColorWriteMaskEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorWriteMaskEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks,
@@ -14808,12 +15117,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(VkCommandBuffer commandB
         skip |= intercept->PreCallValidateCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetRasterizationStreamEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRasterizationStreamEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream);
+        intercept->PreCallRecordCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream, record_obj);
     }
     DispatchCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream);
-    RecordObject record_obj(vvl::Func::vkCmdSetRasterizationStreamEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizationStreamEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream, record_obj);
@@ -14833,13 +15142,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetConservativeRasterizationModeEXT(
                                                                                  error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetConservativeRasterizationModeEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetConservativeRasterizationModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode);
+        intercept->PreCallRecordCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode, record_obj);
     }
     DispatchCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetConservativeRasterizationModeEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetConservativeRasterizationModeEXT]) {
         auto lock = intercept->WriteLock();
@@ -14860,13 +15169,14 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBu
                                                                                     error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize);
+        intercept->PreCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize,
+                                                                          record_obj);
     }
     DispatchCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize);
-    RecordObject record_obj(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT]) {
         auto lock = intercept->WriteLock();
@@ -14884,12 +15194,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffe
         skip |= intercept->PreCallValidateCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthClipEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthClipEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable);
+        intercept->PreCallRecordCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable, record_obj);
     }
     DispatchCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthClipEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthClipEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable, record_obj);
@@ -14907,12 +15217,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEnableEXT(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetSampleLocationsEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetSampleLocationsEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable);
+        intercept->PreCallRecordCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable, record_obj);
     }
     DispatchCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetSampleLocationsEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetSampleLocationsEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable, record_obj);
@@ -14932,12 +15242,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBu
                                                                       pColorBlendAdvanced, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetColorBlendAdvancedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetColorBlendAdvancedEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced);
+        intercept->PreCallRecordCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced,
+                                                            record_obj);
     }
     DispatchCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced);
-    RecordObject record_obj(vvl::Func::vkCmdSetColorBlendAdvancedEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorBlendAdvancedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced,
@@ -14957,12 +15268,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetProvokingVertexModeEXT(VkCommandBuffer commandB
         skip |= intercept->PreCallValidateCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetProvokingVertexModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetProvokingVertexModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode);
+        intercept->PreCallRecordCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode, record_obj);
     }
     DispatchCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetProvokingVertexModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetProvokingVertexModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode, record_obj);
@@ -14981,12 +15292,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetLineRasterizationModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetLineRasterizationModeEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode);
+        intercept->PreCallRecordCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode, record_obj);
     }
     DispatchCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetLineRasterizationModeEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineRasterizationModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode, record_obj);
@@ -15003,12 +15314,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuf
         skip |= intercept->PreCallValidateCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetLineStippleEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetLineStippleEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable);
+        intercept->PreCallRecordCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable, record_obj);
     }
     DispatchCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetLineStippleEnableEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineStippleEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable, record_obj);
@@ -15026,12 +15337,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer co
         skip |= intercept->PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthClipNegativeOneToOneEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne);
+        intercept->PreCallRecordCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne, record_obj);
     }
     DispatchCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne);
-    RecordObject record_obj(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthClipNegativeOneToOneEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne, record_obj);
@@ -15049,12 +15360,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingEnableNV(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewportWScalingEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewportWScalingEnableNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable);
+        intercept->PreCallRecordCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable, record_obj);
     }
     DispatchCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewportWScalingEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWScalingEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable, record_obj);
@@ -15072,12 +15383,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer
                                                                   error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetViewportSwizzleNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetViewportSwizzleNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles);
+        intercept->PreCallRecordCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles, record_obj);
     }
     DispatchCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles);
-    RecordObject record_obj(vvl::Func::vkCmdSetViewportSwizzleNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportSwizzleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles,
@@ -15096,12 +15407,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(VkCommandBuffer command
         skip |= intercept->PreCallValidateCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoverageToColorEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoverageToColorEnableNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable);
+        intercept->PreCallRecordCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable, record_obj);
     }
     DispatchCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoverageToColorEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageToColorEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable, record_obj);
@@ -15119,12 +15430,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorLocationNV(VkCommandBuffer comma
         skip |= intercept->PreCallValidateCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoverageToColorLocationNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoverageToColorLocationNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation);
+        intercept->PreCallRecordCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation, record_obj);
     }
     DispatchCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoverageToColorLocationNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageToColorLocationNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation, record_obj);
@@ -15143,12 +15454,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationModeNV(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoverageModulationModeNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoverageModulationModeNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode);
+        intercept->PreCallRecordCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode, record_obj);
     }
     DispatchCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoverageModulationModeNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageModulationModeNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode, record_obj);
@@ -15168,13 +15479,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableEnableNV(VkCommandBuffer
                                                                                 error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoverageModulationTableEnableNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoverageModulationTableEnableNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable);
+        intercept->PreCallRecordCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable, record_obj);
     }
     DispatchCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoverageModulationTableEnableNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageModulationTableEnableNV]) {
         auto lock = intercept->WriteLock();
@@ -15195,13 +15506,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(VkCommandBuffer comma
                                                                           pCoverageModulationTable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoverageModulationTableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoverageModulationTableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount,
-                                                                pCoverageModulationTable);
+                                                                pCoverageModulationTable, record_obj);
     }
     DispatchCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount, pCoverageModulationTable);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoverageModulationTableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageModulationTableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount,
@@ -15220,12 +15531,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetShadingRateImageEnableNV(VkCommandBuffer comman
         skip |= intercept->PreCallValidateCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetShadingRateImageEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetShadingRateImageEnableNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable);
+        intercept->PreCallRecordCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable, record_obj);
     }
     DispatchCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetShadingRateImageEnableNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetShadingRateImageEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable, record_obj);
@@ -15245,13 +15556,14 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuf
                                                                                    error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRepresentativeFragmentTestEnableNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable);
+        intercept->PreCallRecordCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable,
+                                                                         record_obj);
     }
     DispatchCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable);
-    RecordObject record_obj(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRepresentativeFragmentTestEnableNV]) {
         auto lock = intercept->WriteLock();
@@ -15272,12 +15584,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(VkCommandBuffer command
         skip |= intercept->PreCallValidateCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetCoverageReductionModeNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetCoverageReductionModeNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
+        intercept->PreCallRecordCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode, record_obj);
     }
     DispatchCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
-    RecordObject record_obj(vvl::Func::vkCmdSetCoverageReductionModeNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageReductionModeNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode, record_obj);
@@ -15295,12 +15607,12 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, VkShade
         skip |= intercept->PreCallValidateGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetShaderModuleIdentifierEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetShaderModuleIdentifierEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
+        intercept->PreCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier, record_obj);
     }
     DispatchGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
-    RecordObject record_obj(vvl::Func::vkGetShaderModuleIdentifierEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderModuleIdentifierEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier, record_obj);
@@ -15318,13 +15630,13 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(VkDevice devic
         skip |= intercept->PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetShaderModuleCreateInfoIdentifierEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetShaderModuleCreateInfoIdentifierEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
+        intercept->PreCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier, record_obj);
     }
     DispatchGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
-    RecordObject record_obj(vvl::Func::vkGetShaderModuleCreateInfoIdentifierEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderModuleCreateInfoIdentifierEXT]) {
         auto lock = intercept->WriteLock();
@@ -15345,14 +15657,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
             physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceOpticalFlowImageFormatsNV);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo,
-                                                                           pFormatCount, pImageFormatProperties);
+                                                                           pFormatCount, pImageFormatProperties, record_obj);
     }
     VkResult result = DispatchGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount,
                                                                          pImageFormatProperties);
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceOpticalFlowImageFormatsNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo,
@@ -15372,12 +15685,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateOpticalFlowSessionNV(VkDevice device, const
         skip |= intercept->PreCallValidateCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateOpticalFlowSessionNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateOpticalFlowSessionNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
+        intercept->PreCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, record_obj);
     }
     VkResult result = DispatchCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
-    RecordObject record_obj(vvl::Func::vkCreateOpticalFlowSessionNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateOpticalFlowSessionNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, record_obj);
@@ -15395,12 +15709,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyOpticalFlowSessionNV(VkDevice device, VkOptica
         skip |= intercept->PreCallValidateDestroyOpticalFlowSessionNV(device, session, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyOpticalFlowSessionNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyOpticalFlowSessionNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyOpticalFlowSessionNV(device, session, pAllocator);
+        intercept->PreCallRecordDestroyOpticalFlowSessionNV(device, session, pAllocator, record_obj);
     }
     DispatchDestroyOpticalFlowSessionNV(device, session, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyOpticalFlowSessionNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyOpticalFlowSessionNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyOpticalFlowSessionNV(device, session, pAllocator, record_obj);
@@ -15419,12 +15733,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(VkDevice device, Vk
         skip |= intercept->PreCallValidateBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBindOpticalFlowSessionImageNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindOpticalFlowSessionImageNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout);
+        intercept->PreCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, record_obj);
     }
     VkResult result = DispatchBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout);
-    RecordObject record_obj(vvl::Func::vkBindOpticalFlowSessionImageNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindOpticalFlowSessionImageNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, record_obj);
@@ -15442,12 +15757,12 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer
         skip |= intercept->PreCallValidateCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdOpticalFlowExecuteNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdOpticalFlowExecuteNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
+        intercept->PreCallRecordCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo, record_obj);
     }
     DispatchCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
-    RecordObject record_obj(vvl::Func::vkCmdOpticalFlowExecuteNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdOpticalFlowExecuteNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo, record_obj);
@@ -15463,12 +15778,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(VkDevice device, VkShaderEXT shader,
         skip |= intercept->PreCallValidateDestroyShaderEXT(device, shader, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyShaderEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyShaderEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyShaderEXT(device, shader, pAllocator);
+        intercept->PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
     }
     DispatchDestroyShaderEXT(device, shader, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyShaderEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyShaderEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
@@ -15484,12 +15799,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderBinaryDataEXT(VkDevice device, VkShaderE
         skip |= intercept->PreCallValidateGetShaderBinaryDataEXT(device, shader, pDataSize, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetShaderBinaryDataEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetShaderBinaryDataEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
+        intercept->PreCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
     }
     VkResult result = DispatchGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetShaderBinaryDataEXT, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderBinaryDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
@@ -15507,12 +15823,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint
         skip |= intercept->PreCallValidateCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBindShadersEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindShadersEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
+        intercept->PreCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders, record_obj);
     }
     DispatchCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
-    RecordObject record_obj(vvl::Func::vkCmdBindShadersEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindShadersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders, record_obj);
@@ -15531,12 +15847,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(VkDevice device,
                                                                            error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetFramebufferTilePropertiesQCOM);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFramebufferTilePropertiesQCOM]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+        intercept->PreCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, record_obj);
     }
     VkResult result = DispatchGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetFramebufferTilePropertiesQCOM, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFramebufferTilePropertiesQCOM]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, record_obj);
@@ -15555,13 +15872,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice de
         skip |= intercept->PreCallValidateGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetDynamicRenderingTilePropertiesQCOM);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDynamicRenderingTilePropertiesQCOM]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+        intercept->PreCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, record_obj);
     }
     VkResult result = DispatchGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetDynamicRenderingTilePropertiesQCOM, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDynamicRenderingTilePropertiesQCOM]) {
         auto lock = intercept->WriteLock();
@@ -15580,12 +15898,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchai
         skip |= intercept->PreCallValidateSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkSetLatencySleepModeNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetLatencySleepModeNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
+        intercept->PreCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
     }
     VkResult result = DispatchSetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
-    RecordObject record_obj(vvl::Func::vkSetLatencySleepModeNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLatencySleepModeNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
@@ -15602,12 +15921,13 @@ VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR sw
         skip |= intercept->PreCallValidateLatencySleepNV(device, swapchain, pSleepInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkLatencySleepNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordLatencySleepNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordLatencySleepNV(device, swapchain, pSleepInfo);
+        intercept->PreCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
     }
     VkResult result = DispatchLatencySleepNV(device, swapchain, pSleepInfo);
-    RecordObject record_obj(vvl::Func::vkLatencySleepNV, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordLatencySleepNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
@@ -15625,12 +15945,12 @@ VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR sw
         skip |= intercept->PreCallValidateSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkSetLatencyMarkerNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetLatencyMarkerNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
+        intercept->PreCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
     DispatchSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
-    RecordObject record_obj(vvl::Func::vkSetLatencyMarkerNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLatencyMarkerNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, record_obj);
@@ -15647,12 +15967,12 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR s
         skip |= intercept->PreCallValidateGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetLatencyTimingsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetLatencyTimingsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+        intercept->PreCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, record_obj);
     }
     DispatchGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
-    RecordObject record_obj(vvl::Func::vkGetLatencyTimingsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetLatencyTimingsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, record_obj);
@@ -15668,12 +15988,12 @@ VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBa
         skip |= intercept->PreCallValidateQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkQueueNotifyOutOfBandNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueNotifyOutOfBandNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
+        intercept->PreCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, record_obj);
     }
     DispatchQueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
-    RecordObject record_obj(vvl::Func::vkQueueNotifyOutOfBandNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueNotifyOutOfBandNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, record_obj);
@@ -15691,13 +16011,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer
         skip |= intercept->PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
+        intercept->PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask, record_obj);
     }
     DispatchCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
-    RecordObject record_obj(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT]) {
         auto lock = intercept->WriteLock();
@@ -15717,12 +16037,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
         skip |= intercept->PreCallValidateGetScreenBufferPropertiesQNX(device, buffer, pProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetScreenBufferPropertiesQNX);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetScreenBufferPropertiesQNX]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties);
+        intercept->PreCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, record_obj);
     }
     VkResult result = DispatchGetScreenBufferPropertiesQNX(device, buffer, pProperties);
-    RecordObject record_obj(vvl::Func::vkGetScreenBufferPropertiesQNX, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetScreenBufferPropertiesQNX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, record_obj);
@@ -15745,12 +16066,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                                          error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCreateAccelerationStructureKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
+        intercept->PreCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
     }
     VkResult result = DispatchCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
-    RecordObject record_obj(vvl::Func::vkCreateAccelerationStructureKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure,
@@ -15770,12 +16092,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(VkDevice device, VkAc
         skip |= intercept->PreCallValidateDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkDestroyAccelerationStructureKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
+        intercept->PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, record_obj);
     }
     DispatchDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-    RecordObject record_obj(vvl::Func::vkDestroyAccelerationStructureKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, record_obj);
@@ -15796,12 +16118,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
                                                                             error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBuildAccelerationStructuresKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+        intercept->PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
     }
     DispatchCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
-    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructuresKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
@@ -15824,15 +16146,15 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(VkCommandBu
             commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructuresIndirectKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBuildAccelerationStructuresIndirectKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBuildAccelerationStructuresIndirectKHR(
-            commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
+            commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, record_obj);
     }
     DispatchCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides,
                                                       ppMaxPrimitiveCounts);
-    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructuresIndirectKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructuresIndirectKHR]) {
         auto lock = intercept->WriteLock();
@@ -15855,12 +16177,14 @@ BuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredO
                                                                          ppBuildRangeInfos, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkBuildAccelerationStructuresKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBuildAccelerationStructuresKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
+        intercept->PreCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos,
+                                                               record_obj);
     }
     VkResult result = DispatchBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
-    RecordObject record_obj(vvl::Func::vkBuildAccelerationStructuresKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBuildAccelerationStructuresKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos,
@@ -15880,12 +16204,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureKHR(VkDevice device, VkD
         skip |= intercept->PreCallValidateCopyAccelerationStructureKHR(device, deferredOperation, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyAccelerationStructureKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo);
+        intercept->PreCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
     }
     VkResult result = DispatchCopyAccelerationStructureKHR(device, deferredOperation, pInfo);
-    RecordObject record_obj(vvl::Func::vkCopyAccelerationStructureKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
@@ -15904,13 +16229,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureToMemoryKHR(VkDevice dev
         skip |= intercept->PreCallValidateCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyAccelerationStructureToMemoryKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
+        intercept->PreCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, record_obj);
     }
     VkResult result = DispatchCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
-    RecordObject record_obj(vvl::Func::vkCopyAccelerationStructureToMemoryKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->WriteLock();
@@ -15930,13 +16256,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToAccelerationStructureKHR(VkDevice dev
         skip |= intercept->PreCallValidateCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkCopyMemoryToAccelerationStructureKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
+        intercept->PreCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
     }
     VkResult result = DispatchCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
-    RecordObject record_obj(vvl::Func::vkCopyMemoryToAccelerationStructureKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
@@ -15960,15 +16287,16 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteAccelerationStructuresPropertiesKHR(VkDevice
             device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkWriteAccelerationStructuresPropertiesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordWriteAccelerationStructuresPropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordWriteAccelerationStructuresPropertiesKHR(
-            device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride);
+            device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, record_obj);
     }
     VkResult result = DispatchWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures,
                                                                        queryType, dataSize, pData, stride);
-    RecordObject record_obj(vvl::Func::vkWriteAccelerationStructuresPropertiesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordWriteAccelerationStructuresPropertiesKHR]) {
         auto lock = intercept->WriteLock();
@@ -15990,12 +16318,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureKHR(VkCommandBuffer comma
         skip |= intercept->PreCallValidateCmdCopyAccelerationStructureKHR(commandBuffer, pInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyAccelerationStructureKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
+        intercept->PreCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
     }
     DispatchCmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyAccelerationStructureKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
@@ -16014,13 +16342,13 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuff
         skip |= intercept->PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyAccelerationStructureToMemoryKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
+        intercept->PreCallRecordCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo, record_obj);
     }
     DispatchCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyAccelerationStructureToMemoryKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->WriteLock();
@@ -16040,13 +16368,13 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuff
         skip |= intercept->PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToAccelerationStructureKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
+        intercept->PreCallRecordCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
     }
     DispatchCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
-    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToAccelerationStructureKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
@@ -16066,13 +16394,14 @@ GetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationSt
         skip |= intercept->PreCallValidateGetAccelerationStructureDeviceAddressKHR(device, pInfo, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureDeviceAddressKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetAccelerationStructureDeviceAddressKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo);
+        intercept->PreCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo, record_obj);
     }
     VkDeviceAddress result = DispatchGetAccelerationStructureDeviceAddressKHR(device, pInfo);
-    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureDeviceAddressKHR, result);
+    record_obj.device_address = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureDeviceAddressKHR]) {
         auto lock = intercept->WriteLock();
@@ -16097,15 +16426,15 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(VkCommand
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteAccelerationStructuresPropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
-            commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+            commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, record_obj);
     }
     DispatchCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures,
                                                         queryType, queryPool, firstQuery);
-    RecordObject record_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteAccelerationStructuresPropertiesKHR]) {
         auto lock = intercept->WriteLock();
@@ -16128,13 +16457,13 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(VkDevi
                                                                                          error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetDeviceAccelerationStructureCompatibilityKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceAccelerationStructureCompatibilityKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
+        intercept->PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility, record_obj);
     }
     DispatchGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
-    RecordObject record_obj(vvl::Func::vkGetDeviceAccelerationStructureCompatibilityKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceAccelerationStructureCompatibilityKHR]) {
         auto lock = intercept->WriteLock();
@@ -16156,14 +16485,14 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(VkDevice device
                                                                                 pSizeInfo, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureBuildSizesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetAccelerationStructureBuildSizesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts,
-                                                                      pSizeInfo);
+        intercept->PreCallRecordGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo,
+                                                                      record_obj);
     }
     DispatchGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
-    RecordObject record_obj(vvl::Func::vkGetAccelerationStructureBuildSizesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureBuildSizesKHR]) {
         auto lock = intercept->WriteLock();
@@ -16188,14 +16517,15 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                           error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdTraceRaysKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdTraceRaysKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
-                                                pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+                                                pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth,
+                                                record_obj);
     }
     DispatchCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
                             pCallableShaderBindingTable, width, height, depth);
-    RecordObject record_obj(vvl::Func::vkCmdTraceRaysKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
@@ -16218,15 +16548,16 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(V
                                                                                           dataSize, pData, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    RecordObject record_obj(vvl::Func::vkGetRayTracingCaptureReplayShaderGroupHandlesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize,
-                                                                                pData);
+                                                                                pData, record_obj);
     }
     VkResult result =
         DispatchGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
-    RecordObject record_obj(vvl::Func::vkGetRayTracingCaptureReplayShaderGroupHandlesKHR, result);
+    record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR]) {
         auto lock = intercept->WriteLock();
@@ -16252,14 +16583,15 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer
                                                                   indirectDeviceAddress, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdTraceRaysIndirectKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdTraceRaysIndirectKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
-                                                        pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
+                                                        pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress,
+                                                        record_obj);
     }
     DispatchCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
                                     pCallableShaderBindingTable, indirectDeviceAddress);
-    RecordObject record_obj(vvl::Func::vkCmdTraceRaysIndirectKHR);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysIndirectKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
@@ -16279,13 +16611,13 @@ VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(VkDevice
         skip |= intercept->PreCallValidateGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader, error_obj);
         if (skip) return 0;
     }
+    RecordObject record_obj(vvl::Func::vkGetRayTracingShaderGroupStackSizeKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordGetRayTracingShaderGroupStackSizeKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
+        intercept->PreCallRecordGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader, record_obj);
     }
     VkDeviceSize result = DispatchGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
-    RecordObject record_obj(vvl::Func::vkGetRayTracingShaderGroupStackSizeKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingShaderGroupStackSizeKHR]) {
         auto lock = intercept->WriteLock();
@@ -16305,13 +16637,13 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer 
         skip |= intercept->PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRayTracingPipelineStackSizeKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+        intercept->PreCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize, record_obj);
     }
     DispatchCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
-    RecordObject record_obj(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRayTracingPipelineStackSizeKHR]) {
         auto lock = intercept->WriteLock();
@@ -16329,12 +16661,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, ui
         skip |= intercept->PreCallValidateCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+        intercept->PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
     DispatchCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
@@ -16352,12 +16684,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBu
         skip |= intercept->PreCallValidateCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksIndirectEXT]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+        intercept->PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
     DispatchCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
@@ -16378,13 +16710,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
                                                                            countBufferOffset, maxDrawCount, stride, error_obj);
         if (skip) return;
     }
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksIndirectCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                                 maxDrawCount, stride);
+                                                                 maxDrawCount, stride, record_obj);
     }
     DispatchCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
-    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
