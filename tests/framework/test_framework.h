@@ -17,7 +17,6 @@
  */
 #pragma once
 
-#include "glslang/SPIRV/GLSL.std.450.h"
 #include "spirv-tools/libspirv.h"
 #include "glslang/Public/ShaderLang.h"
 #include "test_common.h"

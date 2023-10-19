@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_helper.h"
 
 TEST_F(NegativeGpuAssistedRayTracing, ArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(

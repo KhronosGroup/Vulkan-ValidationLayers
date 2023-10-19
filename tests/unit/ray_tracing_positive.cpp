@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
+#include "../framework/shader_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
 
