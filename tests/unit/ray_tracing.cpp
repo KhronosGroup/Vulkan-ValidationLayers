@@ -3351,13 +3351,266 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidMode) {
     ray_query_features.rayQuery = VK_TRUE;
 
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(this, true, &features2));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
     RETURN_IF_SKIP(ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)));
 
-    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_info.SetMode(static_cast<VkBuildAccelerationStructureModeKHR>(42));
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryType) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list changing geometry type");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to geometry type
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetType(vkt::as::GeometryKHR::Type::AABB);
+    build_info.GetGeometries()[0].SetAABBsStride(4096);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03761");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryFlags) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "geometry flag");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to geometry flags
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetFlags(VK_GEOMETRY_OPAQUE_BIT_KHR);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03762");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTriaglesFormat) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "vertex format for the triangles");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to triangles vertex format
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetTrianglesVertexFormat(VK_FORMAT_R16G16B16_SFLOAT);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03763");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesMaxVertex) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "maxVertex for triangles");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to triangles max vertex
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetTrianglesMaxVertex(666);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03764");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesIndexType) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different index "
+        "type for the triangles");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to triangles index type
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetTrianglesIndexType(VkIndexType::VK_INDEX_TYPE_UINT16);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03765");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesTransformData) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "pointer for the transform data");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to triangles transform data
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetTrianglesTransformatData(666 * 16);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03766");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with triangles "
+        "transform data going from non NULL to NULL");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Invalid update to triangles transform data
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    vkt::Buffer buffer(*m_device, 4096,
+                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                           VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    build_info.GetGeometries()[0].SetTrianglesTransformatData(buffer.address());
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    build_info.SetSrcAS(build_info.GetDstAS());
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
+    build_info.GetGeometries()[0].SetTrianglesTransformatData(0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03767");
     build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();

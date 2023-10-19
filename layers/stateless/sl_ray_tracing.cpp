@@ -1139,41 +1139,41 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, error_obj.handle, error_obj.location);
-    for (uint32_t i = 0; i < infoCount; ++i) {
-        const Location info_loc = error_obj.location.dot(Field::pInfos, i);
-        if (SafeModulo(pInfos[i].scratchData.deviceAddress,
+    for (const auto [info, info_i] : vvl::enumerate(pInfos, infoCount)) {
+        const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
+        if (SafeModulo(info->scratchData.deviceAddress,
                        phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment) != 0) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03710", commandBuffer,
                              info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
                              "(%" PRIu64 ") must be a multiple of minAccelerationStructureScratchOffsetAlignment (%" PRIu32 ").",
-                             pInfos[i].scratchData.deviceAddress,
+                             info->scratchData.deviceAddress,
                              phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
         }
-        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", pInfos[i].mode,
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", info->mode,
                                    "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
-        for (uint32_t k = 0; k < infoCount; ++k) {
-            if (i == k) continue;
-            if (pInfos[i].dstAccelerationStructure == pInfos[k].dstAccelerationStructure) {
-                const LogObjectList objlist(commandBuffer, pInfos[i].dstAccelerationStructure);
+        for (const auto [other_info, other_info_j] : vvl::enumerate(pInfos, infoCount)) {
+            if (info_i == other_info_j) continue;
+            if (info->dstAccelerationStructure == other_info->dstAccelerationStructure) {
+                const LogObjectList objlist(commandBuffer, info->dstAccelerationStructure);
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03698", objlist,
                                  info_loc.dot(Field::dstAccelerationStructure),
-                                 "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", k,
-                                 FormatHandle(pInfos[i].dstAccelerationStructure).c_str());
+                                 "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", other_info_j,
+                                 FormatHandle(info->dstAccelerationStructure).c_str());
                 break;
             }
-            if (pInfos[i].srcAccelerationStructure == pInfos[k].dstAccelerationStructure) {
-                const LogObjectList objlist(commandBuffer, pInfos[i].srcAccelerationStructure);
+            if (info->srcAccelerationStructure == other_info->dstAccelerationStructure) {
+                const LogObjectList objlist(commandBuffer, info->srcAccelerationStructure);
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03403", objlist,
                                  info_loc.dot(Field::srcAccelerationStructure),
-                                 "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", k,
-                                 FormatHandle(pInfos[i].srcAccelerationStructure).c_str());
+                                 "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", other_info_j,
+                                 FormatHandle(info->srcAccelerationStructure).c_str());
                 break;
             }
         }
-        for (uint32_t j = 0; j < pInfos[i].geometryCount; ++j) {
-            if (pInfos[i].pGeometries) {
-                const VkAccelerationStructureGeometryKHR &as_geometry = pInfos[i].pGeometries[j];
-                const Location geometry_loc = error_obj.location.dot(Field::pGeometries, j);
+        for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
+            if (info->pGeometries) {
+                const VkAccelerationStructureGeometryKHR &as_geometry = info->pGeometries[geom_i];
+                const Location geometry_loc = error_obj.location.dot(Field::pGeometries, geom_i);
                 if (as_geometry.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     if (as_geometry.geometry.instances.arrayOfPointers == VK_TRUE) {
                         if (SafeModulo(as_geometry.geometry.instances.data.deviceAddress, 8) != 0) {
@@ -1217,9 +1217,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                                          as_geometry.geometry.triangles.transformData.deviceAddress);
                     }
                 }
-            } else if (pInfos[i].ppGeometries) {
-                const VkAccelerationStructureGeometryKHR *as_geometry = pInfos[i].ppGeometries[j];
-                const Location geometry_loc = error_obj.location.dot(Field::ppGeometries, j);
+            } else if (info->ppGeometries) {
+                const VkAccelerationStructureGeometryKHR *as_geometry = info->ppGeometries[geom_i];
+                const Location geometry_loc = error_obj.location.dot(Field::ppGeometries, geom_i);
                 if (as_geometry->geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     if (as_geometry->geometry.instances.arrayOfPointers == VK_TRUE) {
                         if (SafeModulo(as_geometry->geometry.instances.data.deviceAddress, 8) != 0) {
@@ -1230,7 +1230,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                                 ") must be aligned to 8 bytes when geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR and "
                                 "geometry.instances.arrayOfPointers is "
                                 "VK_TRUE.",
-                                pInfos[i].pGeometries[j].geometry.instances.data.deviceAddress);
+                                info->ppGeometries[geom_i]->geometry.instances.data.deviceAddress);
                         }
                     } else {
                         if (SafeModulo(as_geometry->geometry.instances.data.deviceAddress, 16) != 0) {
@@ -1240,7 +1240,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                                 "(%" PRIu64
                                 ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR and "
                                 "geometry.instances.arrayOfPointers is VK_FALSE.",
-                                pInfos[i].pGeometries[j].geometry.instances.data.deviceAddress);
+                                info->ppGeometries[geom_i]->geometry.instances.data.deviceAddress);
                         }
                     }
                 } else if (as_geometry->geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
@@ -1249,7 +1249,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                             "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03714", commandBuffer,
                             geometry_loc.dot(Field::geometry).dot(Field::instances).dot(Field::data).dot(Field::deviceAddress),
                             "(%" PRIu64 ") must be aligned to 8 bytes when geometryType is VK_GEOMETRY_TYPE_AABBS_KHR.",
-                            pInfos[i].pGeometries[j].geometry.instances.data.deviceAddress);
+                            info->ppGeometries[geom_i]->geometry.instances.data.deviceAddress);
                     }
                 } else if (as_geometry->geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
                     if (SafeModulo(as_geometry->geometry.triangles.transformData.deviceAddress, 16) != 0) {
@@ -1260,7 +1260,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                                              .dot(Field::deviceAddress),
                                          "(%" PRIu64
                                          ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR.",
-                                         pInfos[i].pGeometries[j].geometry.triangles.transformData.deviceAddress);
+                                         info->ppGeometries[geom_i]->geometry.triangles.transformData.deviceAddress);
                     }
                 }
             }
