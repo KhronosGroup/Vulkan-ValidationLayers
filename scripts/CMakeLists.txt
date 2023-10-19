@@ -67,6 +67,15 @@ if (UPDATE_DEPS)
     endif()
 
     list(APPEND cmake_vars "CMAKE_TOOLCHAIN_FILE")
+
+    # Avoids manually setting CMAKE_SYSTEM_NAME unless it's needed:
+    # https://cmake.org/cmake/help/latest/variable/CMAKE_CROSSCOMPILING.html
+    if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
+        list(APPEND cmake_vars "CMAKE_SYSTEM_NAME")
+    endif()
+    if (APPLE)
+        list(APPEND cmake_vars "CMAKE_OSX_ARCHITECTURES" "CMAKE_OSX_DEPLOYMENT_TARGET")
+    endif()
     if (NOT MSVC_IDE)
         list(APPEND cmake_vars "CMAKE_CXX_COMPILER" "CMAKE_C_COMPILER" "CMAKE_ASM_COMPILER")
     endif()
