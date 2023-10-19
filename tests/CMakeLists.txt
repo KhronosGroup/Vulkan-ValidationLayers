@@ -25,6 +25,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/layer_validation_tests.cpp
     framework/pipeline_helper.h
     framework/pipeline_helper.cpp
+    framework/shader_helper.h
+    framework/shader_helper.cpp
     framework/test_common.h
     framework/shader_templates.h
     framework/error_monitor.cpp
