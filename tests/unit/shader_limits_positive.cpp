@@ -193,6 +193,8 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
     if (!mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Mesh shader not supported";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
@@ -234,6 +236,8 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
         GTEST_SKIP() << "Mesh and Task shader not supported";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();

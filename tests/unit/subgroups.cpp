@@ -824,6 +824,8 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
     if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
         GTEST_SKIP() << "Required features are not supported";
     }
+    msf.multiviewMeshShader = VK_FALSE;
+    msf.primitiveFragmentShadingRateMeshShader = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &features2))
     InitRenderTarget();
 

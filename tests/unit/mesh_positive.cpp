@@ -25,6 +25,8 @@ TEST_F(PositiveMesh, BasicUsage) {
     if (mesh_shader_features.meshShader == VK_FALSE) {
         GTEST_SKIP() << "Mesh shader feature not supported";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
 

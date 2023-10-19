@@ -31,6 +31,38 @@ void ShaderObjectTest::InitBasicShaderObject(void *pNextFeatures, APIVersion tar
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 }
 
+void ShaderObjectTest::InitBasicMeshShaderObject(void *pNextFeatures, APIVersion targetApiVersion, bool taskShader,
+                                                 bool meshShader) {
+    SetTargetApiVersion(targetApiVersion);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper(pNextFeatures);
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&mesh_shader_features);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
+    if (!shader_object_features.shaderObject) {
+        GTEST_SKIP() << "Test requires (unsupported) shaderObject , skipping.";
+    }
+    if (meshShader && !mesh_shader_features.meshShader) {
+        GTEST_SKIP() << "Mesh shaders are required";
+    }
+    if (taskShader && !mesh_shader_features.taskShader) {
+        GTEST_SKIP() << "Task shaders are required";
+    }
+    if (!maintenance_4_features.maintenance4) {
+        GTEST_SKIP() << "maintenance4 not supported";
+    }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+}
+
 void ShaderObjectTest::BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
@@ -707,21 +739,11 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     TEST_DESCRIPTION("Test drawing using task and mesh shaders");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
-    RETURN_IF_SKIP(InitBasicShaderObject(&mesh_shader_features, VK_API_VERSION_1_3))
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_3));
 
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
 
-    if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
-        GTEST_SKIP() << "Task and mesh shaders are required";
-    }
-    if (!maintenance_4_features.maintenance4) {
-        GTEST_SKIP() << "maintenance4 not supported";
-    }
     static const char task_src[] = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
