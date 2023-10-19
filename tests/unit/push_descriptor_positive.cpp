@@ -436,12 +436,7 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
-
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test crashes on AMD.";
-    }
+    RETURN_IF_SKIP(Init())
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;

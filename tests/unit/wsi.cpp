@@ -263,11 +263,6 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitFramework())
 
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        // Seeing the same crash as the Android comment above
-        GTEST_SKIP() << "This test should not be run on the RADV driver";
-    }
-
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 

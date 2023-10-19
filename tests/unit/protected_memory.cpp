@@ -353,12 +353,6 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())
 
-    // Needed for both protected memory and vkGetDeviceQueue2
-
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        GTEST_SKIP() << "This test should not be run on the RADV driver.";
-    }
-
     VkDeviceQueueInfo2 queue_info_2 = vku::InitStructHelper();
     VkDevice test_device = VK_NULL_HANDLE;
     VkQueue test_queue = VK_NULL_HANDLE;

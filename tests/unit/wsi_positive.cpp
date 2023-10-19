@@ -201,21 +201,15 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     TEST_DESCRIPTION("Run vkCmdCopyImage with a swapchain image");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    printf(
-        "According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
-        "skipping CmdCopySwapchainImage test\n");
-    return;
+    GTEST_SKIP()
+        << "According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
+           "skipping test";
 #endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitFramework())
-
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        // Seeing the same crash as the Android comment above
-        GTEST_SKIP() << "This test should not be run on the RADV driver";
-    }
 
     RETURN_IF_SKIP(InitState())
     InitRenderTarget();
@@ -290,11 +284,6 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     AddSurfaceExtension();
 
     RETURN_IF_SKIP(InitFramework())
-
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        // Seeing the same crash as the Android comment above
-        GTEST_SKIP() << "This test should not be run on the RADV driver";
-    }
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);

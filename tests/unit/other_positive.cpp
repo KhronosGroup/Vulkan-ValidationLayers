@@ -421,12 +421,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     using namespace std::chrono;
     using std::thread;
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
-    // Test randomly fails with VK_TIMEOUT, most likely a driver bug
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test does not run on AMD proprietary driver";
-    }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(Init())
 
     const auto queue_family = m_device->graphics_queues()[0]->get_family_index();
     constexpr uint32_t queue_index = 0;

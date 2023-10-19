@@ -1419,14 +1419,8 @@ TEST_F(PositivePipeline, DISABLED_CreationFeedbackCount0) {
     TEST_DESCRIPTION("Test graphics pipeline feedback stage count check with 0.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
-    // need for IsDriver check
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    // This test hits a bug in the driver, CTS was written, but incase using an old driver
-    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
-        GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
-    }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
     VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();

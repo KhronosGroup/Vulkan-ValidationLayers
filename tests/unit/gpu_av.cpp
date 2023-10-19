@@ -1366,12 +1366,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     AddOptionalExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework())
 
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        GTEST_SKIP() << "This test should not be run on the RADV driver.";
-    }
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "This test should not be run on the AMD proprietary driver.";
-    }
     const bool mesh_shader_supported = IsExtensionsEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
@@ -1689,7 +1683,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
     m_errorMonitor->VerifyFound();
 
-    if (!IsDriver(VK_DRIVER_ID_MESA_RADV) && features13.dynamicRendering) {
+    if (features13.dynamicRendering) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());

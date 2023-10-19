@@ -493,11 +493,6 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework())
 
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        // According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But RADV will crash if memory is NULL, "
-        GTEST_SKIP() << "This test should not be run on the RADV driver";
-    }
-
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures =
         vku::InitStructHelper();
     physicalDeviceImagelessFramebufferFeatures.imagelessFramebuffer = VK_TRUE;

@@ -249,10 +249,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
 
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "Test is crashing on AMD hardware for unknown reasons.";
-    }
-
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper();
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper(&rt_pipeline_features);
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&as_features);

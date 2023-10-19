@@ -2277,10 +2277,6 @@ TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
     }
     RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
 
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV) || IsDriver(VK_DRIVER_ID_ARM_PROPRIETARY)) {
-        GTEST_SKIP() << "Temporarily disabling on Pixel 7 and RADV due to driver crash";
-    }
-
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;

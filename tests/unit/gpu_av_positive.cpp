@@ -213,12 +213,6 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework())
-    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        GTEST_SKIP() << "This test should not be run on the RADV driver.";
-    }
-    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        GTEST_SKIP() << "This test should not be run on the AMD proprietary driver.";
-    }
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
     if (!features2.features.shaderInt64) {

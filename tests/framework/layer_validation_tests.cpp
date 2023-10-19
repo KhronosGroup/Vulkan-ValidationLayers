@@ -600,17 +600,6 @@ VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysical
     return props2;
 }
 
-bool VkLayerTest::IsDriver(VkDriverId driver_id) {
-    if (VkRenderFramework::IgnoreDisableChecks()) {
-        return false;
-    } else {
-        VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&driver_properties);
-        GetPhysicalDeviceProperties2(physical_device_properties2);
-        return (driver_properties.driverID == driver_id);
-    }
-}
-
 bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
