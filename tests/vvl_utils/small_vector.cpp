@@ -414,3 +414,14 @@ TEST(CustomContainer, SmallVectorAssign) {
     ASSERT_TRUE(v_src.empty());
     ASSERT_TRUE(HaveSameElements(ref_xxl, v_dst));
 }
+
+TEST(CustomContainer, Enumerate) {
+    small_vector<int, 2, size_t> sv = {1, 2, 3, 4};
+    std::array ref_elements = {1, 2, 3, 4};
+    size_t indices_i = 0;
+    for (auto [x, i] : vvl::enumerate(sv.data(), sv.size())) {
+        ASSERT_TRUE(i == indices_i);
+        ASSERT_TRUE(*x == ref_elements[indices_i]);
+        ++indices_i;
+    }
+}
