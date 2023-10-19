@@ -1483,6 +1483,109 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
+    TEST_DESCRIPTION("Copying to attachment creates hazard with attachment load operation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+
+    InitRenderTarget();
+    m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy region = {};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {m_width, m_height, 1};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = m_renderTargets[0]->targetView(m_render_target_fmt);
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+    color_attachment.clearValue.color = m_clear_color;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {m_width, m_height};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    // Initiate copy write
+    vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    // Execution barrier to ensure that copy and loadOp operations do not overlap.
+    // This does not synchronize memory accesses though and WAW hazard remains.
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
+
+    // Attachment load operation collides with copy
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdBeginRendering(*m_commandBuffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
+    TEST_DESCRIPTION("Copying to attachment creates hazard with attachment store operation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+
+    InitRenderTarget();
+    m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy region = {};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {m_width, m_height, 1};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = m_renderTargets[0]->targetView(m_render_target_fmt);
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue.color = m_clear_color;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {m_width, m_height};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRendering(*m_commandBuffer, &rendering_info);
+    // Initiate attachment store
+    vk::CmdEndRendering(*m_commandBuffer);
+
+    // Execution barrier to ensure that storeOp and copy operations do not overlap.
+    // This does not synchronize memory accesses though and WAW hazard remains.
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
+
+    // Collide with attachment store by copying to the same attachment
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
