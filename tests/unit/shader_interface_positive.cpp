@@ -320,14 +320,9 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.CreateGraphicsPipeline();
 }
 
