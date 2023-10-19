@@ -991,7 +991,7 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     // layerCount can explicitly list value
-    copy_region.dstSubresource.layerCount = 2;
+    copy_region.dstSubresource.layerCount = 6;
     vk::CmdCopyImage(m_commandBuffer->handle(), image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_commandBuffer->end();
