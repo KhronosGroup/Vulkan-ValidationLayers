@@ -2255,7 +2255,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
                 LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06057", device,
                          create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
                          "is %" PRIu32
-                         ") and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
+                         " and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
                          rendering_struct->viewMask);
         }
 
@@ -2263,7 +2263,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06058", device,
                              create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
                              "is %" PRIu32
-                             ") and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
+                             " and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
                              rendering_struct->viewMask);
         }
 
@@ -2271,7 +2271,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07064", device,
                          create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                         "is %" PRIu32 ") and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
+                         "is %" PRIu32 " and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
                          rendering_struct->viewMask);
         }
 
