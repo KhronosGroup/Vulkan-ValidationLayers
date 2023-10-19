@@ -1412,6 +1412,77 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     m_commandBuffer->EndRenderPass();
 }
 
+TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
+    TEST_DESCRIPTION("Copying to attachment creates hazard with attachment load operation");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    InitRenderTarget();
+    // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
+    m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy region = {};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {m_width, m_height, 1};
+
+    m_commandBuffer->begin();
+    // Initiate copy write
+    vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    // Execution barrier to ensure that copy and loadOp operations do not overlap.
+    // This does not synchronize memory accesses though and WAW hazard remains.
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
+
+    // Attachment load operation collides with copy
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
+    TEST_DESCRIPTION("Copying to attachment creates hazard with attachment store operation");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // This keeps image layout as GENERAL at the end of the render pass (instead of transitioning to
+    // COLOR_ATTACHMENT in default configuration). GENERAL layout is needed to perform a copy. Also,
+    // the absence of layout transition after the render pass is needed because the test hazards
+    // attachment store operation with subsequent copy (and the transition would happen in between).
+    m_color_layout = VK_IMAGE_LAYOUT_GENERAL;
+    InitRenderTarget();
+
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy region = {};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {m_width, m_height, 1};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Initiate attachment store
+    m_commandBuffer->EndRenderPass();
+
+    // Execution barrier to ensure that storeOp and copy operations do not overlap.
+    // This does not synchronize memory accesses though and WAW hazard remains.
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
+
+    // Collide with attachment store by copying to the same attachment
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
