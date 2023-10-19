@@ -2395,10 +2395,11 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
 
 void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                 void *csm_state_data) {
+                                                 const RecordObject &record_obj, void *csm_state_data) {
     // Normally would validate in PreCallValidate, but need a non-const function to update csm_state
     // This is on the stack, we don't have to worry about threading hazards and this could be moved and used const_cast
-    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
+    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
+                                                            csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     // TODO - Move SPIR-V only validation from a pipeline check to here
     csm_state->valid_spirv = true;
@@ -2406,8 +2407,8 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
 
 void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                               void *csm_state_data) {
-    ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders,
+                                               const RecordObject &record_obj, void *csm_state_data) {
+    ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                           csm_state_data);
     create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     // TODO - Move SPIR-V only validation from a pipeline check to here

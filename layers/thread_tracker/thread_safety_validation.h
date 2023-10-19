@@ -417,7 +417,8 @@ class ThreadSafety : public ValidationObject {
 
     void PreCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                       const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
-                                                      VkDisplayPlaneCapabilities2KHR *pCapabilities) override;
+                                                      VkDisplayPlaneCapabilities2KHR *pCapabilities,
+                                                      const RecordObject &record_obj) override;
 
     void PostCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                        const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,

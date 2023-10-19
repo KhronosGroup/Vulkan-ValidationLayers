@@ -369,11 +369,11 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
                 prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
                 out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
+            prototype = prototype.replace(')', ', const RecordObject& record_obj)')
             if pre_call_record:
                 out.append(f'void PreCallRecord{prototype}{terminator}')
 
             if post_call_record:
-                prototype = prototype.replace(')', ', const RecordObject& record_obj)')
                 out.append(f'void PostCallRecord{prototype}{terminator}')
 
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
@@ -381,10 +381,10 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
         out.append('''
 
             void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator, const RecordObject& record_obj) override;
-            void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags) override;
+            void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties *pQueueFamilyProperties, const RecordObject& record_obj) override;
-            void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) override;
-            void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets) override;
+            void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers, const RecordObject& record_obj) override;
+            void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayPropertiesKHR *pProperties, const RecordObject& record_obj) override;
@@ -466,6 +466,17 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                         // {command.name}:
                         {pre_call_validate}
                         ''')
+                elif command.alias:
+                # elif command.name == 'vkCmdBeginRenderPass2KHR':
+                    # For alias that are promoted, just point to new function, ErrorObject will allow us to distinguish the caller
+                    paramList = [param.name for param in command.params]
+                    paramList.append('error_obj')
+                    params = ', '.join(paramList)
+                    out.append(f'''
+                        bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
+                            return PreCallValidate{command.alias[2:]}({params});
+                        }}
+                        ''')
                 else:
                     out.append(f'''
                         bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
@@ -477,8 +488,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
             # Output PreCallRecordAPI function if necessary
             if pre_call_record:
+                postPrototype = prototype.replace(')', ', const RecordObject& record_obj)')
                 out.append(f'''
-                    void ObjectLifetimes::PreCallRecord{prototype} {{
+                    void ObjectLifetimes::PreCallRecord{postPrototype} {{
                         {pre_call_record}
                     }}
                     ''')
@@ -544,7 +556,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         return param_vuid
 
     def hasFieldParentVUID(self, member: Member, structName: str) -> bool:
-        # Not a vulkan handle. Parent VUIDs are only for vulkan handles 
+        # Not a vulkan handle. Parent VUIDs are only for vulkan handles
         if member.type not in self.vk.handles:
             return False
 
@@ -555,20 +567,20 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
     def hasParameterParentVUID(self, parameter: Member, commandName: str) -> bool:
         # Check for commands that, except the first dispatchable parameter,
-        # do not have other parameters that are Vulkan handles. 
+        # do not have other parameters that are Vulkan handles.
         # Such commands can't have parent VUIDs (e.g. vkQueueWaitIdle)
         params = self.vk.commands[commandName].params
         only_dispatchable_parameter = len([x for x in params if x.type in self.vk.handles and (not x.pointer or x.const)]) == 1
         if only_dispatchable_parameter:
             return False
-        
+
         # Special case: vkReleaseFullScreenExclusiveModeEXT.
         # The specification does not define a parent VUID for the swapchain parameter.
         # It mentions in a free form that device should be associated with a swapchain.
         if commandName == 'vkReleaseFullScreenExclusiveModeEXT':
             return False
 
-        # Not a vulkan handle. Parent VUIDs are only for vulkan handles 
+        # Not a vulkan handle. Parent VUIDs are only for vulkan handles
         if parameter.type not in self.vk.handles:
             return False
 

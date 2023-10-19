@@ -90,9 +90,11 @@ class GpuAssistedBase : public ValidationStateTracker {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_create_info) override;
+                                   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
+                                   void *modified_create_info) override;
     void CreateDevice(const VkDeviceCreateInfo *pCreateInfo) override;
-    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) override;
+    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                    const RecordObject &record_obj) override;
 
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                    const RecordObject &record_obj) override;
@@ -115,35 +117,36 @@ class GpuAssistedBase : public ValidationStateTracker {
                                        const VkDependencyInfo *pDependencyInfos, const ErrorObject &error_obj) const override;
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                           void *cpl_state_data) override;
+                                           const RecordObject &record_obj, void *cpl_state_data) override;
     void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                             const RecordObject &record_obj) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                       void *csm_state_data) override;
+                                       const RecordObject &record_obj, void *csm_state_data) override;
     void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                         const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                         const RecordObject &record_obj, void *state_data) override;
-    void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator) override;
+    void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator,
+                                       const RecordObject &record_obj) override;
 
     void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                              void *cgpl_state_data) override;
+                                              const RecordObject &record_obj, void *cgpl_state_data) override;
     void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                              const VkComputePipelineCreateInfo *pCreateInfos,
                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                             void *ccpl_state_data) override;
+                                             const RecordObject &record_obj, void *ccpl_state_data) override;
     void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                   const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                  void *crtpl_state_data) override;
+                                                  const RecordObject &record_obj, void *crtpl_state_data) override;
     void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                    VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   void *crtpl_state_data) override;
+                                                   const RecordObject &record_obj, void *crtpl_state_data) override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -161,7 +164,8 @@ class GpuAssistedBase : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                     const RecordObject &record_obj, void *crtpl_state_data) override;
-    void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) override;
+    void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
+                                      const RecordObject &record_obj) override;
 
     template <typename T>
     void ReportSetupProblem(T object, const char *const specific_message, bool vma_fail = false) const {
@@ -198,7 +202,8 @@ class GpuAssistedBase : public ValidationStateTracker {
     void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                         VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
                                         std::vector<SafeCreateInfo> *new_pipeline_create_infos,
-                                        const VkPipelineBindPoint bind_point, GPUAVState &cgpl_state);
+                                        const VkPipelineBindPoint bind_point, const RecordObject &record_obj,
+                                        GPUAVState &cgpl_state);
     template <typename CreateInfo, typename SafeCreateInfo>
     void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,

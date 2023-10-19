@@ -266,13 +266,12 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'void ThreadSafety::PreCallRecord{prototype[2:]}'
-            prototype = prototype.replace(');', ') {\n')
+            prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
             out.append(prototype)
             out.extend([startThreadSafety] if startThreadSafety is not None else [])
             out.append('}\n\n')
 
             prototype = prototype.replace('PreCallRecord', 'PostCallRecord')
-            prototype = prototype.replace(')', ', const RecordObject& record_obj)')
             out.append(prototype)
             out.extend([finishThreadSafety] if finishThreadSafety is not None else [])
             out.append('}\n\n')
@@ -293,13 +292,12 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
 
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'void PreCallRecord{prototype[2:]}'
-            prototype = prototype.replace(');', ') override;\n\n')
+            prototype = prototype.replace(');', ', const RecordObject& record_obj) override;\n\n')
             if 'ValidationCache' in command.name:
                 prototype = prototype.replace(' override;', ';')
             out.append(prototype)
 
             prototype = prototype.replace('PreCallRecord', 'PostCallRecord')
-            prototype = prototype.replace(')', ', const RecordObject& record_obj)')
             out.append(prototype)
 
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])

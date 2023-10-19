@@ -27,7 +27,8 @@ void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const
                                   VkInstance* pInstance, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
                                     const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
+                                  const RecordObject& record_obj) override;
 bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                              VkPhysicalDevice* pPhysicalDevices, const ErrorObject& error_obj) const override;
 void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices,
@@ -43,7 +44,7 @@ void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceC
                                 const RecordObject& record_obj) override;
 bool PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                   const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
                                    const ErrorObject& error_obj) const override;
 void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
@@ -58,7 +59,8 @@ void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* p
                                   const RecordObject& record_obj) override;
 bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                const ErrorObject& error_obj) const override;
-void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
+                             const RecordObject& record_obj) override;
 bool PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
                               VkMemoryMapFlags flags, void** ppData, const ErrorObject& error_obj) const override;
 bool PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, const ErrorObject& error_obj) const override;
@@ -86,7 +88,8 @@ void PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreate
                                VkFence* pFence, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator,
                                  const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator,
+                               const RecordObject& record_obj) override;
 bool PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
                                 const ErrorObject& error_obj) const override;
 bool PreCallValidateGetFenceStatus(VkDevice device, VkFence fence, const ErrorObject& error_obj) const override;
@@ -97,12 +100,14 @@ void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo*
                                    const RecordObject& record_obj) override;
 bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
                                      const ErrorObject& error_obj) const override;
-void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
 void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                VkEvent* pEvent, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
                                  const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
+                               const RecordObject& record_obj) override;
 bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
 bool PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
 bool PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
@@ -111,7 +116,8 @@ void PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo*
                                    const RecordObject& record_obj) override;
 bool PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator,
                                      const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
 bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                         size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                         const ErrorObject& error_obj) const override;
@@ -121,7 +127,8 @@ void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCrea
                                 VkBuffer* pBuffer, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                   const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
+                                const RecordObject& record_obj) override;
 bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                      const ErrorObject& error_obj) const override;
@@ -130,14 +137,16 @@ void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInf
                                     const RecordObject& record_obj) override;
 bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
                                       const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) override;
 bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                 VkImage* pImage, const ErrorObject& error_obj) const override;
 void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                VkImage* pImage, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                  const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
+                               const RecordObject& record_obj) override;
 bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                               VkSubresourceLayout* pLayout, const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
@@ -148,7 +157,8 @@ void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo*
                                    const RecordObject& record_obj) override;
 bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
                                      const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
 bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                        const ErrorObject& error_obj) const override;
@@ -157,15 +167,15 @@ void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreat
                                       const RecordObject& record_obj) override;
 bool PreCallValidateDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator,
                                         const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
-                                      const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator,
+                                      const RecordObject& record_obj) override;
 void PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
                                        const RecordObject& record_obj) override;
 bool PreCallValidateDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
-                                       const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) override;
 bool PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData,
                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
@@ -186,7 +196,8 @@ void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipel
                                           VkPipeline* pPipelines, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
                                     const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
+                                  const RecordObject& record_obj) override;
 bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                          const ErrorObject& error_obj) const override;
@@ -195,15 +206,16 @@ void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutC
                                         const RecordObject& record_obj) override;
 bool PreCallValidateDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator,
                                           const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
-                                        const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator,
+                                        const RecordObject& record_obj) override;
 bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                   VkSampler* pSampler, const ErrorObject& error_obj) const override;
 void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                  VkSampler* pSampler, const RecordObject& record_obj) override;
 bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator,
                                    const ErrorObject& error_obj) const override;
-void PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator,
+                                 const RecordObject& record_obj) override;
 bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
                                               const ErrorObject& error_obj) const override;
@@ -214,14 +226,14 @@ bool PreCallValidateDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetL
                                                const VkAllocationCallbacks* pAllocator,
                                                const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                             const VkAllocationCallbacks* pAllocator) override;
+                                             const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                         const RecordObject& record_obj) override;
 bool PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks* pAllocator,
                                           const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                        const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks* pAllocator,
+                                        const RecordObject& record_obj) override;
 bool PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
@@ -241,13 +253,15 @@ void PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateI
                                      const RecordObject& record_obj) override;
 bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator,
                                        const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator,
+                                     const RecordObject& record_obj) override;
 void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                     const RecordObject& record_obj) override;
 bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
                                       const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) override;
 bool PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity,
                                              const ErrorObject& error_obj) const override;
 void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
@@ -255,7 +269,8 @@ void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateI
                                      const RecordObject& record_obj) override;
 bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
                                        const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
+                                     const RecordObject& record_obj) override;
 bool PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                      const ErrorObject& error_obj) const override;
 bool PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
@@ -376,7 +391,7 @@ bool PreCallValidateDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbc
                                                   const VkAllocationCallbacks* pAllocator,
                                                   const ErrorObject& error_obj) const override;
 void PreCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                const VkAllocationCallbacks* pAllocator) override;
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
@@ -389,7 +404,7 @@ bool PreCallValidateDestroyDescriptorUpdateTemplate(VkDevice device, VkDescripto
                                                     const VkAllocationCallbacks* pAllocator,
                                                     const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                  const VkAllocationCallbacks* pAllocator) override;
+                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                     const ErrorObject& error_obj) const override;
@@ -427,7 +442,7 @@ void PostCallRecordCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlo
 bool PreCallValidateDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                            const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
-                                         const VkAllocationCallbacks* pAllocator) override;
+                                         const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                    VkPrivateDataSlot privateDataSlot, uint64_t data, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
@@ -463,7 +478,8 @@ bool PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_
                                           const VkDeviceSize* pStrides, const ErrorObject& error_obj) const override;
 bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
                                       const ErrorObject& error_obj) const override;
-void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) override;
 bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                        VkSurfaceKHR surface, VkBool32* pSupported,
                                                        const ErrorObject& error_obj) const override;
@@ -484,7 +500,8 @@ void PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateIn
                                       const RecordObject& record_obj) override;
 bool PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator,
                                         const ErrorObject& error_obj) const override;
-void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator,
+                                      const RecordObject& record_obj) override;
 bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                           VkImage* pSwapchainImages, const ErrorObject& error_obj) const override;
 void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
@@ -569,8 +586,8 @@ void PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCr
                                          const RecordObject& record_obj) override;
 bool PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession, const VkAllocationCallbacks* pAllocator,
                                            const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                         const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession, const VkAllocationCallbacks* pAllocator,
+                                         const RecordObject& record_obj) override;
 bool PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                          uint32_t* pMemoryRequirementsCount,
                                                          VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
@@ -593,7 +610,8 @@ bool PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSes
                                                      const VkAllocationCallbacks* pAllocator,
                                                      const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
-                                                   const VkAllocationCallbacks* pAllocator) override;
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   const RecordObject& record_obj) override;
 bool PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo,
                                            const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
@@ -649,7 +667,8 @@ bool PreCallValidateDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescri
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                     const VkAllocationCallbacks* pAllocator) override;
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     const RecordObject& record_obj) override;
 bool PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                        VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                        const ErrorObject& error_obj) const override;
@@ -708,7 +727,8 @@ bool PreCallValidateDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerY
                                                      const VkAllocationCallbacks* pAllocator,
                                                      const ErrorObject& error_obj) const override;
 void PreCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                   const VkAllocationCallbacks* pAllocator) override;
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   const RecordObject& record_obj) override;
 bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
@@ -742,7 +762,7 @@ bool PreCallValidateDestroyDeferredOperationKHR(VkDevice device, VkDeferredOpera
                                                 const VkAllocationCallbacks* pAllocator,
                                                 const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
-                                              const VkAllocationCallbacks* pAllocator) override;
+                                              const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateGetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                           const ErrorObject& error_obj) const override;
 bool PreCallValidateGetDeferredOperationResultKHR(VkDevice device, VkDeferredOperationKHR operation,
@@ -812,7 +832,7 @@ bool PreCallValidateDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugRe
                                                   const VkAllocationCallbacks* pAllocator,
                                                   const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                                const VkAllocationCallbacks* pAllocator) override;
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                        const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                        const VkDeviceSize* pSizes, const ErrorObject& error_obj) const override;
@@ -842,10 +862,12 @@ void PostCallRecordCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreate
                                        const RecordObject& record_obj) override;
 bool PreCallValidateDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator,
                                        const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator,
+                                     const RecordObject& record_obj) override;
 bool PreCallValidateDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) override;
 bool PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo,
                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
@@ -933,7 +955,7 @@ bool PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUt
                                                   const VkAllocationCallbacks* pAllocator,
                                                   const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                const VkAllocationCallbacks* pAllocator) override;
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -978,7 +1000,7 @@ void PostCallRecordCreateValidationCacheEXT(VkDevice device, const VkValidationC
 bool PreCallValidateDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                               const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const;
 void PreCallRecordDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
-                                            const VkAllocationCallbacks* pAllocator);
+                                            const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj);
 bool PreCallValidateMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
                                              const VkValidationCacheEXT* pSrcCaches, const ErrorObject& error_obj) const;
 bool PreCallValidateGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize, void* pData,
@@ -997,7 +1019,7 @@ bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerati
                                                    const VkAllocationCallbacks* pAllocator,
                                                    const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                 const VkAllocationCallbacks* pAllocator) override;
+                                                 const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                  const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
                                                                  VkMemoryRequirements2KHR* pMemoryRequirements,
@@ -1055,7 +1077,8 @@ void PostCallRecordAcquirePerformanceConfigurationINTEL(VkDevice device,
                                                         const RecordObject& record_obj) override;
 bool PreCallValidateReleasePerformanceConfigurationINTEL(VkDevice device, VkPerformanceConfigurationINTEL configuration,
                                                          const ErrorObject& error_obj) const override;
-void PreCallRecordReleasePerformanceConfigurationINTEL(VkDevice device, VkPerformanceConfigurationINTEL configuration) override;
+void PreCallRecordReleasePerformanceConfigurationINTEL(VkDevice device, VkPerformanceConfigurationINTEL configuration,
+                                                       const RecordObject& record_obj) override;
 bool PreCallValidateQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                           const ErrorObject& error_obj) const override;
 bool PreCallValidateSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable,
@@ -1137,7 +1160,7 @@ bool PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectC
                                                     const VkAllocationCallbacks* pAllocator,
                                                     const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
-                                                  const VkAllocationCallbacks* pAllocator) override;
+                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display,
                                          const ErrorObject& error_obj) const override;
 void PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR* display,
@@ -1148,7 +1171,7 @@ void PostCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateData
 bool PreCallValidateDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                               const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
-                                            const VkAllocationCallbacks* pAllocator) override;
+                                            const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                       VkPrivateDataSlot privateDataSlot, uint64_t data,
                                       const ErrorObject& error_obj) const override;
@@ -1238,7 +1261,7 @@ bool PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferColl
                                                    const VkAllocationCallbacks* pAllocator,
                                                    const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
-                                                 const VkAllocationCallbacks* pAllocator) override;
+                                                 const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 #endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 bool PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
@@ -1267,7 +1290,8 @@ void PostCallRecordCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfo
                                      const RecordObject& record_obj) override;
 bool PreCallValidateDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator,
                                        const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator,
+                                     const RecordObject& record_obj) override;
 bool PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkMicromapBuildInfoEXT* pInfos,
                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
@@ -1329,7 +1353,7 @@ bool PreCallValidateDestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSe
                                                 const VkAllocationCallbacks* pAllocator,
                                                 const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session,
-                                              const VkAllocationCallbacks* pAllocator) override;
+                                              const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session,
                                                   VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view,
                                                   VkImageLayout layout, const ErrorObject& error_obj) const override;
@@ -1344,7 +1368,8 @@ void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, c
                                     const RecordObject& record_obj) override;
 bool PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
                                      const ErrorObject& error_obj) const override;
-void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) override;
+void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
 bool PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
                                            const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
@@ -1378,7 +1403,7 @@ bool PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerat
                                                     const VkAllocationCallbacks* pAllocator,
                                                     const ErrorObject& error_obj) const override;
 void PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
-                                                  const VkAllocationCallbacks* pAllocator) override;
+                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                       const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
@@ -1450,14 +1475,15 @@ bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuff
 
 void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
-void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags) override;
+void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
+                                      const RecordObject& record_obj) override;
 void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                           VkQueueFamilyProperties* pQueueFamilyProperties,
                                                           const RecordObject& record_obj) override;
 void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                     const VkCommandBuffer* pCommandBuffers) override;
+                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) override;
 void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                     const VkDescriptorSet* pDescriptorSets) override;
+                                     const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) override;
 void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                            VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                            const RecordObject& record_obj) override;

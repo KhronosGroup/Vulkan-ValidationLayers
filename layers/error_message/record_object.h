@@ -17,11 +17,13 @@
 
 #include "generated/error_location_helper.h"
 
-// Contains all information for each PostCallRecord function
+// Contains all information for each PreCallRecord / PostCallRecord function
 struct RecordObject {
     const Location location; // starting location (Always the function entrypoint)
-    const VkResult result = VK_RESULT_MAX_ENUM; // Not all items return a VkResult
-    const VkDeviceAddress device_address = 0;
+
+    // not const as we will want to update these after the command is ran, this struct should passed around as a const ref anyway
+    VkResult result = VK_RESULT_MAX_ENUM;  // Not all items return a VkResult
+    VkDeviceAddress device_address = 0;
 
     RecordObject(vvl::Func command_) : location(Location(command_)) {}
     RecordObject(vvl::Func command_, VkResult result_) : location(Location(command_)), result(result_) {}
