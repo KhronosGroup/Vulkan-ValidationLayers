@@ -36,6 +36,7 @@ TEST_F(NegativeMesh, BasicUsage) {
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&xfb_feature);
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
     mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
     features2.features.multiDrawIndirect = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &features2))
@@ -258,6 +259,8 @@ TEST_F(NegativeMesh, ExtensionDisabled) {
 
     mesh_shader_features.meshShader = VK_FALSE;
     mesh_shader_features.taskShader = VK_FALSE;
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
 
@@ -365,6 +368,8 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
     if (mesh_shader_features.meshShader != VK_TRUE) {
         GTEST_SKIP() << "Mesh shader feature not supported";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
@@ -865,6 +870,8 @@ TEST_F(NegativeMesh, DrawCmds) {
         GTEST_SKIP() << "Mesh shader feature not supported";
     }
     features2.features.multiDrawIndirect = VK_FALSE;
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &features2))
     InitRenderTarget();
@@ -1012,6 +1019,8 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     if (mesh_shader_features.meshShader != VK_TRUE) {
         GTEST_SKIP() << "Mesh shader feature not supported";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &features2))
     InitRenderTarget();
@@ -1233,6 +1242,8 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Task or mesh shader feature not supported";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();

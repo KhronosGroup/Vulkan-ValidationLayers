@@ -2705,6 +2705,8 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
     if (!mesh_shader_features.meshShaderQueries) {
         GTEST_SKIP() << "Mesh shader queries are not supported.";
     }
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();

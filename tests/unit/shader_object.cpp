@@ -98,12 +98,7 @@ TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08414");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, false));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -240,13 +235,8 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
     TEST_DESCRIPTION("Create task shader with invalid next stage.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
-
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
+    
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_2, true, false));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
@@ -269,12 +259,7 @@ TEST_F(NegativeShaderObject, MeshNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08436");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_2, false, true));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
@@ -297,12 +282,7 @@ TEST_F(NegativeShaderObject, TaskNVNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_2, true, false));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_NV, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
@@ -430,17 +410,8 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08470");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_3))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_3, true, false));
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
@@ -482,17 +453,7 @@ TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08471");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_3, false, true));
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
@@ -708,17 +669,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08478");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features, VK_API_VERSION_1_2))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_3, false, true));
 
     const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_GRAPHICS_BIT);
 
@@ -902,12 +853,7 @@ TEST_F(NegativeShaderObject, DrawWithoutBindingMeshShadersWhenEnabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08689");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08690");
 
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, false, true));
 
     InitDynamicRenderTarget();
 
@@ -1015,17 +961,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08403");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, false, true));
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -1056,17 +992,7 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08404");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, false, true));
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
@@ -1098,20 +1024,7 @@ TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08405");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
 
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
@@ -1397,15 +1310,7 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
@@ -1428,12 +1333,7 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08436");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, false, true));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
 
@@ -3286,12 +3186,7 @@ TEST_F(NegativeShaderObject, MissingTaskShaderBind) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08689");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3302,7 +3197,7 @@ TEST_F(NegativeShaderObject, MissingTaskShaderBind) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
-    if (meshShaderFeatures.meshShader) {
+    {
         VkShaderStageFlagBits meshStage = VK_SHADER_STAGE_MESH_BIT_EXT;
         VkShaderEXT nullShader = VK_NULL_HANDLE;
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &meshStage, &nullShader);
@@ -3319,13 +3214,8 @@ TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08690");
-
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
+    
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3336,7 +3226,7 @@ TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
-    if (meshShaderFeatures.taskShader) {
+    {
         VkShaderStageFlagBits taskStage = VK_SHADER_STAGE_TASK_BIT_EXT;
         VkShaderEXT nullShader = VK_NULL_HANDLE;
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &taskStage, &nullShader);
@@ -3355,17 +3245,7 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08696");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08885");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3379,7 +3259,7 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
-    if (meshShaderFeatures.taskShader) {
+    {
         VkShaderStageFlagBits taskStage = VK_SHADER_STAGE_TASK_BIT_EXT;
         VkShaderEXT nullShader = VK_NULL_HANDLE;
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &taskStage, &nullShader);
@@ -3399,20 +3279,7 @@ TEST_F(NegativeShaderObject, MeshShaderWithMissingTaskShader) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08694");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08885");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -3448,20 +3315,7 @@ TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08695");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08885");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -3507,17 +3361,7 @@ TEST_F(NegativeShaderObject, VertAndTaskShadersBound) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08696");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08885");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3546,7 +3390,7 @@ TEST_F(NegativeShaderObject, VertAndTaskShadersBound) {
     VkShaderEXT nullShader = VK_NULL_HANDLE;
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &taskStage, &nullShader);
     VkShaderStageFlagBits meshStage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    if (meshShaderFeatures.meshShader) {
+    {
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &meshStage, &meshShader.handle());
     }
 
@@ -3898,17 +3742,7 @@ TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08885");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = vku::InitStructHelper(&meshShaderFeatures);
-    RETURN_IF_SKIP(InitBasicShaderObject(&maintenance4Features))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
-    if (maintenance4Features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -3925,7 +3759,7 @@ TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fragShader.handle()};
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-    if (meshShaderFeatures.taskShader) {
+    {
         VkShaderStageFlagBits taskStage = VK_SHADER_STAGE_TASK_BIT_EXT;
         VkShaderEXT nullShader = VK_NULL_HANDLE;
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &taskStage, &nullShader);
@@ -5224,12 +5058,7 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-MeshEXT-07115");
 
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2))
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
-    }
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, false, true));
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);

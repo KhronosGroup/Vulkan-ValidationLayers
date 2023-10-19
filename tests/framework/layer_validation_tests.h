@@ -495,7 +495,10 @@ class ShaderObjectTest : public VkLayerTest {
     vkt::Buffer vertexBuffer;
 
   public:
-    void InitBasicShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1, bool coreFeatures = true);
+    void InitBasicShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1,
+                               bool coreFeatures = true);
+    void InitBasicMeshShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1,
+                                   bool taskShader = true, bool meshShader = true);
     void BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader);
     void BindCompShader(const vkt::Shader &compShader);
     void SetDefaultDynamicStates(const std::vector<VkDynamicState>& exclude = {}, bool tessellation = false, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
