@@ -1051,8 +1051,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
 }
 
 TEST_F(NegativePipeline, DepthStencilRequired) {
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "pDepthStencilState is NULL when rasterization is enabled and subpass uses a depth/stencil attachment");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09028");
 
     RETURN_IF_SKIP(Init())
     InitRenderTarget();

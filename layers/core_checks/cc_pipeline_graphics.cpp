@@ -1220,9 +1220,12 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                 const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
                 const auto ds_state = pipeline.DepthStencilState();
                 if (!ds_state) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891", device, ds_loc,
-                                     "is NULL when rasterization is enabled "
-                                     "and subpass uses a depth/stencil attachment.");
+                    if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09028", device, ds_loc,
+                                         "is NULL when rasterization is enabled "
+                                         "and subpass %" PRIu32 " uses a depth/stencil attachment.",
+                                         pipeline.Subpass());
+                    }
                 } else if (ds_state->depthBoundsTestEnable == VK_TRUE) {
                     if (!enabled_features.depthBounds) {
                         skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", device,
@@ -1712,19 +1715,20 @@ bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE 
     const auto ds_state = pipeline.DepthStencilState();
     const auto &rp_state = pipeline.RenderPassState();
     const bool null_rp = (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE);
-    if (ds_state) {
-        if ((((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) !=
-              0) ||
-             ((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) !=
-              0)) &&
-            null_rp) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06483", device, ds_loc.dot(Field::flags),
-                             "is %s but renderPass is VK_NULL_HANDLE.",
-                             string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+    if (null_rp) {
+        if (ds_state) {
+            if ((ds_state->flags &
+                 (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
+                  VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM)) != 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06483", device, ds_loc.dot(Field::flags),
+                                 "is %s but renderPass is VK_NULL_HANDLE.",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+            }
+        } else if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+            if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, ds_loc, "is NULL.");
+            }
         }
-    } else if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state &&
-               !pipeline.IsDepthStencilStateDynamic() && !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, ds_loc, "is NULL.");
     }
 
     return skip;
