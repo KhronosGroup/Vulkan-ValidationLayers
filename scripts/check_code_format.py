@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2020-2023 Valve Corporation
 # Copyright (c) 2020-2023 LunarG, Inc.
 
