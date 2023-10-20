@@ -625,6 +625,28 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
+    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
+    if (image_compression_control && (image_compression_control->flags & VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT) != 0) {
+        if (vkuFormatIsMultiplane(pCreateInfo->format)) {
+            if (image_compression_control->compressionControlPlaneCount != vkuFormatPlaneCount(pCreateInfo->format)) {
+                skip |= LogError("VUID-VkImageCreateInfo-pNext-06743", device, create_info_loc,
+                                 "VkImageCompressionControlEXT::flags contain VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT, but "
+                                 "VkImageCompressionControlEXT::compressionControlPlaneCount (%" PRIu32
+                                 ") is not equal to the number of planes in the multi-planar format %s (%" PRIu32 ")",
+                                 image_compression_control->compressionControlPlaneCount, string_VkFormat(pCreateInfo->format),
+                                 vkuFormatPlaneCount(pCreateInfo->format));
+            }
+        } else {
+            if (image_compression_control->compressionControlPlaneCount != 1) {
+                skip |= LogError("VUID-VkImageCreateInfo-pNext-06744", device, create_info_loc,
+                                 "VkImageCompressionControlEXT::flags contain VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT and "
+                                 "VkImageCreateInfo::format is a not a multi-planar format (%s), but "
+                                 "VkImageCompressionControlEXT::compressionControlPlaneCount is %" PRIu32,
+                                 string_VkFormat(pCreateInfo->format), image_compression_control->compressionControlPlaneCount);
+            }
+        }
+    }
+
     return skip;
 }
 
