@@ -1574,3 +1574,75 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT;
     create_pipe_with_depth_bias_representation(depth_bias_representation);
 }
+
+TEST_F(PositivePipeline, DepthStencilStateIgnored) {
+    TEST_DESCRIPTION("Have a valid null pDepthStencilState with a Depth attachment");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    InitRenderTarget();
+
+    VkAttachmentDescription attachments[] = {
+        {
+            0,
+            VK_FORMAT_B8G8R8A8_UNORM,
+            VK_SAMPLE_COUNT_1_BIT,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        },
+        {
+            0,
+            VK_FORMAT_D16_UNORM,
+            VK_SAMPLE_COUNT_1_BIT,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        },
+    };
+    VkAttachmentReference refs[] = {
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
+    };
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr};
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 0, nullptr};
+    vkt::RenderPass rp(*m_device, rpci);
+
+    // disable with rasterizerDiscardEnable
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+        pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+        pipe.gp_ci_.renderPass = rp.handle();
+        pipe.CreateGraphicsPipeline();
+    }
+
+    // disable with dynamic state
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_OP);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+        pipe.gp_ci_.renderPass = rp.handle();
+        pipe.CreateGraphicsPipeline();
+    }
+}

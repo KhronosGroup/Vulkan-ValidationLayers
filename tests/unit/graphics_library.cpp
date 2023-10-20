@@ -339,8 +339,11 @@ TEST_F(NegativeGraphicsLibrary, DepthStencilStateIgnored) {
     frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
     frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_OP);
     frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+
     // forgetting VK_EXT_extended_dynamic_state3
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
     frag_shader_lib.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
