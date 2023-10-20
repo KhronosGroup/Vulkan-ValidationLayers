@@ -133,6 +133,14 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
     skip |= ValidateAttachmentCompatibility(type1_string, rp1_state, type2_string, rp2_state, primary_depthstencil_attach,
                                             secondary_depthstencil_attach, loc, error_code);
 
+    if (primary_desc.flags != secondary_desc.flags) {
+        std::stringstream ss;
+        ss << "First subpass description flags is " << string_VkSubpassDescriptionFlags(primary_desc.flags)
+           << ", which is different from the second subpass flags " << string_VkSubpassDescriptionFlags(secondary_desc.flags)
+           << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), loc, error_code);
+    }
+
     // Both renderpasses must agree on Multiview usage
     if (primary_desc.viewMask && secondary_desc.viewMask) {
         if (primary_desc.viewMask != secondary_desc.viewMask) {
