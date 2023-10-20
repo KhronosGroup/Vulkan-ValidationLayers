@@ -2950,3 +2950,63 @@ TEST_F(VkLayerTest, RequiredMeshShaderFeatures) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
+    TEST_DESCRIPTION("Test using the ray tracing stage flag without enabling any of ray tracing features");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device);
+    VkPipelineStageFlags stage = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.signalSemaphoreCount = 1u;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
+
+    submit_info.signalSemaphoreCount = 0u;
+    submit_info.waitSemaphoreCount = 1u;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.pWaitDstStageMask = &stage;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-07949");
+    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    vkt::Event event(*m_device);
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-07949");
+    vk::CmdSetEvent(m_commandBuffer->handle(), event.handle(), stage);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent-stageMask-07949");
+    vk::CmdResetEvent(m_commandBuffer->handle(), event.handle(), stage);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-07949");
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1u, &event.handle(), stage, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0u, nullptr, 0u,
+                      nullptr, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-dstStageMask-07949");
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1u, &event.handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, stage, 0u, nullptr, 0u,
+                      nullptr, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcStageMask-07949");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), stage, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr, 0u, nullptr, 0u,
+                           nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstStageMask-07949");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, stage, 0u, 0u, nullptr, 0u, nullptr, 0u,
+                           nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    vk::QueueWaitIdle(m_default_queue);
+}
