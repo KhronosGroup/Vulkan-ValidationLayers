@@ -3374,3 +3374,36 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeWsi, ImageCompressionControlSwapchainWithoutFeature) {
+    TEST_DESCRIPTION("Use image compression control swapchain pNext without feature enabled");
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+    InitSwapchainInfo();
+
+    VkImageCompressionControlEXT image_compression_control = vku::InitStructHelper();
+
+    VkSwapchainCreateInfoKHR create_info = vku::InitStructHelper(&image_compression_control);
+    create_info.surface = m_surface;
+    create_info.minImageCount = m_surface_capabilities.minImageCount;
+    create_info.imageFormat = m_surface_formats[0].format;
+    create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    create_info.imageArrayLayers = 1;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    create_info.compositeAlpha = m_surface_composite_alpha;
+    create_info.presentMode = m_surface_non_shared_present_mode;
+    create_info.clipped = VK_FALSE;
+    create_info.oldSwapchain = 0;
+
+    VkSwapchainKHR swapchain;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-pNext-06752");
+    vk::CreateSwapchainKHR(*m_device, &create_info, nullptr, &swapchain);
+    m_errorMonitor->VerifyFound();
+}
