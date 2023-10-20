@@ -193,11 +193,14 @@ TEST_F(NegativeCommand, MissingClearAttachment) {
 
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    VkClearAttachment color_attachment = {};
-    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    color_attachment.colorAttachment = 2;
+    VkClearAttachment color_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 2, VkClearValue{}};
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    color_attachment.colorAttachment = VK_ATTACHMENT_UNUSED;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
