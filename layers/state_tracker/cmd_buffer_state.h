@@ -601,7 +601,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         }
         return 0;
     }
-    bool IsValidDynamicColorAttachmentImageIndex(uint32_t index) const { return index < GetDynamicColorAttachmentCount(); }
     uint32_t GetDynamicColorAttachmentImageIndex(uint32_t index) const { return index; }
     uint32_t GetDynamicColorResolveAttachmentImageIndex(uint32_t index) const { return index + GetDynamicColorAttachmentCount(); }
     uint32_t GetDynamicDepthAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount(); }

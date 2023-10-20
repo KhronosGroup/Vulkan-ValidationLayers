@@ -155,13 +155,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
     info.pInheritanceInfo = &hinfo;
 
     secondary.begin(&info);
-    VkClearAttachment color_attachment = {};
-    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    color_attachment.clearValue.color.float32[0] = 0.0;
-    color_attachment.clearValue.color.float32[1] = 0.0;
-    color_attachment.clearValue.color.float32[2] = 0.0;
-    color_attachment.clearValue.color.float32[3] = 0.0;
-    color_attachment.colorAttachment = 0;
+    VkClearAttachment color_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VkClearValue{}};
 
     VkClearAttachment ds_attachment = {};
     ds_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -1206,4 +1200,24 @@ TEST_F(PositiveCommand, CopyBufferToRemaingImageLayers) {
     m_commandBuffer->begin();
     vk::CmdCopyBufferToImage2KHR(m_commandBuffer->handle(), &copy_buffer_to_image);
     m_commandBuffer->end();
+}
+
+TEST_F(PositiveCommand, ClearAttachmentBasicUsage) {
+    TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    VkClearAttachment color_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VkClearValue{}};
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 }
