@@ -452,6 +452,33 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
 
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        if (enabled_features.variableMultisampleRate == VK_FALSE &&
+            !cb_state.activeRenderPass->UsesColorAttachment(cb_state.GetActiveSubpass()) &&
+            !cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
+            std::stringstream message;
+            if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                    cb_state.GetActiveSubpassRasterizationSampleCount();
+                subpass_rasterization_samples &&
+                *subpass_rasterization_samples != cb_state.dynamic_state_value.rasterization_samples) {
+                message << "VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE and the rasterizationSamples set with "
+                           "vkCmdSetRasterizationSamplesEXT() were "
+                        << string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples)
+                        << "but a previous draw used rasterization samples " << *subpass_rasterization_samples << ".";
+            } else if ((cb_state.dynamic_state_value.rasterization_samples &
+                        phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) == 0) {
+                message << "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() are "
+                        << string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples)
+                        << ", but this bit is not in framebufferNoAttachmentsSampleCounts ("
+                        << string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) << ").";
+            }
+            if (!message.str().empty()) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(vuid.sample_locations_07471, objlist, loc, "%s.", message.str().c_str());
+            }
+        }
+    }
+
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
     const bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);

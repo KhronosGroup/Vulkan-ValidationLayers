@@ -314,6 +314,7 @@ struct DrawDispatchVuid {
     const char* stencil_attachment_08965 = kVUIDUndefined;
     const char* sample_locations_07482 = kVUIDUndefined;
     const char* sample_locations_07483 = kVUIDUndefined;
+    const char* sample_locations_07471 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
