@@ -154,8 +154,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
-        Location loc(Func::vkCreateDevice);
-        LogInfo(kVUID_BestPractices_CreateDevice_API_Mismatch, device, loc,
+        LogInfo(kVUID_BestPractices_CreateDevice_API_Mismatch, device, error_obj.location,
                 "API Version of current instance, %s is higher than API Version on device, %s", inst_api_name.c_str(),
                 dev_api_name.c_str());
     }

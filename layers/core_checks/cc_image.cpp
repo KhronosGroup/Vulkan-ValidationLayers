@@ -1140,15 +1140,14 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                 }
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                auto val_fn = [this, rectCount, clear_rect_copy](const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb,
-                                                                 const FRAMEBUFFER_STATE *) {
+                auto val_fn = [this, rectCount, clear_rect_copy, record_obj](
+                                  const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb, const FRAMEBUFFER_STATE *) {
                     assert(rectCount == clear_rect_copy->size());
                     bool skip = false;
-                    const Location loc(Func::vkCmdClearAttachments);
                     skip = ValidateClearAttachmentExtent(
                         secondary, prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
                         prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
-                        clear_rect_copy->data(), loc);
+                        clear_rect_copy->data(), record_obj.location);
                     return skip;
                 };
                 cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
@@ -1176,16 +1175,15 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                 }
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                auto val_fn = [this, rectCount, clear_rect_copy](const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb,
-                                                                 const FRAMEBUFFER_STATE *fb) {
+                auto val_fn = [this, rectCount, clear_rect_copy, record_obj](
+                                  const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb, const FRAMEBUFFER_STATE *fb) {
                     assert(rectCount == clear_rect_copy->size());
                     const auto &render_area = prim_cb->active_render_pass_begin_info.renderArea;
                     bool skip = false;
 
                     if (fb && prim_cb->IsPrimary()) {
-                        const Location loc(Func::vkCmdClearAttachments);
                         skip = ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
-                                                             clear_rect_copy->data(), loc);
+                                                             clear_rect_copy->data(), record_obj.location);
                     }
                     return skip;
                 };
