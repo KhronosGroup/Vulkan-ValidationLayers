@@ -784,8 +784,6 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = vs_layout;
-    pre_raster.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
-    pre_raster.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pre_raster.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
@@ -933,8 +931,6 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = vs_layout;
-    pre_raster.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
-    pre_raster.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pre_raster.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
