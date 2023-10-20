@@ -708,6 +708,13 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             return true;
         }
     }
+
+    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
+    if (image_compression_control && !enabled_features.imageCompressionControlSwapchain) {
+        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-06752", device, create_info_loc.dot(Field::pNext),
+                         "contains VkImageCompressionControlEXT, but imageCompressionControlSwapchain is not enabled");
+    }
+
     return skip;
 }
 
