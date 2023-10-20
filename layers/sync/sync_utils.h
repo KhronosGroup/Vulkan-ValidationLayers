@@ -28,6 +28,7 @@
 #endif
 
 struct DeviceFeatures;
+struct DeviceExtensions;
 class ValidationStateTracker;
 class BUFFER_STATE;
 class IMAGE_STATE;
@@ -36,7 +37,7 @@ namespace sync_utils {
 
 static constexpr VkQueueFlags kAllQueueTypes = (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
 
-VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures& features);
+VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
 
 // Expand all pipeline stage bits. If queue_flags and disabled_feature_mask is provided, the expansion of ALL_COMMANDS_BIT
 // and ALL_GRAPHICS_BIT will be limited to what is supported.
