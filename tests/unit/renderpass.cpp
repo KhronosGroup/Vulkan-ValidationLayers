@@ -3692,6 +3692,104 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
+    TEST_DESCRIPTION("Two renderpasses with different VkSubpassDescriptionFlagBits");
+
+    AddRequiredExtensions(VK_EXT_LEGACY_DITHERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceLegacyDitheringFeaturesEXT dithering_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(dithering_features);
+    if (dithering_features.legacyDithering == VK_FALSE) {
+        GTEST_SKIP() << "legacyDithering feature not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &dithering_features));
+
+    VkAttachmentReference attach_ref = {};
+    attach_ref.attachment = 0;
+    attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attach_ref;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDependency dependency = {0,
+                                      0,
+                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                      VK_DEPENDENCY_BY_REGION_BIT};
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &dependency;
+
+    vkt::RenderPass render_pass1(*m_device, rpci);
+    subpass.flags = VK_SUBPASS_DESCRIPTION_ENABLE_LEGACY_DITHERING_BIT_EXT;
+    vkt::RenderPass render_pass2(*m_device, rpci);
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
+    fb_ci.renderPass = render_pass1.handle();
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = &imageView;
+    fb_ci.width = 32;
+    fb_ci.height = 32;
+    fb_ci.layers = 1;
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+
+    VkClearValue clear_values[2] = {};
+    clear_values[0].color = {{0, 0, 0, 0}};
+    clear_values[1].color = {{0, 0, 0, 0}};
+
+    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
+    rpbi.framebuffer = framebuffer.handle();
+    rpbi.renderPass = render_pass2.handle();
+    rpbi.renderArea.extent.width = 32;
+    rpbi.renderArea.extent.height = 32;
+    rpbi.clearValueCount = 2;
+    rpbi.pClearValues = clear_values;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.renderPass = render_pass2.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+
+    rpbi.renderPass = render_pass1.handle();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeRenderPass, SubpassAttachmentImageLayout) {
     TEST_DESCRIPTION("Invalid attachment reference layout");
 
