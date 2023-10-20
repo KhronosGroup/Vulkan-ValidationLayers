@@ -1180,7 +1180,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
                                       "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 

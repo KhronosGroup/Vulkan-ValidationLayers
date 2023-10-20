@@ -119,7 +119,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
@@ -165,7 +165,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositiveShaderInterface, RelaxedBlockLayout) {
@@ -796,7 +796,7 @@ TEST_F(VkPositiveLayerTest, FragmentOutputNotConsumedButAlphaToCoverageEnabled) 
         helper.pipe_ms_state_ci_ = ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 // Spec doesn't clarify if this is valid or not

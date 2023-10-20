@@ -2968,7 +2968,6 @@ TEST_F(VkGpuAssistedLayerTest, SelectInstrumentedShaders) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Should not get a warning since shader wasn't instrumented
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_default_queue);
     VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};

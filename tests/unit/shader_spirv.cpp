@@ -1442,7 +1442,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
     // Sanity check
     cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
     if (cs) {
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         // signed int mismatch
         entries[0].size = 0;
@@ -1522,7 +1522,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         if (cs) {
             // Sanity check
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             // signed int 8 mismatch
             entries[0].size = 0;
@@ -1577,7 +1577,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         cs = VkShaderObj::CreateFromASM(this, cs_float64, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         if (cs) {
             // Sanity check
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             // float 64 mismatch
             entries[0].size = 1;

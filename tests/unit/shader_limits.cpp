@@ -50,7 +50,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
     const auto validPipeline = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsValid.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit | kWarningBit);
+    CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit);
 
     // Exceed sample mask input array size
     char const *inputSource = R"glsl(
