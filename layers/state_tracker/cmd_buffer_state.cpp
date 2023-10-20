@@ -1050,6 +1050,11 @@ void CMD_BUFFER_STATE::UpdatePipelineState(Func command, const VkPipelineBindPoi
         usedDynamicScissorCount |= pipe->IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     }
 
+    if (pipe->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+        dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        SetActiveSubpassRasterizationSampleCount(dynamic_state_value.rasterization_samples);
+    }
+
     if (last_bound.pipeline_layout != VK_NULL_HANDLE) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;

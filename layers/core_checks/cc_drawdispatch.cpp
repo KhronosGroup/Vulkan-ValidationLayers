@@ -291,6 +291,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDraw-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDraw-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDraw-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDraw-rasterizationSamples-07471";
     }
 };
 
@@ -564,6 +565,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMultiEXT-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMultiEXT-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMultiEXT-rasterizationSamples-07471";
     }
 };
 
@@ -838,6 +840,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawIndexed-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawIndexed-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawIndexed-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawIndexed-rasterizationSamples-07471";
     }
 };
 
@@ -1112,6 +1115,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMultiIndexedEXT-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMultiIndexedEXT-rasterizationSamples-07471";
     }
 };
 
@@ -1387,6 +1391,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawIndirect-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawIndirect-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawIndirect-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawIndirect-rasterizationSamples-07471";
     }
 };
 
@@ -1663,6 +1668,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawIndexedIndirect-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawIndexedIndirect-rasterizationSamples-07471";
     }
 };
 
@@ -2027,6 +2033,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawIndirectCount-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawIndirectCount-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawIndirectCount-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawIndirectCount-rasterizationSamples-07471";
     }
 };
 
@@ -2306,6 +2313,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawIndexedIndirectCount-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawIndexedIndirectCount-rasterizationSamples-07471";
     }
 };
 
@@ -2735,6 +2743,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMeshTasksNV-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMeshTasksNV-rasterizationSamples-07471";
     }
 };
 
@@ -2995,6 +3004,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMeshTasksIndirectNV-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizationSamples-07471";
     }
 };
 
@@ -3258,6 +3268,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizationSamples-07471";
     }
 };
 
@@ -3515,6 +3526,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMeshTasksEXT-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMeshTasksEXT-rasterizationSamples-07471";
     }
 };
 
@@ -3775,6 +3787,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizationSamples-07471";
     }
 };
 
@@ -4038,6 +4051,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizationSamples-07471";
     }
 };
 
@@ -4313,6 +4327,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         stencil_attachment_08965                 = "VUID-vkCmdDrawIndirectByteCountEXT-pStencilAttachment-08965";
         sample_locations_07482                   = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsPerPixel-07482";
         sample_locations_07483                   = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsPerPixel-07483";
+        sample_locations_07471                   = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizationSamples-07471";
     }
 };
 
