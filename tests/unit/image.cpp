@@ -6146,3 +6146,46 @@ TEST_F(NegativeImage, ResolveDepthImage) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeImage, ImageCompressionControlPlaneCount) {
+    TEST_DESCRIPTION("Test invalid image compression control plane counts");
+
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceImageCompressionControlFeaturesEXT icc_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(icc_features);
+    if (!icc_features.imageCompressionControl) {
+        GTEST_SKIP() << "imageCompressionControl not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &icc_features));
+
+    VkImageCompressionFixedRateFlagsEXT image_compression_fixed_rage_flags[] = {0u, 0u};
+
+    VkImageCompressionControlEXT image_compression_control = vku::InitStructHelper();
+    image_compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT;
+    image_compression_control.compressionControlPlaneCount = 1u;
+    image_compression_control.pFixedRateFlags = image_compression_fixed_rage_flags;
+
+    VkImageCreateInfo create_info = vku::InitStructHelper(&image_compression_control);
+    create_info.imageType = VK_IMAGE_TYPE_2D;
+    create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    create_info.extent = {32u, 32u, 1u};
+    create_info.mipLevels = 1u;
+    create_info.arrayLayers = 1u;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06743");
+    vk::CreateImage(*m_device, &create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+
+    image_compression_control.compressionControlPlaneCount = 2u;
+    create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06744");
+    vk::CreateImage(*m_device, &create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
