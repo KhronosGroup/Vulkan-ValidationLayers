@@ -372,9 +372,9 @@ void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdResolveImage, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
+        QueueValidateImage(funcs, record_obj.location.function, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
                            pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, Func::vkCmdResolveImage, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
                            pRegions[i].dstSubresource);
     }
 }
@@ -393,9 +393,9 @@ void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
     uint32_t regionCount = pResolveImageInfo->regionCount;
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdResolveImage2, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
+        QueueValidateImage(funcs, record_obj.location.function, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
                            pResolveImageInfo->pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, Func::vkCmdResolveImage2, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
                            pResolveImageInfo->pRegions[i].dstSubresource);
     }
 }
@@ -408,7 +408,7 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     auto dst = Get<bp_state::Image>(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdClearColorImage, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
@@ -427,7 +427,7 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     auto dst = Get<bp_state::Image>(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdClearDepthStencilImage, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         for (uint32_t i = 0; i < rangeCount; i++) {
@@ -448,8 +448,10 @@ void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdCopyImage, src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, Func::vkCmdCopyImage, dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE, pRegions[i].dstSubresource);
+        QueueValidateImage(funcs, record_obj.location.function, src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
+                           pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
+                           pRegions[i].dstSubresource);
     }
 }
 
@@ -461,7 +463,7 @@ void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
     auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdCopyBufferToImage, dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
                            pRegions[i].imageSubresource);
     }
 }
@@ -474,7 +476,7 @@ void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuf
     auto src = Get<bp_state::Image>(srcImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdCopyImageToBuffer, src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
+        QueueValidateImage(funcs, record_obj.location.function, src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
                            pRegions[i].imageSubresource);
     }
 }
@@ -488,8 +490,10 @@ void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, Func::vkCmdBlitImage, src, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ, pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, Func::vkCmdBlitImage, dst, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE, pRegions[i].dstSubresource);
+        QueueValidateImage(funcs, record_obj.location.function, src, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ,
+                           pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE,
+                           pRegions[i].dstSubresource);
     }
 }
 

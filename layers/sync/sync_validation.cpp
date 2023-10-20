@@ -4413,7 +4413,7 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
-    const auto tag = cb_context->NextCommandTag(Func::vkCmdCopyBuffer);
+    const auto tag = cb_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<BUFFER_STATE>(srcBuffer);
@@ -4504,12 +4504,12 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
 
 void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
                                                    const RecordObject &record_obj) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, Func::vkCmdCopyBuffer2KHR);
+    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
                                                 const RecordObject &record_obj) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, Func::vkCmdCopyBuffer2);
+    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -4563,7 +4563,7 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdCopyImage);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -4659,12 +4659,12 @@ void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkC
 
 void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
                                                   const RecordObject &record_obj) {
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, Func::vkCmdCopyImage2KHR);
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
                                                const RecordObject &record_obj) {
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, Func::vkCmdCopyImage2);
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier(
@@ -4696,7 +4696,7 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(Func::vkCmdPipelineBarrier, *this, cb_access_context->GetQueueFlags(),
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(record_obj.location.function, *this, cb_access_context->GetQueueFlags(),
                                                            srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                                                            pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                            imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -4728,8 +4728,8 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandB
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(Func::vkCmdPipelineBarrier2KHR, *this,
-                                                           cb_access_context->GetQueueFlags(), *pDependencyInfo);
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(record_obj.location.function, *this, cb_access_context->GetQueueFlags(),
+                                                           *pDependencyInfo);
 }
 
 void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
@@ -4739,7 +4739,7 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuff
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(Func::vkCmdPipelineBarrier2, *this, cb_access_context->GetQueueFlags(),
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(record_obj.location.function, *this, cb_access_context->GetQueueFlags(),
                                                            *pDependencyInfo);
 }
 
@@ -5072,7 +5072,7 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
     StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                                     record_obj);
     RecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
-                               Func::vkCmdCopyBufferToImage);
+                               record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -5081,7 +5081,7 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer comman
     StateTracker::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, record_obj);
     RecordCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                               pCopyBufferToImageInfo->pRegions, Func::vkCmdCopyBufferToImage2KHR);
+                               pCopyBufferToImageInfo->pRegions, record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
@@ -5090,7 +5090,7 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBu
     StateTracker::PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
     RecordCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                               pCopyBufferToImageInfo->pRegions, Func::vkCmdCopyBufferToImage2);
+                               pCopyBufferToImageInfo->pRegions, record_obj.location.function);
 }
 
 template <typename RegionType>
@@ -5198,7 +5198,7 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuf
     StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                                     record_obj);
     RecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
-                               Func::vkCmdCopyImageToBuffer);
+                               record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -5207,7 +5207,7 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer comman
     StateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, record_obj);
     RecordCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                               pCopyImageToBufferInfo->pRegions, Func::vkCmdCopyImageToBuffer2KHR);
+                               pCopyImageToBufferInfo->pRegions, record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
@@ -5216,7 +5216,7 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBu
     StateTracker::PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
     RecordCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                               pCopyImageToBufferInfo->pRegions, Func::vkCmdCopyImageToBuffer2);
+                               pCopyImageToBufferInfo->pRegions, record_obj.location.function);
 }
 
 template <typename RegionType>
@@ -5340,7 +5340,7 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions, filter, record_obj);
     RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
-                       Func::vkCmdBlitImage);
+                       record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
@@ -5348,7 +5348,7 @@ void SyncValidator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer,
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter, Func::vkCmdBlitImage2KHR);
+                       pBlitImageInfo->filter, record_obj.location.function);
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
@@ -5356,7 +5356,7 @@ void SyncValidator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, co
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter, Func::vkCmdBlitImage2);
+                       pBlitImageInfo->filter, record_obj.location.function);
 }
 
 bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
@@ -5452,7 +5452,7 @@ void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDispatch);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
 }
@@ -5480,7 +5480,7 @@ void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDispatchIndirect);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5508,7 +5508,7 @@ void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDraw);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawVertex(vertexCount, firstVertex, tag);
@@ -5538,7 +5538,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDrawIndexed);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawVertexIndex(indexCount, firstIndex, tag);
@@ -5578,7 +5578,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDrawIndirect);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5624,7 +5624,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDrawIndexedIndirect);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5692,7 +5692,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuf
     StateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                     stride, record_obj);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               Func::vkCmdDrawIndirectCount);
+                               record_obj.location.function);
 }
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
@@ -5708,7 +5708,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer command
     StateTracker::PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                        stride, record_obj);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               Func::vkCmdDrawIndirectCountKHR);
+                               record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5725,7 +5725,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer command
     StateTracker::PreCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                        stride, record_obj);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               Func::vkCmdDrawIndirectCountAMD);
+                               record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5784,7 +5784,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer com
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                            maxDrawCount, stride, record_obj);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      Func::vkCmdDrawIndexedIndirectCount);
+                                      record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -5802,7 +5802,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer 
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                               maxDrawCount, stride, record_obj);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      Func::vkCmdDrawIndexedIndirectCountKHR);
+                                      record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -5820,7 +5820,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer 
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                               maxDrawCount, stride, record_obj);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      Func::vkCmdDrawIndexedIndirectCountAMD);
+                                      record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
@@ -5861,7 +5861,7 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdClearColorImage);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5916,7 +5916,7 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdClearDepthStencilImage);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5954,7 +5954,7 @@ void SyncValidator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
                                                      const VkClearRect *pRects, const RecordObject &record_obj) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     auto cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdClearAttachments);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     const auto rp_access_context = cb_access_context->GetCurrentRenderPassContext();
     if (!rp_access_context) return;
 
@@ -6006,7 +6006,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdCopyQueryPoolResults);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6053,7 +6053,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdFillBuffer);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6119,7 +6119,7 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdResolveImage);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6262,7 +6262,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdUpdateBuffer);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6310,7 +6310,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdWriteBufferMarkerAMD);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -7606,7 +7606,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdWriteBufferMarker2AMD);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -7656,7 +7656,7 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        const ResourceUsageTag cb_tag = cb_context->NextIndexedCommandTag(vvl::Func::vkCmdExecuteCommands, cb_index);
+        const ResourceUsageTag cb_tag = cb_context->NextIndexedCommandTag(record_obj.location.function, cb_index);
         const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
         cb_context->AddHandle(cb_tag, "pCommandBuffers", recorded_cb->Handle(), cb_index);

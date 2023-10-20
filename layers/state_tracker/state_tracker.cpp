@@ -225,7 +225,7 @@ void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer com
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
-        cb_state->RecordTransferCmd(Func::vkCmdClearColorImage, Get<IMAGE_STATE>(image));
+        cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(image));
     }
 }
 
@@ -238,7 +238,7 @@ void ValidationStateTracker::PreCallRecordCmdClearDepthStencilImage(VkCommandBuf
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
-        cb_state->RecordTransferCmd(Func::vkCmdClearDepthStencilImage, Get<IMAGE_STATE>(image));
+        cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(image));
     }
 }
 
@@ -249,7 +249,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage(VkCommandBuffer commandBu
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyImage, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
@@ -257,7 +257,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyImage2KHR, Get<IMAGE_STATE>(pCopyImageInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pCopyImageInfo->srcImage),
                                 Get<IMAGE_STATE>(pCopyImageInfo->dstImage));
 }
 
@@ -266,7 +266,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage2(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyImage2, Get<IMAGE_STATE>(pCopyImageInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pCopyImageInfo->srcImage),
                                 Get<IMAGE_STATE>(pCopyImageInfo->dstImage));
 }
 
@@ -277,7 +277,7 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer comman
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdResolveImage, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
@@ -286,7 +286,7 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer co
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdResolveImage2KHR, Get<IMAGE_STATE>(pResolveImageInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pResolveImageInfo->srcImage),
                                 Get<IMAGE_STATE>(pResolveImageInfo->dstImage));
 }
 
@@ -296,7 +296,7 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage2(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdResolveImage2, Get<IMAGE_STATE>(pResolveImageInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pResolveImageInfo->srcImage),
                                 Get<IMAGE_STATE>(pResolveImageInfo->dstImage));
 }
 
@@ -307,7 +307,7 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBu
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdBlitImage, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
@@ -315,7 +315,7 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdBlitImage2KHR, Get<IMAGE_STATE>(pBlitImageInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pBlitImageInfo->srcImage),
                                 Get<IMAGE_STATE>(pBlitImageInfo->dstImage));
 }
 
@@ -324,7 +324,7 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage2(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdBlitImage2, Get<IMAGE_STATE>(pBlitImageInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pBlitImageInfo->srcImage),
                                 Get<IMAGE_STATE>(pBlitImageInfo->dstImage));
 }
 
@@ -468,7 +468,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyBuffer, Get<BUFFER_STATE>(srcBuffer), Get<BUFFER_STATE>(dstBuffer));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(srcBuffer), Get<BUFFER_STATE>(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -477,7 +477,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer comm
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyBuffer2KHR, Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer),
                                 Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer));
 }
 
@@ -486,7 +486,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer2(VkCommandBuffer command
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyBuffer2, Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer),
                                 Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer));
 }
 
@@ -555,7 +555,7 @@ void ValidationStateTracker::PreCallRecordCmdFillBuffer(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdFillBuffer, Get<BUFFER_STATE>(dstBuffer));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
@@ -566,7 +566,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer c
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
-    cb_state->RecordTransferCmd(Func::vkCmdCopyImageToBuffer, Get<IMAGE_STATE>(srcImage), Get<BUFFER_STATE>(dstBuffer));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<BUFFER_STATE>(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -575,7 +575,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuff
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyImageToBuffer2KHR, Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage),
                                 Get<BUFFER_STATE>(pCopyImageToBufferInfo->dstBuffer));
 }
 
@@ -585,7 +585,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer 
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyImageToBuffer2, Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage),
                                 Get<BUFFER_STATE>(pCopyImageToBufferInfo->dstBuffer));
 }
 
@@ -595,7 +595,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer c
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyBufferToImage, Get<BUFFER_STATE>(srcBuffer), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(srcBuffer), Get<IMAGE_STATE>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -604,7 +604,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuff
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyBufferToImage2KHR, Get<BUFFER_STATE>(pCopyBufferToImageInfo->srcBuffer),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(pCopyBufferToImageInfo->srcBuffer),
                                 Get<IMAGE_STATE>(pCopyBufferToImageInfo->dstImage));
 }
 
@@ -614,7 +614,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer 
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(Func::vkCmdCopyBufferToImage2, Get<BUFFER_STATE>(pCopyBufferToImageInfo->srcBuffer),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<BUFFER_STATE>(pCopyBufferToImageInfo->srcBuffer),
                                 Get<IMAGE_STATE>(pCopyBufferToImageInfo->dstImage));
 }
 
@@ -2162,7 +2162,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
                                                           VkPipeline pipeline, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    cb_state->RecordCmd(Func::vkCmdBindPipeline);
+    cb_state->RecordCmd(record_obj.location.function);
 
     auto pipe_state = Get<PIPELINE_STATE>(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
@@ -2288,7 +2288,7 @@ void ValidationStateTracker::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuf
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordCmd(Func::vkCmdBindShadingRateImageNV);
+    cb_state->RecordCmd(record_obj.location.function);
 
     if (imageView != VK_NULL_HANDLE) {
         auto view_state = Get<IMAGE_VIEW_STATE>(imageView);
@@ -2632,7 +2632,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
     if (!cb_state || !pipeline_layout) {
         return;
     }
-    cb_state->RecordCmd(Func::vkCmdBindDescriptorSets);
+    cb_state->RecordCmd(record_obj.location.function);
 
     std::shared_ptr<cvdescriptorset::DescriptorSet> no_push_desc;
 
@@ -2713,7 +2713,7 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
                                                                uint32_t bindingCount, const VkBuffer *pBuffers,
                                                                const VkDeviceSize *pOffsets, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordCmd(Func::vkCmdBindVertexBuffers);
+    cb_state->RecordCmd(record_obj.location.function);
 
     uint32_t end = firstBinding + bindingCount;
     if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
@@ -2743,7 +2743,7 @@ void ValidationStateTracker::PostCallRecordCmdUpdateBuffer(VkCommandBuffer comma
 void ValidationStateTracker::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordSetEvent(Func::vkCmdSetEvent, event, stageMask);
+    cb_state->RecordSetEvent(record_obj.location.function, event, stageMask);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2752,7 +2752,7 @@ void ValidationStateTracker::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer comman
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
 
-    cb_state->RecordSetEvent(Func::vkCmdSetEvent2KHR, event, stage_masks.src);
+    cb_state->RecordSetEvent(record_obj.location.function, event, stage_masks.src);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
@@ -2761,26 +2761,26 @@ void ValidationStateTracker::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBu
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
 
-    cb_state->RecordSetEvent(Func::vkCmdSetEvent2, event, stage_masks.src);
+    cb_state->RecordSetEvent(record_obj.location.function, event, stage_masks.src);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
 void ValidationStateTracker::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
                                                         VkPipelineStageFlags stageMask, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordResetEvent(Func::vkCmdResetEvent, event, stageMask);
+    cb_state->RecordResetEvent(record_obj.location.function, event, stageMask);
 }
 
 void ValidationStateTracker::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                             VkPipelineStageFlags2KHR stageMask, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordResetEvent(Func::vkCmdResetEvent2KHR, event, stageMask);
+    cb_state->RecordResetEvent(record_obj.location.function, event, stageMask);
 }
 
 void ValidationStateTracker::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                          VkPipelineStageFlags2 stageMask, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordResetEvent(Func::vkCmdResetEvent2, event, stageMask);
+    cb_state->RecordResetEvent(record_obj.location.function, event, stageMask);
 }
 
 void ValidationStateTracker::PreCallRecordCmdWaitEvents(
@@ -2789,7 +2789,7 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents(
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordWaitEvents(Func::vkCmdWaitEvents, eventCount, pEvents, sourceStageMask);
+    cb_state->RecordWaitEvents(record_obj.location.function, eventCount, pEvents, sourceStageMask);
     cb_state->RecordBarriers(memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                              imageMemoryBarrierCount, pImageMemoryBarriers);
 }
@@ -2801,7 +2801,7 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer comm
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
         auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
-        cb_state->RecordWaitEvents(Func::vkCmdWaitEvents2KHR, 1, &pEvents[i], stage_masks.src);
+        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], stage_masks.src);
         cb_state->RecordBarriers(dep_info);
     }
 }
@@ -2812,7 +2812,7 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents2(VkCommandBuffer command
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
         auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
-        cb_state->RecordWaitEvents(Func::vkCmdWaitEvents2, 1, &pEvents[i], stage_masks.src);
+        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], stage_masks.src);
         cb_state->RecordBarriers(dep_info);
     }
 }
@@ -2832,7 +2832,7 @@ void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer
                                                                  const VkDependencyInfoKHR *pDependencyInfo,
                                                                  const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordCmd(Func::vkCmdPipelineBarrier2KHR);
+    cb_state->RecordCmd(record_obj.location.function);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
@@ -2840,7 +2840,7 @@ void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer co
                                                               const VkDependencyInfo *pDependencyInfo,
                                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordCmd(Func::vkCmdPipelineBarrier2);
+    cb_state->RecordCmd(record_obj.location.function);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
@@ -3073,7 +3073,7 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass(VkCommandBuffer com
                                                              const VkRenderPassBeginInfo *pRenderPassBegin,
                                                              VkSubpassContents contents, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->BeginRenderPass(Func::vkCmdBeginRenderPass, pRenderPassBegin, contents);
+    cb_state->BeginRenderPass(record_obj.location.function, pRenderPassBegin, contents);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
@@ -3081,7 +3081,7 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer
                                                                  const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                                  const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->BeginRenderPass(Func::vkCmdBeginRenderPass2KHR, pRenderPassBegin, pSubpassBeginInfo->contents);
+    cb_state->BeginRenderPass(record_obj.location.function, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
@@ -3137,23 +3137,23 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer c
                                                                const VkRenderingInfoKHR *pRenderingInfo,
                                                                const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->BeginRendering(Func::vkCmdBeginRenderingKHR, pRenderingInfo);
+    cb_state->BeginRendering(record_obj.location.function, pRenderingInfo);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                             const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->BeginRendering(Func::vkCmdBeginRendering, pRenderingInfo);
+    cb_state->BeginRendering(record_obj.location.function, pRenderingInfo);
 }
 
 void ValidationStateTracker::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->EndRendering(Func::vkCmdEndRenderingKHR);
+    cb_state->EndRendering(record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->EndRendering(Func::vkCmdEndRendering);
+    cb_state->EndRendering(record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
@@ -3161,7 +3161,7 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer co
                                                               const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->BeginRenderPass(Func::vkCmdBeginRenderPass2, pRenderPassBegin, pSubpassBeginInfo->contents);
+    cb_state->BeginRenderPass(record_obj.location.function, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -3936,7 +3936,7 @@ void ValidationStateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBu
                                                                      const VkDebugUtilsLabelEXT *pLabelInfo,
                                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordCmd(Func::vkCmdBeginDebugUtilsLabelEXT);
+    cb_state->RecordCmd(record_obj.location.function);
     BeginCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 }
 
@@ -3952,7 +3952,7 @@ void ValidationStateTracker::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandB
     InsertCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordCmd(Func::vkCmdInsertDebugUtilsLabelEXT);
+    cb_state->RecordCmd(record_obj.location.function);
     // Squirrel away an easily accessible copy.
     cb_state->debug_label = LoggingLabel(pLabelInfo);
 }
@@ -4063,7 +4063,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
         return;
     }
 
-    cb_state->RecordCmd(Func::vkCmdPushDescriptorSetWithTemplateKHR);
+    cb_state->RecordCmd(record_obj.location.function);
     auto dsl = layout_data->GetDsl(set);
     const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
@@ -4336,7 +4336,7 @@ void ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffe
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                   uint32_t stride, const RecordObject &record_obj) {
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               Func::vkCmdDrawIndexedIndirectCountKHR);
+                               record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -4344,7 +4344,7 @@ void ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer c
                                                                uint32_t maxDrawCount, uint32_t stride,
                                                                const RecordObject &record_obj) {
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               Func::vkCmdDrawIndexedIndirectCount);
+                               record_obj.location.function);
 }
 
 void ValidationStateTracker::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -4365,7 +4365,7 @@ void ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkComma
                                                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                          uint32_t stride, const RecordObject &record_obj) {
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      Func::vkCmdDrawIndexedIndirectCountKHR);
+                                      record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -4373,20 +4373,20 @@ void ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandB
                                                                       VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                       uint32_t stride, const RecordObject &record_obj) {
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      Func::vkCmdDrawIndexedIndirectCount);
+                                      record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
                                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateDrawCmd(Func::vkCmdDrawMeshTasksNV);
+    cb_state->UpdateDrawCmd(record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                      VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
                                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateDrawCmd(Func::vkCmdDrawMeshTasksIndirectNV);
+    cb_state->UpdateDrawCmd(record_obj.location.function);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (!disabled[command_buffer_state] && buffer_state) {
         cb_state->AddChild(buffer_state);
@@ -4398,7 +4398,7 @@ void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkComm
                                                                           VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                           uint32_t stride, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateDrawCmd(Func::vkCmdDrawMeshTasksIndirectCountNV);
+    cb_state->UpdateDrawCmd(record_obj.location.function);
     if (!disabled[command_buffer_state]) {
         auto buffer_state = Get<BUFFER_STATE>(buffer);
         auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
@@ -4415,14 +4415,14 @@ void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer co
                                                               uint32_t groupCountY, uint32_t groupCountZ,
                                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateDrawCmd(Func::vkCmdDrawMeshTasksEXT);
+    cb_state->UpdateDrawCmd(record_obj.location.function);
 }
 
 void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                       VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
                                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateDrawCmd(Func::vkCmdDrawMeshTasksIndirectEXT);
+    cb_state->UpdateDrawCmd(record_obj.location.function);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (!disabled[command_buffer_state] && buffer_state) {
         cb_state->AddChild(buffer_state);
@@ -4434,7 +4434,7 @@ void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCom
                                                                            VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                            uint32_t stride, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateDrawCmd(Func::vkCmdDrawMeshTasksIndirectCountEXT);
+    cb_state->UpdateDrawCmd(record_obj.location.function);
     if (!disabled[command_buffer_state]) {
         auto buffer_state = Get<BUFFER_STATE>(buffer);
         auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);

@@ -368,7 +368,6 @@ void ObjectLifetimes::PreCallRecordDestroyInstance(VkInstance instance, const Vk
 
 void ObjectLifetimes::PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
                                                     const RecordObject &record_obj) {
-    const Location loc(Func::vkDestroyInstance);
     RecordDestroyObject(instance, kVulkanObjectTypeInstance);
 }
 
