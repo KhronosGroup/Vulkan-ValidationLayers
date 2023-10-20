@@ -1065,7 +1065,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init())
 
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkCommandPoolCreateInfo-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit), "VUID-VkCommandPoolCreateInfo-pNext-pNext");
     // Set VkCommandPoolCreateInfo::pNext to a non-NULL value, when pNext must be NULL.
     // Need to pick a function that has no allowed pNext structure types.
     // Expected to trigger an error with StatelessValidation::ValidateStructPnext
@@ -1076,7 +1076,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     vk::CreateCommandPool(device(), &pool_ci, NULL, &pool);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit), " chain includes a structure with unexpected VkStructureType ");
     // Set VkMemoryAllocateInfo::pNext to a non-NULL value, but use
     // a function that has allowed pNext structure types and specify
     // a structure type that is not allowed.
@@ -1086,7 +1086,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     vk::AllocateMemory(device(), &memory_alloc_info, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit), " chain includes a structure with unexpected VkStructureType ");
     // Same concept as above, but unlike vkAllocateMemory where VkMemoryAllocateInfo is a const
     // in vkGetPhysicalDeviceProperties2, VkPhysicalDeviceProperties2 is not a const
     VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&app_info);

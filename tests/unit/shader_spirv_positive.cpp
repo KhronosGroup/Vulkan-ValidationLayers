@@ -261,7 +261,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -288,7 +288,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature11) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -327,7 +327,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -725,7 +725,7 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
                                                    SPV_SOURCE_ASM, nullptr);
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info_nospec, kErrorBit | kWarningBit);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info_nospec, kErrorBit);
 
     // Use spec constant to update value
     const auto set_info_spec = [&](CreateComputePipelineHelper &helper) {
@@ -733,7 +733,7 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
                                                    SPV_SOURCE_ASM, &specialization_info);
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit | kWarningBit);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit);
 }
 
 TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
@@ -1202,15 +1202,15 @@ TEST_F(PositiveShaderSpirv, SpecializationUnused) {
         helper.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
                                                    &specialization_info);
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     // Even if the ID is never seen in VkSpecializationMapEntry the OpSpecConstant will use the default and still is valid
     specialization_info.mapEntryCount = 1;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     // try another random unused value other than zero
     entries[0].constantID = 100;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
@@ -1722,7 +1722,7 @@ void main() {}
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         helper.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {

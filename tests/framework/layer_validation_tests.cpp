@@ -422,7 +422,7 @@ void AllocateDisjointMemory(vkt::Device *device, PFN_vkGetImageMemoryRequirement
 
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
-        test.Monitor().SetDesiredFailureMsg(kErrorBit | kWarningBit, code);
+        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
 
     vkt::Sampler sampler(*test.DeviceObj(), *create_info);

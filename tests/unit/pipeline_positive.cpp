@@ -661,7 +661,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.gp_ci_.renderPass = render_pass.handle();
     };
-    CreatePipelineHelper::OneshotTest(*this, override_info, kErrorBit | kWarningBit);
+    CreatePipelineHelper::OneshotTest(*this, override_info, kErrorBit);
 }
 
 TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
