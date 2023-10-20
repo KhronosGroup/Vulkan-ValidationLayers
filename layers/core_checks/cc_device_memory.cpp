@@ -1741,14 +1741,36 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
                                                const Location &bind_loc, const Location &memory_loc) const {
     bool skip = false;
 
-    auto const mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
-    if (mem_info) {
+    auto const mem_state = Get<DEVICE_MEMORY_STATE>(bind.memory);
+    if (mem_state) {
         // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
         // one. We also need to check memory_bind.memory
-        if (bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+        if (bind.memoryOffset >= mem_state->alloc_info.allocationSize) {
             skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", bind.memory, bind_loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of memory.", bind.memoryOffset,
-                             mem_info->alloc_info.allocationSize);
+                             mem_state->alloc_info.allocationSize);
+        }
+
+        if (mem_state->IsExport()) {
+            if (!(mem_state->export_handle_types & image_state->external_memory_handle_types)) {
+                const LogObjectList objlist(bind.memory, image_state->image());
+                skip |= LogError("VUID-VkSparseImageMemoryBind-memory-02732", objlist,
+                                 memory_loc.dot(Field::memory).pNext(Struct::VkExportMemoryAllocateInfo).dot(Field::handleTypes),
+                                 "is %s, but the external handle types specified in resource are %s.",
+                                 string_VkExternalMemoryHandleTypeFlags(mem_state->export_handle_types).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
+            }
+        }
+
+        if (mem_state->IsImport()) {
+            if (!(*mem_state->import_handle_type & image_state->external_memory_handle_types)) {
+                const LogObjectList objlist(bind.memory, image_state->image());
+                skip |= LogError("VUID-VkSparseImageMemoryBind-memory-02733", objlist, memory_loc.dot(Field::memory),
+                                 "was created with memory import operation, with handle type %s, but the external handle types "
+                                 "specified in resource are %s.",
+                                 string_VkExternalMemoryHandleTypeFlagBits(*mem_state->import_handle_type),
+                                 string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
+            }
         }
     }
 
