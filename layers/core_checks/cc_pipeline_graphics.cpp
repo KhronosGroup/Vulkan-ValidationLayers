@@ -781,7 +781,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const PIPELINE_ST
         vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
 
     if (rp_state && !rp_state->UsesDynamicRendering()) {
-        if (subpass_desc->colorAttachmentCount == 0) {
+        if (!subpass_desc || subpass_desc->colorAttachmentCount == 0 || !subpass_desc->pResolveAttachments) {
             return false;
         }
         // can only have 1 color attachment

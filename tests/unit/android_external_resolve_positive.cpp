@@ -38,6 +38,16 @@ void AndroidExternalResolveTest::InitBasicAndroidExternalResolve(void* pNextFeat
     nullColorAttachmentWithExternalFormatResolve = external_format_resolve_props.nullColorAttachmentWithExternalFormatResolve;
 }
 
+TEST_F(PositiveAndroidExternalResolve, NoResolve) {
+    TEST_DESCRIPTION("Make sure enabling the feature doesn't break normal usage of API.");
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
 
