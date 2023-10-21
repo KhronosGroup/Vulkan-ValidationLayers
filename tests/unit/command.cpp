@@ -7440,3 +7440,28 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         m_commandBuffer->end();
     }
 }
+
+TEST_F(NegativeCommand, CommandBufferInheritanceInfo) {
+    TEST_DESCRIPTION("Test invalid command buffer begin inheritance info.");
+
+    RETURN_IF_SKIP(Init());
+    if (m_device->phy().features().inheritedQueries == VK_FALSE) {
+        GTEST_SKIP() << "inheritedQueries feature is disabled";
+    }
+
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00051");
+    vk::BeginCommandBuffer(secondary.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper();
+    inheritance_info.queryFlags = VK_QUERY_CONTROL_PRECISE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00052");
+    vk::BeginCommandBuffer(secondary.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+}
