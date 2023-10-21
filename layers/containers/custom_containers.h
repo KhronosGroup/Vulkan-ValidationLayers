@@ -1016,6 +1016,8 @@ class TlsGuard {
     }
     T *operator->() { return &(*payload_); }
 
+    operator bool() { return payload_.has_value(); }
+
   private:
     inline thread_local static std::optional<T> payload_{};
     bool *skip_;

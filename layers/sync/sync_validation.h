@@ -43,6 +43,29 @@ struct SyncEventState;
 class SyncValidator;
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
+using QueueId = uint32_t;
+
+enum SyncHazard {
+    NONE = 0,
+    READ_AFTER_WRITE,
+    WRITE_AFTER_READ,
+    WRITE_AFTER_WRITE,
+    READ_RACING_WRITE,
+    WRITE_RACING_WRITE,
+    WRITE_RACING_READ,
+    WRITE_AFTER_PRESENT,  // Once presented, an image may not be used until acquired
+    READ_AFTER_PRESENT,
+    PRESENT_AFTER_READ,  // Must be unreferenced and visible to present
+    PRESENT_AFTER_WRITE,
+};
+
+enum class SyncOrdering : uint8_t {
+    kNonAttachment = 0,
+    kColorAttachment = 1,
+    kDepthStencilAttachment = 2,
+    kRaster = 3,
+    kNumOrderings = 4,
+};
 
 namespace syncval_state {
 class CommandBuffer;
@@ -87,33 +110,52 @@ class ImageViewState : public IMAGE_VIEW_STATE {
     const ImageRangeGen view_range_gen;
 };
 
+enum class AttachmentType { kColor, kDepth, kStencil };
+
+struct DynamicRenderingInfo {
+    struct Attachment {
+        const safe_VkRenderingAttachmentInfo &info;
+        std::shared_ptr<const ImageViewState> view;
+        std::shared_ptr<const ImageViewState> resolve_view;
+        ImageRangeGen view_gen;
+        std::optional<ImageRangeGen> resolve_gen;
+        AttachmentType type;
+
+        Attachment(const SyncValidator &state, const safe_VkRenderingAttachmentInfo &info, const AttachmentType type_,
+                   const VkOffset3D &offset, const VkExtent3D &extent);
+
+        SyncStageAccessIndex GetLoadUsage() const;
+        SyncStageAccessIndex GetStoreUsage() const;
+        SyncOrdering GetOrdering() const;
+        Location GetLocation(const Location &loc, uint32_t index = 0) const;
+        bool IsWriteable(const LAST_BOUND_STATE &last_bound_state) const;
+        bool IsValid() const { return view.get(); }
+    };
+
+    // attachments store references to this info, so make sure this doesn't get moved around.
+    DynamicRenderingInfo(const DynamicRenderingInfo &) = delete;
+    DynamicRenderingInfo(DynamicRenderingInfo &&) = delete;
+    DynamicRenderingInfo &operator=(const DynamicRenderingInfo &) = delete;
+    DynamicRenderingInfo &operator=(DynamicRenderingInfo &&) = delete;
+
+    DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
+    safe_VkRenderingInfo info;
+    std::vector<Attachment> attachments;  // All attachments (with internal typing)
+};
+
+struct BeginRenderingCmdState {
+    BeginRenderingCmdState(std::shared_ptr<const syncval_state::CommandBuffer> &&cb_state_) : cb_state(std::move(cb_state_)) {}
+    void AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
+    const DynamicRenderingInfo &GetRenderingInfo() const;
+    std::shared_ptr<const CommandBuffer> cb_state;
+    std::unique_ptr<DynamicRenderingInfo> info;
+};
+
 }  // namespace syncval_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, IMAGE_VIEW_STATE)
 
-using QueueId = uint32_t;
 
-enum SyncHazard {
-    NONE = 0,
-    READ_AFTER_WRITE,
-    WRITE_AFTER_READ,
-    WRITE_AFTER_WRITE,
-    READ_RACING_WRITE,
-    WRITE_RACING_WRITE,
-    WRITE_RACING_READ,
-    WRITE_AFTER_PRESENT,  // Once presented, an image may not be used until acquired
-    READ_AFTER_PRESENT,
-    PRESENT_AFTER_READ,  // Must be unreferenced and visible to present
-    PRESENT_AFTER_WRITE,
-};
-
-enum class SyncOrdering : uint8_t {
-    kNonAttachment = 0,
-    kColorAttachment = 1,
-    kDepthStencilAttachment = 2,
-    kRaster = 3,
-    kNumOrderings = 4,
-};
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
@@ -1172,6 +1214,8 @@ class AccessContext {
     HazardResult DetectHazard(const ImageState &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
     HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const;
+    HazardResult DetectHazard(const ImageRangeGen &ref_range_gen, SyncStageAccessIndex current_usage,
+                              SyncOrdering ordering_rule) const;
     HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                               const VkOffset3D &offset, const VkExtent3D &extent) const;
     HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
@@ -1542,6 +1586,11 @@ class CommandExecutionContext {
 class CommandBufferAccessContext : public CommandExecutionContext {
   public:
     using SyncOpPointer = std::shared_ptr<SyncOpBase>;
+    constexpr static SyncStageAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
+    constexpr static SyncStageAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+    constexpr static SyncOrdering kResolveOrder = SyncOrdering::kColorAttachment;
+    constexpr static SyncOrdering kStoreOrder = SyncOrdering::kRaster;
+
     struct SyncOpEntry {
         ResourceUsageTag tag;
         SyncOpPointer sync_op;
@@ -1601,6 +1650,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         current_context_ = &cb_access_context_;
         current_renderpass_context_ = nullptr;
         events_context_.Clear();
+        dynamic_rendering_info_.reset();
     }
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
@@ -1616,19 +1666,24 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                            const std::vector<const syncval_state::ImageViewState *> &attachment_views);
 
+    bool ValidateBeginRendering(const ErrorObject &error_obj, syncval_state::BeginRenderingCmdState &cmd_state) const;
+    void RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const RecordObject &record_obj);
+    bool ValidateEndRendering(const ErrorObject &error_obj) const;
+    void RecordEndRendering(const RecordObject &record_obj);
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
     bool ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, const Location &loc) const;
     void RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
     bool ValidateDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, const Location &loc) const;
     void RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, ResourceUsageTag tag);
-    bool ValidateDrawSubpassAttachment(const Location &loc) const;
-    void RecordDrawSubpassAttachment(ResourceUsageTag tag);
+    bool ValidateDrawAttachment(const Location &loc) const;
+    bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
+    void RecordDrawAttachment(ResourceUsageTag tag);
+    void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
     ResourceUsageTag RecordNextSubpass(vvl::Func command);
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);
     void RecordDestroyEvent(EVENT_STATE *event_state);
 
-    bool ValidateFirstUse(CommandExecutionContext &exec_context, const ErrorObject &error_obj, uint32_t index) const;
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
@@ -1701,6 +1756,10 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
     RenderPassAccessContext *current_renderpass_context_;
     std::vector<SyncOpEntry> sync_ops_;
+
+    // State during dynamic rendering (dynamic rendering rendering passes must be
+    // contained within a single command buffer)
+    std::unique_ptr<syncval_state::DynamicRenderingInfo> dynamic_rendering_info_;
 };
 
 // Allow keep track of the exec contexts replay state
@@ -2245,6 +2304,20 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                          const RecordObject &record_obj) override;
     void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                             const RecordObject &record_obj) override;
+
+    bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
+                                             const ErrorObject &error_obj) const override;
+    bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                          const ErrorObject &error_obj) const override;
+    void PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
+                                           const RecordObject &record_obj) override;
+    void PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                        const RecordObject &record_obj) override;
+
+    bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const override;
+    bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const override;
+    void PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) override;
+    void PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) override;
 
     template <typename RegionType>
     bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
