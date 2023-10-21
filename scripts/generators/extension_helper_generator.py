@@ -21,6 +21,7 @@
 import os
 import re
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 from pyparsing import ParseResults
 # From the Vulkan-Headers
@@ -110,6 +111,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
         fieldName = dict()
         # [ Extension name : List[Extension | Version] ]
         requiredExpression = dict()
+        guard_helper = PlatformGuardHelper()
         for extension in self.vk.extensions.values():
             fieldName[extension.name] = extension.name.lower()
             requiredExpression[extension.name] = list()
@@ -221,7 +223,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             out.append(f'{{"{version}", InstanceInfo(&InstanceExtensions::{name}, {{}})}},\n')
 
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
-            out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
+            out.extend(guard_helper.add_guard(extension.protect))
             reqs = ''
             # This is only done to match whitespace from before code we refactored
             if requiredExpression[extension.name]:
@@ -229,7 +231,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 reqs += ',\n'.join([f'{{&InstanceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
             out.append(f'{{{extension.nameString}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
-            out.extend(['#endif\n'] if extension.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
                 };
@@ -286,9 +288,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
         out.append('static const std::set<std::string> kInstanceExtensionNames = {\n')
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
-            out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
+            out.extend(guard_helper.add_guard(extension.protect))
             out.append(f'    {extension.nameString},\n')
-            out.extend(['#endif\n'] if extension.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('};\n')
 
         out.append('\nstruct DeviceExtensions : public InstanceExtensions {\n')
@@ -317,7 +319,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             out.append(f'{{"{version}", DeviceInfo(&DeviceExtensions::{field}, {{}})}},\n')
 
         for extension in [x for x in self.vk.extensions.values() if x.device]:
-            out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
+            out.extend(guard_helper.add_guard(extension.protect))
             reqs = ''
             # This is only done to match whitespace from before code we refactored
             if requiredExpression[extension.name]:
@@ -325,7 +327,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 reqs += ',\n'.join([f'{{&DeviceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
             out.append(f'{{{extension.nameString}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
-            out.extend(['#endif\n'] if extension.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
                 };
@@ -412,9 +414,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             ''')
         out.append('static const std::set<std::string> kDeviceExtensionNames = {\n')
         for extension in [x for x in self.vk.extensions.values() if x.device]:
-            out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
+            out.extend(guard_helper.add_guard(extension.protect))
             out.append(f'    {extension.nameString},\n')
-            out.extend(['#endif\n'] if extension.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('};\n')
 
         out.append('// NOLINTEND') # Wrap for clang-tidy to ignore

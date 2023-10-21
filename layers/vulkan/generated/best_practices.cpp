@@ -1181,9 +1181,7 @@ void BestPractices::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                     HANDLE handle,
                                                                     VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties,
@@ -1225,9 +1223,7 @@ void BestPractices::PostCallRecordImportSemaphoreWin32HandleKHR(
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
                                                              const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                              HANDLE* pHandle, const RecordObject& record_obj) {
@@ -1302,9 +1298,7 @@ void BestPractices::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                          HANDLE* pHandle, const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
@@ -1638,9 +1632,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelProper
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, const RecordObject& record_obj) {
@@ -1814,9 +1806,7 @@ void BestPractices::PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physica
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 void BestPractices::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                            VkDisplayKHR* pDisplay, const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
@@ -1971,9 +1961,7 @@ void BestPractices::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDe
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 void BestPractices::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                         const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                         struct AHardwareBuffer** pBuffer,
@@ -2003,9 +1991,7 @@ void BestPractices::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice dev
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                            VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
                                                                            const RecordObject& record_obj) {
@@ -2015,9 +2001,7 @@ void BestPractices::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDev
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                          const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                                          uint32_t* pNodeIndex, const RecordObject& record_obj) {
@@ -2328,9 +2312,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(VkPhy
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                     const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
@@ -2339,9 +2321,7 @@ void BestPractices::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice dev
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                     const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
@@ -2350,9 +2330,7 @@ void BestPractices::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice dev
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                         VkDeviceGroupPresentModeFlagsKHR* pModes,
@@ -2544,9 +2522,7 @@ void BestPractices::PostCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physica
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                     VkDisplayKHR* pDisplay, const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
@@ -2579,9 +2555,7 @@ void BestPractices::PostCallRecordGetMemoryZirconHandleFUCHSIA(VkDevice device,
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
     VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const RecordObject& record_obj) {
@@ -2592,9 +2566,7 @@ void BestPractices::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
     const RecordObject& record_obj) {
@@ -2604,9 +2576,7 @@ void BestPractices::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                   const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                   zx_handle_t* pZirconHandle, const RecordObject& record_obj) {
@@ -2616,9 +2586,7 @@ void BestPractices::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice devic
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device,
                                                                 const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator,
@@ -2630,9 +2598,7 @@ void BestPractices::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device,
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
     const RecordObject& record_obj) {
@@ -2643,9 +2609,7 @@ void BestPractices::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
     const RecordObject& record_obj) {
@@ -2656,9 +2620,7 @@ void BestPractices::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void BestPractices::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                        VkBufferCollectionPropertiesFUCHSIA* pProperties,
                                                                        const RecordObject& record_obj) {

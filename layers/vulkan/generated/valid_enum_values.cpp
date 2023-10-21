@@ -31,6 +31,7 @@
 //      devices over the lifespan of the project (e.g., VLT).
 
 // clang-format off
+
 template<>
 std::vector<VkResult> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkResultEnums = {VK_SUCCESS, VK_NOT_READY, VK_TIMEOUT, VK_EVENT_SET, VK_EVENT_RESET, VK_INCOMPLETE, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_DEVICE_LOST, VK_ERROR_MEMORY_MAP_FAILED, VK_ERROR_LAYER_NOT_PRESENT, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_INCOMPATIBLE_DRIVER, VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_FRAGMENTED_POOL, VK_ERROR_UNKNOWN};
@@ -848,7 +849,7 @@ std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() con
     std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
     return values;
 }
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 template<>
 std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const {
@@ -1416,7 +1417,7 @@ std::vector<VkFullScreenExclusiveEXT> ValidationObject::ValidParamValues() const
     std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
     return values;
 }
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 template<>
 std::vector<VkLineRasterizationModeEXT> ValidationObject::ValidParamValues() const {

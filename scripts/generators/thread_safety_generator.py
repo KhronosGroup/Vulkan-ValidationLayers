@@ -21,6 +21,7 @@
 import os
 from generators.vulkan_object import Command, Param
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 def GetParentInstance(param: Param) -> str:
     instanceParent = ['VkSurfaceKHR',
@@ -256,6 +257,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             #include "chassis.h"
             #include "thread_tracker/thread_safety_validation.h"
             ''')
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist and x.name not in self.manual_commands]:
             # Determine first if this function needs to be intercepted
             startThreadSafety = self.makeThreadUseBlock(command, start=True)
@@ -263,7 +265,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             if startThreadSafety is None and finishThreadSafety is None:
                 continue
 
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'void ThreadSafety::PreCallRecord{prototype[2:]}'
             prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
@@ -276,11 +278,12 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             out.extend([finishThreadSafety] if finishThreadSafety is not None else [])
             out.append('}\n\n')
 
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
 
     def generateCommands(self):
         out = []
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
             # Determine first if this function needs to be intercepted
             startThreadSafety = self.makeThreadUseBlock(command, start=True)
@@ -288,7 +291,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             if startThreadSafety is None and finishThreadSafety is None:
                 continue
 
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
 
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'void PreCallRecord{prototype[2:]}'
@@ -300,26 +303,28 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             prototype = prototype.replace('PreCallRecord', 'PostCallRecord')
             out.append(prototype)
 
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
 
     def generateCounterDefinitions(self):
         out = []
         out.append('// clang-format off\n')
+        guard_helper = PlatformGuardHelper()
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
-            out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
+            out.extend(guard_helper.add_guard(handle.protect))
             out.append(f'counter<{handle.name}> c_{handle.name};\n')
-            out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('// clang-format on\n')
         self.write("".join(out))
 
     def generateCounterInstance(self):
         out = []
         out.append('// clang-format off\n')
+        guard_helper = PlatformGuardHelper()
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
-            out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
+            out.extend(guard_helper.add_guard(handle.protect))
             out.append(f'c_{handle.name}(kVulkanObjectType{handle.name[2:]}, this),\n')
-            out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('// clang-format on\n')
         self.write("".join(out))
 
@@ -327,9 +332,10 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
         out = []
         out.append('// clang-format off\n')
         instanceParent = ['VkSurfaceKHR', 'VkDebugReportCallbackEXT', 'VkDebugUtilsMessengerEXT', 'VkDisplayKHR']
+        guard_helper = PlatformGuardHelper()
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
-            out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
+            out.extend(guard_helper.add_guard(handle.protect))
             out.extend([f'WRAPPER_PARENT_INSTANCE({handle.name})\n'] if handle.name in instanceParent else [f'WRAPPER({handle.name})\n'])
-            out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('// clang-format on\n')
         self.write("".join(out))

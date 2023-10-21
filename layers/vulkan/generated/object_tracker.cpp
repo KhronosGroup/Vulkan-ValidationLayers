@@ -236,8 +236,6 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                     }
                 }
             }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
@@ -2503,8 +2501,6 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                     }
                 }
             }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
@@ -3111,8 +3107,6 @@ void ObjectLifetimes::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, co
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
 
 // vkGetPhysicalDeviceXlibPresentationSupportKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-physicalDevice-parameter"
@@ -3129,8 +3123,6 @@ void ObjectLifetimes::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
 
 // vkGetPhysicalDeviceXcbPresentationSupportKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-physicalDevice-parameter"
@@ -3147,8 +3139,6 @@ void ObjectLifetimes::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance,
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
 // vkGetPhysicalDeviceWaylandPresentationSupportKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-physicalDevice-parameter"
@@ -3177,8 +3167,6 @@ void ObjectLifetimes::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, c
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 // vkGetPhysicalDeviceWin32PresentationSupportKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-physicalDevice-parameter"
@@ -3476,8 +3464,6 @@ bool ObjectLifetimes::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device,
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 // vkGetMemoryWin32HandlePropertiesKHR:
 // Checked by chassis: device: "VUID-vkGetMemoryWin32HandlePropertiesKHR-device-parameter"
@@ -3520,8 +3506,6 @@ bool ObjectLifetimes::PreCallValidateImportSemaphoreWin32HandleKHR(
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                                                                 const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
@@ -3658,8 +3642,6 @@ bool ObjectLifetimes::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetFenceWin32HandleKHR(VkDevice device,
                                                             const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
@@ -4028,9 +4010,6 @@ bool ObjectLifetimes::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMe
 // vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-physicalDevice-parameter"
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 bool ObjectLifetimes::PreCallValidateGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData,
@@ -4047,8 +4026,6 @@ bool ObjectLifetimes::PreCallValidateGetEncodedVideoSessionParametersKHR(
 
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                                        const ErrorObject& error_obj) const {
@@ -4580,8 +4557,6 @@ bool ObjectLifetimes::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice phys
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 // vkGetRandROutputDisplayEXT:
 // Checked by chassis: physicalDevice: "VUID-vkGetRandROutputDisplayEXT-physicalDevice-parameter"
@@ -4796,9 +4771,6 @@ void ObjectLifetimes::PreCallRecordDestroyDebugUtilsMessengerEXT(VkInstance inst
 // vkGetAndroidHardwareBufferPropertiesANDROID:
 // Checked by chassis: device: "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-device-parameter"
 
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 bool ObjectLifetimes::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                            const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                            struct AHardwareBuffer** pBuffer,
@@ -4880,8 +4852,6 @@ void ObjectLifetimes::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice d
         }
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                               VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
@@ -4895,8 +4865,6 @@ bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(Vk
 
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
     VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex,
@@ -4909,26 +4877,15 @@ bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
 
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 // vkCmdInitializeGraphScratchMemoryAMDX:
 // Checked by chassis: commandBuffer: "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-parameter"
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 // vkCmdDispatchGraphAMDX:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDispatchGraphAMDX-commandBuffer-parameter"
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 // vkCmdDispatchGraphIndirectAMDX:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDispatchGraphIndirectAMDX-commandBuffer-parameter"
-
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 // vkCmdDispatchGraphIndirectCountAMDX:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDispatchGraphIndirectCountAMDX-commandBuffer-parameter"
@@ -5536,8 +5493,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(Vk
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                        const ErrorObject& error_obj) const {
@@ -5549,8 +5504,6 @@ bool ObjectLifetimes::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice 
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                        const ErrorObject& error_obj) const {
@@ -5561,8 +5514,6 @@ bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice 
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
@@ -6116,8 +6067,6 @@ bool ObjectLifetimes::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice phys
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 // vkGetWinrtDisplayNV:
 // Checked by chassis: physicalDevice: "VUID-vkGetWinrtDisplayNV-physicalDevice-parameter"
@@ -6139,8 +6088,6 @@ void ObjectLifetimes::PostCallRecordCreateDirectFBSurfaceEXT(VkInstance instance
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 // vkGetPhysicalDeviceDirectFBPresentationSupportEXT:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-physicalDevice-parameter"
@@ -6166,14 +6113,9 @@ bool ObjectLifetimes::PreCallValidateGetMemoryZirconHandleFUCHSIA(VkDevice devic
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 // vkGetMemoryZirconHandlePropertiesFUCHSIA:
 // Checked by chassis: device: "VUID-vkGetMemoryZirconHandlePropertiesFUCHSIA-device-parameter"
-
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
@@ -6190,8 +6132,6 @@ bool ObjectLifetimes::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle,
@@ -6207,8 +6147,6 @@ bool ObjectLifetimes::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 // vkCreateBufferCollectionFUCHSIA:
 // Checked by chassis: device: "VUID-vkCreateBufferCollectionFUCHSIA-device-parameter"
@@ -6221,8 +6159,6 @@ void ObjectLifetimes::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice devic
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pCollection, kVulkanObjectTypeBufferCollectionFUCHSIA, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
@@ -6236,8 +6172,6 @@ bool ObjectLifetimes::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
@@ -6251,8 +6185,6 @@ bool ObjectLifetimes::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA
 
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                     const VkAllocationCallbacks* pAllocator,
@@ -6273,8 +6205,6 @@ void ObjectLifetimes::PreCallRecordDestroyBufferCollectionFUCHSIA(VkDevice devic
                                                                   const RecordObject& record_obj) {
     RecordDestroyObject(collection, kVulkanObjectTypeBufferCollectionFUCHSIA);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                           VkBufferCollectionPropertiesFUCHSIA* pProperties,
@@ -6361,8 +6291,6 @@ void ObjectLifetimes::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, 
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 // vkGetPhysicalDeviceScreenPresentationSupportQNX:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-physicalDevice-parameter"

@@ -24,6 +24,7 @@
 import os
 from generators.vulkan_object import Command
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 # This class is a container for any source code, data, or other behavior that is necessary to
 # customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
@@ -331,10 +332,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName);\n
             ''')
 
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'{command.cPrototype.replace("VKAPI_CALL vk", "VKAPI_CALL ")}\n\n')
-            out.extend(['#endif\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
             // Layer object type identifiers
@@ -667,11 +669,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
             parameters = parameters.replace('\n', '')
             parameters = ' '.join(parameters.split()) # remove duplicate whitespace
 
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'        virtual bool PreCallValidate{command.name[2:]}({parameters}, const ErrorObject& error_obj) const {{ return false; }};\n')
             out.append(f'        virtual void PreCallRecord{command.name[2:]}({parameters}, const RecordObject& record_obj) {{}};\n')
             out.append(f'        virtual void PostCallRecord{command.name[2:]}({parameters}, const RecordObject& record_obj) {{}};\n')
-            out.extend(['#endif\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
         virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache, const VkAllocationCallbacks* pAllocator) {};
@@ -1792,9 +1794,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 return VK_SUCCESS;
             }
             ''')
+        guard_helper = PlatformGuardHelper()
 
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions and x.name not in self.manual_functions]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.replace('VKAPI_CALL vk', 'VKAPI_CALL ').replace(');', ') {\n')
             out.append(prototype)
 
@@ -1905,7 +1908,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             out.append('}\n')
             out.append('\n')
 
-            out.extend(['#endif\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
 // Map of intercepted ApiName to its associated function data
@@ -1917,9 +1920,9 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vk_layerGetPhysicalDeviceProcAddr", {kFuncTypeInst, (void*)GetPhysicalDeviceProcAddr}},
 ''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    {{"{command.name}", {{{self.getApiFunctionType(command)}, (void*){command.name[2:]}}}}},\n')
-            out.extend(['#endif\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('};\n')
         out.append('} // namespace vulkan_layer_chassis\n')
         out.append('// clang-format on\n')
@@ -2010,11 +2013,12 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
 
         out.append(APISpecific.genInitObjectDispatchVectorSource(self.targetApiName))
 
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in self.manual_functions]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    BUILD_DISPATCH_VECTOR(PreCallValidate{command.name[2:]});\n')
             out.append(f'    BUILD_DISPATCH_VECTOR(PreCallRecord{command.name[2:]});\n')
             out.append(f'    BUILD_DISPATCH_VECTOR(PostCallRecord{command.name[2:]});\n')
-            out.extend(['#endif\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('}\n')
         self.write("".join(out))

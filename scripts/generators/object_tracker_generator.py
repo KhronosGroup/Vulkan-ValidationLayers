@@ -19,7 +19,7 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import buildListVUID, getVUID
+from generators.generator_utils import buildListVUID, getVUID, PlatformGuardHelper
 from generators.vulkan_object import Handle, Command, Struct, Member, Param
 from generators.base_generator import BaseGenerator
 
@@ -352,8 +352,9 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
 
     def generateHeader(self):
         out = []
+        guard_helper = PlatformGuardHelper()
         for command in self.vk.commands.values():
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             (pre_call_validate, pre_call_record, post_call_record) = self.generateFunctionBody(command)
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
@@ -375,7 +376,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             if post_call_record:
                 out.append(f'void PostCallRecord{prototype}{terminator}')
 
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
 
@@ -448,9 +449,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         out.append('}\n')
 
         out.append('// clang-format on')
-
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
 
             # Generate object handling code
             (pre_call_validate, pre_call_record, post_call_record) = self.generateFunctionBody(command)
@@ -514,7 +515,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 out.append(f'{post_call_record}\n')
                 out.append('}\n')
 
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         self.write("".join(out))
 
@@ -766,19 +767,19 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
                 contains_pNext = False
                 if struct.extendedBy:
+                    guard_helper = PlatformGuardHelper()
                     for extendedBy in struct.extendedBy:
                         extended_struct = self.vk.structs[extendedBy]
                         extended_members = [x for x in extended_struct.members if x.type in self.vk.handles]
                         if not extended_members:
                             continue
                         contains_pNext = True
-                        nested_struct.extend([f'#ifdef {extended_struct.protect}\n'] if extended_struct.protect else [])
+                        nested_struct.extend(guard_helper.add_guard(extended_struct.protect))
                         nested_struct.append(f'if (auto pNext = vku::FindStructInPNextChain<{extendedBy}>({new_prefix}pNext)) {{\n')
                         nested_struct.append(f'    const Location pNext_loc = {new_error_loc}.pNext(Struct::{extendedBy});\n')
                         nested_struct.append(self.validateObjects(extended_members, 'pNext->', arrayIndex + 1, extendedBy, topCommand, 'pNext_loc'))
                         nested_struct.append('}\n')
-                        nested_struct.extend([f'#endif // {extended_struct.protect}\n'] if extended_struct.protect else [])
-
+                    nested_struct.extend(guard_helper.add_guard(None))
                 # Close indentation
                 if member.length is not None:
                     nested_struct.append('}\n')

@@ -19,6 +19,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class DispatchTableHelperOutputGenerator(BaseGenerator):
     """Generate dispatch tables header based on XML element attributes"""
@@ -62,10 +63,12 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             #include "vk_extension_helper.h"
             \n''')
 
+        guard_helper = PlatformGuardHelper()
+
         for command in [x for x in self.vk.commands.values() if x.extensions or x.version]:
             if command.name == 'vkEnumerateInstanceVersion':
                 continue # TODO - Figure out how this can be automatically detected
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
 
             prototype = ' '.join(command.cPrototype.split()) # remove duplicate whitespace
             prototype = prototype.replace('\n', '').replace('( ', '(').replace(');', ')').replace(' vk', ' Stub')
@@ -75,7 +78,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             result = 'return VK_FALSE;' if command.returnType == 'VkBool32' else result
 
             out.append(f'static {prototype} {{ {result} }}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('\n')
 
         out.append('const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_extension_map {\n')
@@ -129,11 +132,11 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
                 table->GetDeviceProcAddr = gpa;
             ''')
         for command in [x for x in self.vk.commands.values() if x.device and x.name != 'vkGetDeviceProcAddr']:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    table->{command.name[2:]} = (PFN_{command.name}) gpa(device, "{command.name}");\n')
             if command.version or command.extensions:
                 out.append(f'    if (table->{command.name[2:]} == nullptr) {{ table->{command.name[2:]} = (PFN_{command.name})Stub{command.name[2:]}; }}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('}\n')
 
         out.append('''
@@ -153,11 +156,11 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
               'vkGetInstanceProcAddr',
         ]
         for command in [x for x in self.vk.commands.values() if x.instance and x.name not in ignoreList]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    table->{command.name[2:]} = (PFN_{command.name}) gpa(instance, "{command.name}");\n')
             if command.version or command.extensions:
                 out.append(f'    if (table->{command.name[2:]} == nullptr) {{ table->{command.name[2:]} = (PFN_{command.name})Stub{command.name[2:]}; }}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('}\n')
 
         out.append('// NOLINTEND') # Wrap for clang-tidy to ignore

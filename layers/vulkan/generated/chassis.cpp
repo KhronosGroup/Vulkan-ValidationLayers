@@ -6260,8 +6260,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t queueFamilyIndex, Display* dpy,
                                                                            VisualID visualID) {
@@ -6290,7 +6288,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -6316,8 +6314,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, xcb_connection_t* connection,
                                                                           xcb_visualid_t visual_id) {
@@ -6346,7 +6342,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -6372,8 +6368,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex,
                                                                               struct wl_display* display) {
@@ -6402,7 +6396,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -6428,7 +6422,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -6454,8 +6448,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
@@ -6480,7 +6472,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                      const VkVideoProfileInfoKHR* pVideoProfile,
                                                                      VkVideoCapabilitiesKHR* pCapabilities) {
@@ -7200,8 +7192,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(VkDevice device, const Vk
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                  HANDLE handle,
                                                                  VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties) {
@@ -7231,7 +7221,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -7332,8 +7322,6 @@ ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32Handl
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
                                                           const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                           HANDLE* pHandle) {
@@ -7359,7 +7347,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -7706,8 +7694,6 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                       HANDLE* pHandle) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -7732,7 +7718,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkF
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -8803,8 +8789,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
     return result;
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL
 GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
                                     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) {
@@ -8836,8 +8820,6 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
     return result;
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
@@ -8859,7 +8841,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, cons
     }
 }
 
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
@@ -9988,7 +9970,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_GGP
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
@@ -10045,7 +10027,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceM
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -10071,7 +10053,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                            const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -10191,8 +10173,6 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDe
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                         VkDisplayKHR* pDisplay) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
@@ -10218,7 +10198,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                         VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
@@ -10517,7 +10497,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -10543,7 +10523,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -10827,8 +10807,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevic
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                      struct AHardwareBuffer** pBuffer) {
@@ -10857,7 +10835,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice de
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,
                                                                  uint32_t createInfoCount,
@@ -10890,8 +10868,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device
     return result;
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                         VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -10920,8 +10896,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice
     return result;
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                       const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                                       uint32_t* pNodeIndex) {
@@ -10951,8 +10925,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice d
     return result;
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
@@ -10977,8 +10949,6 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer c
     }
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -11001,8 +10971,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, V
     }
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                         const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -11027,8 +10995,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandB
     }
 }
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                              VkDeviceAddress countInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -11053,7 +11019,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
     }
 }
 
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                     const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -12098,7 +12064,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -12124,7 +12090,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -12238,8 +12204,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -12264,8 +12228,6 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -12290,8 +12252,6 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                      const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                      VkDeviceGroupPresentModeFlagsKHR* pModes) {
@@ -12320,7 +12280,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice de
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
@@ -13130,7 +13090,7 @@ VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalO
     }
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                          VkDeviceSize* pLayoutSizeInBytes) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -13497,8 +13457,6 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                  VkDisplayKHR* pDisplay) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
@@ -13523,7 +13481,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -13549,8 +13507,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
                                                                                uint32_t queueFamilyIndex, IDirectFB* dfb) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
@@ -13576,7 +13532,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
                                                 const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                                 uint32_t vertexAttributeDescriptionCount,
@@ -13633,8 +13589,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(VkDevice device,
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL
 GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
                                        VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties) {
@@ -13667,8 +13621,6 @@ GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTy
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -13694,8 +13646,6 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                zx_handle_t* pZirconHandle) {
@@ -13722,8 +13672,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
                                                              const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator,
@@ -13751,8 +13699,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -13782,8 +13728,6 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -13814,8 +13758,6 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                           const VkAllocationCallbacks* pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -13839,8 +13781,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBuf
     }
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                     VkBufferCollectionPropertiesFUCHSIA* pProperties) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -13868,7 +13808,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice dev
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
                                                                              VkExtent2D* pMaxWorkgroupSize) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -14126,8 +14066,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
     return result;
 }
 
-#endif
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
                                                                              uint32_t queueFamilyIndex,
                                                                              struct _screen_window* window) {
@@ -14155,7 +14093,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                      const VkBool32* pColorWriteEnables) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -16051,7 +15989,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
     return result;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -16969,31 +16907,23 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCreateSharedSwapchainsKHR", {kFuncTypeDev, (void*)CreateSharedSwapchainsKHR}},
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     {"vkCreateXlibSurfaceKHR", {kFuncTypeInst, (void*)CreateXlibSurfaceKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
     {"vkGetPhysicalDeviceXlibPresentationSupportKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceXlibPresentationSupportKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
     {"vkCreateXcbSurfaceKHR", {kFuncTypeInst, (void*)CreateXcbSurfaceKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
     {"vkGetPhysicalDeviceXcbPresentationSupportKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceXcbPresentationSupportKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     {"vkCreateWaylandSurfaceKHR", {kFuncTypeInst, (void*)CreateWaylandSurfaceKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
     {"vkGetPhysicalDeviceWaylandPresentationSupportKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceWaylandPresentationSupportKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     {"vkCreateAndroidSurfaceKHR", {kFuncTypeInst, (void*)CreateAndroidSurfaceKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkCreateWin32SurfaceKHR", {kFuncTypeInst, (void*)CreateWin32SurfaceKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetPhysicalDeviceWin32PresentationSupportKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceWin32PresentationSupportKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     {"vkGetPhysicalDeviceVideoCapabilitiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceVideoCapabilitiesKHR}},
     {"vkGetPhysicalDeviceVideoFormatPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceVideoFormatPropertiesKHR}},
     {"vkCreateVideoSessionKHR", {kFuncTypeDev, (void*)CreateVideoSessionKHR}},
@@ -17024,19 +16954,15 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetPhysicalDeviceExternalBufferPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceExternalBufferPropertiesKHR}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetMemoryWin32HandleKHR", {kFuncTypeDev, (void*)GetMemoryWin32HandleKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetMemoryWin32HandlePropertiesKHR", {kFuncTypeDev, (void*)GetMemoryWin32HandlePropertiesKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     {"vkGetMemoryFdKHR", {kFuncTypeDev, (void*)GetMemoryFdKHR}},
     {"vkGetMemoryFdPropertiesKHR", {kFuncTypeDev, (void*)GetMemoryFdPropertiesKHR}},
     {"vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceExternalSemaphorePropertiesKHR}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkImportSemaphoreWin32HandleKHR", {kFuncTypeDev, (void*)ImportSemaphoreWin32HandleKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetSemaphoreWin32HandleKHR", {kFuncTypeDev, (void*)GetSemaphoreWin32HandleKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     {"vkImportSemaphoreFdKHR", {kFuncTypeDev, (void*)ImportSemaphoreFdKHR}},
     {"vkGetSemaphoreFdKHR", {kFuncTypeDev, (void*)GetSemaphoreFdKHR}},
     {"vkCmdPushDescriptorSetKHR", {kFuncTypeDev, (void*)CmdPushDescriptorSetKHR}},
@@ -17052,10 +16978,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetPhysicalDeviceExternalFencePropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceExternalFencePropertiesKHR}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkImportFenceWin32HandleKHR", {kFuncTypeDev, (void*)ImportFenceWin32HandleKHR}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetFenceWin32HandleKHR", {kFuncTypeDev, (void*)GetFenceWin32HandleKHR}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     {"vkImportFenceFdKHR", {kFuncTypeDev, (void*)ImportFenceFdKHR}},
     {"vkGetFenceFdKHR", {kFuncTypeDev, (void*)GetFenceFdKHR}},
     {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", {kFuncTypePdev, (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR}},
@@ -17099,13 +17023,9 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkUnmapMemory2KHR", {kFuncTypeDev, (void*)UnmapMemory2KHR}},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetEncodedVideoSessionParametersKHR", {kFuncTypeDev, (void*)GetEncodedVideoSessionParametersKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdEncodeVideoKHR", {kFuncTypeDev, (void*)CmdEncodeVideoKHR}},
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdSetEvent2KHR", {kFuncTypeDev, (void*)CmdSetEvent2KHR}},
     {"vkCmdResetEvent2KHR", {kFuncTypeDev, (void*)CmdResetEvent2KHR}},
     {"vkCmdWaitEvents2KHR", {kFuncTypeDev, (void*)CmdWaitEvents2KHR}},
@@ -17155,24 +17075,22 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetShaderInfoAMD", {kFuncTypeDev, (void*)GetShaderInfoAMD}},
 #ifdef VK_USE_PLATFORM_GGP
     {"vkCreateStreamDescriptorSurfaceGGP", {kFuncTypeInst, (void*)CreateStreamDescriptorSurfaceGGP}},
-#endif
+#endif  // VK_USE_PLATFORM_GGP
     {"vkGetPhysicalDeviceExternalImageFormatPropertiesNV", {kFuncTypePdev, (void*)GetPhysicalDeviceExternalImageFormatPropertiesNV}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetMemoryWin32HandleNV", {kFuncTypeDev, (void*)GetMemoryWin32HandleNV}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
     {"vkCreateViSurfaceNN", {kFuncTypeInst, (void*)CreateViSurfaceNN}},
-#endif
+#endif  // VK_USE_PLATFORM_VI_NN
     {"vkCmdBeginConditionalRenderingEXT", {kFuncTypeDev, (void*)CmdBeginConditionalRenderingEXT}},
     {"vkCmdEndConditionalRenderingEXT", {kFuncTypeDev, (void*)CmdEndConditionalRenderingEXT}},
     {"vkCmdSetViewportWScalingNV", {kFuncTypeDev, (void*)CmdSetViewportWScalingNV}},
     {"vkReleaseDisplayEXT", {kFuncTypePdev, (void*)ReleaseDisplayEXT}},
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     {"vkAcquireXlibDisplayEXT", {kFuncTypePdev, (void*)AcquireXlibDisplayEXT}},
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     {"vkGetRandROutputDisplayEXT", {kFuncTypePdev, (void*)GetRandROutputDisplayEXT}},
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
     {"vkGetPhysicalDeviceSurfaceCapabilities2EXT", {kFuncTypePdev, (void*)GetPhysicalDeviceSurfaceCapabilities2EXT}},
     {"vkDisplayPowerControlEXT", {kFuncTypeDev, (void*)DisplayPowerControlEXT}},
     {"vkRegisterDeviceEventEXT", {kFuncTypeDev, (void*)RegisterDeviceEventEXT}},
@@ -17186,10 +17104,10 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkSetHdrMetadataEXT", {kFuncTypeDev, (void*)SetHdrMetadataEXT}},
 #ifdef VK_USE_PLATFORM_IOS_MVK
     {"vkCreateIOSSurfaceMVK", {kFuncTypeInst, (void*)CreateIOSSurfaceMVK}},
-#endif
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
     {"vkCreateMacOSSurfaceMVK", {kFuncTypeInst, (void*)CreateMacOSSurfaceMVK}},
-#endif
+#endif  // VK_USE_PLATFORM_MACOS_MVK
     {"vkSetDebugUtilsObjectNameEXT", {kFuncTypeDev, (void*)SetDebugUtilsObjectNameEXT}},
     {"vkSetDebugUtilsObjectTagEXT", {kFuncTypeDev, (void*)SetDebugUtilsObjectTagEXT}},
     {"vkQueueBeginDebugUtilsLabelEXT", {kFuncTypeDev, (void*)QueueBeginDebugUtilsLabelEXT}},
@@ -17203,31 +17121,17 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkSubmitDebugUtilsMessageEXT", {kFuncTypeInst, (void*)SubmitDebugUtilsMessageEXT}},
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     {"vkGetAndroidHardwareBufferPropertiesANDROID", {kFuncTypeDev, (void*)GetAndroidHardwareBufferPropertiesANDROID}},
-#endif
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
     {"vkGetMemoryAndroidHardwareBufferANDROID", {kFuncTypeDev, (void*)GetMemoryAndroidHardwareBufferANDROID}},
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCreateExecutionGraphPipelinesAMDX", {kFuncTypeDev, (void*)CreateExecutionGraphPipelinesAMDX}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetExecutionGraphPipelineScratchSizeAMDX", {kFuncTypeDev, (void*)GetExecutionGraphPipelineScratchSizeAMDX}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetExecutionGraphPipelineNodeIndexAMDX", {kFuncTypeDev, (void*)GetExecutionGraphPipelineNodeIndexAMDX}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdInitializeGraphScratchMemoryAMDX", {kFuncTypeDev, (void*)CmdInitializeGraphScratchMemoryAMDX}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdDispatchGraphAMDX", {kFuncTypeDev, (void*)CmdDispatchGraphAMDX}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdDispatchGraphIndirectAMDX", {kFuncTypeDev, (void*)CmdDispatchGraphIndirectAMDX}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdDispatchGraphIndirectCountAMDX", {kFuncTypeDev, (void*)CmdDispatchGraphIndirectCountAMDX}},
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdSetSampleLocationsEXT", {kFuncTypeDev, (void*)CmdSetSampleLocationsEXT}},
     {"vkGetPhysicalDeviceMultisamplePropertiesEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceMultisamplePropertiesEXT}},
     {"vkGetImageDrmFormatModifierPropertiesEXT", {kFuncTypeDev, (void*)GetImageDrmFormatModifierPropertiesEXT}},
@@ -17274,26 +17178,20 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkSetLocalDimmingAMD", {kFuncTypeDev, (void*)SetLocalDimmingAMD}},
 #ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkCreateImagePipeSurfaceFUCHSIA", {kFuncTypeInst, (void*)CreateImagePipeSurfaceFUCHSIA}},
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
     {"vkCreateMetalSurfaceEXT", {kFuncTypeInst, (void*)CreateMetalSurfaceEXT}},
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
     {"vkGetBufferDeviceAddressEXT", {kFuncTypeDev, (void*)GetBufferDeviceAddressEXT}},
     {"vkGetPhysicalDeviceToolPropertiesEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceToolPropertiesEXT}},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesNV}},
     {"vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", {kFuncTypePdev, (void*)GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetPhysicalDeviceSurfacePresentModes2EXT", {kFuncTypePdev, (void*)GetPhysicalDeviceSurfacePresentModes2EXT}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkAcquireFullScreenExclusiveModeEXT", {kFuncTypeDev, (void*)AcquireFullScreenExclusiveModeEXT}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkReleaseFullScreenExclusiveModeEXT", {kFuncTypeDev, (void*)ReleaseFullScreenExclusiveModeEXT}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetDeviceGroupSurfacePresentModes2EXT", {kFuncTypeDev, (void*)GetDeviceGroupSurfacePresentModes2EXT}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     {"vkCreateHeadlessSurfaceEXT", {kFuncTypeInst, (void*)CreateHeadlessSurfaceEXT}},
     {"vkCmdSetLineStippleEXT", {kFuncTypeDev, (void*)CmdSetLineStippleEXT}},
     {"vkResetQueryPoolEXT", {kFuncTypeDev, (void*)ResetQueryPoolEXT}},
@@ -17330,7 +17228,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetPrivateDataEXT", {kFuncTypeDev, (void*)GetPrivateDataEXT}},
 #ifdef VK_USE_PLATFORM_METAL_EXT
     {"vkExportMetalObjectsEXT", {kFuncTypeDev, (void*)ExportMetalObjectsEXT}},
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
     {"vkGetDescriptorSetLayoutSizeEXT", {kFuncTypeDev, (void*)GetDescriptorSetLayoutSizeEXT}},
     {"vkGetDescriptorSetLayoutBindingOffsetEXT", {kFuncTypeDev, (void*)GetDescriptorSetLayoutBindingOffsetEXT}},
     {"vkGetDescriptorEXT", {kFuncTypeDev, (void*)GetDescriptorEXT}},
@@ -17346,44 +17244,24 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetDeviceFaultInfoEXT", {kFuncTypeDev, (void*)GetDeviceFaultInfoEXT}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkAcquireWinrtDisplayNV", {kFuncTypePdev, (void*)AcquireWinrtDisplayNV}},
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetWinrtDisplayNV", {kFuncTypePdev, (void*)GetWinrtDisplayNV}},
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     {"vkCreateDirectFBSurfaceEXT", {kFuncTypeInst, (void*)CreateDirectFBSurfaceEXT}},
-#endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     {"vkGetPhysicalDeviceDirectFBPresentationSupportEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceDirectFBPresentationSupportEXT}},
-#endif
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
     {"vkCmdSetVertexInputEXT", {kFuncTypeDev, (void*)CmdSetVertexInputEXT}},
 #ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkGetMemoryZirconHandleFUCHSIA", {kFuncTypeDev, (void*)GetMemoryZirconHandleFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkGetMemoryZirconHandlePropertiesFUCHSIA", {kFuncTypeDev, (void*)GetMemoryZirconHandlePropertiesFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkImportSemaphoreZirconHandleFUCHSIA", {kFuncTypeDev, (void*)ImportSemaphoreZirconHandleFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkGetSemaphoreZirconHandleFUCHSIA", {kFuncTypeDev, (void*)GetSemaphoreZirconHandleFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkCreateBufferCollectionFUCHSIA", {kFuncTypeDev, (void*)CreateBufferCollectionFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkSetBufferCollectionImageConstraintsFUCHSIA", {kFuncTypeDev, (void*)SetBufferCollectionImageConstraintsFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkSetBufferCollectionBufferConstraintsFUCHSIA", {kFuncTypeDev, (void*)SetBufferCollectionBufferConstraintsFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkDestroyBufferCollectionFUCHSIA", {kFuncTypeDev, (void*)DestroyBufferCollectionFUCHSIA}},
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkGetBufferCollectionPropertiesFUCHSIA", {kFuncTypeDev, (void*)GetBufferCollectionPropertiesFUCHSIA}},
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
     {"vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", {kFuncTypeDev, (void*)GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI}},
     {"vkCmdSubpassShadingHUAWEI", {kFuncTypeDev, (void*)CmdSubpassShadingHUAWEI}},
     {"vkCmdBindInvocationMaskHUAWEI", {kFuncTypeDev, (void*)CmdBindInvocationMaskHUAWEI}},
@@ -17396,10 +17274,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdSetPrimitiveRestartEnableEXT", {kFuncTypeDev, (void*)CmdSetPrimitiveRestartEnableEXT}},
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     {"vkCreateScreenSurfaceQNX", {kFuncTypeInst, (void*)CreateScreenSurfaceQNX}},
-#endif
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
     {"vkGetPhysicalDeviceScreenPresentationSupportQNX", {kFuncTypePdev, (void*)GetPhysicalDeviceScreenPresentationSupportQNX}},
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     {"vkCmdSetColorWriteEnableEXT", {kFuncTypeDev, (void*)CmdSetColorWriteEnableEXT}},
     {"vkCmdDrawMultiEXT", {kFuncTypeDev, (void*)CmdDrawMultiEXT}},
     {"vkCmdDrawMultiIndexedEXT", {kFuncTypeDev, (void*)CmdDrawMultiIndexedEXT}},
@@ -17481,7 +17357,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {kFuncTypeDev, (void*)CmdSetAttachmentFeedbackLoopEnableEXT}},
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

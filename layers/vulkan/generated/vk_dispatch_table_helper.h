@@ -324,8 +324,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateXlibSurfaceKHR(VkInstance instan
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
 static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                       uint32_t queueFamilyIndex, Display* dpy,
                                                                                       VisualID visualID) {
@@ -337,8 +335,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateXcbSurfaceKHR(VkInstance instanc
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
 static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t queueFamilyIndex,
                                                                                      xcb_connection_t* connection,
@@ -352,8 +348,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateWaylandSurfaceKHR(VkInstance ins
                                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                          uint32_t queueFamilyIndex,
                                                                                          struct wl_display* display) {
@@ -372,8 +366,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateWin32SurfaceKHR(VkInstance insta
                                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                        uint32_t queueFamilyIndex) {
     return VK_FALSE;
@@ -470,8 +462,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryWin32HandleKHR(VkDevice devic
                                                                   HANDLE* pHandle) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL
 StubGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
                                       VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties) {
@@ -493,8 +483,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL
 StubImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetSemaphoreWin32HandleKHR(VkDevice device,
                                                                      const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                      HANDLE* pHandle) {
@@ -547,8 +535,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL
 StubImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetFenceWin32HandleKHR(VkDevice device,
                                                                  const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                  HANDLE* pHandle) {
@@ -714,15 +700,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceVideoEncodeQualityLev
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) {
     return VK_SUCCESS;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) {
     return VK_SUCCESS;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {}
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -890,8 +872,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubAcquireXlibDisplayEXT(VkPhysicalDevice
                                                                 VkDisplayKHR display) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                                    VkDisplayKHR* pDisplay) {
     return VK_SUCCESS;
@@ -980,8 +960,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetAndroidHardwareBufferPropertiesANDR
     VkDevice device, const struct AHardwareBuffer* buffer, VkAndroidHardwareBufferPropertiesANDROID* pProperties) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryAndroidHardwareBufferANDROID(
     VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer) {
     return VK_SUCCESS;
@@ -993,31 +971,19 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateExecutionGraphPipelinesAMDX(
     const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     return VK_SUCCESS;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetExecutionGraphPipelineScratchSizeAMDX(
     VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) {
     return VK_SUCCESS;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetExecutionGraphPipelineNodeIndexAMDX(
     VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex) {
     return VK_SUCCESS;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch) {}
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                            const VkDispatchGraphCountInfoAMDX* pCountInfo) {}
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                    const VkDispatchGraphCountInfoAMDX* pCountInfo) {}
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                         VkDeviceAddress countInfo) {}
 #endif  // VK_ENABLE_BETA_EXTENSIONS
@@ -1215,18 +1181,12 @@ StubGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice, co
                                              uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                                 VkDeviceGroupPresentModeFlagsKHR* pModes) {
@@ -1380,8 +1340,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetDeviceFaultInfoEXT(VkDevice device,
 static VKAPI_ATTR VkResult VKAPI_CALL StubAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                             VkDisplayKHR* pDisplay) {
     return VK_SUCCESS;
@@ -1394,8 +1352,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDirectFBSurfaceEXT(VkInstance in
                                                                    VkSurfaceKHR* pSurface) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
                                                                                           uint32_t queueFamilyIndex,
                                                                                           IDirectFB* dfb) {
@@ -1411,51 +1367,35 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryZirconHandleFUCHSIA(
     VkDevice device, const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL
 StubGetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
                                            VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateBufferCollectionFUCHSIA(VkDevice device,
                                                                         const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         VkBufferCollectionFUCHSIA* pCollection) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR void VKAPI_CALL StubDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                      const VkAllocationCallbacks* pAllocator) {}
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetBufferCollectionPropertiesFUCHSIA(VkDevice device,
                                                                                VkBufferCollectionFUCHSIA collection,
                                                                                VkBufferCollectionPropertiesFUCHSIA* pProperties) {
@@ -1490,8 +1430,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateScreenSurfaceQNX(VkInstance inst
                                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     return VK_SUCCESS;
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
                                                                                         uint32_t queueFamilyIndex,
                                                                                         struct _screen_window* window) {
@@ -2797,8 +2735,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetMemoryWin32HandleKHR == nullptr) {
         table->GetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)StubGetMemoryWin32HandleKHR;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->GetMemoryWin32HandlePropertiesKHR =
         (PFN_vkGetMemoryWin32HandlePropertiesKHR)gpa(device, "vkGetMemoryWin32HandlePropertiesKHR");
     if (table->GetMemoryWin32HandlePropertiesKHR == nullptr) {
@@ -2818,8 +2754,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->ImportSemaphoreWin32HandleKHR == nullptr) {
         table->ImportSemaphoreWin32HandleKHR = (PFN_vkImportSemaphoreWin32HandleKHR)StubImportSemaphoreWin32HandleKHR;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->GetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)gpa(device, "vkGetSemaphoreWin32HandleKHR");
     if (table->GetSemaphoreWin32HandleKHR == nullptr) {
         table->GetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)StubGetSemaphoreWin32HandleKHR;
@@ -2885,8 +2819,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->ImportFenceWin32HandleKHR == nullptr) {
         table->ImportFenceWin32HandleKHR = (PFN_vkImportFenceWin32HandleKHR)StubImportFenceWin32HandleKHR;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->GetFenceWin32HandleKHR = (PFN_vkGetFenceWin32HandleKHR)gpa(device, "vkGetFenceWin32HandleKHR");
     if (table->GetFenceWin32HandleKHR == nullptr) {
         table->GetFenceWin32HandleKHR = (PFN_vkGetFenceWin32HandleKHR)StubGetFenceWin32HandleKHR;
@@ -3044,8 +2976,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
         table->GetEncodedVideoSessionParametersKHR =
             (PFN_vkGetEncodedVideoSessionParametersKHR)StubGetEncodedVideoSessionParametersKHR;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)gpa(device, "vkCmdEncodeVideoKHR");
     if (table->CmdEncodeVideoKHR == nullptr) {
         table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)StubCmdEncodeVideoKHR;
@@ -3333,8 +3263,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
         table->GetAndroidHardwareBufferPropertiesANDROID =
             (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)StubGetAndroidHardwareBufferPropertiesANDROID;
     }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
     table->GetMemoryAndroidHardwareBufferANDROID =
         (PFN_vkGetMemoryAndroidHardwareBufferANDROID)gpa(device, "vkGetMemoryAndroidHardwareBufferANDROID");
     if (table->GetMemoryAndroidHardwareBufferANDROID == nullptr) {
@@ -3348,44 +3276,32 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CreateExecutionGraphPipelinesAMDX == nullptr) {
         table->CreateExecutionGraphPipelinesAMDX = (PFN_vkCreateExecutionGraphPipelinesAMDX)StubCreateExecutionGraphPipelinesAMDX;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->GetExecutionGraphPipelineScratchSizeAMDX =
         (PFN_vkGetExecutionGraphPipelineScratchSizeAMDX)gpa(device, "vkGetExecutionGraphPipelineScratchSizeAMDX");
     if (table->GetExecutionGraphPipelineScratchSizeAMDX == nullptr) {
         table->GetExecutionGraphPipelineScratchSizeAMDX =
             (PFN_vkGetExecutionGraphPipelineScratchSizeAMDX)StubGetExecutionGraphPipelineScratchSizeAMDX;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->GetExecutionGraphPipelineNodeIndexAMDX =
         (PFN_vkGetExecutionGraphPipelineNodeIndexAMDX)gpa(device, "vkGetExecutionGraphPipelineNodeIndexAMDX");
     if (table->GetExecutionGraphPipelineNodeIndexAMDX == nullptr) {
         table->GetExecutionGraphPipelineNodeIndexAMDX =
             (PFN_vkGetExecutionGraphPipelineNodeIndexAMDX)StubGetExecutionGraphPipelineNodeIndexAMDX;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdInitializeGraphScratchMemoryAMDX =
         (PFN_vkCmdInitializeGraphScratchMemoryAMDX)gpa(device, "vkCmdInitializeGraphScratchMemoryAMDX");
     if (table->CmdInitializeGraphScratchMemoryAMDX == nullptr) {
         table->CmdInitializeGraphScratchMemoryAMDX =
             (PFN_vkCmdInitializeGraphScratchMemoryAMDX)StubCmdInitializeGraphScratchMemoryAMDX;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX)gpa(device, "vkCmdDispatchGraphAMDX");
     if (table->CmdDispatchGraphAMDX == nullptr) {
         table->CmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX)StubCmdDispatchGraphAMDX;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX)gpa(device, "vkCmdDispatchGraphIndirectAMDX");
     if (table->CmdDispatchGraphIndirectAMDX == nullptr) {
         table->CmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX)StubCmdDispatchGraphIndirectAMDX;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdDispatchGraphIndirectCountAMDX =
         (PFN_vkCmdDispatchGraphIndirectCountAMDX)gpa(device, "vkCmdDispatchGraphIndirectCountAMDX");
     if (table->CmdDispatchGraphIndirectCountAMDX == nullptr) {
@@ -3595,15 +3511,11 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->AcquireFullScreenExclusiveModeEXT == nullptr) {
         table->AcquireFullScreenExclusiveModeEXT = (PFN_vkAcquireFullScreenExclusiveModeEXT)StubAcquireFullScreenExclusiveModeEXT;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->ReleaseFullScreenExclusiveModeEXT =
         (PFN_vkReleaseFullScreenExclusiveModeEXT)gpa(device, "vkReleaseFullScreenExclusiveModeEXT");
     if (table->ReleaseFullScreenExclusiveModeEXT == nullptr) {
         table->ReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)StubReleaseFullScreenExclusiveModeEXT;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->GetDeviceGroupSurfacePresentModes2EXT =
         (PFN_vkGetDeviceGroupSurfacePresentModes2EXT)gpa(device, "vkGetDeviceGroupSurfacePresentModes2EXT");
     if (table->GetDeviceGroupSurfacePresentModes2EXT == nullptr) {
@@ -3824,59 +3736,43 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetMemoryZirconHandleFUCHSIA == nullptr) {
         table->GetMemoryZirconHandleFUCHSIA = (PFN_vkGetMemoryZirconHandleFUCHSIA)StubGetMemoryZirconHandleFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->GetMemoryZirconHandlePropertiesFUCHSIA =
         (PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA)gpa(device, "vkGetMemoryZirconHandlePropertiesFUCHSIA");
     if (table->GetMemoryZirconHandlePropertiesFUCHSIA == nullptr) {
         table->GetMemoryZirconHandlePropertiesFUCHSIA =
             (PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA)StubGetMemoryZirconHandlePropertiesFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->ImportSemaphoreZirconHandleFUCHSIA =
         (PFN_vkImportSemaphoreZirconHandleFUCHSIA)gpa(device, "vkImportSemaphoreZirconHandleFUCHSIA");
     if (table->ImportSemaphoreZirconHandleFUCHSIA == nullptr) {
         table->ImportSemaphoreZirconHandleFUCHSIA =
             (PFN_vkImportSemaphoreZirconHandleFUCHSIA)StubImportSemaphoreZirconHandleFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->GetSemaphoreZirconHandleFUCHSIA =
         (PFN_vkGetSemaphoreZirconHandleFUCHSIA)gpa(device, "vkGetSemaphoreZirconHandleFUCHSIA");
     if (table->GetSemaphoreZirconHandleFUCHSIA == nullptr) {
         table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA)StubGetSemaphoreZirconHandleFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->CreateBufferCollectionFUCHSIA = (PFN_vkCreateBufferCollectionFUCHSIA)gpa(device, "vkCreateBufferCollectionFUCHSIA");
     if (table->CreateBufferCollectionFUCHSIA == nullptr) {
         table->CreateBufferCollectionFUCHSIA = (PFN_vkCreateBufferCollectionFUCHSIA)StubCreateBufferCollectionFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->SetBufferCollectionImageConstraintsFUCHSIA =
         (PFN_vkSetBufferCollectionImageConstraintsFUCHSIA)gpa(device, "vkSetBufferCollectionImageConstraintsFUCHSIA");
     if (table->SetBufferCollectionImageConstraintsFUCHSIA == nullptr) {
         table->SetBufferCollectionImageConstraintsFUCHSIA =
             (PFN_vkSetBufferCollectionImageConstraintsFUCHSIA)StubSetBufferCollectionImageConstraintsFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->SetBufferCollectionBufferConstraintsFUCHSIA =
         (PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA)gpa(device, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
     if (table->SetBufferCollectionBufferConstraintsFUCHSIA == nullptr) {
         table->SetBufferCollectionBufferConstraintsFUCHSIA =
             (PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA)StubSetBufferCollectionBufferConstraintsFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->DestroyBufferCollectionFUCHSIA = (PFN_vkDestroyBufferCollectionFUCHSIA)gpa(device, "vkDestroyBufferCollectionFUCHSIA");
     if (table->DestroyBufferCollectionFUCHSIA == nullptr) {
         table->DestroyBufferCollectionFUCHSIA = (PFN_vkDestroyBufferCollectionFUCHSIA)StubDestroyBufferCollectionFUCHSIA;
     }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     table->GetBufferCollectionPropertiesFUCHSIA =
         (PFN_vkGetBufferCollectionPropertiesFUCHSIA)gpa(device, "vkGetBufferCollectionPropertiesFUCHSIA");
     if (table->GetBufferCollectionPropertiesFUCHSIA == nullptr) {
@@ -4570,8 +4466,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->CreateXlibSurfaceKHR == nullptr) {
         table->CreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)StubCreateXlibSurfaceKHR;
     }
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
     table->GetPhysicalDeviceXlibPresentationSupportKHR =
         (PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR)gpa(instance, "vkGetPhysicalDeviceXlibPresentationSupportKHR");
     if (table->GetPhysicalDeviceXlibPresentationSupportKHR == nullptr) {
@@ -4584,8 +4478,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->CreateXcbSurfaceKHR == nullptr) {
         table->CreateXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)StubCreateXcbSurfaceKHR;
     }
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
     table->GetPhysicalDeviceXcbPresentationSupportKHR =
         (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)gpa(instance, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
     if (table->GetPhysicalDeviceXcbPresentationSupportKHR == nullptr) {
@@ -4598,8 +4490,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->CreateWaylandSurfaceKHR == nullptr) {
         table->CreateWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)StubCreateWaylandSurfaceKHR;
     }
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
     table->GetPhysicalDeviceWaylandPresentationSupportKHR =
         (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)gpa(instance, "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
     if (table->GetPhysicalDeviceWaylandPresentationSupportKHR == nullptr) {
@@ -4618,8 +4508,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->CreateWin32SurfaceKHR == nullptr) {
         table->CreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)StubCreateWin32SurfaceKHR;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->GetPhysicalDeviceWin32PresentationSupportKHR =
         (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)gpa(instance, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
     if (table->GetPhysicalDeviceWin32PresentationSupportKHR == nullptr) {
@@ -4808,8 +4696,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->AcquireXlibDisplayEXT == nullptr) {
         table->AcquireXlibDisplayEXT = (PFN_vkAcquireXlibDisplayEXT)StubAcquireXlibDisplayEXT;
     }
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     table->GetRandROutputDisplayEXT = (PFN_vkGetRandROutputDisplayEXT)gpa(instance, "vkGetRandROutputDisplayEXT");
     if (table->GetRandROutputDisplayEXT == nullptr) {
         table->GetRandROutputDisplayEXT = (PFN_vkGetRandROutputDisplayEXT)StubGetRandROutputDisplayEXT;
@@ -4914,8 +4800,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->AcquireWinrtDisplayNV == nullptr) {
         table->AcquireWinrtDisplayNV = (PFN_vkAcquireWinrtDisplayNV)StubAcquireWinrtDisplayNV;
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     table->GetWinrtDisplayNV = (PFN_vkGetWinrtDisplayNV)gpa(instance, "vkGetWinrtDisplayNV");
     if (table->GetWinrtDisplayNV == nullptr) {
         table->GetWinrtDisplayNV = (PFN_vkGetWinrtDisplayNV)StubGetWinrtDisplayNV;
@@ -4926,8 +4810,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->CreateDirectFBSurfaceEXT == nullptr) {
         table->CreateDirectFBSurfaceEXT = (PFN_vkCreateDirectFBSurfaceEXT)StubCreateDirectFBSurfaceEXT;
     }
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     table->GetPhysicalDeviceDirectFBPresentationSupportEXT =
         (PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT)gpa(instance, "vkGetPhysicalDeviceDirectFBPresentationSupportEXT");
     if (table->GetPhysicalDeviceDirectFBPresentationSupportEXT == nullptr) {
@@ -4940,8 +4822,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->CreateScreenSurfaceQNX == nullptr) {
         table->CreateScreenSurfaceQNX = (PFN_vkCreateScreenSurfaceQNX)StubCreateScreenSurfaceQNX;
     }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
     table->GetPhysicalDeviceScreenPresentationSupportQNX =
         (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX)gpa(instance, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
     if (table->GetPhysicalDeviceScreenPresentationSupportQNX == nullptr) {

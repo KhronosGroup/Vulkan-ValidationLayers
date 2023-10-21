@@ -1147,8 +1147,6 @@ void safe_VkImportMemoryWin32HandleInfoNV::initialize(const safe_VkImportMemoryW
     handle = copy_src->handle;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const VkExportMemoryWin32HandleInfoNV* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -1225,8 +1223,6 @@ void safe_VkExportMemoryWin32HandleInfoNV::initialize(const safe_VkExportMemoryW
         pAttributes = new SECURITY_ATTRIBUTES(*copy_src->pAttributes);
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV(
     const VkWin32KeyedMutexAcquireReleaseInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1894,8 +1890,6 @@ void safe_VkAndroidHardwareBufferUsageANDROID::initialize(const safe_VkAndroidHa
     androidHardwareBufferUsage = copy_src->androidHardwareBufferUsage;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID(
     const VkAndroidHardwareBufferPropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1948,8 +1942,6 @@ void safe_VkAndroidHardwareBufferPropertiesANDROID::initialize(const safe_VkAndr
     memoryTypeBits = copy_src->memoryTypeBits;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID(
     const VkAndroidHardwareBufferFormatPropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2045,8 +2037,6 @@ void safe_VkAndroidHardwareBufferFormatPropertiesANDROID::initialize(
     suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID(
     const VkImportAndroidHardwareBufferInfoANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2096,8 +2086,6 @@ void safe_VkImportAndroidHardwareBufferInfoANDROID::initialize(const safe_VkImpo
     pNext = SafePnextCopy(copy_src->pNext);
     buffer = copy_src->buffer;
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2146,8 +2134,6 @@ void safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::initialize(const safe_VkM
     memory = copy_src->memory;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const VkExternalFormatANDROID* in_struct,
                                                            [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2194,8 +2180,6 @@ void safe_VkExternalFormatANDROID::initialize(const safe_VkExternalFormatANDROID
     externalFormat = copy_src->externalFormat;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID(
     const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2341,8 +2325,6 @@ void safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::initialize(const safe_VkPhy
     shaderEnqueue = copy_src->shaderEnqueue;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX(
     const VkPhysicalDeviceShaderEnqueuePropertiesAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2418,8 +2400,6 @@ void safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::initialize(const safe_VkP
     executionGraphDispatchAddressAlignment = copy_src->executionGraphDispatchAddressAlignment;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkExecutionGraphPipelineScratchSizeAMDX::safe_VkExecutionGraphPipelineScratchSizeAMDX(
     const VkExecutionGraphPipelineScratchSizeAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2468,8 +2448,6 @@ void safe_VkExecutionGraphPipelineScratchSizeAMDX::initialize(const safe_VkExecu
     size = copy_src->size;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkExecutionGraphPipelineCreateInfoAMDX::safe_VkExecutionGraphPipelineCreateInfoAMDX(
     const VkExecutionGraphPipelineCreateInfoAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2600,8 +2578,6 @@ void safe_VkExecutionGraphPipelineCreateInfoAMDX::initialize(const safe_VkExecut
     }
     if (copy_src->pLibraryInfo) pLibraryInfo = new safe_VkPipelineLibraryCreateInfoKHR(*copy_src->pLibraryInfo);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkDeviceOrHostAddressConstAMDX::safe_VkDeviceOrHostAddressConstAMDX(const VkDeviceOrHostAddressConstAMDX* in_struct,
                                                                          PNextCopyState*) {
@@ -2638,8 +2614,6 @@ void safe_VkDeviceOrHostAddressConstAMDX::initialize(const safe_VkDeviceOrHostAd
     deviceAddress = copy_src->deviceAddress;
     hostAddress = copy_src->hostAddress;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkPipelineShaderStageNodeCreateInfoAMDX::safe_VkPipelineShaderStageNodeCreateInfoAMDX(
     const VkPipelineShaderStageNodeCreateInfoAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8422,8 +8396,6 @@ void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const safe_VkImportM
     handle = copy_src->handle;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA(
     const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8472,8 +8444,6 @@ void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const safe_VkMemoryZ
     memoryTypeBits = copy_src->memoryTypeBits;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA(
     const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8526,8 +8496,6 @@ void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const safe_VkMemoryGetZ
     handleType = copy_src->handleType;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(
     const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8597,8 +8565,6 @@ void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const safe_VkImpo
     zirconHandle = copy_src->zirconHandle;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(
     const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8651,8 +8617,6 @@ void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const safe_VkSemapho
     handleType = copy_src->handleType;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkBufferCollectionCreateInfoFUCHSIA::safe_VkBufferCollectionCreateInfoFUCHSIA(
     const VkBufferCollectionCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8701,8 +8665,6 @@ void safe_VkBufferCollectionCreateInfoFUCHSIA::initialize(const safe_VkBufferCol
     collectionToken = copy_src->collectionToken;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkImportMemoryBufferCollectionFUCHSIA::safe_VkImportMemoryBufferCollectionFUCHSIA(
     const VkImportMemoryBufferCollectionFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8755,8 +8717,6 @@ void safe_VkImportMemoryBufferCollectionFUCHSIA::initialize(const safe_VkImportM
     index = copy_src->index;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkBufferCollectionImageCreateInfoFUCHSIA::safe_VkBufferCollectionImageCreateInfoFUCHSIA(
     const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8809,8 +8769,6 @@ void safe_VkBufferCollectionImageCreateInfoFUCHSIA::initialize(const safe_VkBuff
     index = copy_src->index;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkBufferCollectionConstraintsInfoFUCHSIA::safe_VkBufferCollectionConstraintsInfoFUCHSIA(
     const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -8886,8 +8844,6 @@ void safe_VkBufferCollectionConstraintsInfoFUCHSIA::initialize(const safe_VkBuff
     minBufferCountForSharedSlack = copy_src->minBufferCountForSharedSlack;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkBufferConstraintsInfoFUCHSIA::safe_VkBufferConstraintsInfoFUCHSIA(const VkBufferConstraintsInfoFUCHSIA* in_struct,
                                                                          [[maybe_unused]] PNextCopyState* copy_state,
@@ -8947,8 +8903,6 @@ void safe_VkBufferConstraintsInfoFUCHSIA::initialize(const safe_VkBufferConstrai
     bufferCollectionConstraints.initialize(&copy_src->bufferCollectionConstraints);
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkBufferCollectionBufferCreateInfoFUCHSIA::safe_VkBufferCollectionBufferCreateInfoFUCHSIA(
     const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -9001,8 +8955,6 @@ void safe_VkBufferCollectionBufferCreateInfoFUCHSIA::initialize(const safe_VkBuf
     index = copy_src->index;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkSysmemColorSpaceFUCHSIA::safe_VkSysmemColorSpaceFUCHSIA(const VkSysmemColorSpaceFUCHSIA* in_struct,
                                                                [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -9049,8 +9001,6 @@ void safe_VkSysmemColorSpaceFUCHSIA::initialize(const safe_VkSysmemColorSpaceFUC
     colorSpace = copy_src->colorSpace;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkBufferCollectionPropertiesFUCHSIA::safe_VkBufferCollectionPropertiesFUCHSIA(
     const VkBufferCollectionPropertiesFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -9161,8 +9111,6 @@ void safe_VkBufferCollectionPropertiesFUCHSIA::initialize(const safe_VkBufferCol
     suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHSIA(
     const VkImageFormatConstraintsInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -9278,8 +9226,6 @@ void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const safe_VkImageForm
         }
     }
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
 safe_VkImageConstraintsInfoFUCHSIA::safe_VkImageConstraintsInfoFUCHSIA(const VkImageConstraintsInfoFUCHSIA* in_struct,
                                                                        [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -9837,8 +9783,6 @@ void safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::initialize(
     displacementMicromap = copy_src->displacementMicromap;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(
     const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -9891,8 +9835,6 @@ void safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::initialize(
     maxDisplacementMicromapSubdivisionLevel = copy_src->maxDisplacementMicromapSubdivisionLevel;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(
     const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
@@ -12005,8 +11947,6 @@ void safe_VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::initialize(
     externalFormatResolve = copy_src->externalFormatResolve;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID(
     const VkPhysicalDeviceExternalFormatResolvePropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
@@ -12073,8 +12013,6 @@ void safe_VkPhysicalDeviceExternalFormatResolvePropertiesANDROID::initialize(
     externalFormatResolveChromaOffsetY = copy_src->externalFormatResolveChromaOffsetY;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID::safe_VkAndroidHardwareBufferFormatResolvePropertiesANDROID(
     const VkAndroidHardwareBufferFormatResolvePropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
@@ -13927,8 +13865,6 @@ void safe_VkScreenBufferPropertiesQNX::initialize(const safe_VkScreenBufferPrope
     memoryTypeBits = copy_src->memoryTypeBits;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 safe_VkScreenBufferFormatPropertiesQNX::safe_VkScreenBufferFormatPropertiesQNX(const VkScreenBufferFormatPropertiesQNX* in_struct,
                                                                                [[maybe_unused]] PNextCopyState* copy_state,
@@ -14029,8 +13965,6 @@ void safe_VkScreenBufferFormatPropertiesQNX::initialize(const safe_VkScreenBuffe
     suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX(const VkImportScreenBufferInfoQNX* in_struct,
                                                                    [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -14101,8 +14035,6 @@ void safe_VkImportScreenBufferInfoQNX::initialize(const safe_VkImportScreenBuffe
         buffer = new _screen_buffer(*copy_src->buffer);
     }
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 safe_VkExternalFormatQNX::safe_VkExternalFormatQNX(const VkExternalFormatQNX* in_struct,
                                                    [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -14147,8 +14079,6 @@ void safe_VkExternalFormatQNX::initialize(const safe_VkExternalFormatQNX* copy_s
     externalFormat = copy_src->externalFormat;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(
     const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state,

@@ -20,6 +20,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 # This class is a container for any source code, data, or other behavior that is necessary to
 # customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
@@ -93,16 +94,17 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
 
         out.append('// clang-format off\n')
         out.append(f'const uint32_t GeneratedVulkanHeaderVersion = {self.vk.headerVersion};\n')
+        guard_helper = PlatformGuardHelper()
         for bitmask in bitmasks:
             if bitmask.flagName == 'VkGeometryInstanceFlagsKHR':
                 continue # only called in VkAccelerationStructureInstanceKHR which is never called anywhere explicitly
             elif len(bitmask.flags) == 0:
                 continue # some bitmask are empty and used for reserve in the future
 
-            out.extend([f'#ifdef {bitmask.protect}\n'] if bitmask.protect else [])
+            out.extend(guard_helper.add_guard(bitmask.protect))
             out.append(f'const {bitmask.flagName} All{bitmask.name} = {"|".join([flag.name for flag in bitmask.flags])}')
             out.append(';\n')
-            out.extend([f'#endif //{bitmask.protect}\n'] if bitmask.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.extend(APISpecific.genManualConstants(self.targetApiName))
 

@@ -20,7 +20,7 @@
 
 import os
 import re
-from generators.generator_utils import buildListVUID
+from generators.generator_utils import buildListVUID, PlatformGuardHelper
 from generators.vulkan_object import Member
 from generators.base_generator import BaseGenerator
 
@@ -264,8 +264,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out.append('}\n')
         out.append('\n')
 
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'bool PreCallValidate{prototype[2:]}'
             prototype = prototype.replace(');', ') const override;\n')
@@ -273,7 +274,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 prototype = prototype.replace('const override', 'const')
             prototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
             out.append(prototype)
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
 
     def generateSource(self):
@@ -337,9 +338,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             if lines:
                 self.validatedStructs[struct.name] = lines
 
+        guard_helper = PlatformGuardHelper()
         # Do some processing here to extract data from validatedstructs...
         for struct in [x for x in self.vk.structs.values() if x.extends]:
-            out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
+            out.extend(guard_helper.add_guard(struct.protect))
 
             pnext_case = '\n'
             pnext_check = ''
@@ -401,7 +403,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 out.append(pnext_case)
             else:
                 out.append(f'\n        // No Validation code for {struct.name} structure members  -- Covers VUID-{struct.name}-sType-sType\n')
-            out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
                         skip = false;
@@ -413,7 +415,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         # Generate the command parameter checking code from the captured data
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect, extra_newline=True))
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prototype = prototype.replace(')', ', const ErrorObject& error_obj)')
@@ -460,8 +462,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 out.append(f'    if (!skip) skip |= manual_PreCallValidate{command.name[2:]}({params_text});\n')
             out.append('return skip;\n')
             out.append('}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
-            out.append('\n')
+        out.extend(guard_helper.add_guard(None, extra_newline=True))
 
         self.write("".join(out))
 

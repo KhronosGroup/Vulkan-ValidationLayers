@@ -2835,8 +2835,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // No Validation code for VkExportMemoryWin32HandleInfoKHR structure members  -- Covers
         // VUID-VkExportMemoryWin32HandleInfoKHR-sType-sType
@@ -2881,13 +2879,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseKeys-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // No Validation code for VkExportSemaphoreWin32HandleInfoKHR structure members  -- Covers
         // VUID-VkExportSemaphoreWin32HandleInfoKHR-sType-sType
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // No Validation code for VkD3D12FenceSubmitInfoKHR structure members  -- Covers VUID-VkD3D12FenceSubmitInfoKHR-sType-sType
 #endif  // VK_USE_PLATFORM_WIN32_KHR
@@ -3002,8 +2996,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                        structure->vertexAttributeAccessBeyondStride);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkPhysicalDevicePortabilitySubsetPropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDevicePortabilitySubsetPropertiesKHR-sType-sType
@@ -3240,8 +3232,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkVideoEncodeCapabilitiesKHR structure members  -- Covers
         // VUID-VkVideoEncodeCapabilitiesKHR-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkQueryPoolVideoEncodeFeedbackCreateInfoKHR structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_VIDEO_ENCODE_FEEDBACK_CREATE_INFO_KHR: {  // Covers
@@ -3255,8 +3245,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkQueryPoolVideoEncodeFeedbackCreateInfoKHR-encodeFeedbackFlags-requiredbitmask");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeUsageInfoKHR structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR: {  // Covers VUID-VkVideoEncodeUsageInfoKHR-sType-sType
@@ -3275,8 +3263,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                            "VUID-VkVideoEncodeUsageInfoKHR-tuningMode-parameter");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeRateControlInfoKHR structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR: {  // Covers VUID-VkVideoEncodeRateControlInfoKHR-sType-sType
@@ -3303,8 +3289,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 }
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeQualityLevelInfoKHR structure members  -- Covers
         // VUID-VkVideoEncodeQualityLevelInfoKHR-sType-sType
@@ -3520,13 +3504,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkVideoEncodeH264CapabilitiesEXT structure members  -- Covers
         // VUID-VkVideoEncodeH264CapabilitiesEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH264QualityLevelPropertiesEXT structure members  -- Covers
         // VUID-VkVideoEncodeH264QualityLevelPropertiesEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264SessionCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT: {  // Covers
@@ -3537,13 +3517,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::useMaxLevelIdc), structure->useMaxLevelIdc);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH264SessionParametersAddInfoEXT structure members  -- Covers
         // VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264SessionParametersCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT: {  // Covers
@@ -3563,8 +3539,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 }
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264SessionParametersGetInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_GET_INFO_EXT: {  // Covers
@@ -3577,13 +3551,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::writeStdPPS), structure->writeStdPPS);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH264SessionParametersFeedbackInfoEXT structure members  -- Covers
         // VUID-VkVideoEncodeH264SessionParametersFeedbackInfoEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264PictureInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PICTURE_INFO_EXT: {  // Covers VUID-VkVideoEncodeH264PictureInfoEXT-sType-sType
@@ -3615,8 +3585,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::generatePrefixNalu), structure->generatePrefixNalu);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264DpbSlotInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT: {  // Covers VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType
@@ -3627,13 +3595,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH264ProfileInfoEXT structure members  -- Covers
         // VUID-VkVideoEncodeH264ProfileInfoEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264RateControlInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_INFO_EXT: {  // Covers
@@ -3646,8 +3610,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkVideoEncodeH264RateControlInfoEXT-flags-parameter");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264RateControlLayerInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_LAYER_INFO_EXT: {  // Covers
@@ -3662,8 +3624,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::useMaxFrameSize), structure->useMaxFrameSize);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH264GopRemainingFrameInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_GOP_REMAINING_FRAME_INFO_EXT: {  // Covers
@@ -3674,13 +3634,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::useGopRemainingFrames), structure->useGopRemainingFrames);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH265CapabilitiesEXT structure members  -- Covers
         // VUID-VkVideoEncodeH265CapabilitiesEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265SessionCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT: {  // Covers
@@ -3691,18 +3647,12 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::useMaxLevelIdc), structure->useMaxLevelIdc);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH265QualityLevelPropertiesEXT structure members  -- Covers
         // VUID-VkVideoEncodeH265QualityLevelPropertiesEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH265SessionParametersAddInfoEXT structure members  -- Covers
         // VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265SessionParametersCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT: {  // Covers
@@ -3722,8 +3672,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 }
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265SessionParametersGetInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_GET_INFO_EXT: {  // Covers
@@ -3738,13 +3686,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::writeStdPPS), structure->writeStdPPS);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH265SessionParametersFeedbackInfoEXT structure members  -- Covers
         // VUID-VkVideoEncodeH265SessionParametersFeedbackInfoEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265PictureInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PICTURE_INFO_EXT: {  // Covers VUID-VkVideoEncodeH265PictureInfoEXT-sType-sType
@@ -3775,8 +3719,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkVideoEncodeH265PictureInfoEXT-pStdPictureInfo-parameter");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265DpbSlotInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT: {  // Covers VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType
@@ -3787,13 +3729,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkVideoEncodeH265ProfileInfoEXT structure members  -- Covers
         // VUID-VkVideoEncodeH265ProfileInfoEXT-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265RateControlInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_INFO_EXT: {  // Covers
@@ -3806,8 +3744,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkVideoEncodeH265RateControlInfoEXT-flags-parameter");
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265RateControlLayerInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_LAYER_INFO_EXT: {  // Covers
@@ -3822,8 +3758,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::useMaxFrameSize), structure->useMaxFrameSize);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkVideoEncodeH265GopRemainingFrameInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_GOP_REMAINING_FRAME_INFO_EXT: {  // Covers
@@ -3882,13 +3816,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkImportMemoryWin32HandleInfoNV-handleType-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // No Validation code for VkExportMemoryWin32HandleInfoNV structure members  -- Covers
         // VUID-VkExportMemoryWin32HandleInfoNV-sType-sType
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // Validation code for VkWin32KeyedMutexAcquireReleaseInfoNV structure members
         case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV: {  // Covers
@@ -4196,13 +4126,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkAndroidHardwareBufferUsageANDROID structure members  -- Covers
         // VUID-VkAndroidHardwareBufferUsageANDROID-sType-sType
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
         // No Validation code for VkAndroidHardwareBufferFormatPropertiesANDROID structure members  -- Covers
         // VUID-VkAndroidHardwareBufferFormatPropertiesANDROID-sType-sType
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
         // Validation code for VkImportAndroidHardwareBufferInfoANDROID structure members
         case VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID: {  // Covers
@@ -4214,12 +4140,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
         // No Validation code for VkExternalFormatANDROID structure members  -- Covers VUID-VkExternalFormatANDROID-sType-sType
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
         // No Validation code for VkAndroidHardwareBufferFormatProperties2ANDROID structure members  -- Covers
         // VUID-VkAndroidHardwareBufferFormatProperties2ANDROID-sType-sType
@@ -4235,13 +4157,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::shaderEnqueue), structure->shaderEnqueue);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkPhysicalDeviceShaderEnqueuePropertiesAMDX structure members  -- Covers
         // VUID-VkPhysicalDeviceShaderEnqueuePropertiesAMDX-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkPipelineShaderStageNodeCreateInfoAMDX structure members  -- Covers
         // VUID-VkPipelineShaderStageNodeCreateInfoAMDX-sType-sType
@@ -5060,8 +4978,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                            "VUID-VkSurfaceFullScreenExclusiveInfoEXT-fullScreenExclusive-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // Validation code for VkSurfaceCapabilitiesFullScreenExclusiveEXT structure members
         case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT: {  // Covers
@@ -5072,8 +4988,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::fullScreenExclusiveSupported), structure->fullScreenExclusiveSupported);
             }
         } break;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // No Validation code for VkSurfaceFullScreenExclusiveWin32InfoEXT structure members  -- Covers
         // VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-sType-sType
@@ -5641,13 +5555,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkExportMetalObjectCreateInfoEXT-exportObjectType-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // No Validation code for VkExportMetalDeviceInfoEXT structure members  -- Covers
         // VUID-VkExportMetalDeviceInfoEXT-sType-sType
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkExportMetalCommandQueueInfoEXT structure members
         case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT: {  // Covers VUID-VkExportMetalCommandQueueInfoEXT-sType-sType
@@ -5657,8 +5567,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRequiredHandle(pNext_loc.dot(Field::queue), structure->queue);
             }
         } break;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkExportMetalBufferInfoEXT structure members
         case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {  // Covers VUID-VkExportMetalBufferInfoEXT-sType-sType
@@ -5668,13 +5576,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRequiredHandle(pNext_loc.dot(Field::memory), structure->memory);
             }
         } break;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // No Validation code for VkImportMetalBufferInfoEXT structure members  -- Covers
         // VUID-VkImportMetalBufferInfoEXT-sType-sType
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkExportMetalTextureInfoEXT structure members
         case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT: {  // Covers VUID-VkExportMetalTextureInfoEXT-sType-sType
@@ -5686,8 +5590,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkExportMetalTextureInfoEXT-plane-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkImportMetalTextureInfoEXT structure members
         case VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT: {  // Covers VUID-VkImportMetalTextureInfoEXT-sType-sType
@@ -5699,8 +5601,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkImportMetalTextureInfoEXT-plane-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkExportMetalIOSurfaceInfoEXT structure members
         case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {  // Covers VUID-VkExportMetalIOSurfaceInfoEXT-sType-sType
@@ -5710,18 +5610,12 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRequiredHandle(pNext_loc.dot(Field::image), structure->image);
             }
         } break;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // No Validation code for VkImportMetalIOSurfaceInfoEXT structure members  -- Covers
         // VUID-VkImportMetalIOSurfaceInfoEXT-sType-sType
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // No Validation code for VkExportMetalSharedEventInfoEXT structure members  -- Covers
         // VUID-VkExportMetalSharedEventInfoEXT-sType-sType
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
         // No Validation code for VkImportMetalSharedEventInfoEXT structure members  -- Covers
         // VUID-VkImportMetalSharedEventInfoEXT-sType-sType
@@ -6126,8 +6020,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkImportMemoryZirconHandleInfoFUCHSIA-handleType-parameter");
             }
         } break;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
         // Validation code for VkImportMemoryBufferCollectionFUCHSIA structure members
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA: {  // Covers
@@ -6138,8 +6030,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRequiredHandle(pNext_loc.dot(Field::collection), structure->collection);
             }
         } break;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
         // Validation code for VkBufferCollectionImageCreateInfoFUCHSIA structure members
         case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA: {  // Covers
@@ -6150,8 +6040,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRequiredHandle(pNext_loc.dot(Field::collection), structure->collection);
             }
         } break;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 
         // Validation code for VkBufferCollectionBufferCreateInfoFUCHSIA structure members
         case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA: {  // Covers
@@ -6424,13 +6312,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::displacementMicromap), structure->displacementMicromap);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkPhysicalDeviceDisplacementMicromapPropertiesNV structure members  -- Covers
         // VUID-VkPhysicalDeviceDisplacementMicromapPropertiesNV-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkAccelerationStructureTrianglesDisplacementMicromapNV structure members
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV: {  // Covers
@@ -7011,13 +6895,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateBool32(pNext_loc.dot(Field::externalFormatResolve), structure->externalFormatResolve);
             }
         } break;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
         // No Validation code for VkPhysicalDeviceExternalFormatResolvePropertiesANDROID structure members  -- Covers
         // VUID-VkPhysicalDeviceExternalFormatResolvePropertiesANDROID-sType-sType
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
         // No Validation code for VkAndroidHardwareBufferFormatResolvePropertiesANDROID structure members  -- Covers
         // VUID-VkAndroidHardwareBufferFormatResolvePropertiesANDROID-sType-sType
@@ -7300,17 +7180,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkScreenBufferFormatPropertiesQNX structure members  -- Covers
         // VUID-VkScreenBufferFormatPropertiesQNX-sType-sType
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
         // No Validation code for VkImportScreenBufferInfoQNX structure members  -- Covers
         // VUID-VkImportScreenBufferInfoQNX-sType-sType
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
         // No Validation code for VkExternalFormatQNX structure members  -- Covers VUID-VkExternalFormatQNX-sType-sType
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 
         // Validation code for VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX: {  // Covers
@@ -15507,9 +15381,7 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(VkInstance instanc
     if (!skip) skip |= manual_PreCallValidateCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_XLIB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t queueFamilyIndex, Display* dpy,
                                                                                      VisualID visualID,
@@ -15569,9 +15441,7 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(VkInstance instance
     if (!skip) skip |= manual_PreCallValidateCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                     uint32_t queueFamilyIndex,
                                                                                     xcb_connection_t* connection,
@@ -15635,9 +15505,7 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(VkInstance inst
     if (!skip) skip |= manual_PreCallValidateCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                         uint32_t queueFamilyIndex,
                                                                                         struct wl_display* display,
@@ -15749,9 +15617,7 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(VkInstance instan
     if (!skip) skip |= manual_PreCallValidateCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                       uint32_t queueFamilyIndex,
                                                                                       const ErrorObject& error_obj) const {
@@ -17044,9 +16910,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device
     skip |= ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle, "VUID-vkGetMemoryWin32HandleKHR-pHandle-parameter");
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
     VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties, const ErrorObject& error_obj) const {
@@ -17188,9 +17052,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreWin32HandleKHR(
     if (!skip) skip |= manual_PreCallValidateImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                                                                     const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                     HANDLE* pHandle, const ErrorObject& error_obj) const {
@@ -17937,9 +17799,7 @@ bool StatelessValidation::PreCallValidateImportFenceWin32HandleKHR(
     if (!skip) skip |= manual_PreCallValidateImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(VkDevice device,
                                                                 const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                 HANDLE* pHandle, const ErrorObject& error_obj) const {
@@ -19160,9 +19020,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLeve
     }
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData,
@@ -19210,9 +19068,7 @@ bool StatelessValidation::PreCallValidateGetEncodedVideoSessionParametersKHR(
                           "VUID-vkGetEncodedVideoSessionParametersKHR-pData-parameter");
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
@@ -21535,9 +21391,7 @@ bool StatelessValidation::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice 
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 bool StatelessValidation::PreCallValidateGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                                   VkDisplayKHR* pDisplay, const ErrorObject& error_obj) const {
     bool skip = false;
@@ -22268,9 +22122,7 @@ bool StatelessValidation::PreCallValidateGetAndroidHardwareBufferPropertiesANDRO
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool StatelessValidation::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer,
     const ErrorObject& error_obj) const {
@@ -22443,9 +22295,7 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
                           "VUID-vkCreateExecutionGraphPipelinesAMDX-pPipelines-parameter");
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(
     VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
     const ErrorObject& error_obj) const {
@@ -22459,9 +22309,7 @@ bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineScratchSizeAMD
                                "VUID-VkExecutionGraphPipelineScratchSizeAMDX-sType-sType");
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
     VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex,
     const ErrorObject& error_obj) const {
@@ -22482,9 +22330,7 @@ bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
                                     "VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-pNodeIndex-parameter");
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
@@ -22493,9 +22339,7 @@ bool StatelessValidation::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkC
     // No xml-driven validation
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                               const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                               const ErrorObject& error_obj) const {
@@ -22509,9 +22353,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer co
     }
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                       const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                                       const ErrorObject& error_obj) const {
@@ -22526,9 +22368,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandB
     }
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                            VkDeviceAddress countInfo,
                                                                            const ErrorObject& error_obj) const {
@@ -23880,9 +23720,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
                                                                                pPresentModes, error_obj);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
@@ -23892,9 +23730,7 @@ bool StatelessValidation::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDev
     skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
@@ -25106,9 +24942,7 @@ bool StatelessValidation::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice 
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     return skip;
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                            VkDisplayKHR* pDisplay, const ErrorObject& error_obj) const {
     bool skip = false;
@@ -25166,9 +25000,7 @@ bool StatelessValidation::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance ins
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateDirectFBSurfaceEXT-pSurface-parameter");
     return skip;
 }
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
                                                                                          uint32_t queueFamilyIndex, IDirectFB* dfb,
                                                                                          const ErrorObject& error_obj) const {
@@ -25255,9 +25087,7 @@ bool StatelessValidation::PreCallValidateGetMemoryZirconHandleFUCHSIA(
                                     "VUID-vkGetMemoryZirconHandleFUCHSIA-pZirconHandle-parameter");
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
     VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const ErrorObject& error_obj) const {
@@ -25281,9 +25111,7 @@ bool StatelessValidation::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
     const ErrorObject& error_obj) const {
@@ -25316,9 +25144,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle,
     const ErrorObject& error_obj) const {
@@ -25346,9 +25172,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
                                     "VUID-vkGetSemaphoreZirconHandleFUCHSIA-pZirconHandle-parameter");
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device,
                                                                        const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                                        const VkAllocationCallbacks* pAllocator,
@@ -25396,9 +25220,7 @@ bool StatelessValidation::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice 
                                     "VUID-vkCreateBufferCollectionFUCHSIA-pCollection-parameter");
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
     const ErrorObject& error_obj) const {
@@ -25556,9 +25378,7 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCH
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
     const ErrorObject& error_obj) const {
@@ -25617,9 +25437,7 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionBufferConstraintsFUC
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         const ErrorObject& error_obj) const {
@@ -25655,9 +25473,7 @@ bool StatelessValidation::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_FUCHSIA
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
 bool StatelessValidation::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                               VkBufferCollectionPropertiesFUCHSIA* pProperties,
                                                                               const ErrorObject& error_obj) const {
@@ -25846,9 +25662,7 @@ bool StatelessValidation::PreCallValidateCreateScreenSurfaceQNX(VkInstance insta
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateScreenSurfaceQNX-pSurface-parameter");
     return skip;
 }
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
                                                                                        uint32_t queueFamilyIndex,
                                                                                        struct _screen_window* window,

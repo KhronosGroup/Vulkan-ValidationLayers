@@ -315,31 +315,23 @@ PFN_vkCreateDisplayPlaneSurfaceKHR CreateDisplayPlaneSurfaceKHR;
 PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR;
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 PFN_vkCreateXlibSurfaceKHR CreateXlibSurfaceKHR;
-#endif //VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
 PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR GetPhysicalDeviceXlibPresentationSupportKHR;
-#endif //VK_USE_PLATFORM_XLIB_KHR
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 PFN_vkCreateXcbSurfaceKHR CreateXcbSurfaceKHR;
-#endif //VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
 PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR GetPhysicalDeviceXcbPresentationSupportKHR;
-#endif //VK_USE_PLATFORM_XCB_KHR
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 PFN_vkCreateWaylandSurfaceKHR CreateWaylandSurfaceKHR;
-#endif //VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR GetPhysicalDeviceWaylandPresentationSupportKHR;
-#endif //VK_USE_PLATFORM_WAYLAND_KHR
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 PFN_vkCreateAndroidSurfaceKHR CreateAndroidSurfaceKHR;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkCreateWin32SurfaceKHR CreateWin32SurfaceKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR GetPhysicalDeviceWin32PresentationSupportKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
 PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR GetPhysicalDeviceVideoFormatPropertiesKHR;
 PFN_vkCreateVideoSessionKHR CreateVideoSessionKHR;
@@ -370,19 +362,15 @@ PFN_vkEnumeratePhysicalDeviceGroupsKHR EnumeratePhysicalDeviceGroupsKHR;
 PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR GetPhysicalDeviceExternalBufferPropertiesKHR;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetMemoryWin32HandleKHR GetMemoryWin32HandleKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetMemoryWin32HandlePropertiesKHR GetMemoryWin32HandlePropertiesKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetMemoryFdKHR GetMemoryFdKHR;
 PFN_vkGetMemoryFdPropertiesKHR GetMemoryFdPropertiesKHR;
 PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR GetPhysicalDeviceExternalSemaphorePropertiesKHR;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkImportSemaphoreWin32HandleKHR ImportSemaphoreWin32HandleKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetSemaphoreWin32HandleKHR GetSemaphoreWin32HandleKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
 PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
 PFN_vkCmdPushDescriptorSetKHR CmdPushDescriptorSetKHR;
@@ -398,10 +386,8 @@ PFN_vkGetSwapchainStatusKHR GetSwapchainStatusKHR;
 PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR GetPhysicalDeviceExternalFencePropertiesKHR;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkImportFenceWin32HandleKHR ImportFenceWin32HandleKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetFenceWin32HandleKHR GetFenceWin32HandleKHR;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 PFN_vkImportFenceFdKHR ImportFenceFdKHR;
 PFN_vkGetFenceFdKHR GetFenceFdKHR;
 PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR;
@@ -445,13 +431,9 @@ PFN_vkMapMemory2KHR MapMemory2KHR;
 PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdSetEvent2KHR CmdSetEvent2KHR;
 PFN_vkCmdResetEvent2KHR CmdResetEvent2KHR;
 PFN_vkCmdWaitEvents2KHR CmdWaitEvents2KHR;
@@ -501,24 +483,22 @@ PFN_vkCmdDrawIndexedIndirectCountAMD CmdDrawIndexedIndirectCountAMD;
 PFN_vkGetShaderInfoAMD GetShaderInfoAMD;
 #ifdef VK_USE_PLATFORM_GGP
 PFN_vkCreateStreamDescriptorSurfaceGGP CreateStreamDescriptorSurfaceGGP;
-#endif //VK_USE_PLATFORM_GGP
+#endif  // VK_USE_PLATFORM_GGP
 PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV GetPhysicalDeviceExternalImageFormatPropertiesNV;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetMemoryWin32HandleNV GetMemoryWin32HandleNV;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
 PFN_vkCreateViSurfaceNN CreateViSurfaceNN;
-#endif //VK_USE_PLATFORM_VI_NN
+#endif  // VK_USE_PLATFORM_VI_NN
 PFN_vkCmdBeginConditionalRenderingEXT CmdBeginConditionalRenderingEXT;
 PFN_vkCmdEndConditionalRenderingEXT CmdEndConditionalRenderingEXT;
 PFN_vkCmdSetViewportWScalingNV CmdSetViewportWScalingNV;
 PFN_vkReleaseDisplayEXT ReleaseDisplayEXT;
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 PFN_vkAcquireXlibDisplayEXT AcquireXlibDisplayEXT;
-#endif //VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 PFN_vkGetRandROutputDisplayEXT GetRandROutputDisplayEXT;
-#endif //VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT GetPhysicalDeviceSurfaceCapabilities2EXT;
 PFN_vkDisplayPowerControlEXT DisplayPowerControlEXT;
 PFN_vkRegisterDeviceEventEXT RegisterDeviceEventEXT;
@@ -532,10 +512,10 @@ PFN_vkCmdSetDiscardRectangleModeEXT CmdSetDiscardRectangleModeEXT;
 PFN_vkSetHdrMetadataEXT SetHdrMetadataEXT;
 #ifdef VK_USE_PLATFORM_IOS_MVK
 PFN_vkCreateIOSSurfaceMVK CreateIOSSurfaceMVK;
-#endif //VK_USE_PLATFORM_IOS_MVK
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 PFN_vkCreateMacOSSurfaceMVK CreateMacOSSurfaceMVK;
-#endif //VK_USE_PLATFORM_MACOS_MVK
+#endif  // VK_USE_PLATFORM_MACOS_MVK
 PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
 PFN_vkSetDebugUtilsObjectTagEXT SetDebugUtilsObjectTagEXT;
 PFN_vkQueueBeginDebugUtilsLabelEXT QueueBeginDebugUtilsLabelEXT;
@@ -549,31 +529,17 @@ PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
 PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 PFN_vkGetAndroidHardwareBufferPropertiesANDROID GetAndroidHardwareBufferPropertiesANDROID;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 PFN_vkGetMemoryAndroidHardwareBufferANDROID GetMemoryAndroidHardwareBufferANDROID;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCreateExecutionGraphPipelinesAMDX CreateExecutionGraphPipelinesAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkGetExecutionGraphPipelineScratchSizeAMDX GetExecutionGraphPipelineScratchSizeAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkGetExecutionGraphPipelineNodeIndexAMDX GetExecutionGraphPipelineNodeIndexAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdInitializeGraphScratchMemoryAMDX CmdInitializeGraphScratchMemoryAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdDispatchGraphAMDX CmdDispatchGraphAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdDispatchGraphIndirectAMDX CmdDispatchGraphIndirectAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdDispatchGraphIndirectCountAMDX CmdDispatchGraphIndirectCountAMDX;
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
 PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
 PFN_vkGetImageDrmFormatModifierPropertiesEXT GetImageDrmFormatModifierPropertiesEXT;
@@ -620,26 +586,20 @@ PFN_vkGetPerformanceParameterINTEL GetPerformanceParameterINTEL;
 PFN_vkSetLocalDimmingAMD SetLocalDimmingAMD;
 #ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkCreateImagePipeSurfaceFUCHSIA CreateImagePipeSurfaceFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkCreateMetalSurfaceEXT CreateMetalSurfaceEXT;
-#endif //VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
 PFN_vkGetBufferDeviceAddressEXT GetBufferDeviceAddressEXT;
 PFN_vkGetPhysicalDeviceToolPropertiesEXT GetPhysicalDeviceToolPropertiesEXT;
 PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV GetPhysicalDeviceCooperativeMatrixPropertiesNV;
 PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT GetPhysicalDeviceSurfacePresentModes2EXT;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkAcquireFullScreenExclusiveModeEXT AcquireFullScreenExclusiveModeEXT;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkReleaseFullScreenExclusiveModeEXT ReleaseFullScreenExclusiveModeEXT;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT;
 PFN_vkCmdSetLineStippleEXT CmdSetLineStippleEXT;
 PFN_vkResetQueryPoolEXT ResetQueryPoolEXT;
@@ -676,7 +636,7 @@ PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
 PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
-#endif //VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
 PFN_vkGetDescriptorSetLayoutSizeEXT GetDescriptorSetLayoutSizeEXT;
 PFN_vkGetDescriptorSetLayoutBindingOffsetEXT GetDescriptorSetLayoutBindingOffsetEXT;
 PFN_vkGetDescriptorEXT GetDescriptorEXT;
@@ -692,44 +652,24 @@ PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
 PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkAcquireWinrtDisplayNV AcquireWinrtDisplayNV;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkGetWinrtDisplayNV GetWinrtDisplayNV;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 PFN_vkCreateDirectFBSurfaceEXT CreateDirectFBSurfaceEXT;
-#endif //VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT GetPhysicalDeviceDirectFBPresentationSupportEXT;
-#endif //VK_USE_PLATFORM_DIRECTFB_EXT
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
 #ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkGetMemoryZirconHandleFUCHSIA GetMemoryZirconHandleFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA GetMemoryZirconHandlePropertiesFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkImportSemaphoreZirconHandleFUCHSIA ImportSemaphoreZirconHandleFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkGetSemaphoreZirconHandleFUCHSIA GetSemaphoreZirconHandleFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkCreateBufferCollectionFUCHSIA CreateBufferCollectionFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkSetBufferCollectionImageConstraintsFUCHSIA SetBufferCollectionImageConstraintsFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA SetBufferCollectionBufferConstraintsFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkDestroyBufferCollectionFUCHSIA DestroyBufferCollectionFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 PFN_vkGetBufferCollectionPropertiesFUCHSIA GetBufferCollectionPropertiesFUCHSIA;
-#endif //VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
 PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI;
 PFN_vkCmdSubpassShadingHUAWEI CmdSubpassShadingHUAWEI;
 PFN_vkCmdBindInvocationMaskHUAWEI CmdBindInvocationMaskHUAWEI;
@@ -742,10 +682,8 @@ PFN_vkCmdSetLogicOpEXT CmdSetLogicOpEXT;
 PFN_vkCmdSetPrimitiveRestartEnableEXT CmdSetPrimitiveRestartEnableEXT;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;
-#endif //VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
-#endif //VK_USE_PLATFORM_SCREEN_QNX
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkCmdSetColorWriteEnableEXT CmdSetColorWriteEnableEXT;
 PFN_vkCmdDrawMultiEXT CmdDrawMultiEXT;
 PFN_vkCmdDrawMultiIndexedEXT CmdDrawMultiIndexedEXT;
@@ -827,7 +765,7 @@ PFN_vkQueueNotifyOutOfBandNV QueueNotifyOutOfBandNV;
 PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
-#endif //VK_USE_PLATFORM_SCREEN_QNX
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
 PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;
@@ -1121,7 +1059,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceXlibPresentationSupportKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_XLIB_KHR
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
         {
             "VK_KHR_xcb_surface", [](VkInstance instance) {
@@ -1129,7 +1067,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetPhysicalDeviceXcbPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceXcbPresentationSupportKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_XCB_KHR
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
         {
             "VK_KHR_wayland_surface", [](VkInstance instance) {
@@ -1137,14 +1075,14 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_WAYLAND_KHR
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         {
             "VK_KHR_android_surface", [](VkInstance instance) {
                 CreateAndroidSurfaceKHR = reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(GetInstanceProcAddr(instance, "vkCreateAndroidSurfaceKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_KHR_win32_surface", [](VkInstance instance) {
@@ -1152,7 +1090,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetPhysicalDeviceWin32PresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceWin32PresentationSupportKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_KHR_get_physical_device_properties2", [](VkInstance instance) {
                 GetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
@@ -1211,7 +1149,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 CreateStreamDescriptorSurfaceGGP = reinterpret_cast<PFN_vkCreateStreamDescriptorSurfaceGGP>(GetInstanceProcAddr(instance, "vkCreateStreamDescriptorSurfaceGGP"));
             }
         },
-#endif //VK_USE_PLATFORM_GGP
+#endif  // VK_USE_PLATFORM_GGP
         {
             "VK_NV_external_memory_capabilities", [](VkInstance instance) {
                 GetPhysicalDeviceExternalImageFormatPropertiesNV = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalImageFormatPropertiesNV"));
@@ -1223,7 +1161,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 CreateViSurfaceNN = reinterpret_cast<PFN_vkCreateViSurfaceNN>(GetInstanceProcAddr(instance, "vkCreateViSurfaceNN"));
             }
         },
-#endif //VK_USE_PLATFORM_VI_NN
+#endif  // VK_USE_PLATFORM_VI_NN
         {
             "VK_EXT_direct_mode_display", [](VkInstance instance) {
                 ReleaseDisplayEXT = reinterpret_cast<PFN_vkReleaseDisplayEXT>(GetInstanceProcAddr(instance, "vkReleaseDisplayEXT"));
@@ -1236,7 +1174,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetRandROutputDisplayEXT = reinterpret_cast<PFN_vkGetRandROutputDisplayEXT>(GetInstanceProcAddr(instance, "vkGetRandROutputDisplayEXT"));
             }
         },
-#endif //VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
         {
             "VK_EXT_display_surface_counter", [](VkInstance instance) {
                 GetPhysicalDeviceSurfaceCapabilities2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
@@ -1248,14 +1186,14 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 CreateIOSSurfaceMVK = reinterpret_cast<PFN_vkCreateIOSSurfaceMVK>(GetInstanceProcAddr(instance, "vkCreateIOSSurfaceMVK"));
             }
         },
-#endif //VK_USE_PLATFORM_IOS_MVK
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
         {
             "VK_MVK_macos_surface", [](VkInstance instance) {
                 CreateMacOSSurfaceMVK = reinterpret_cast<PFN_vkCreateMacOSSurfaceMVK>(GetInstanceProcAddr(instance, "vkCreateMacOSSurfaceMVK"));
             }
         },
-#endif //VK_USE_PLATFORM_MACOS_MVK
+#endif  // VK_USE_PLATFORM_MACOS_MVK
         {
             "VK_EXT_debug_utils", [](VkInstance instance) {
                 SetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(GetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT"));
@@ -1277,14 +1215,14 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 CreateImagePipeSurfaceFUCHSIA = reinterpret_cast<PFN_vkCreateImagePipeSurfaceFUCHSIA>(GetInstanceProcAddr(instance, "vkCreateImagePipeSurfaceFUCHSIA"));
             }
         },
-#endif //VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_metal_surface", [](VkInstance instance) {
                 CreateMetalSurfaceEXT = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(GetInstanceProcAddr(instance, "vkCreateMetalSurfaceEXT"));
             }
         },
-#endif //VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_headless_surface", [](VkInstance instance) {
                 CreateHeadlessSurfaceEXT = reinterpret_cast<PFN_vkCreateHeadlessSurfaceEXT>(GetInstanceProcAddr(instance, "vkCreateHeadlessSurfaceEXT"));
@@ -1303,7 +1241,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetPhysicalDeviceDirectFBPresentationSupportEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceDirectFBPresentationSupportEXT"));
             }
         },
-#endif //VK_USE_PLATFORM_DIRECTFB_EXT
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         {
             "VK_QNX_screen_surface", [](VkInstance instance) {
@@ -1311,7 +1249,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
                 GetPhysicalDeviceScreenPresentationSupportQNX = reinterpret_cast<PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceScreenPresentationSupportQNX"));
             }
         },
-#endif //VK_USE_PLATFORM_SCREEN_QNX
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 
     };
 
@@ -1389,7 +1327,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetMemoryWin32HandlePropertiesKHR = reinterpret_cast<PFN_vkGetMemoryWin32HandlePropertiesKHR>(GetDeviceProcAddr(device, "vkGetMemoryWin32HandlePropertiesKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_KHR_external_memory_fd", [](VkInstance , VkDevice device) {
                 GetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(GetDeviceProcAddr(device, "vkGetMemoryFdKHR"));
@@ -1403,7 +1341,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(GetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_KHR_external_semaphore_fd", [](VkInstance , VkDevice device) {
                 ImportSemaphoreFdKHR = reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(GetDeviceProcAddr(device, "vkImportSemaphoreFdKHR"));
@@ -1444,7 +1382,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetFenceWin32HandleKHR = reinterpret_cast<PFN_vkGetFenceWin32HandleKHR>(GetDeviceProcAddr(device, "vkGetFenceWin32HandleKHR"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_KHR_external_fence_fd", [](VkInstance , VkDevice device) {
                 ImportFenceFdKHR = reinterpret_cast<PFN_vkImportFenceFdKHR>(GetDeviceProcAddr(device, "vkImportFenceFdKHR"));
@@ -1544,7 +1482,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR"));
             }
         },
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_KHR_synchronization2", [](VkInstance , VkDevice device) {
                 CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(GetDeviceProcAddr(device, "vkCmdSetEvent2KHR"));
@@ -1643,7 +1581,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetMemoryWin32HandleNV = reinterpret_cast<PFN_vkGetMemoryWin32HandleNV>(GetDeviceProcAddr(device, "vkGetMemoryWin32HandleNV"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_EXT_conditional_rendering", [](VkInstance , VkDevice device) {
                 CmdBeginConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdBeginConditionalRenderingEXT>(GetDeviceProcAddr(device, "vkCmdBeginConditionalRenderingEXT"));
@@ -1688,7 +1626,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetMemoryAndroidHardwareBufferANDROID = reinterpret_cast<PFN_vkGetMemoryAndroidHardwareBufferANDROID>(GetDeviceProcAddr(device, "vkGetMemoryAndroidHardwareBufferANDROID"));
             }
         },
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_AMDX_shader_enqueue", [](VkInstance , VkDevice device) {
@@ -1701,7 +1639,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdDispatchGraphIndirectCountAMDX = reinterpret_cast<PFN_vkCmdDispatchGraphIndirectCountAMDX>(GetDeviceProcAddr(device, "vkCmdDispatchGraphIndirectCountAMDX"));
             }
         },
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_EXT_sample_locations", [](VkInstance instance, VkDevice device) {
                 CmdSetSampleLocationsEXT = reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(GetDeviceProcAddr(device, "vkCmdSetSampleLocationsEXT"));
@@ -1826,7 +1764,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPhysicalDeviceSurfacePresentModes2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfacePresentModes2EXT"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_EXT_line_rasterization", [](VkInstance , VkDevice device) {
                 CmdSetLineStippleEXT = reinterpret_cast<PFN_vkCmdSetLineStippleEXT>(GetDeviceProcAddr(device, "vkCmdSetLineStippleEXT"));
@@ -1896,7 +1834,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 ExportMetalObjectsEXT = reinterpret_cast<PFN_vkExportMetalObjectsEXT>(GetDeviceProcAddr(device, "vkExportMetalObjectsEXT"));
             }
         },
-#endif //VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_descriptor_buffer", [](VkInstance , VkDevice device) {
                 GetDescriptorSetLayoutSizeEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(GetDeviceProcAddr(device, "vkGetDescriptorSetLayoutSizeEXT"));
@@ -1934,7 +1872,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetWinrtDisplayNV = reinterpret_cast<PFN_vkGetWinrtDisplayNV>(GetInstanceProcAddr(instance, "vkGetWinrtDisplayNV"));
             }
         },
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         {
             "VK_EXT_vertex_input_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetVertexInputEXT = reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(GetDeviceProcAddr(device, "vkCmdSetVertexInputEXT"));
@@ -1947,16 +1885,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetMemoryZirconHandlePropertiesFUCHSIA = reinterpret_cast<PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA>(GetDeviceProcAddr(device, "vkGetMemoryZirconHandlePropertiesFUCHSIA"));
             }
         },
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
         {
             "VK_FUCHSIA_external_semaphore", [](VkInstance , VkDevice device) {
                 ImportSemaphoreZirconHandleFUCHSIA = reinterpret_cast<PFN_vkImportSemaphoreZirconHandleFUCHSIA>(GetDeviceProcAddr(device, "vkImportSemaphoreZirconHandleFUCHSIA"));
                 GetSemaphoreZirconHandleFUCHSIA = reinterpret_cast<PFN_vkGetSemaphoreZirconHandleFUCHSIA>(GetDeviceProcAddr(device, "vkGetSemaphoreZirconHandleFUCHSIA"));
             }
         },
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
         {
             "VK_FUCHSIA_buffer_collection", [](VkInstance , VkDevice device) {
                 CreateBufferCollectionFUCHSIA = reinterpret_cast<PFN_vkCreateBufferCollectionFUCHSIA>(GetDeviceProcAddr(device, "vkCreateBufferCollectionFUCHSIA"));
@@ -1966,7 +1900,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetBufferCollectionPropertiesFUCHSIA = reinterpret_cast<PFN_vkGetBufferCollectionPropertiesFUCHSIA>(GetDeviceProcAddr(device, "vkGetBufferCollectionPropertiesFUCHSIA"));
             }
         },
-#endif //VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
         {
             "VK_HUAWEI_subpass_shading", [](VkInstance , VkDevice device) {
                 GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI = reinterpret_cast<PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI>(GetDeviceProcAddr(device, "vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI"));
@@ -2195,7 +2129,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetScreenBufferPropertiesQNX = reinterpret_cast<PFN_vkGetScreenBufferPropertiesQNX>(GetDeviceProcAddr(device, "vkGetScreenBufferPropertiesQNX"));
             }
         },
-#endif //VK_USE_PLATFORM_SCREEN_QNX
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
         {
             "VK_KHR_acceleration_structure", [](VkInstance , VkDevice device) {
                 CreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR"));
@@ -2265,31 +2199,23 @@ void ResetAllExtensions() {
     CreateSharedSwapchainsKHR = nullptr;
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     CreateXlibSurfaceKHR = nullptr;
-#endif //VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
     GetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-#endif //VK_USE_PLATFORM_XLIB_KHR
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
     CreateXcbSurfaceKHR = nullptr;
-#endif //VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
     GetPhysicalDeviceXcbPresentationSupportKHR = nullptr;
-#endif //VK_USE_PLATFORM_XCB_KHR
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     CreateWaylandSurfaceKHR = nullptr;
-#endif //VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
     GetPhysicalDeviceWaylandPresentationSupportKHR = nullptr;
-#endif //VK_USE_PLATFORM_WAYLAND_KHR
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     CreateAndroidSurfaceKHR = nullptr;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     CreateWin32SurfaceKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     GetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     GetPhysicalDeviceVideoCapabilitiesKHR = nullptr;
     GetPhysicalDeviceVideoFormatPropertiesKHR = nullptr;
     CreateVideoSessionKHR = nullptr;
@@ -2320,19 +2246,15 @@ void ResetAllExtensions() {
     GetPhysicalDeviceExternalBufferPropertiesKHR = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     GetMemoryWin32HandleKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     GetMemoryWin32HandlePropertiesKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     GetMemoryFdKHR = nullptr;
     GetMemoryFdPropertiesKHR = nullptr;
     GetPhysicalDeviceExternalSemaphorePropertiesKHR = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     ImportSemaphoreWin32HandleKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     GetSemaphoreWin32HandleKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     ImportSemaphoreFdKHR = nullptr;
     GetSemaphoreFdKHR = nullptr;
     CmdPushDescriptorSetKHR = nullptr;
@@ -2348,10 +2270,8 @@ void ResetAllExtensions() {
     GetPhysicalDeviceExternalFencePropertiesKHR = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     ImportFenceWin32HandleKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     GetFenceWin32HandleKHR = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     ImportFenceFdKHR = nullptr;
     GetFenceFdKHR = nullptr;
     EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR = nullptr;
@@ -2395,13 +2315,9 @@ void ResetAllExtensions() {
     UnmapMemory2KHR = nullptr;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     GetEncodedVideoSessionParametersKHR = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     CmdEncodeVideoKHR = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     CmdSetEvent2KHR = nullptr;
     CmdResetEvent2KHR = nullptr;
     CmdWaitEvents2KHR = nullptr;
@@ -2451,24 +2367,22 @@ void ResetAllExtensions() {
     GetShaderInfoAMD = nullptr;
 #ifdef VK_USE_PLATFORM_GGP
     CreateStreamDescriptorSurfaceGGP = nullptr;
-#endif //VK_USE_PLATFORM_GGP
+#endif  // VK_USE_PLATFORM_GGP
     GetPhysicalDeviceExternalImageFormatPropertiesNV = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     GetMemoryWin32HandleNV = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
     CreateViSurfaceNN = nullptr;
-#endif //VK_USE_PLATFORM_VI_NN
+#endif  // VK_USE_PLATFORM_VI_NN
     CmdBeginConditionalRenderingEXT = nullptr;
     CmdEndConditionalRenderingEXT = nullptr;
     CmdSetViewportWScalingNV = nullptr;
     ReleaseDisplayEXT = nullptr;
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     AcquireXlibDisplayEXT = nullptr;
-#endif //VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     GetRandROutputDisplayEXT = nullptr;
-#endif //VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
     GetPhysicalDeviceSurfaceCapabilities2EXT = nullptr;
     DisplayPowerControlEXT = nullptr;
     RegisterDeviceEventEXT = nullptr;
@@ -2482,10 +2396,10 @@ void ResetAllExtensions() {
     SetHdrMetadataEXT = nullptr;
 #ifdef VK_USE_PLATFORM_IOS_MVK
     CreateIOSSurfaceMVK = nullptr;
-#endif //VK_USE_PLATFORM_IOS_MVK
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
     CreateMacOSSurfaceMVK = nullptr;
-#endif //VK_USE_PLATFORM_MACOS_MVK
+#endif  // VK_USE_PLATFORM_MACOS_MVK
     SetDebugUtilsObjectNameEXT = nullptr;
     SetDebugUtilsObjectTagEXT = nullptr;
     QueueBeginDebugUtilsLabelEXT = nullptr;
@@ -2499,31 +2413,17 @@ void ResetAllExtensions() {
     SubmitDebugUtilsMessageEXT = nullptr;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     GetAndroidHardwareBufferPropertiesANDROID = nullptr;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
     GetMemoryAndroidHardwareBufferANDROID = nullptr;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     CreateExecutionGraphPipelinesAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     GetExecutionGraphPipelineScratchSizeAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     GetExecutionGraphPipelineNodeIndexAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     CmdInitializeGraphScratchMemoryAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     CmdDispatchGraphAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     CmdDispatchGraphIndirectAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     CmdDispatchGraphIndirectCountAMDX = nullptr;
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     CmdSetSampleLocationsEXT = nullptr;
     GetPhysicalDeviceMultisamplePropertiesEXT = nullptr;
     GetImageDrmFormatModifierPropertiesEXT = nullptr;
@@ -2570,26 +2470,20 @@ void ResetAllExtensions() {
     SetLocalDimmingAMD = nullptr;
 #ifdef VK_USE_PLATFORM_FUCHSIA
     CreateImagePipeSurfaceFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
     CreateMetalSurfaceEXT = nullptr;
-#endif //VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
     GetBufferDeviceAddressEXT = nullptr;
     GetPhysicalDeviceToolPropertiesEXT = nullptr;
     GetPhysicalDeviceCooperativeMatrixPropertiesNV = nullptr;
     GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     GetPhysicalDeviceSurfacePresentModes2EXT = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     AcquireFullScreenExclusiveModeEXT = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     ReleaseFullScreenExclusiveModeEXT = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     GetDeviceGroupSurfacePresentModes2EXT = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     CreateHeadlessSurfaceEXT = nullptr;
     CmdSetLineStippleEXT = nullptr;
     ResetQueryPoolEXT = nullptr;
@@ -2626,7 +2520,7 @@ void ResetAllExtensions() {
     GetPrivateDataEXT = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     ExportMetalObjectsEXT = nullptr;
-#endif //VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
     GetDescriptorSetLayoutSizeEXT = nullptr;
     GetDescriptorSetLayoutBindingOffsetEXT = nullptr;
     GetDescriptorEXT = nullptr;
@@ -2642,44 +2536,24 @@ void ResetAllExtensions() {
     GetDeviceFaultInfoEXT = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     AcquireWinrtDisplayNV = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     GetWinrtDisplayNV = nullptr;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     CreateDirectFBSurfaceEXT = nullptr;
-#endif //VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     GetPhysicalDeviceDirectFBPresentationSupportEXT = nullptr;
-#endif //VK_USE_PLATFORM_DIRECTFB_EXT
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
     CmdSetVertexInputEXT = nullptr;
 #ifdef VK_USE_PLATFORM_FUCHSIA
     GetMemoryZirconHandleFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     GetMemoryZirconHandlePropertiesFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     ImportSemaphoreZirconHandleFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     GetSemaphoreZirconHandleFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     CreateBufferCollectionFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     SetBufferCollectionImageConstraintsFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     SetBufferCollectionBufferConstraintsFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     DestroyBufferCollectionFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     GetBufferCollectionPropertiesFUCHSIA = nullptr;
-#endif //VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
     GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI = nullptr;
     CmdSubpassShadingHUAWEI = nullptr;
     CmdBindInvocationMaskHUAWEI = nullptr;
@@ -2692,10 +2566,8 @@ void ResetAllExtensions() {
     CmdSetPrimitiveRestartEnableEXT = nullptr;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     CreateScreenSurfaceQNX = nullptr;
-#endif //VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetPhysicalDeviceScreenPresentationSupportQNX = nullptr;
-#endif //VK_USE_PLATFORM_SCREEN_QNX
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     CmdSetColorWriteEnableEXT = nullptr;
     CmdDrawMultiEXT = nullptr;
     CmdDrawMultiIndexedEXT = nullptr;
@@ -2777,7 +2649,7 @@ void ResetAllExtensions() {
     CmdSetAttachmentFeedbackLoopEnableEXT = nullptr;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetScreenBufferPropertiesQNX = nullptr;
-#endif //VK_USE_PLATFORM_SCREEN_QNX
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;
     CmdBuildAccelerationStructuresKHR = nullptr;

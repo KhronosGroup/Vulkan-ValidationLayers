@@ -67,7 +67,7 @@ template<> std::vector<VkQueueGlobalPriorityKHR> ValidationObject::ValidParamVal
 template<> std::vector<VkFragmentShadingRateCombinerOpKHR> ValidationObject::ValidParamValues() const;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() const;
-#endif //VK_ENABLE_BETA_EXTENSIONS
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() const;
@@ -104,7 +104,7 @@ template<> std::vector<VkCoverageReductionModeNV> ValidationObject::ValidParamVa
 template<> std::vector<VkProvokingVertexModeEXT> ValidationObject::ValidParamValues() const;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 template<> std::vector<VkFullScreenExclusiveEXT> ValidationObject::ValidParamValues() const;
-#endif //VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 template<> std::vector<VkLineRasterizationModeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkIndirectCommandsTokenTypeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDepthBiasRepresentationEXT> ValidationObject::ValidParamValues() const;
