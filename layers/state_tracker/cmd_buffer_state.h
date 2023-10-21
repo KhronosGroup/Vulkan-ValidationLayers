@@ -266,6 +266,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         VkConservativeRasterizationModeEXT conservative_rasterization_mode;
         // VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT
         bool sample_locations_enable;
+        // VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT
+        VkImageAspectFlags attachment_feedback_loop_enable;
 
         // VK_DYNAMIC_STATE_VIEWPORT
         std::vector<VkViewport> viewports;

@@ -1085,26 +1085,60 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
 
             const bool layout_read_only = IsImageLayoutReadOnly(subpass.layout);
-            bool write_attachment =
-                (subpass.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) > 0 &&
-                !layout_read_only;
-            bool feedback_loop = false;
-            for (uint32_t i = 0; i < context.cb_state.activeRenderPass->createInfo.dependencyCount; ++i) {
-                const auto &dep = context.cb_state.activeRenderPass->createInfo.pDependencies[i];
-                if ((dep.dependencyFlags & VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT) != 0 &&
-                    dep.srcSubpass == context.cb_state.GetActiveSubpass() &&
-                    dep.dstSubpass == context.cb_state.GetActiveSubpass()) {
-                    feedback_loop = true;
-                    break;
+            bool color_write_attachment = (subpass.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0;
+            bool depth_write_attachment = (subpass.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 && !layout_read_only &&
+                                          (subpass.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT);
+            bool stencil_write_attachment = (subpass.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 &&
+                                            !layout_read_only && (subpass.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
+            bool color_feedback_loop = subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+            bool depth_feedback_loop = subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+            bool stencil_feedback_loop = subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+            if (pipeline && !pipeline->IsDynamic(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT)) {
+                if ((pipeline->create_flags & VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0) {
+                    color_feedback_loop = false;
+                }
+                if ((pipeline->create_flags & VK_PIPELINE_CREATE_DEPTH_STENCIL_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0) {
+                    depth_feedback_loop = false;
+                    stencil_feedback_loop = false;
+                }
+            } else if (context.cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT]) {
+                if ((context.cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_COLOR_BIT) == 0) {
+                    color_feedback_loop = false;
+                }
+                if ((context.cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_DEPTH_BIT) == 0) {
+                    depth_feedback_loop = false;
+                }
+                if ((context.cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
+                    stencil_feedback_loop = false;
                 }
             }
-            feedback_loop &= subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT &&
-                             (pipeline->create_flags & VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) != 0;
-            if (write_attachment && descriptor_read_from && !feedback_loop) {
+            if (color_feedback_loop || depth_feedback_loop || stencil_feedback_loop) {
+                bool dependency_found = false;
+                for (uint32_t i = 0; i < context.cb_state.activeRenderPass->createInfo.dependencyCount; ++i) {
+                    const auto &dep = context.cb_state.activeRenderPass->createInfo.pDependencies[i];
+                    if ((dep.dependencyFlags & VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT) != 0 &&
+                        dep.srcSubpass == context.cb_state.GetActiveSubpass() &&
+                        dep.dstSubpass == context.cb_state.GetActiveSubpass()) {
+                        dependency_found = true;
+                        break;
+                    }
+                }
+                if (!dependency_found) {
+                    color_feedback_loop = false;
+                    depth_feedback_loop = false;
+                    stencil_feedback_loop = false;
+                }
+            }
+            if (((color_write_attachment && !color_feedback_loop) || (depth_write_attachment && !depth_feedback_loop) ||
+                 (stencil_write_attachment && !stencil_feedback_loop)) &&
+                descriptor_read_from) {
+                const auto vuid = color_write_attachment    ? context.vuids.attachment_access_09000
+                                  : !depth_write_attachment ? context.vuids.attachment_access_09001
+                                                            : context.vuids.attachment_access_09002;
                 if (same_view) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view, context.framebuffer);
-                    return LogError(context.vuids.image_subresources_subpass_read_09003, objlist, context.loc,
+                    return LogError(vuid, objlist, context.loc,
                                     "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                     ") has %s which will be written to as %s attachment %" PRIu32 ".",
                                     FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
@@ -1112,7 +1146,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 } else if (overlapping_view) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view, context.framebuffer, view_state->image_view());
-                    return LogError(context.vuids.image_subresources_subpass_read_09003, objlist, context.loc,
+                    return LogError(vuid, objlist, context.loc,
                                     "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                     ") has %s which will be overlap written to as %s in %s attachment %" PRIu32 ".",
                                     FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
