@@ -35,8 +35,10 @@ struct SUBPASS_INFO {
     bool used;
     VkImageUsageFlagBits usage;
     VkImageLayout layout;
+    VkImageAspectFlags aspectMask;
 
-    SUBPASS_INFO() : used(false), usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED) {}
+    SUBPASS_INFO()
+        : used(false), usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), aspectMask(VkImageAspectFlags(0)) {}
 };
 
 // Store the DAG.

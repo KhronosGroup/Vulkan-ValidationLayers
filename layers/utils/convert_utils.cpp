@@ -53,6 +53,8 @@ static safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_struc
 }
 
 static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct, const uint32_t viewMask,
+                                          const VkImageAspectFlags* color_attachment_aspect_masks,
+                                          const VkImageAspectFlags ds_attachment_aspect_mask,
                                           const VkImageAspectFlags* input_attachment_aspect_masks) {
     safe_VkSubpassDescription2 v2;
     v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
@@ -78,7 +80,7 @@ static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct,
     if (v2.colorAttachmentCount && in_struct.pColorAttachments) {
         v2.pColorAttachments = new safe_VkAttachmentReference2[v2.colorAttachmentCount];
         for (uint32_t i = 0; i < v2.colorAttachmentCount; ++i) {
-            v2.pColorAttachments[i] = ToV2KHR(in_struct.pColorAttachments[i]);
+            v2.pColorAttachments[i] = ToV2KHR(in_struct.pColorAttachments[i], color_attachment_aspect_masks[i]);
         }
     }
     if (v2.colorAttachmentCount && in_struct.pResolveAttachments) {
@@ -89,7 +91,7 @@ static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct,
     }
     if (in_struct.pDepthStencilAttachment) {
         v2.pDepthStencilAttachment = new safe_VkAttachmentReference2();
-        *v2.pDepthStencilAttachment = ToV2KHR(*in_struct.pDepthStencilAttachment);
+        *v2.pDepthStencilAttachment = ToV2KHR(*in_struct.pDepthStencilAttachment, ds_attachment_aspect_mask);
     }
     if (v2.preserveAttachmentCount && in_struct.pPreserveAttachments) {
         auto preserve_attachments = new uint32_t[v2.preserveAttachmentCount];
@@ -156,26 +158,53 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
     }
 
     // translate VkRenderPassInputAttachmentAspectCreateInfo into vector
+    std::vector<std::vector<VkImageAspectFlags>> color_attachment_aspect_masks(out_struct.subpassCount);
+    std::vector<VkImageAspectFlags> depth_stencil_attachment_aspect_masks(out_struct.subpassCount);
     std::vector<std::vector<VkImageAspectFlags>> input_attachment_aspect_masks(out_struct.subpassCount);
+
+    const auto GetAspectFromFormat = [](VkFormat format) {
+        VkImageAspectFlags aspect = 0u;
+        if (vkuFormatIsColor(format)) aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
+        if (vkuFormatHasDepth(format)) aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (vkuFormatHasStencil(format)) aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        if (vkuFormatPlaneCount(format) > 1) {
+            aspect |= VK_IMAGE_ASPECT_PLANE_0_BIT;
+            aspect |= VK_IMAGE_ASPECT_PLANE_1_BIT;
+        }
+        if (vkuFormatPlaneCount(format) > 2) aspect |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+        return aspect;
+    };
     // set defaults
     for (uint32_t si = 0; si < out_struct.subpassCount; ++si) {
         if (create_info.pSubpasses) {
-            input_attachment_aspect_masks[si].resize(create_info.pSubpasses[si].inputAttachmentCount, 0);
+            const auto& subpass = create_info.pSubpasses[si];
+            color_attachment_aspect_masks[si].resize(subpass.colorAttachmentCount, 0);
+            input_attachment_aspect_masks[si].resize(subpass.inputAttachmentCount, 0);
 
-            for (uint32_t iai = 0; iai < create_info.pSubpasses[si].inputAttachmentCount; ++iai) {
-                if (out_struct.pAttachments && create_info.pSubpasses[si].pInputAttachments) {
-                    const auto& input_attachment = create_info.pSubpasses[si].pInputAttachments[iai];
+            for (uint32_t cai = 0; cai < subpass.colorAttachmentCount; ++cai) {
+                if (out_struct.pAttachments && subpass.pColorAttachments) {
+                    const auto& color_attachment = subpass.pColorAttachments[cai];
+                    if (color_attachment.attachment != VK_ATTACHMENT_UNUSED) {
+                        const auto format = out_struct.pAttachments[color_attachment.attachment].format;
+                        color_attachment_aspect_masks[si][cai] = GetAspectFromFormat(format);
+                    }
+                }
+            }
+
+            if (out_struct.pAttachments && subpass.pDepthStencilAttachment) {
+                const auto& ds_attachment = *subpass.pDepthStencilAttachment;
+                if (ds_attachment.attachment != VK_ATTACHMENT_UNUSED) {
+                    const auto format = out_struct.pAttachments[ds_attachment.attachment].format;
+                    depth_stencil_attachment_aspect_masks[si] = GetAspectFromFormat(format);
+                }
+            }
+
+            for (uint32_t iai = 0; iai < subpass.inputAttachmentCount; ++iai) {
+                if (out_struct.pAttachments && subpass.pInputAttachments) {
+                    const auto& input_attachment = subpass.pInputAttachments[iai];
                     if (input_attachment.attachment != VK_ATTACHMENT_UNUSED) {
                         const auto format = out_struct.pAttachments[input_attachment.attachment].format;
-
-                        if (vkuFormatIsColor(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_COLOR_BIT;
-                        if (vkuFormatHasDepth(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_DEPTH_BIT;
-                        if (vkuFormatHasStencil(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_STENCIL_BIT;
-                        if (vkuFormatPlaneCount(format) > 1) {
-                            input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_0_BIT;
-                            input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_1_BIT;
-                        }
-                        if (vkuFormatPlaneCount(format) > 2) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+                        input_attachment_aspect_masks[si][iai] = GetAspectFromFormat(format);
                     }
                 }
             }
@@ -200,7 +229,8 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
         out_struct.pSubpasses = new safe_VkSubpassDescription2[out_struct.subpassCount];
         for (uint32_t i = 0; i < out_struct.subpassCount; ++i) {
             const uint32_t view_mask = has_view_mask ? multiview_info->pViewMasks[i] : 0;
-            out_struct.pSubpasses[i] = ToV2KHR(create_info.pSubpasses[i], view_mask, input_attachment_aspect_masks[i].data());
+            out_struct.pSubpasses[i] = ToV2KHR(create_info.pSubpasses[i], view_mask, color_attachment_aspect_masks[i].data(),
+                                               depth_stencil_attachment_aspect_masks[i], input_attachment_aspect_masks[i].data());
         }
     }
 

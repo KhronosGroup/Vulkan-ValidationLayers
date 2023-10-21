@@ -426,6 +426,7 @@ void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2
             subpasses[attachment_index].used = true;
             subpasses[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
             subpasses[attachment_index].layout = subpass.pInputAttachments[index].layout;
+            subpasses[attachment_index].aspectMask = subpass.pInputAttachments[index].aspectMask;
         }
     }
 
@@ -435,6 +436,7 @@ void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2
             subpasses[attachment_index].used = true;
             subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
+            subpasses[attachment_index].aspectMask = subpass.pColorAttachments[index].aspectMask;
             active_color_attachments_index.insert(index);
         }
         if (subpass.pResolveAttachments) {
@@ -443,6 +445,7 @@ void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2
                 subpasses[attachment_index2].used = true;
                 subpasses[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                 subpasses[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
+                subpasses[attachment_index2].aspectMask = subpass.pResolveAttachments[index].aspectMask;
             }
         }
     }
@@ -453,6 +456,7 @@ void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2
             subpasses[attachment_index].used = true;
             subpasses[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             subpasses[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
+            subpasses[attachment_index].aspectMask = subpass.pDepthStencilAttachment->aspectMask;
         }
     }
 }
