@@ -6614,3 +6614,49 @@ TEST_F(NegativeDynamicRendering, MismatchingDepthAttachmentFormatInSecondaryCmdB
     m_errorMonitor->VerifyFound();
     secondary_cmd_buf.end();
 }
+
+TEST_F(NegativeDynamicRendering, MissingImageCreateSubsampled) {
+    TEST_DESCRIPTION("Create image without required VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT flag");
+
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
+    }
+
+    VkImageObj color_image(m_device);
+    color_image.Init(32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImageView color_image_view = color_image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkImageObj fdm_image(m_device);
+    fdm_image.Init(32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
+    VkImageView fdm_image_view = fdm_image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fdma_info = vku::InitStructHelper();
+    fdma_info.imageView = fdm_image_view;
+    fdma_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkClearValue clear_value;
+    clear_value.color = {{0, 0, 0, 0}};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue = clear_value;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fdma_info);
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06107");
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
