@@ -739,50 +739,42 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
 VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t queueFamilyIndex, Display* dpy,
                                                                            VisualID visualID);
 
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, xcb_connection_t* connection,
                                                                           xcb_visualid_t visual_id);
 
-#endif
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex,
                                                                               struct wl_display* display);
 
-#endif
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                      const VkVideoProfileInfoKHR* pVideoProfile,
                                                                      VkVideoCapabilitiesKHR* pCapabilities);
@@ -876,13 +868,11 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                        HANDLE* pHandle);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                  HANDLE handle,
                                                                  VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd);
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
@@ -896,13 +886,11 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
 VKAPI_ATTR VkResult VKAPI_CALL
 ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
                                                           const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                           HANDLE* pHandle);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo);
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd);
@@ -948,12 +936,10 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
                                                          const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                       HANDLE* pHandle);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo);
 
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd);
@@ -1083,17 +1069,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL
 GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
                                     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo);
 
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo);
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask);
@@ -1234,7 +1216,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
                                                                 const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_GGP
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
@@ -1244,12 +1226,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory,
                                                       VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                            const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin);
 
@@ -1263,12 +1245,10 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display);
 
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                         VkDisplayKHR* pDisplay);
 
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                         VkSurfaceCapabilities2EXT* pSurfaceCapabilities);
 
@@ -1307,12 +1287,12 @@ VKAPI_ATTR void VKAPI_CALL SetHdrMetadataEXT(VkDevice device, uint32_t swapchain
 VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
 
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo);
@@ -1345,50 +1325,36 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
 VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                          VkAndroidHardwareBufferPropertiesANDROID* pProperties);
 
-#endif
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                      struct AHardwareBuffer** pBuffer);
 
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,
                                                                  uint32_t createInfoCount,
                                                                  const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
                                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                         VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                       const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                                       uint32_t* pNodeIndex);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                         const VkDispatchGraphCountInfoAMDX* pCountInfo);
 
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                              VkDeviceAddress countInfo);
 
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                     const VkSampleLocationsInfoEXT* pSampleLocationsInfo);
 
@@ -1541,12 +1507,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
                                                              const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
@@ -1565,21 +1531,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
                                                                         uint32_t* pPresentModeCount,
                                                                         VkPresentModeKHR* pPresentModes);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                      const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                      VkDeviceGroupPresentModeFlagsKHR* pModes);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
@@ -1675,7 +1635,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objec
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo);
 
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                          VkDeviceSize* pLayoutSizeInBytes);
 
@@ -1724,22 +1684,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFa
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display);
 
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                  VkDisplayKHR* pDisplay);
 
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
                                                                                uint32_t queueFamilyIndex, IDirectFB* dfb);
 
-#endif
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
                                                 const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                                 uint32_t vertexAttributeDescriptionCount,
@@ -1750,51 +1706,35 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(VkDevice device,
                                                             const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                             zx_handle_t* pZirconHandle);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL
 GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
                                        VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                zx_handle_t* pZirconHandle);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
                                                              const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator,
                                                              VkBufferCollectionFUCHSIA* pCollection);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                           const VkAllocationCallbacks* pAllocator);
 
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                     VkBufferCollectionPropertiesFUCHSIA* pProperties);
 
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
                                                                              VkExtent2D* pMaxWorkgroupSize);
 
@@ -1824,13 +1764,11 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer comma
 VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 
-#endif
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
                                                                              uint32_t queueFamilyIndex,
                                                                              struct _screen_window* window);
 
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                      const VkBool32* pColorWriteEnables);
 
@@ -2058,7 +1996,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer
 VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                             VkScreenBufferPropertiesQNX* pProperties);
 
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -3199,47 +3137,39 @@ class ValidationObject {
         virtual bool PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
         virtual bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, Display* dpy, VisualID visualID, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, Display* dpy, VisualID visualID, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, Display* dpy, VisualID visualID, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
         virtual bool PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
         virtual bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
         virtual bool PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
         virtual bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         virtual bool PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, const VkVideoProfileInfoKHR* pVideoProfile, VkVideoCapabilitiesKHR* pCapabilities, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, const VkVideoProfileInfoKHR* pVideoProfile, VkVideoCapabilitiesKHR* pCapabilities, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, const VkVideoProfileInfoKHR* pVideoProfile, VkVideoCapabilitiesKHR* pCapabilities, const RecordObject& record_obj) {};
@@ -3328,12 +3258,10 @@ class ValidationObject {
         virtual bool PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle, VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle, VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle, VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd, const RecordObject& record_obj) {};
@@ -3347,12 +3275,10 @@ class ValidationObject {
         virtual bool PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo, const RecordObject& record_obj) {};
@@ -3396,12 +3322,10 @@ class ValidationObject {
         virtual bool PreCallValidateImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, const RecordObject& record_obj) {};
@@ -3529,17 +3453,13 @@ class ValidationObject {
         virtual bool PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {};
@@ -3685,7 +3605,7 @@ class ValidationObject {
         virtual bool PreCallValidateCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_GGP
         virtual bool PreCallValidateGetPhysicalDeviceExternalImageFormatPropertiesNV(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType, VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType, VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType, VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, const RecordObject& record_obj) {};
@@ -3693,12 +3613,12 @@ class ValidationObject {
         virtual bool PreCallValidateGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory, VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory, VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory, VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
         virtual bool PreCallValidateCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_VI_NN
         virtual bool PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin, const RecordObject& record_obj) {};
@@ -3715,12 +3635,10 @@ class ValidationObject {
         virtual bool PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display, const RecordObject& record_obj) {};
         virtual void PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
         virtual bool PreCallValidateGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput, VkDisplayKHR* pDisplay, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput, VkDisplayKHR* pDisplay, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput, VkDisplayKHR* pDisplay, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
         virtual bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkSurfaceCapabilities2EXT* pSurfaceCapabilities, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkSurfaceCapabilities2EXT* pSurfaceCapabilities, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkSurfaceCapabilities2EXT* pSurfaceCapabilities, const RecordObject& record_obj) {};
@@ -3758,12 +3676,12 @@ class ValidationObject {
         virtual bool PreCallValidateCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
         virtual bool PreCallValidateCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_MACOS_MVK
         virtual bool PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo, const RecordObject& record_obj) {};
@@ -3801,47 +3719,33 @@ class ValidationObject {
         virtual bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer, VkAndroidHardwareBufferPropertiesANDROID* pProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer, VkAndroidHardwareBufferPropertiesANDROID* pProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer, VkAndroidHardwareBufferPropertiesANDROID* pProperties, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
         virtual bool PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceAddress countInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceAddress countInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceAddress countInfo, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const RecordObject& record_obj) {};
@@ -3966,12 +3870,12 @@ class ValidationObject {
         virtual bool PreCallValidateCreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
         virtual bool PreCallValidateCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
         virtual bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo, const RecordObject& record_obj) {};
@@ -3988,22 +3892,16 @@ class ValidationObject {
         virtual bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, const RecordObject& record_obj) {};
         virtual void PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, const RecordObject& record_obj) {};
         virtual void PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, VkDeviceGroupPresentModeFlagsKHR* pModes, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, VkDeviceGroupPresentModeFlagsKHR* pModes, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, VkDeviceGroupPresentModeFlagsKHR* pModes, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
@@ -4110,7 +4008,7 @@ class ValidationObject {
         virtual bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_METAL_EXT
         virtual bool PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes, const RecordObject& record_obj) {};
@@ -4154,22 +4052,18 @@ class ValidationObject {
         virtual bool PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display, const RecordObject& record_obj) {};
         virtual void PostCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
         virtual bool PreCallValidateGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
         virtual bool PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
         virtual bool PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, IDirectFB* dfb, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, IDirectFB* dfb, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, IDirectFB* dfb, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
         virtual bool PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions, const RecordObject& record_obj) {};
@@ -4177,47 +4071,31 @@ class ValidationObject {
         virtual bool PreCallValidateGetMemoryZirconHandleFUCHSIA(VkDevice device, const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryZirconHandleFUCHSIA(VkDevice device, const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryZirconHandleFUCHSIA(VkDevice device, const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle, VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle, VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle, VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateImportSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordImportSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordImportSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateGetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {};
         virtual void PostCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_FUCHSIA
         virtual bool PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize, const RecordObject& record_obj) {};
@@ -4252,12 +4130,10 @@ class ValidationObject {
         virtual bool PreCallValidateCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, const RecordObject& record_obj) {};
-#endif
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
         virtual bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
         virtual bool PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkBool32* pColorWriteEnables, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkBool32* pColorWriteEnables, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkBool32* pColorWriteEnables, const RecordObject& record_obj) {};
@@ -4499,7 +4375,7 @@ class ValidationObject {
         virtual bool PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) {};
-#endif
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
         virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure, const RecordObject& record_obj) {};

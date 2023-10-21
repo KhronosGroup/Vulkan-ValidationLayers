@@ -19,6 +19,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class LayerDispatchTableOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -61,10 +62,11 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_GetPhysicalDeviceProcAddr GetPhysicalDeviceProcAddr;
 
 ''')
+        guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.instance]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    PFN_{command.name} {command.name[2:]};\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('} VkLayerInstanceDispatchTable;\n')
 
         out.append('''
@@ -72,9 +74,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
 typedef struct VkLayerDispatchTable_ {
 ''')
         for command in [x for x in self.vk.commands.values() if x.device]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    PFN_{command.name} {command.name[2:]};\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('} VkLayerDispatchTable;\n')
 
         out.append('// clang-format on')

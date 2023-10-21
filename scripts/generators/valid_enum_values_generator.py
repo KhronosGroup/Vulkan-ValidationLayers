@@ -18,6 +18,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class ValidEnumValuesOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -59,10 +60,11 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         out.append("// clang-format off\n")
+        guard_helper = PlatformGuardHelper()
         for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
-            out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])
+            out.extend(guard_helper.add_guard(enum.protect))
             out.append(f'template<> std::vector<{enum.name}> ValidationObject::ValidParamValues() const;\n')
-            out.extend([f'#endif //{enum.protect}\n'] if enum.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append("// clang-format on\n")
 
         self.write("".join(out))
@@ -79,9 +81,10 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             //      devices over the lifespan of the project (e.g., VLT).
 
             ''')
+        guard_helper = PlatformGuardHelper()
         out.append("// clang-format off\n")
         for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
-            out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])
+            out.extend(guard_helper.add_guard(enum.protect, extra_newline=True))
             out.append(f'template<>\nstd::vector<{enum.name}> ValidationObject::ValidParamValues() const {{\n')
 
             # If the field has same/subset extensions as enum, we count it as "core" for the struct
@@ -106,8 +109,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
     std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
     return values;
 }}\n''')
-            out.extend([f'#endif //{enum.protect}\n'] if enum.protect else [])
-            out.append('\n')
+        out.extend(guard_helper.add_guard(None, extra_newline=True))
 
         out.append("// clang-format on\n")
         self.write(''.join(out))

@@ -22,6 +22,7 @@ import os
 import re
 from generators.vulkan_object import Struct, Member
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 # Determine if a structure needs a safe_struct helper function
 # That is, it has an sType or one of its members is a pointer
@@ -135,8 +136,9 @@ class SafeStructOutputGenerator(BaseGenerator):
             char *SafeStringCopy(const char *in_string);
             \n''')
 
+        guard_helper = PlatformGuardHelper()
         for struct in [x for x in self.vk.structs.values() if needSafeStruct(x)]:
-            out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
+            out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'{"union" if struct.union else "struct"} safe_{struct.name} {{\n')
             # Can only initialize first member of an Union
             canInitialize = True
@@ -190,7 +192,7 @@ class SafeStructOutputGenerator(BaseGenerator):
                     }
                     ''')
             out.append('};\n')
-            out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
+        out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
 
     def generateUtil(self):
@@ -237,15 +239,15 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
                 memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));
                 safe_pNext = struct_copy;
                 break;
-            }''')
-
+            }
+''')
+        guard_helper = PlatformGuardHelper()
         for struct in [x for x in self.vk.structs.values() if x.extends]:
-            out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
-            out.append(f'''
-            case {struct.sType}:
-                safe_pNext = new safe_{struct.name}(reinterpret_cast<const {struct.name} *>(pNext), copy_state, false);
-                break;''')
-            out.extend([f'\n#endif // {struct.protect}'] if struct.protect else [])
+            out.extend(guard_helper.add_guard(struct.protect))
+            out.append(f'            case {struct.sType}:\n')
+            out.append(f'                safe_pNext = new safe_{struct.name}(reinterpret_cast<const {struct.name} *>(pNext), copy_state, false);\n')
+            out.append('                break;\n')
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
             default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain
@@ -293,12 +295,11 @@ void FreePnextChain(const void *pNext) {
 ''')
 
         for struct in [x for x in self.vk.structs.values() if x.extends]:
-            out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
-            out.append(f'''
-        case {struct.sType}:
-            delete reinterpret_cast<const safe_{struct.name} *>(header);
-            break;''')
-            out.extend([f'\n#endif // {struct.protect}'] if struct.protect else [])
+            out.extend(guard_helper.add_guard(struct.protect))
+            out.append(f'        case {struct.sType}:\n')
+            out.append(f'            delete reinterpret_cast<const safe_{struct.name} *>(header);\n')
+            out.append(f'            break;\n')
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
         default: // Encountered an unknown sType
@@ -899,8 +900,9 @@ void FreePnextChain(const void *pNext) {
         else: # elif self.filename.endswith('_core.cpp'):
             splitRegex = r'.*[a-z0-9]$'
 
+        guard_helper = PlatformGuardHelper()
         for struct in [x for x in self.vk.structs.values() if needSafeStruct(x) and x.name not in wsiStructs and re.match(splitRegex, x.name)]:
-            out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
+            out.extend(guard_helper.add_guard(struct.protect))
 
             init_list = ''          # list of members in struct constructor initializer
             default_init_list = ''  # Default constructor just inits ptrs to nullptr in initializer
@@ -1151,6 +1153,6 @@ void FreePnextChain(const void *pNext) {
                 {{
                 {init_copy}{init_construct}}}
                 ''')
-            out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         self.write("".join(out))

@@ -18,6 +18,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class FunctionPointersOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -78,10 +79,11 @@ class FunctionPointersOutputGenerator(BaseGenerator):
 
 namespace vk {
 ''')
+        guard_helper = PlatformGuardHelper()
         for command in self.vk.commands.values():
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'extern PFN_{command.name} {command.name[2:]};\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('''
 void InitCore(const char *api_name);
 void InitInstanceExtension(VkInstance instance, const char* extension_name);
@@ -148,10 +150,11 @@ static inline void *get_proc_address(dl_handle library, const char *name) {
 
 namespace vk {
 ''')
+        guard_helper = PlatformGuardHelper()
         for command in self.vk.commands.values():
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'PFN_{command.name} {command.name[2:]};\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
 void InitCore(const char *api_name) {
@@ -185,14 +188,14 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
     static const vvl::unordered_map<std::string, std::function<void(VkInstance)>> initializers = {
 ''')
         for extension in [x for x in self.vk.extensions.values() if x.instance and x.commands]:
-            out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
+            out.extend(guard_helper.add_guard(extension.protect))
             out.append('        {\n')
             out.append(f'            "{extension.name}", [](VkInstance instance) {{\n')
             for command in [x for x in extension.commands]:
                 out.append(f'                {command.name[2:]} = reinterpret_cast<PFN_{command.name}>(GetInstanceProcAddr(instance, "{command.name}"));\n')
             out.append('            }\n')
             out.append('        },\n')
-            out.extend([f'#endif //{extension.protect}\n'] if extension.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
     };
@@ -207,7 +210,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
     static const vvl::unordered_map<std::string, std::function<void(VkInstance, VkDevice)>> initializers = {
 ''')
         for extension in [x for x in self.vk.extensions.values() if x.device and x.commands]:
-            out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
+            out.extend(guard_helper.add_guard(extension.protect))
             out.append('        {\n')
             instanceCommand = [x for x in extension.commands if x.instance]
             deviceCommand = [x for x in extension.commands if x.device]
@@ -216,7 +219,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             out.extend([f'                {command.name[2:]} = reinterpret_cast<PFN_{command.name}>(GetInstanceProcAddr(instance, "{command.name}"));\n' for command in instanceCommand])
             out.append('            }\n')
             out.append('        },\n')
-            out.extend([f'#endif //{extension.protect}\n'] if extension.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('''
     };
@@ -228,9 +231,9 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
 
         out.append('void ResetAllExtensions() {\n')
         for command in [x for x in self.vk.commands.values() if x.extensions]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    {command.name[2:]} = nullptr;\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         out.append('}\n')
 

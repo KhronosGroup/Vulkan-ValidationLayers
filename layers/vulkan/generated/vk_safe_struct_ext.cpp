@@ -695,8 +695,6 @@ void safe_VkVideoEncodeH264CapabilitiesEXT::initialize(const safe_VkVideoEncodeH
     stdSyntaxFlags = copy_src->stdSyntaxFlags;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264QualityLevelPropertiesEXT::safe_VkVideoEncodeH264QualityLevelPropertiesEXT(
     const VkVideoEncodeH264QualityLevelPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -796,8 +794,6 @@ void safe_VkVideoEncodeH264QualityLevelPropertiesEXT::initialize(const safe_VkVi
     preferredStdEntropyCodingModeFlag = copy_src->preferredStdEntropyCodingModeFlag;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264SessionCreateInfoEXT::safe_VkVideoEncodeH264SessionCreateInfoEXT(
     const VkVideoEncodeH264SessionCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -850,8 +846,6 @@ void safe_VkVideoEncodeH264SessionCreateInfoEXT::initialize(const safe_VkVideoEn
     maxLevelIdc = copy_src->maxLevelIdc;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264SessionParametersAddInfoEXT::safe_VkVideoEncodeH264SessionParametersAddInfoEXT(
     const VkVideoEncodeH264SessionParametersAddInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -978,8 +972,6 @@ void safe_VkVideoEncodeH264SessionParametersAddInfoEXT::initialize(
         memcpy((void*)pStdPPSs, (void*)copy_src->pStdPPSs, sizeof(StdVideoH264PictureParameterSet) * copy_src->stdPPSCount);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264SessionParametersCreateInfoEXT::safe_VkVideoEncodeH264SessionParametersCreateInfoEXT(
     const VkVideoEncodeH264SessionParametersCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1058,8 +1050,6 @@ void safe_VkVideoEncodeH264SessionParametersCreateInfoEXT::initialize(
     if (copy_src->pParametersAddInfo)
         pParametersAddInfo = new safe_VkVideoEncodeH264SessionParametersAddInfoEXT(*copy_src->pParametersAddInfo);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264SessionParametersGetInfoEXT::safe_VkVideoEncodeH264SessionParametersGetInfoEXT(
     const VkVideoEncodeH264SessionParametersGetInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1129,8 +1119,6 @@ void safe_VkVideoEncodeH264SessionParametersGetInfoEXT::initialize(
     stdPPSId = copy_src->stdPPSId;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT::safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT(
     const VkVideoEncodeH264SessionParametersFeedbackInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
@@ -1191,8 +1179,6 @@ void safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT::initialize(
     hasStdPPSOverrides = copy_src->hasStdPPSOverrides;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264NaluSliceInfoEXT::safe_VkVideoEncodeH264NaluSliceInfoEXT(const VkVideoEncodeH264NaluSliceInfoEXT* in_struct,
                                                                                [[maybe_unused]] PNextCopyState* copy_state,
@@ -1270,8 +1256,6 @@ void safe_VkVideoEncodeH264NaluSliceInfoEXT::initialize(const safe_VkVideoEncode
         pStdSliceHeader = new StdVideoEncodeH264SliceHeader(*copy_src->pStdSliceHeader);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264PictureInfoEXT::safe_VkVideoEncodeH264PictureInfoEXT(const VkVideoEncodeH264PictureInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -1399,8 +1383,6 @@ void safe_VkVideoEncodeH264PictureInfoEXT::initialize(const safe_VkVideoEncodeH2
         pStdPictureInfo = new StdVideoEncodeH264PictureInfo(*copy_src->pStdPictureInfo);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264DpbSlotInfoEXT::safe_VkVideoEncodeH264DpbSlotInfoEXT(const VkVideoEncodeH264DpbSlotInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -1473,8 +1455,6 @@ void safe_VkVideoEncodeH264DpbSlotInfoEXT::initialize(const safe_VkVideoEncodeH2
         pStdReferenceInfo = new StdVideoEncodeH264ReferenceInfo(*copy_src->pStdReferenceInfo);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264ProfileInfoEXT::safe_VkVideoEncodeH264ProfileInfoEXT(const VkVideoEncodeH264ProfileInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -1523,8 +1503,6 @@ void safe_VkVideoEncodeH264ProfileInfoEXT::initialize(const safe_VkVideoEncodeH2
     stdProfileIdc = copy_src->stdProfileIdc;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264RateControlInfoEXT::safe_VkVideoEncodeH264RateControlInfoEXT(
     const VkVideoEncodeH264RateControlInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1600,8 +1578,6 @@ void safe_VkVideoEncodeH264RateControlInfoEXT::initialize(const safe_VkVideoEnco
     temporalLayerCount = copy_src->temporalLayerCount;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264RateControlLayerInfoEXT::safe_VkVideoEncodeH264RateControlLayerInfoEXT(
     const VkVideoEncodeH264RateControlLayerInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1683,8 +1659,6 @@ void safe_VkVideoEncodeH264RateControlLayerInfoEXT::initialize(const safe_VkVide
     maxFrameSize = copy_src->maxFrameSize;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH264GopRemainingFrameInfoEXT::safe_VkVideoEncodeH264GopRemainingFrameInfoEXT(
     const VkVideoEncodeH264GopRemainingFrameInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1754,8 +1728,6 @@ void safe_VkVideoEncodeH264GopRemainingFrameInfoEXT::initialize(const safe_VkVid
     gopRemainingB = copy_src->gopRemainingB;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265CapabilitiesEXT::safe_VkVideoEncodeH265CapabilitiesEXT(const VkVideoEncodeH265CapabilitiesEXT* in_struct,
                                                                              [[maybe_unused]] PNextCopyState* copy_state,
@@ -1898,8 +1870,6 @@ void safe_VkVideoEncodeH265CapabilitiesEXT::initialize(const safe_VkVideoEncodeH
     stdSyntaxFlags = copy_src->stdSyntaxFlags;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265SessionCreateInfoEXT::safe_VkVideoEncodeH265SessionCreateInfoEXT(
     const VkVideoEncodeH265SessionCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -1952,8 +1922,6 @@ void safe_VkVideoEncodeH265SessionCreateInfoEXT::initialize(const safe_VkVideoEn
     maxLevelIdc = copy_src->maxLevelIdc;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265QualityLevelPropertiesEXT::safe_VkVideoEncodeH265QualityLevelPropertiesEXT(
     const VkVideoEncodeH265QualityLevelPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2047,8 +2015,6 @@ void safe_VkVideoEncodeH265QualityLevelPropertiesEXT::initialize(const safe_VkVi
     preferredMaxL1ReferenceCount = copy_src->preferredMaxL1ReferenceCount;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265SessionParametersAddInfoEXT::safe_VkVideoEncodeH265SessionParametersAddInfoEXT(
     const VkVideoEncodeH265SessionParametersAddInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2215,8 +2181,6 @@ void safe_VkVideoEncodeH265SessionParametersAddInfoEXT::initialize(
         memcpy((void*)pStdPPSs, (void*)copy_src->pStdPPSs, sizeof(StdVideoH265PictureParameterSet) * copy_src->stdPPSCount);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265SessionParametersCreateInfoEXT::safe_VkVideoEncodeH265SessionParametersCreateInfoEXT(
     const VkVideoEncodeH265SessionParametersCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2301,8 +2265,6 @@ void safe_VkVideoEncodeH265SessionParametersCreateInfoEXT::initialize(
     if (copy_src->pParametersAddInfo)
         pParametersAddInfo = new safe_VkVideoEncodeH265SessionParametersAddInfoEXT(*copy_src->pParametersAddInfo);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265SessionParametersGetInfoEXT::safe_VkVideoEncodeH265SessionParametersGetInfoEXT(
     const VkVideoEncodeH265SessionParametersGetInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2384,8 +2346,6 @@ void safe_VkVideoEncodeH265SessionParametersGetInfoEXT::initialize(
     stdPPSId = copy_src->stdPPSId;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT::safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT(
     const VkVideoEncodeH265SessionParametersFeedbackInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
@@ -2452,8 +2412,6 @@ void safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT::initialize(
     hasStdPPSOverrides = copy_src->hasStdPPSOverrides;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT(
     const VkVideoEncodeH265NaluSliceSegmentInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2533,8 +2491,6 @@ void safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::initialize(const safe_VkVide
         pStdSliceSegmentHeader = new StdVideoEncodeH265SliceSegmentHeader(*copy_src->pStdSliceSegmentHeader);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265PictureInfoEXT::safe_VkVideoEncodeH265PictureInfoEXT(const VkVideoEncodeH265PictureInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -2656,8 +2612,6 @@ void safe_VkVideoEncodeH265PictureInfoEXT::initialize(const safe_VkVideoEncodeH2
         pStdPictureInfo = new StdVideoEncodeH265PictureInfo(*copy_src->pStdPictureInfo);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265DpbSlotInfoEXT::safe_VkVideoEncodeH265DpbSlotInfoEXT(const VkVideoEncodeH265DpbSlotInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -2730,8 +2684,6 @@ void safe_VkVideoEncodeH265DpbSlotInfoEXT::initialize(const safe_VkVideoEncodeH2
         pStdReferenceInfo = new StdVideoEncodeH265ReferenceInfo(*copy_src->pStdReferenceInfo);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265ProfileInfoEXT::safe_VkVideoEncodeH265ProfileInfoEXT(const VkVideoEncodeH265ProfileInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -2780,8 +2732,6 @@ void safe_VkVideoEncodeH265ProfileInfoEXT::initialize(const safe_VkVideoEncodeH2
     stdProfileIdc = copy_src->stdProfileIdc;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265RateControlInfoEXT::safe_VkVideoEncodeH265RateControlInfoEXT(
     const VkVideoEncodeH265RateControlInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2857,8 +2807,6 @@ void safe_VkVideoEncodeH265RateControlInfoEXT::initialize(const safe_VkVideoEnco
     subLayerCount = copy_src->subLayerCount;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265RateControlLayerInfoEXT::safe_VkVideoEncodeH265RateControlLayerInfoEXT(
     const VkVideoEncodeH265RateControlLayerInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -2940,8 +2888,6 @@ void safe_VkVideoEncodeH265RateControlLayerInfoEXT::initialize(const safe_VkVide
     maxFrameSize = copy_src->maxFrameSize;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkVideoEncodeH265GopRemainingFrameInfoEXT::safe_VkVideoEncodeH265GopRemainingFrameInfoEXT(
     const VkVideoEncodeH265GopRemainingFrameInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -7674,8 +7620,6 @@ void safe_VkSurfaceFullScreenExclusiveInfoEXT::initialize(const safe_VkSurfaceFu
     fullScreenExclusive = copy_src->fullScreenExclusive;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT(
     const VkSurfaceCapabilitiesFullScreenExclusiveEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -7724,8 +7668,6 @@ void safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::initialize(const safe_VkS
     fullScreenExclusiveSupported = copy_src->fullScreenExclusiveSupported;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusiveWin32InfoEXT(
     const VkSurfaceFullScreenExclusiveWin32InfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -10639,8 +10581,6 @@ void safe_VkExportMetalObjectCreateInfoEXT::initialize(const safe_VkExportMetalO
     exportObjectType = copy_src->exportObjectType;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalObjectsInfoEXT::safe_VkExportMetalObjectsInfoEXT(const VkExportMetalObjectsInfoEXT* in_struct,
                                                                    [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -10683,8 +10623,6 @@ void safe_VkExportMetalObjectsInfoEXT::initialize(const safe_VkExportMetalObject
     sType = copy_src->sType;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalDeviceInfoEXT::safe_VkExportMetalDeviceInfoEXT(const VkExportMetalDeviceInfoEXT* in_struct,
                                                                  [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -10731,8 +10669,6 @@ void safe_VkExportMetalDeviceInfoEXT::initialize(const safe_VkExportMetalDeviceI
     mtlDevice = copy_src->mtlDevice;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalCommandQueueInfoEXT::safe_VkExportMetalCommandQueueInfoEXT(const VkExportMetalCommandQueueInfoEXT* in_struct,
                                                                              [[maybe_unused]] PNextCopyState* copy_state,
@@ -10786,8 +10722,6 @@ void safe_VkExportMetalCommandQueueInfoEXT::initialize(const safe_VkExportMetalC
     mtlCommandQueue = copy_src->mtlCommandQueue;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalBufferInfoEXT::safe_VkExportMetalBufferInfoEXT(const VkExportMetalBufferInfoEXT* in_struct,
                                                                  [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -10838,8 +10772,6 @@ void safe_VkExportMetalBufferInfoEXT::initialize(const safe_VkExportMetalBufferI
     mtlBuffer = copy_src->mtlBuffer;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkImportMetalBufferInfoEXT::safe_VkImportMetalBufferInfoEXT(const VkImportMetalBufferInfoEXT* in_struct,
                                                                  [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -10886,8 +10818,6 @@ void safe_VkImportMetalBufferInfoEXT::initialize(const safe_VkImportMetalBufferI
     mtlBuffer = copy_src->mtlBuffer;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalTextureInfoEXT::safe_VkExportMetalTextureInfoEXT(const VkExportMetalTextureInfoEXT* in_struct,
                                                                    [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -10961,8 +10891,6 @@ void safe_VkExportMetalTextureInfoEXT::initialize(const safe_VkExportMetalTextur
     mtlTexture = copy_src->mtlTexture;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkImportMetalTextureInfoEXT::safe_VkImportMetalTextureInfoEXT(const VkImportMetalTextureInfoEXT* in_struct,
                                                                    [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -11013,8 +10941,6 @@ void safe_VkImportMetalTextureInfoEXT::initialize(const safe_VkImportMetalTextur
     mtlTexture = copy_src->mtlTexture;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalIOSurfaceInfoEXT::safe_VkExportMetalIOSurfaceInfoEXT(const VkExportMetalIOSurfaceInfoEXT* in_struct,
                                                                        [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -11066,8 +10992,6 @@ void safe_VkExportMetalIOSurfaceInfoEXT::initialize(const safe_VkExportMetalIOSu
     ioSurface = copy_src->ioSurface;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkImportMetalIOSurfaceInfoEXT::safe_VkImportMetalIOSurfaceInfoEXT(const VkImportMetalIOSurfaceInfoEXT* in_struct,
                                                                        [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
@@ -11115,8 +11039,6 @@ void safe_VkImportMetalIOSurfaceInfoEXT::initialize(const safe_VkImportMetalIOSu
     ioSurface = copy_src->ioSurface;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkExportMetalSharedEventInfoEXT::safe_VkExportMetalSharedEventInfoEXT(const VkExportMetalSharedEventInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,
@@ -11173,8 +11095,6 @@ void safe_VkExportMetalSharedEventInfoEXT::initialize(const safe_VkExportMetalSh
     mtlSharedEvent = copy_src->mtlSharedEvent;
     pNext = SafePnextCopy(copy_src->pNext);
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_METAL_EXT
 
 safe_VkImportMetalSharedEventInfoEXT::safe_VkImportMetalSharedEventInfoEXT(const VkImportMetalSharedEventInfoEXT* in_struct,
                                                                            [[maybe_unused]] PNextCopyState* copy_state,

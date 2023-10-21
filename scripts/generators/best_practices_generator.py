@@ -18,6 +18,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 # If there is another success code other than VK_SUCCESS
 def hasNonVkSuccess(successCodes: list[str]) -> bool:
@@ -121,9 +122,10 @@ class BestPracticesOutputGenerator(BaseGenerator):
             #include "containers/custom_containers.h"
             #include "error_message/record_object.h"
             ''')
+        guard_helper = PlatformGuardHelper()
         # List all Function declarations
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void PostCallRecord{prototype[2:]}'
             prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
@@ -131,7 +133,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             if command.name in self.extra_parameter_list:
                 prototype = prototype.replace(')', ', void* state_data)')
             out.append(prototype)
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         # Create deprecated extension map
         out.append('const vvl::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n')
@@ -160,6 +162,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
         self.write("".join(out))
 
     def generateSource(self):
+        guard_helper = PlatformGuardHelper()
         out = []
         out.append('''
             #include "chassis.h"
@@ -172,8 +175,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 paramList.append('state_data')
             params = ', '.join(paramList)
 
-            out.append('\n')
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect, extra_newline=True))
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void BestPractices::PostCallRecord{prototype[2:]}'
             prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
@@ -199,5 +201,5 @@ class BestPracticesOutputGenerator(BaseGenerator):
                     }''')
 
             out.append('}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None, extra_newline=True))
         self.write(''.join(out))

@@ -67,3 +67,21 @@ def getVUID(valid_vuids: set, vuid: str, quotes: bool = True) -> str:
         print(f'Warning: Could not find {vuid} in validusage.json')
         vuid = vuid.replace('VUID-', 'UNASSIGNED-')
     return vuid if not quotes else f'"{vuid}"'
+
+class PlatformGuardHelper():
+    """Used to elide platform guards together, so redundant #endif then #ifdefs are removed
+    Note - be sure to call add_guard(None) when done to add a trailing #endif if needed
+    """
+    def __init__(self):
+        self.current_guard = None
+
+    def add_guard(self, guard, extra_newline = False):
+        out = []
+        if self.current_guard is not guard and self.current_guard is not None:
+                out.append(f'#endif  // {self.current_guard}\n')
+        if extra_newline:
+            out.append('\n')
+        if self.current_guard is not guard and guard is not None:
+            out.append(f'#ifdef {guard}\n')
+        self.current_guard = guard
+        return out

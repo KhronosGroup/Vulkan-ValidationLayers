@@ -20,6 +20,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class ObjectTypesOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -145,9 +146,9 @@ template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeUnknown> {
 };
 
 #endif //  VK_DEFINE_HANDLE logic duplication\n''')
-
+        guard_helper = PlatformGuardHelper()
         for handle in [x for x in self.vk.handles.values() if x.dispatchable]:
-            out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
+            out.extend(guard_helper.add_guard(handle.protect))
             out.append(f'''
 template <> struct VkHandleInfo<{handle.name}> {{
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectType{handle.name[2:]};
@@ -160,11 +161,11 @@ template <> struct VkHandleInfo<{handle.name}> {{
 template <> struct VulkanObjectTypeInfo<kVulkanObjectType{handle.name[2:]}> {{
     typedef {handle.name} Type;
 }};\n''')
-            out.extend([f'#endif //{handle.protect}\n'] if handle.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n')
 
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
-            out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
+            out.extend(guard_helper.add_guard(handle.protect))
             out.append(f'''
 template <> struct VkHandleInfo<{handle.name}> {{
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectType{handle.name[2:]};
@@ -177,7 +178,7 @@ template <> struct VkHandleInfo<{handle.name}> {{
 template <> struct VulkanObjectTypeInfo<kVulkanObjectType{handle.name[2:]}> {{
     typedef {handle.name} Type;
 }};\n''')
-            out.extend([f'#endif //{handle.protect}\n'] if handle.protect else [])
+        out.extend(guard_helper.add_guard(None))
         out.append('#endif // TYPESAFE_NONDISPATCHABLE_HANDLES\n')
 
         out.append('''

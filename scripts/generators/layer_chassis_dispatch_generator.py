@@ -21,6 +21,7 @@ import sys
 import os
 from generators.vulkan_object import Member
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class LayerChassisDispatchOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -153,13 +154,14 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext);
 
             ''')
+        guard_helper = PlatformGuardHelper()
         for command in self.vk.commands.values():
             prototype = command.cPrototype
             prototype = prototype.replace("VKAPI_ATTR ", "")
             prototype = prototype.replace("VKAPI_CALL vk", "Dispatch")
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
             out.append(f'{prototype}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         self.write("".join(out))
 
@@ -189,20 +191,18 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
 
                     switch (header->sType) {
             ''')
-
+        guard_helper = PlatformGuardHelper()
         for struct in [self.vk.structs[x] for x in self.ndo_extension_structs]:
             (api_decls, api_pre, api_post) = self.uniquifyMembers(struct.members, 'safe_struct->', 0, False, False, False)
             # Only process extension structs containing handles
             if not api_pre:
                 continue
-            out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
+            out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'case {struct.sType}: {{\n')
             out.append(f'    safe_{struct.name} *safe_struct = reinterpret_cast<safe_{struct.name} *>(cur_pnext);\n')
             out.append(api_pre)
             out.append('} break;\n')
-            out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
-            out.append('\n')
-
+        out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
                         break;
@@ -213,9 +213,8 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             }
             }
             ''')
-
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
+            out.extend(guard_helper.add_guard(command.protect))
 
             # Generate NDO wrapping/unwrapping code for all parameters
             isCreate = any(x in command.name for x in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'GetDrmDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL'])
@@ -314,7 +313,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             if assignResult != '':
                 out.append('return result;\n')
             out.append('}\n')
-            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
+        out.extend(guard_helper.add_guard(None))
 
         self.write("".join(out))
 

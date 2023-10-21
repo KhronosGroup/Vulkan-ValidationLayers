@@ -3154,8 +3154,6 @@ void ThreadSafety::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const 
     FinishReadObjectParentInstance(device, vvl::Func::vkGetMemoryWin32HandleKHR);
 }
 
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                   HANDLE handle,
                                                                   VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties,
@@ -3204,8 +3202,6 @@ void ThreadSafety::PostCallRecordImportSemaphoreWin32HandleKHR(
     FinishReadObjectParentInstance(device, vvl::Func::vkImportSemaphoreWin32HandleKHR);
 }
 
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
                                                            const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                            HANDLE* pHandle, const RecordObject& record_obj) {
@@ -3394,8 +3390,6 @@ void ThreadSafety::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
     FinishReadObjectParentInstance(device, vvl::Func::vkImportFenceWin32HandleKHR);
 }
 
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                        HANDLE* pHandle, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetFenceWin32HandleKHR);
@@ -3828,8 +3822,6 @@ void ThreadSafety::PostCallRecordGetEncodedVideoSessionParametersKHR(
     FinishReadObjectParentInstance(device, vvl::Func::vkGetEncodedVideoSessionParametersKHR);
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                                   const RecordObject& record_obj) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdEncodeVideoKHR);
@@ -4877,8 +4869,6 @@ void ThreadSafety::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDev
     FinishReadObjectParentInstance(device, vvl::Func::vkGetAndroidHardwareBufferPropertiesANDROID);
 }
 
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 void ThreadSafety::PreCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                       const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                       struct AHardwareBuffer** pBuffer,
@@ -4919,8 +4909,6 @@ void ThreadSafety::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice devi
     }
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                          VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
                                                                          const RecordObject& record_obj) {
@@ -4935,8 +4923,6 @@ void ThreadSafety::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDevi
     FinishReadObject(executionGraph, vvl::Func::vkGetExecutionGraphPipelineScratchSizeAMDX);
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                        const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                                        uint32_t* pNodeIndex, const RecordObject& record_obj) {
@@ -4951,8 +4937,6 @@ void ThreadSafety::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice
     FinishReadObject(executionGraph, vvl::Func::vkGetExecutionGraphPipelineNodeIndexAMDX);
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                     const RecordObject& record_obj) {
     StartReadObject(commandBuffer, vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX);
@@ -4963,8 +4947,6 @@ void ThreadSafety::PostCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBu
     FinishReadObject(commandBuffer, vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX);
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                      const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                      const RecordObject& record_obj) {
@@ -4977,8 +4959,6 @@ void ThreadSafety::PostCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuf
     FinishReadObject(commandBuffer, vvl::Func::vkCmdDispatchGraphAMDX);
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                              const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                              const RecordObject& record_obj) {
@@ -4991,8 +4971,6 @@ void ThreadSafety::PostCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer co
     FinishReadObject(commandBuffer, vvl::Func::vkCmdDispatchGraphIndirectAMDX);
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                   VkDeviceAddress countInfo, const RecordObject& record_obj) {
     StartReadObject(commandBuffer, vvl::Func::vkCmdDispatchGraphIndirectCountAMDX);
@@ -5720,8 +5698,6 @@ void ThreadSafety::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice devi
     FinishReadObject(swapchain, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
 }
 
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                   const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
@@ -5734,8 +5710,6 @@ void ThreadSafety::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice devi
     FinishReadObject(swapchain, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
 }
 
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                       const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                       VkDeviceGroupPresentModeFlagsKHR* pModes,
@@ -6437,8 +6411,6 @@ void ThreadSafety::PostCallRecordGetMemoryZirconHandleFUCHSIA(VkDevice device,
     FinishReadObjectParentInstance(device, vvl::Func::vkGetMemoryZirconHandleFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
     VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const RecordObject& record_obj) {
@@ -6451,8 +6423,6 @@ void ThreadSafety::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     FinishReadObjectParentInstance(device, vvl::Func::vkGetMemoryZirconHandlePropertiesFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
     const RecordObject& record_obj) {
@@ -6465,8 +6435,6 @@ void ThreadSafety::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     FinishReadObjectParentInstance(device, vvl::Func::vkImportSemaphoreZirconHandleFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                 const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                 zx_handle_t* pZirconHandle, const RecordObject& record_obj) {
@@ -6479,8 +6447,6 @@ void ThreadSafety::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device
     FinishReadObjectParentInstance(device, vvl::Func::vkGetSemaphoreZirconHandleFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordCreateBufferCollectionFUCHSIA(VkDevice device,
                                                               const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -6500,8 +6466,6 @@ void ThreadSafety::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device,
     }
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
     const RecordObject& record_obj) {
@@ -6516,8 +6480,6 @@ void ThreadSafety::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     FinishReadObject(collection, vvl::Func::vkSetBufferCollectionImageConstraintsFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
     const RecordObject& record_obj) {
@@ -6532,8 +6494,6 @@ void ThreadSafety::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     FinishReadObject(collection, vvl::Func::vkSetBufferCollectionBufferConstraintsFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const RecordObject& record_obj) {
@@ -6548,8 +6508,6 @@ void ThreadSafety::PostCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device,
     FinishReadObject(collection, vvl::Func::vkDestroyBufferCollectionFUCHSIA);
 }
 
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                      VkBufferCollectionPropertiesFUCHSIA* pProperties,
                                                                      const RecordObject& record_obj) {

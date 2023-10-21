@@ -73,20 +73,14 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateDisplayPlaneSurfaceKHR CreateDisplayPlaneSurfaceKHR;
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     PFN_vkCreateXlibSurfaceKHR CreateXlibSurfaceKHR;
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
     PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR GetPhysicalDeviceXlibPresentationSupportKHR;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
     PFN_vkCreateXcbSurfaceKHR CreateXcbSurfaceKHR;
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
     PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR GetPhysicalDeviceXcbPresentationSupportKHR;
 #endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     PFN_vkCreateWaylandSurfaceKHR CreateWaylandSurfaceKHR;
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR GetPhysicalDeviceWaylandPresentationSupportKHR;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -94,8 +88,6 @@ typedef struct VkLayerInstanceDispatchTable_ {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkCreateWin32SurfaceKHR CreateWin32SurfaceKHR;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR GetPhysicalDeviceWin32PresentationSupportKHR;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
@@ -138,8 +130,6 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkReleaseDisplayEXT ReleaseDisplayEXT;
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     PFN_vkAcquireXlibDisplayEXT AcquireXlibDisplayEXT;
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     PFN_vkGetRandROutputDisplayEXT GetRandROutputDisplayEXT;
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
     PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT GetPhysicalDeviceSurfaceCapabilities2EXT;
@@ -172,20 +162,14 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkAcquireWinrtDisplayNV AcquireWinrtDisplayNV;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetWinrtDisplayNV GetWinrtDisplayNV;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     PFN_vkCreateDirectFBSurfaceEXT CreateDirectFBSurfaceEXT;
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT GetPhysicalDeviceDirectFBPresentationSupportEXT;
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
     PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
@@ -407,16 +391,12 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkTrimCommandPoolKHR TrimCommandPoolKHR;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetMemoryWin32HandleKHR GetMemoryWin32HandleKHR;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetMemoryWin32HandlePropertiesKHR GetMemoryWin32HandlePropertiesKHR;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetMemoryFdKHR GetMemoryFdKHR;
     PFN_vkGetMemoryFdPropertiesKHR GetMemoryFdPropertiesKHR;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkImportSemaphoreWin32HandleKHR ImportSemaphoreWin32HandleKHR;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetSemaphoreWin32HandleKHR GetSemaphoreWin32HandleKHR;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
@@ -433,8 +413,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetSwapchainStatusKHR GetSwapchainStatusKHR;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkImportFenceWin32HandleKHR ImportFenceWin32HandleKHR;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetFenceWin32HandleKHR GetFenceWin32HandleKHR;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkImportFenceFdKHR ImportFenceFdKHR;
@@ -471,8 +449,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdSetEvent2KHR CmdSetEvent2KHR;
@@ -544,29 +520,15 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     PFN_vkGetAndroidHardwareBufferPropertiesANDROID GetAndroidHardwareBufferPropertiesANDROID;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
     PFN_vkGetMemoryAndroidHardwareBufferANDROID GetMemoryAndroidHardwareBufferANDROID;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCreateExecutionGraphPipelinesAMDX CreateExecutionGraphPipelinesAMDX;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetExecutionGraphPipelineScratchSizeAMDX GetExecutionGraphPipelineScratchSizeAMDX;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetExecutionGraphPipelineNodeIndexAMDX GetExecutionGraphPipelineNodeIndexAMDX;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdInitializeGraphScratchMemoryAMDX CmdInitializeGraphScratchMemoryAMDX;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdDispatchGraphAMDX CmdDispatchGraphAMDX;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdDispatchGraphIndirectAMDX CmdDispatchGraphIndirectAMDX;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdDispatchGraphIndirectCountAMDX CmdDispatchGraphIndirectCountAMDX;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
@@ -614,11 +576,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetBufferDeviceAddressEXT GetBufferDeviceAddressEXT;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkAcquireFullScreenExclusiveModeEXT AcquireFullScreenExclusiveModeEXT;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkReleaseFullScreenExclusiveModeEXT ReleaseFullScreenExclusiveModeEXT;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkGetDeviceGroupSurfacePresentModes2EXT GetDeviceGroupSurfacePresentModes2EXT;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkCmdSetLineStippleEXT CmdSetLineStippleEXT;
@@ -671,29 +629,13 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
 #ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetMemoryZirconHandleFUCHSIA GetMemoryZirconHandleFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA GetMemoryZirconHandlePropertiesFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkImportSemaphoreZirconHandleFUCHSIA ImportSemaphoreZirconHandleFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetSemaphoreZirconHandleFUCHSIA GetSemaphoreZirconHandleFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkCreateBufferCollectionFUCHSIA CreateBufferCollectionFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkSetBufferCollectionImageConstraintsFUCHSIA SetBufferCollectionImageConstraintsFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA SetBufferCollectionBufferConstraintsFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkDestroyBufferCollectionFUCHSIA DestroyBufferCollectionFUCHSIA;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetBufferCollectionPropertiesFUCHSIA GetBufferCollectionPropertiesFUCHSIA;
 #endif  // VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI;

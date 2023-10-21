@@ -64,7 +64,7 @@ WRAPPER(VkIndirectCommandsLayoutNV)
 WRAPPER(VkAccelerationStructureKHR)
 #ifdef VK_USE_PLATFORM_FUCHSIA
 WRAPPER(VkBufferCollectionFUCHSIA)
-#endif // VK_USE_PLATFORM_FUCHSIA
+#endif  // VK_USE_PLATFORM_FUCHSIA
 WRAPPER(VkMicromapEXT)
 WRAPPER(VkOpticalFlowSessionNV)
 WRAPPER(VkShaderEXT)
