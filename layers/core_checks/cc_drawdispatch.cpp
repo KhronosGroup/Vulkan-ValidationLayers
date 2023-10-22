@@ -295,6 +295,9 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDraw-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDraw-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDraw-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDraw-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDraw-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDraw-sampleLocationsEnable-07938";
     }
 };
 
@@ -572,6 +575,9 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMultiEXT-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMultiEXT-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMultiEXT-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07938";
     }
 };
 
@@ -850,6 +856,9 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawIndexed-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawIndexed-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawIndexed-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07938";
     }
 };
 
@@ -1128,6 +1137,9 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMultiIndexedEXT-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMultiIndexedEXT-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMultiIndexedEXT-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07938";
     }
 };
 
@@ -1407,6 +1419,9 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawIndirect-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawIndirect-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawIndirect-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07938";
     }
 };
 
@@ -1687,6 +1702,9 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawIndexedIndirect-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawIndexedIndirect-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawIndexedIndirect-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07938";
     }
 };
 
@@ -2055,6 +2073,9 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawIndirectCount-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawIndirectCount-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawIndirectCount-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07938";
     }
 };
 
@@ -2338,6 +2359,9 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawIndexedIndirectCount-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawIndexedIndirectCount-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawIndexedIndirectCount-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07938";
     }
 };
 
@@ -2771,6 +2795,9 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMeshTasksNV-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMeshTasksNV-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMeshTasksNV-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07938";
     }
 };
 
@@ -3035,6 +3062,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07938";
     }
 };
 
@@ -3302,6 +3332,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07938";
     }
 };
 
@@ -3563,6 +3596,9 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMeshTasksEXT-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMeshTasksEXT-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMeshTasksEXT-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07938";
     }
 };
 
@@ -3827,6 +3863,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07938";
     }
 };
 
@@ -4094,6 +4133,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07938";
     }
 };
 
@@ -4373,6 +4415,9 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         attachment_access_09000                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-09000";
         attachment_access_09001                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-09001";
         attachment_access_09002                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-09002";
+        sample_locations_enable_07936            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07936";
+        sample_locations_enable_07937            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07937";
+        sample_locations_enable_07938            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07938";
     }
 };
 
