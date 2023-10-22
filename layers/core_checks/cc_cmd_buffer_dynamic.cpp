@@ -479,6 +479,55 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
 
+    if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
+        pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        const auto sample_locations =
+            vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pipeline.MultisampleState()->pNext);
+        if (sample_locations &&
+            ((!pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) && sample_locations->sampleLocationsEnable) ||
+             (pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
+              cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT] &&
+              cb_state.dynamic_state_value.sample_locations_enable))) {
+            VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
+            DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, cb_state.dynamic_state_value.rasterization_samples,
+                                                              &multisample_prop);
+
+            if (SafeModulo(multisample_prop.maxSampleLocationGridSize.width,
+                           sample_locations->sampleLocationsInfo.sampleLocationGridSize.width) != 0) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(vuid.sample_locations_enable_07936, objlist, loc,
+                                 "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
+                                 ") with rasterization samples %s is not evenly divided by "
+                                 "VkMultisamplePropertiesEXT::sampleLocationGridSize.width (%" PRIu32 ").",
+                                 multisample_prop.maxSampleLocationGridSize.width,
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                                 sample_locations->sampleLocationsInfo.sampleLocationGridSize.width);
+            }
+            if (SafeModulo(multisample_prop.maxSampleLocationGridSize.height,
+                           sample_locations->sampleLocationsInfo.sampleLocationGridSize.height) != 0) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(vuid.sample_locations_enable_07937, objlist, loc,
+                                 "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32
+                                 ") with rasterization samples %s is not evenly divided by "
+                                 "VkMultisamplePropertiesEXT::sampleLocationGridSize.height (%" PRIu32 ").",
+                                 multisample_prop.maxSampleLocationGridSize.height,
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                                 sample_locations->sampleLocationsInfo.sampleLocationGridSize.height);
+            }
+            if (sample_locations->sampleLocationsInfo.sampleLocationsPerPixel !=
+                cb_state.dynamic_state_value.rasterization_samples) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(vuid.sample_locations_enable_07938, objlist, loc,
+                                 "Pipeline was created with "
+                                 "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo.sampleLocationsPerPixel %s "
+                                 "which does not match rasterization samples (%s) set with vkCmdSetRasterizationSamplesEXT().",
+                                 string_VkSampleCountFlagBits(sample_locations->sampleLocationsInfo.sampleLocationsPerPixel),
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+            }
+        }
+    }
+
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
     const bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
