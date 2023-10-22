@@ -873,11 +873,34 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     }
     RETURN_IF_SKIP(InitState(nullptr, &features2))
 
-    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
-    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    static const char *chit_src = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        layout(location = 0) rayPayloadEXT uvec4 hitValue;
+        layout(r32ui, set = 0, binding = 0) uniform uimage2D result;
+        layout(set = 0, binding = 1) uniform accelerationStructureEXT topLevelAS;
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {});
+        void main()
+        {
+          float tmin     = 0.0;
+          float tmax     = 1.0;
+          vec3  origin   = vec3(float(gl_LaunchIDEXT.x) + 0.5f, float(gl_LaunchIDEXT.y) + 0.5f, float(gl_LaunchIDEXT.z + 0.5f));
+          vec3  direct   = vec3(0.0, 0.0, -1.0);
+          hitValue       = uvec4(1,0,0,0);
+          traceRayEXT(topLevelAS, 0, 0xFF, 0, 0, 0, origin, tmin, direct, tmax, 0);
+          imageStore(result, ivec2(gl_LaunchIDEXT.xy), hitValue);
+        }
+    )glsl";
+
+    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(this, chit_src, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr}};
+
+    const vkt::DescriptorSetLayout ds_layout(*m_device, layout_bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
@@ -927,7 +950,7 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     pipeline_ci.pStages = &stage_create_info;
     pipeline_ci.groupCount = 1;
     pipeline_ci.pGroups = &group_create_info;
-    pipeline_ci.layout = empty_pipeline_layout.handle();
+    pipeline_ci.layout = pipeline_layout.handle();
     pipeline_ci.pLibraryInterface = &interface_ci;
 
     VkDeferredOperationKHR deferredOperation = VK_NULL_HANDLE;
