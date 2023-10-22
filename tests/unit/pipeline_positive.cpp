@@ -1575,6 +1575,46 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     create_pipe_with_depth_bias_representation(depth_bias_representation);
 }
 
+TEST_F(PositivePipeline, DeviceGeneratedCommands) {
+    TEST_DESCRIPTION("Test creating pipeline with device generated commands");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV dgc_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(dgc_features);
+    if (!dgc_features.deviceGeneratedCommands) {
+        GTEST_SKIP() << "deviceGeneratedCommands not supported";
+    }
+    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+    VkPipelineVertexInputStateCreateInfo vertex_input_state = vku::InitStructHelper();
+    VkPipelineTessellationStateCreateInfo tessellation_state = vku::InitStructHelper();
+
+    VkGraphicsShaderGroupCreateInfoNV group = vku::InitStructHelper();
+    group.stageCount = 2u;
+    group.pStages = stages;
+    group.pVertexInputState = &vertex_input_state;
+    group.pTessellationState = &tessellation_state;
+
+    VkGraphicsPipelineShaderGroupsCreateInfoNV shader_groups_ci = vku::InitStructHelper();
+    shader_groups_ci.groupCount = 1u;
+    shader_groups_ci.pGroups = &group;
+    shader_groups_ci.pipelineCount = 0u;
+    shader_groups_ci.pPipelines = nullptr;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &shader_groups_ci;
+    pipe.shader_stages_ = {stages[0], stages[1]};
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositivePipeline, DepthStencilStateIgnored) {
     TEST_DESCRIPTION("Have a valid null pDepthStencilState with a Depth attachment");
 
