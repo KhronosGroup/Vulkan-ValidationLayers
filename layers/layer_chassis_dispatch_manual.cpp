@@ -188,6 +188,25 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                     unwrapped_libs[idx1] = layer_data->Unwrap(link_info->pLibraries[idx1]);
                 }
             }
+
+            auto device_generated_commands =
+                vku::FindStructInPNextChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(local_pCreateInfos[idx0].pNext);
+            if (device_generated_commands) {
+                for (uint32_t idx1 = 0; idx1 < device_generated_commands->groupCount; ++idx1) {
+                    for (uint32_t idx2 = 0; idx2 < device_generated_commands->pGroups[idx1].stageCount; ++idx2) {
+                        auto unwrapped_stage =
+                            const_cast<VkPipelineShaderStageCreateInfo *>(&device_generated_commands->pGroups[idx1].pStages[idx2]);
+                        if (device_generated_commands->pGroups[idx1].pStages[idx2].module) {
+                            unwrapped_stage->module =
+                                layer_data->Unwrap(device_generated_commands->pGroups[idx1].pStages[idx2].module);
+                        }
+                    }
+                }
+                auto unwrapped_pipelines = const_cast<VkPipeline *>(device_generated_commands->pPipelines);
+                for (uint32_t idx1 = 0; idx1 < device_generated_commands->pipelineCount; ++idx1) {
+                    unwrapped_pipelines[idx1] = layer_data->Unwrap(device_generated_commands->pPipelines[idx1]);
+                }
+            }
         }
     }
     if (pipelineCache) {
