@@ -670,7 +670,7 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Lo
                 }
             } else if (stage_ci.module == VK_NULL_HANDLE && !enabled_features.maintenance5) {
                 skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-08771", device, loc,
-                                 "module is not a valid VkShaderModule and both teh graphicsPipelineLibrary and maintenance5 "
+                                 "module is not a valid VkShaderModule and both the graphicsPipelineLibrary and maintenance5 "
                                  "features were not enabled. (stage %s).",
                                  string_VkShaderStageFlagBits(stage_ci.stage));
             }
