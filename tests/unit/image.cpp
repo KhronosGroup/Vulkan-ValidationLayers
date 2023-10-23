@@ -2010,6 +2010,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     VkImage imageSparse;
 
     // Creating a sparse image means we should not bind memory to it.
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-09403");
     res = vk::CreateImage(m_device->device(), &imgInfo, NULL, &imageSparse);
     ASSERT_FALSE(res);
 
@@ -6276,6 +6277,31 @@ TEST_F(NegativeImage, ImageCompressionControlPlaneCount) {
     image_compression_control.compressionControlPlaneCount = 2u;
     create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06744");
+    vk::CreateImage(*m_device, &create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, IncompatibleArrayAndSparseFlags) {
+    TEST_DESCRIPTION("Create image with invalid combination of create flags");
+    RETURN_IF_SKIP(Init());
+    if (!m_device->phy().features().sparseBinding) {
+        GTEST_SKIP() << "sparseBinding not supported";
+    }
+
+    VkImageCreateInfo create_info = vku::InitStructHelper();
+    create_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_3D;
+    create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    create_info.extent = {32u, 32u, 1u};
+    create_info.mipLevels = 1u;
+    create_info.arrayLayers = 1u;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-09403");
     vk::CreateImage(*m_device, &create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 }
