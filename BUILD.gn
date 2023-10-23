@@ -99,7 +99,7 @@ config("vulkan_layer_config") {
   }
 }
 
-core_validation_sources = [
+vvl_sources = [
   "layers/utils/android_ndk_types.h",
   "layers/utils/convert_utils.cpp",
   "layers/utils/convert_utils.h",
@@ -215,79 +215,6 @@ core_validation_sources = [
   "layers/sync/sync_validation.h",
   "layers/utils/shader_utils.cpp",
   "layers/utils/shader_utils.h",
-]
-
-object_lifetimes_sources = [
-  "layers/vulkan/generated/object_tracker.cpp",
-  "layers/vulkan/generated/object_tracker.h",
-  "layers/object_tracker/object_lifetime_validation.h",
-  "layers/object_tracker/object_tracker_utils.cpp",
-]
-
-stateless_validation_sources = [
-  "layers/vulkan/generated/stateless_validation_helper.cpp",
-  "layers/vulkan/generated/stateless_validation_helper.h",
-  "layers/vulkan/generated/enum_flag_bits.h",
-  "layers/stateless/sl_buffer.cpp",
-  "layers/stateless/sl_cmd_buffer_dynamic.cpp",
-  "layers/stateless/sl_cmd_buffer.cpp",
-  "layers/stateless/sl_descriptor.cpp",
-  "layers/stateless/sl_device_memory.cpp",
-  "layers/stateless/sl_external_object.cpp",
-  "layers/stateless/sl_framebuffer.cpp",
-  "layers/stateless/sl_image.cpp",
-  "layers/stateless/sl_instance_device.cpp",
-  "layers/stateless/sl_pipeline.cpp",
-  "layers/stateless/sl_ray_tracing.cpp",
-  "layers/stateless/sl_render_pass.cpp",
-  "layers/stateless/sl_shader_object.cpp",
-  "layers/stateless/sl_synchronization.cpp",
-  "layers/stateless/sl_utils.cpp",
-  "layers/stateless/sl_wsi.cpp",
-  "layers/stateless/stateless_validation.h",
-]
-
-thread_safety_sources = [
-  "layers/vulkan/generated/thread_safety.cpp",
-  "layers/vulkan/generated/thread_safety_commands.h",
-  "layers/vulkan/generated/thread_safety_counter_bodies.h",
-  "layers/vulkan/generated/thread_safety_counter_definitions.h",
-  "layers/vulkan/generated/thread_safety_counter_instances.h",
-  "layers/thread_tracker/thread_safety_validation.cpp",
-  "layers/thread_tracker/thread_safety_validation.h",
-]
-
-unique_objects_sources = []
-
-best_practices_sources = [
-  "layers/best_practices/best_practices_error_enums.h",
-  "layers/best_practices/best_practices_utils.cpp",
-  "layers/best_practices/bp_buffer.cpp",
-  "layers/best_practices/bp_cmd_buffer.cpp",
-  "layers/best_practices/bp_copy_blit_resolve.cpp",
-  "layers/best_practices/bp_descriptor.cpp",
-  "layers/best_practices/bp_device_memory.cpp",
-  "layers/best_practices/bp_drawdispatch.cpp",
-  "layers/best_practices/bp_framebuffer.cpp",
-  "layers/best_practices/bp_image.cpp",
-  "layers/best_practices/bp_instance_device.cpp",
-  "layers/best_practices/bp_pipeline.cpp",
-  "layers/best_practices/bp_ray_tracing.cpp",
-  "layers/best_practices/bp_render_pass.cpp",
-  "layers/best_practices/bp_synchronization.cpp",
-  "layers/best_practices/bp_video.cpp",
-  "layers/best_practices/bp_wsi.cpp",
-  "layers/best_practices/best_practices_validation.h",
-  "layers/vulkan/generated/best_practices.cpp",
-  "layers/vulkan/generated/best_practices.h",
-]
-
-debug_printf_sources = [
-  "layers/gpu_validation/debug_printf.cpp",
-  "layers/gpu_validation/debug_printf.h",
-]
-
-chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
   "layers/vulkan/generated/chassis.cpp",
@@ -308,14 +235,63 @@ chassis_sources = [
   "layers/vulkan/generated/vk_safe_struct_vendor.cpp",
   "layers/layer_options.cpp",
   "layers/layer_options.h",
+  "layers/vulkan/generated/object_tracker.cpp",
+  "layers/vulkan/generated/object_tracker.h",
+  "layers/object_tracker/object_lifetime_validation.h",
+  "layers/object_tracker/object_tracker_utils.cpp",
+  "layers/vulkan/generated/stateless_validation_helper.cpp",
+  "layers/vulkan/generated/stateless_validation_helper.h",
+  "layers/vulkan/generated/enum_flag_bits.h",
+  "layers/stateless/sl_buffer.cpp",
+  "layers/stateless/sl_cmd_buffer_dynamic.cpp",
+  "layers/stateless/sl_cmd_buffer.cpp",
+  "layers/stateless/sl_descriptor.cpp",
+  "layers/stateless/sl_device_memory.cpp",
+  "layers/stateless/sl_external_object.cpp",
+  "layers/stateless/sl_framebuffer.cpp",
+  "layers/stateless/sl_image.cpp",
+  "layers/stateless/sl_instance_device.cpp",
+  "layers/stateless/sl_pipeline.cpp",
+  "layers/stateless/sl_ray_tracing.cpp",
+  "layers/stateless/sl_render_pass.cpp",
+  "layers/stateless/sl_shader_object.cpp",
+  "layers/stateless/sl_synchronization.cpp",
+  "layers/stateless/sl_utils.cpp",
+  "layers/stateless/sl_wsi.cpp",
+  "layers/stateless/stateless_validation.h",
+  "layers/vulkan/generated/thread_safety.cpp",
+  "layers/vulkan/generated/thread_safety_commands.h",
+  "layers/vulkan/generated/thread_safety_counter_bodies.h",
+  "layers/vulkan/generated/thread_safety_counter_definitions.h",
+  "layers/vulkan/generated/thread_safety_counter_instances.h",
+  "layers/thread_tracker/thread_safety_validation.cpp",
+  "layers/thread_tracker/thread_safety_validation.h",
+  "layers/best_practices/best_practices_error_enums.h",
+  "layers/best_practices/best_practices_utils.cpp",
+  "layers/best_practices/bp_buffer.cpp",
+  "layers/best_practices/bp_cmd_buffer.cpp",
+  "layers/best_practices/bp_copy_blit_resolve.cpp",
+  "layers/best_practices/bp_descriptor.cpp",
+  "layers/best_practices/bp_device_memory.cpp",
+  "layers/best_practices/bp_drawdispatch.cpp",
+  "layers/best_practices/bp_framebuffer.cpp",
+  "layers/best_practices/bp_image.cpp",
+  "layers/best_practices/bp_instance_device.cpp",
+  "layers/best_practices/bp_pipeline.cpp",
+  "layers/best_practices/bp_ray_tracing.cpp",
+  "layers/best_practices/bp_render_pass.cpp",
+  "layers/best_practices/bp_synchronization.cpp",
+  "layers/best_practices/bp_video.cpp",
+  "layers/best_practices/bp_wsi.cpp",
+  "layers/best_practices/best_practices_validation.h",
+  "layers/vulkan/generated/best_practices.cpp",
+  "layers/vulkan/generated/best_practices.h",
+  "layers/gpu_validation/debug_printf.cpp",
+  "layers/gpu_validation/debug_printf.h",
 ]
 
 layers = [ [
-      "khronos_validation",
-      core_validation_sources + object_lifetimes_sources +
-          stateless_validation_sources + thread_safety_sources +
-          unique_objects_sources + best_practices_sources +
-          debug_printf_sources + chassis_sources,
+      "khronos_validation", vvl_sources,
       [ ":vulkan_core_validation_glslang" ],
       [],
     ] ]
