@@ -59,10 +59,7 @@ config("generated_layers_config") {
 }
 
 config("vulkan_internal_config") {
-  defines = [
-    "VULKAN_NON_CMAKE_BUILD",
-    "VK_ENABLE_BETA_EXTENSIONS",
-  ]
+  defines = [ "VK_ENABLE_BETA_EXTENSIONS" ]
 
   cflags = []
   if (is_clang || !is_win) {
