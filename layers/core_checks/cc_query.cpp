@@ -111,7 +111,9 @@ bool CoreChecks::ValidateQueryPoolWasReset(const QUERY_POOL_STATE &query_pool_st
             continue;
         }
         if (query_pool_state.GetQueryState(i, 0u) == QUERYSTATE_UNKNOWN) {
-            skip |= LogError(kVUID_Core_QueryPool_NotReset, query_pool_state.pool(), loc.dot(Field::queryPool),
+            const char *vuid = loc.function == Func::vkGetQueryPoolResults ? "VUID-vkGetQueryPoolResults-None-09401"
+                                                                           : "VUID-vkCmdCopyQueryPoolResults-None-09402";
+            skip |= LogError(vuid, query_pool_state.pool(), loc.dot(Field::queryPool),
                              "%s and query %" PRIu32
                              ": query not reset. After query pool creation, each query must be reset before it is used. Queries "
                              "must also be reset between uses.",

@@ -427,7 +427,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
 
     VkFramebuffer fb;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-02747");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-02746");
     vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
 
@@ -745,7 +745,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferenceAttachment) {
     fb_info.layers = 1;
 
     VkFramebuffer framebuffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-02747");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-02746");
     vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
