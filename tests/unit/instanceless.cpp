@@ -278,8 +278,14 @@ VKAPI_ATTR VkBool32 VKAPI_PTR utils_callback(VkDebugUtilsMessageSeverityFlagBits
     return VK_FALSE;
 }
 
+#ifndef VK_USE_PLATFORM_ANDROID_KHR
 TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     TEST_DESCRIPTION("Create instance with structures in pNext while not including required extensions");
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#endif
 
     VkInstanceCreateInfo ici = vku::InitStructHelper();
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -318,8 +324,13 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     debug_utils_messenger.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     debug_utils_messenger.pfnUserCallback = utils_callback;
     ici.pNext = &debug_utils_messenger;
-    ici.enabledExtensionCount = 0u;
+    // Ignore the first extension which is VK_EXT_debug_utils
+    ici.enabledExtensionCount = size32(m_instance_extension_names) - 1;
+    if (ici.enabledExtensionCount > 0) {
+        ici.ppEnabledExtensionNames = &m_instance_extension_names[1];
+    }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-pNext-04926");
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 }
+#endif

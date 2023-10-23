@@ -2426,7 +2426,7 @@ TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
 
     auto ici = GetInstanceCreateInfo();
     ici.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-    ici.enabledExtensionCount = 0;
+    ici.enabledExtensionCount = 1;
 
     VkInstance local_instance;
 
@@ -2435,8 +2435,9 @@ TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
     m_errorMonitor->VerifyFound();
 
     if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
-        std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
-        ici.enabledExtensionCount = 1;
+        std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+                                                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+        ici.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
         ici.ppEnabledExtensionNames = enabled_extensions.data();
 
         ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
