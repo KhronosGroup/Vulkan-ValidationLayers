@@ -18,6 +18,7 @@
 #include "gpu_validation/gpu_state_tracker.h"
 #include "sync/sync_utils.h"
 #include "vma/vma.h"
+#include "utils/hash_util.h"
 
 // Implementation for Descriptor Set Manager class
 UtilDescriptorSetManager::UtilDescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)
@@ -1004,8 +1005,8 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         bool cached = false;
                         bool pass = false;
                         if (gpuav_settings.cache_instrumented_shaders) {
-                            csm_state.unique_shader_id = ValidationCache::MakeShaderHash(module_state->spirv->words_.data(),
-                                                                                         module_state->spirv->words_.size());
+                            csm_state.unique_shader_id =
+                                hash_util::shader_hash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
                             auto it = instrumented_shaders.find(csm_state.unique_shader_id);
                             if (it != instrumented_shaders.end()) {
                                 csm_state.instrumented_spirv = it->second.second;

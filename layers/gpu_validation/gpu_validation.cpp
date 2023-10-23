@@ -22,6 +22,7 @@
 #endif
 #include "utils/cast_utils.h"
 #include "utils/shader_utils.h"
+#include "utils/hash_util.h"
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
@@ -1245,7 +1246,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
     uint32_t shader_id;
     if (gpuav_settings.cache_instrumented_shaders) {
-        const uint32_t shader_hash = ValidationCache::MakeShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
+        const uint32_t shader_hash = hash_util::shader_hash(pCreateInfo->pCode, pCreateInfo->codeSize);
         if (gpuav_settings.cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, csm_state)) {
             return;
         }
@@ -1277,8 +1278,10 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
         if (gpuav_settings.cache_instrumented_shaders) {
-            const uint32_t shader_hash = ValidationCache::MakeShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
-            if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) continue;
+            const uint32_t shader_hash = hash_util::shader_hash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
+            if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) {
+                continue;
+            }
             csm_state->unique_shader_ids[i] = shader_hash;
         } else {
             csm_state->unique_shader_ids[i] = unique_shader_module_id++;

@@ -25,8 +25,8 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/vk_safe_struct.h"
 #include "generated/vk_validation_error_messages.h"
-#include "external/xxhash.h"
 #include "error_location.h"
+#include "utils/hash_util.h"
 
 [[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
 
@@ -140,7 +140,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         object_name_infos.push_back(object_name_info);
     }
 
-    const uint32_t message_id_number = text_vuid ? vvl_vuid_hash(text_vuid) : 0U;
+    const uint32_t message_id_number = text_vuid ? hash_util::vuid_hash(text_vuid) : 0U;
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data = vku::InitStructHelper();
     callback_data.flags = 0;
@@ -341,7 +341,7 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, std::string_view 
         return false;
     }
     // If message is in filter list, bail out very early
-    const uint32_t message_id = vvl_vuid_hash(vuid_text);
+    const uint32_t message_id = hash_util::vuid_hash(vuid_text);
     if (debug_data->filter_message_ids.find(message_id) != debug_data->filter_message_ids.end()) {
         return false;
     }
@@ -540,9 +540,4 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
 #endif
 
     return false;
-}
-
-uint32_t vvl_vuid_hash(std::string_view vuid) {
-    constexpr uint32_t seed = 8;
-    return XXH32(vuid.data(), vuid.size(), seed);
 }

@@ -17,6 +17,7 @@
  */
 
 #include "layer_options.h"
+#include "utils/hash_util.h"
 #include <vulkan/layer/vk_layer_settings.hpp>
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
@@ -289,7 +290,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
         token = GetNextToken(&raw_id_list, delimiter, &pos);
         uint32_t int_id = TokenToUint(token);
         if (int_id == 0) {
-            const uint32_t id_hash = vvl_vuid_hash(token);
+            const uint32_t id_hash = hash_util::vuid_hash(token);
             if (id_hash != 0) {
                 int_id = id_hash;
             }
