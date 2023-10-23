@@ -15,6 +15,7 @@
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/ray_tracing_helper_nv.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_helper.h"
 
 TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInvalidHandle) {
     TEST_DESCRIPTION(
