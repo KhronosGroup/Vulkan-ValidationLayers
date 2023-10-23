@@ -78,6 +78,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeAccelerationStructureNV, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNV, error_code, loc);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCudaModuleNV, error_code, loc);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCudaFunctionNV, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeAccelerationStructureKHR, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBufferCollectionFUCHSIA, error_code, loc);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeMicromapEXT, error_code, loc);
@@ -129,6 +131,8 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureNV);
     DestroyUndestroyedObjects(kVulkanObjectTypePerformanceConfigurationINTEL);
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectCommandsLayoutNV);
+    DestroyUndestroyedObjects(kVulkanObjectTypeCudaModuleNV);
+    DestroyUndestroyedObjects(kVulkanObjectTypeCudaFunctionNV);
     DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA);
     DestroyUndestroyedObjects(kVulkanObjectTypeMicromapEXT);
@@ -5894,6 +5898,98 @@ bool ObjectLifetimes::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObject
                                                        VkPrivateDataSlot privateDataSlot, uint64_t* pData,
                                                        const ErrorObject& error_obj) const {
     return PreCallValidateGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, error_obj);
+}
+
+// vkCreateCudaModuleNV:
+// Checked by chassis: device: "VUID-vkCreateCudaModuleNV-device-parameter"
+
+void ObjectLifetimes::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
+                                                       const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    CreateObject(*pModule, kVulkanObjectTypeCudaModuleNV, pAllocator);
+}
+
+bool ObjectLifetimes::PreCallValidateGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize,
+                                                          void* pCacheData, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetCudaModuleCacheNV-device-parameter"
+    skip |= ValidateObject(module, kVulkanObjectTypeCudaModuleNV, false, "VUID-vkGetCudaModuleCacheNV-module-parameter",
+                           "VUID-vkGetCudaModuleCacheNV-module-parent", error_obj.location.dot(Field::module));
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateCudaFunctionNV-device-parameter"
+    if (pCreateInfo) {
+        [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
+        skip |= ValidateObject(pCreateInfo->module, kVulkanObjectTypeCudaModuleNV, false,
+                               "VUID-VkCudaFunctionCreateInfoNV-module-parameter",
+                               "UNASSIGNED-VkCudaFunctionCreateInfoNV-module-parent", pCreateInfo_loc.dot(Field::module));
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
+                                                         const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    CreateObject(*pFunction, kVulkanObjectTypeCudaFunctionNV, pAllocator);
+}
+
+bool ObjectLifetimes::PreCallValidateDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyCudaModuleNV-device-parameter"
+    skip |= ValidateObject(module, kVulkanObjectTypeCudaModuleNV, false, "VUID-vkDestroyCudaModuleNV-module-parameter",
+                           "VUID-vkDestroyCudaModuleNV-module-parent", error_obj.location.dot(Field::module));
+    skip |= ValidateDestroyObject(module, kVulkanObjectTypeCudaModuleNV, pAllocator, kVUIDUndefined, kVUIDUndefined,
+                                  error_obj.location);
+
+    return skip;
+}
+
+void ObjectLifetimes::PreCallRecordDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module,
+                                                       const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    RecordDestroyObject(module, kVulkanObjectTypeCudaModuleNV);
+}
+
+bool ObjectLifetimes::PreCallValidateDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyCudaFunctionNV-device-parameter"
+    skip |= ValidateObject(function, kVulkanObjectTypeCudaFunctionNV, false, "VUID-vkDestroyCudaFunctionNV-function-parameter",
+                           "VUID-vkDestroyCudaFunctionNV-function-parent", error_obj.location.dot(Field::function));
+    skip |= ValidateDestroyObject(function, kVulkanObjectTypeCudaFunctionNV, pAllocator, kVUIDUndefined, kVUIDUndefined,
+                                  error_obj.location);
+
+    return skip;
+}
+
+void ObjectLifetimes::PreCallRecordDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                         const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    RecordDestroyObject(function, kVulkanObjectTypeCudaFunctionNV);
+}
+
+bool ObjectLifetimes::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCudaLaunchKernelNV-commandBuffer-parameter"
+    if (pLaunchInfo) {
+        [[maybe_unused]] const Location pLaunchInfo_loc = error_obj.location.dot(Field::pLaunchInfo);
+        skip |= ValidateObject(pLaunchInfo->function, kVulkanObjectTypeCudaFunctionNV, false,
+                               "VUID-VkCudaLaunchInfoNV-function-parameter", "UNASSIGNED-VkCudaLaunchInfoNV-function-parent",
+                               pLaunchInfo_loc.dot(Field::function));
+    }
+
+    return skip;
 }
 
 bool ObjectLifetimes::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,

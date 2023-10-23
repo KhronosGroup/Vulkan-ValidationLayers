@@ -111,6 +111,8 @@ struct DeviceFeatures {
     bool cubicRangeClamp;
     // VkPhysicalDeviceCubicWeightsFeaturesQCOM
     bool selectableCubicWeights;
+    // VkPhysicalDeviceCudaKernelLaunchFeaturesNV
+    bool cudaKernelLaunchFeatures;
     // VkPhysicalDeviceCustomBorderColorFeaturesEXT
     bool customBorderColorWithoutFormat;
     // VkPhysicalDeviceCustomBorderColorFeaturesEXT
@@ -651,6 +653,8 @@ struct DeviceFeatures {
     bool samplerYcbcrConversion;
     // VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceVulkan12Features
     bool scalarBlockLayout;
+    // VkPhysicalDeviceSchedulingControlsFeaturesARM
+    bool schedulingControls;
     // VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceVulkan12Features
     bool separateDepthStencilLayouts;
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT

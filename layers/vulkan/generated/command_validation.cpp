@@ -1233,6 +1233,13 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetDepthBias2EXT-videocoding",
 }},
+{Func::vkCmdCudaLaunchKernelNV, {
+    "VUID-vkCmdCudaLaunchKernelNV-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdCudaLaunchKernelNV-commandBuffer-cmdpool",
+    CMD_SCOPE_BOTH, "kVUIDUndefined",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCudaLaunchKernelNV-videocoding",
+}},
 {Func::vkCmdBindDescriptorBuffersEXT, {
     "VUID-vkCmdBindDescriptorBuffersEXT-commandBuffer-recording",
     nullptr,

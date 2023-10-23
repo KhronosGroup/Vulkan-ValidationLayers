@@ -634,6 +634,12 @@ PFN_vkCreatePrivateDataSlotEXT CreatePrivateDataSlotEXT;
 PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
 PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
 PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
+PFN_vkGetCudaModuleCacheNV GetCudaModuleCacheNV;
+PFN_vkCreateCudaFunctionNV CreateCudaFunctionNV;
+PFN_vkDestroyCudaModuleNV DestroyCudaModuleNV;
+PFN_vkDestroyCudaFunctionNV DestroyCudaFunctionNV;
+PFN_vkCmdCudaLaunchKernelNV CmdCudaLaunchKernelNV;
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -1828,6 +1834,16 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPrivateDataEXT = reinterpret_cast<PFN_vkGetPrivateDataEXT>(GetDeviceProcAddr(device, "vkGetPrivateDataEXT"));
             }
         },
+        {
+            "VK_NV_cuda_kernel_launch", [](VkInstance , VkDevice device) {
+                CreateCudaModuleNV = reinterpret_cast<PFN_vkCreateCudaModuleNV>(GetDeviceProcAddr(device, "vkCreateCudaModuleNV"));
+                GetCudaModuleCacheNV = reinterpret_cast<PFN_vkGetCudaModuleCacheNV>(GetDeviceProcAddr(device, "vkGetCudaModuleCacheNV"));
+                CreateCudaFunctionNV = reinterpret_cast<PFN_vkCreateCudaFunctionNV>(GetDeviceProcAddr(device, "vkCreateCudaFunctionNV"));
+                DestroyCudaModuleNV = reinterpret_cast<PFN_vkDestroyCudaModuleNV>(GetDeviceProcAddr(device, "vkDestroyCudaModuleNV"));
+                DestroyCudaFunctionNV = reinterpret_cast<PFN_vkDestroyCudaFunctionNV>(GetDeviceProcAddr(device, "vkDestroyCudaFunctionNV"));
+                CmdCudaLaunchKernelNV = reinterpret_cast<PFN_vkCmdCudaLaunchKernelNV>(GetDeviceProcAddr(device, "vkCmdCudaLaunchKernelNV"));
+            }
+        },
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_metal_objects", [](VkInstance , VkDevice device) {
@@ -2518,6 +2534,12 @@ void ResetAllExtensions() {
     DestroyPrivateDataSlotEXT = nullptr;
     SetPrivateDataEXT = nullptr;
     GetPrivateDataEXT = nullptr;
+    CreateCudaModuleNV = nullptr;
+    GetCudaModuleCacheNV = nullptr;
+    CreateCudaFunctionNV = nullptr;
+    DestroyCudaModuleNV = nullptr;
+    DestroyCudaFunctionNV = nullptr;
+    CmdCudaLaunchKernelNV = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     ExportMetalObjectsEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT

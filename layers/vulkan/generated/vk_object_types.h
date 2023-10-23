@@ -70,12 +70,14 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeAccelerationStructureNV = 41,
     kVulkanObjectTypePerformanceConfigurationINTEL = 42,
     kVulkanObjectTypeIndirectCommandsLayoutNV = 43,
-    kVulkanObjectTypeAccelerationStructureKHR = 44,
-    kVulkanObjectTypeBufferCollectionFUCHSIA = 45,
-    kVulkanObjectTypeMicromapEXT = 46,
-    kVulkanObjectTypeOpticalFlowSessionNV = 47,
-    kVulkanObjectTypeShaderEXT = 48,
-    kVulkanObjectTypeMax = 49
+    kVulkanObjectTypeCudaModuleNV = 44,
+    kVulkanObjectTypeCudaFunctionNV = 45,
+    kVulkanObjectTypeAccelerationStructureKHR = 46,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 47,
+    kVulkanObjectTypeMicromapEXT = 48,
+    kVulkanObjectTypeOpticalFlowSessionNV = 49,
+    kVulkanObjectTypeShaderEXT = 50,
+    kVulkanObjectTypeMax = 51
 } VulkanObjectType;
 
 // Array of object name strings for OBJECT_TYPE enum conversion
@@ -124,6 +126,8 @@ static const char* const object_string[kVulkanObjectTypeMax] = {
     "VkAccelerationStructureNV",
     "VkPerformanceConfigurationINTEL",
     "VkIndirectCommandsLayoutNV",
+    "VkCudaModuleNV",
+    "VkCudaFunctionNV",
     "VkAccelerationStructureKHR",
     "VkBufferCollectionFUCHSIA",
     "VkMicromapEXT",
@@ -177,6 +181,8 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,   // kVulkanObjectTypeAccelerationStructureNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypePerformanceConfigurationINTEL
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectCommandsLayoutNV
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeCudaModuleNV
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeCudaFunctionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,  // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeMicromapEXT
@@ -273,6 +279,10 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
             return VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL;
         case kVulkanObjectTypeIndirectCommandsLayoutNV:
             return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV;
+        case kVulkanObjectTypeCudaModuleNV:
+            return VK_OBJECT_TYPE_CUDA_MODULE_NV;
+        case kVulkanObjectTypeCudaFunctionNV:
+            return VK_OBJECT_TYPE_CUDA_FUNCTION_NV;
         case kVulkanObjectTypeAccelerationStructureKHR:
             return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         case kVulkanObjectTypeBufferCollectionFUCHSIA:
@@ -377,6 +387,10 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
             return kVulkanObjectTypePerformanceConfigurationINTEL;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV:
             return kVulkanObjectTypeIndirectCommandsLayoutNV;
+        case VK_OBJECT_TYPE_CUDA_MODULE_NV:
+            return kVulkanObjectTypeCudaModuleNV;
+        case VK_OBJECT_TYPE_CUDA_FUNCTION_NV:
+            return kVulkanObjectTypeCudaFunctionNV;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
             return kVulkanObjectTypeAccelerationStructureKHR;
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA:
@@ -1019,6 +1033,30 @@ struct VkHandleInfo<VkIndirectCommandsLayoutNV> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectCommandsLayoutNV> {
     typedef VkIndirectCommandsLayoutNV Type;
+};
+
+template <>
+struct VkHandleInfo<VkCudaModuleNV> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeCudaModuleNV;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_CUDA_MODULE_NV;
+    static const char* Typename() { return "VkCudaModuleNV"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeCudaModuleNV> {
+    typedef VkCudaModuleNV Type;
+};
+
+template <>
+struct VkHandleInfo<VkCudaFunctionNV> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeCudaFunctionNV;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_CUDA_FUNCTION_NV;
+    static const char* Typename() { return "VkCudaFunctionNV"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeCudaFunctionNV> {
+    typedef VkCudaFunctionNV Type;
 };
 
 template <>

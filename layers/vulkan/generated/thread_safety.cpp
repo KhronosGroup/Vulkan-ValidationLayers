@@ -6167,6 +6167,82 @@ void ThreadSafety::PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType
     FinishReadObject(privateDataSlot, vvl::Func::vkGetPrivateDataEXT);
 }
 
+void ThreadSafety::PreCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
+                                                   const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, vvl::Func::vkCreateCudaModuleNV);
+}
+
+void ThreadSafety::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
+                                                    const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkCreateCudaModuleNV);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pModule);
+    }
+}
+
+void ThreadSafety::PreCallRecordGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData,
+                                                     const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, vvl::Func::vkGetCudaModuleCacheNV);
+    StartReadObject(module, vvl::Func::vkGetCudaModuleCacheNV);
+}
+
+void ThreadSafety::PostCallRecordGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData,
+                                                      const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkGetCudaModuleCacheNV);
+    FinishReadObject(module, vvl::Func::vkGetCudaModuleCacheNV);
+}
+
+void ThreadSafety::PreCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
+                                                     const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, vvl::Func::vkCreateCudaFunctionNV);
+}
+
+void ThreadSafety::PostCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
+                                                      const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkCreateCudaFunctionNV);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pFunction);
+    }
+}
+
+void ThreadSafety::PreCallRecordDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator,
+                                                    const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, vvl::Func::vkDestroyCudaModuleNV);
+    StartReadObject(module, vvl::Func::vkDestroyCudaModuleNV);
+}
+
+void ThreadSafety::PostCallRecordDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module,
+                                                     const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkDestroyCudaModuleNV);
+    FinishReadObject(module, vvl::Func::vkDestroyCudaModuleNV);
+}
+
+void ThreadSafety::PreCallRecordDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, vvl::Func::vkDestroyCudaFunctionNV);
+    StartReadObject(function, vvl::Func::vkDestroyCudaFunctionNV);
+}
+
+void ThreadSafety::PostCallRecordDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                       const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, vvl::Func::vkDestroyCudaFunctionNV);
+    FinishReadObject(function, vvl::Func::vkDestroyCudaFunctionNV);
+}
+
+void ThreadSafety::PreCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
+                                                      const RecordObject& record_obj) {
+    StartReadObject(commandBuffer, vvl::Func::vkCmdCudaLaunchKernelNV);
+}
+
+void ThreadSafety::PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
+                                                       const RecordObject& record_obj) {
+    FinishReadObject(commandBuffer, vvl::Func::vkCmdCudaLaunchKernelNV);
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void ThreadSafety::PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                       const RecordObject& record_obj) {

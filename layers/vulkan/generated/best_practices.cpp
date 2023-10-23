@@ -2450,6 +2450,39 @@ void BestPractices::PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectTyp
     }
 }
 
+void BestPractices::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
+                                                     const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData,
+                                                       const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
+
+    if (record_obj.result > VK_SUCCESS) {
+        LogPositiveSuccessCode(record_obj);
+        return;
+    }
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
+                                                       const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
 void BestPractices::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                           const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
                                                                           void* pData, const RecordObject& record_obj) {
