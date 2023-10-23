@@ -1202,7 +1202,9 @@ TEST_F(PositiveCommand, CopyBufferToRemaingImageLayers) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveCommand, ClearAttachmentBasicUsage) {
+// TODO - Currently crashing on Linux-Mesa-6800
+// added in https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6769
+TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
