@@ -1096,8 +1096,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                 "is VK_TRUE but the depthClipControl feature was not enabled.");
                         }
                     }
-                } else if (!has_dynamic_viewport_with_count || !has_dynamic_scissor_with_count ||
-                           !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                } else if ((!has_dynamic_viewport_with_count || !has_dynamic_scissor_with_count ||
+                            !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) &&
+                           (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
+                            (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) &&
+                             !create_info.pRasterizationState->rasterizerDiscardEnable))) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024", device, create_info_loc,
                                      "Rasterization is enabled (pCreateInfos[%" PRIu32
                                      "].pRasterizationState->rasterizerDiscardEnable is VK_FALSE), but pCreateInfos[%" PRIu32
