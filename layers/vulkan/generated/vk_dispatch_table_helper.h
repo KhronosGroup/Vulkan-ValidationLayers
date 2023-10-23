@@ -1288,6 +1288,24 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubSetPrivateDataEXT(VkDevice device, VkO
 }
 static VKAPI_ATTR void VKAPI_CALL StubGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                                         VkPrivateDataSlot privateDataSlot, uint64_t* pData) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize,
+                                                               void* pCacheData) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               VkCudaFunctionNV* pFunction) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module,
+                                                          const VkAllocationCallbacks* pAllocator) {}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                            const VkAllocationCallbacks* pAllocator) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {}
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR void VKAPI_CALL StubExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {}
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -2045,6 +2063,12 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkDestroyPrivateDataSlotEXT", {"VK_EXT_private_data"}},
     {"vkSetPrivateDataEXT", {"VK_EXT_private_data"}},
     {"vkGetPrivateDataEXT", {"VK_EXT_private_data"}},
+    {"vkCreateCudaModuleNV", {"VK_NV_cuda_kernel_launch"}},
+    {"vkGetCudaModuleCacheNV", {"VK_NV_cuda_kernel_launch"}},
+    {"vkCreateCudaFunctionNV", {"VK_NV_cuda_kernel_launch"}},
+    {"vkDestroyCudaModuleNV", {"VK_NV_cuda_kernel_launch"}},
+    {"vkDestroyCudaFunctionNV", {"VK_NV_cuda_kernel_launch"}},
+    {"vkCmdCudaLaunchKernelNV", {"VK_NV_cuda_kernel_launch"}},
     {"vkExportMetalObjectsEXT", {"VK_EXT_metal_objects"}},
     {"vkGetDescriptorSetLayoutSizeEXT", {"VK_EXT_descriptor_buffer"}},
     {"vkGetDescriptorSetLayoutBindingOffsetEXT", {"VK_EXT_descriptor_buffer"}},
@@ -3650,6 +3674,30 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gpa(device, "vkGetPrivateDataEXT");
     if (table->GetPrivateDataEXT == nullptr) {
         table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)StubGetPrivateDataEXT;
+    }
+    table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)gpa(device, "vkCreateCudaModuleNV");
+    if (table->CreateCudaModuleNV == nullptr) {
+        table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)StubCreateCudaModuleNV;
+    }
+    table->GetCudaModuleCacheNV = (PFN_vkGetCudaModuleCacheNV)gpa(device, "vkGetCudaModuleCacheNV");
+    if (table->GetCudaModuleCacheNV == nullptr) {
+        table->GetCudaModuleCacheNV = (PFN_vkGetCudaModuleCacheNV)StubGetCudaModuleCacheNV;
+    }
+    table->CreateCudaFunctionNV = (PFN_vkCreateCudaFunctionNV)gpa(device, "vkCreateCudaFunctionNV");
+    if (table->CreateCudaFunctionNV == nullptr) {
+        table->CreateCudaFunctionNV = (PFN_vkCreateCudaFunctionNV)StubCreateCudaFunctionNV;
+    }
+    table->DestroyCudaModuleNV = (PFN_vkDestroyCudaModuleNV)gpa(device, "vkDestroyCudaModuleNV");
+    if (table->DestroyCudaModuleNV == nullptr) {
+        table->DestroyCudaModuleNV = (PFN_vkDestroyCudaModuleNV)StubDestroyCudaModuleNV;
+    }
+    table->DestroyCudaFunctionNV = (PFN_vkDestroyCudaFunctionNV)gpa(device, "vkDestroyCudaFunctionNV");
+    if (table->DestroyCudaFunctionNV == nullptr) {
+        table->DestroyCudaFunctionNV = (PFN_vkDestroyCudaFunctionNV)StubDestroyCudaFunctionNV;
+    }
+    table->CmdCudaLaunchKernelNV = (PFN_vkCmdCudaLaunchKernelNV)gpa(device, "vkCmdCudaLaunchKernelNV");
+    if (table->CmdCudaLaunchKernelNV == nullptr) {
+        table->CmdCudaLaunchKernelNV = (PFN_vkCmdCudaLaunchKernelNV)StubCmdCudaLaunchKernelNV;
     }
 #ifdef VK_USE_PLATFORM_METAL_EXT
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gpa(device, "vkExportMetalObjectsEXT");

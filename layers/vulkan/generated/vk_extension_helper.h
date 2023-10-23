@@ -610,6 +610,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotEnabled};
     ExtEnabled vk_nv_device_diagnostics_config{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
+    ExtEnabled vk_nv_cuda_kernel_launch{kNotEnabled};
     ExtEnabled vk_nv_low_latency{kNotEnabled};
     ExtEnabled vk_ext_metal_objects{kNotEnabled};
     ExtEnabled vk_ext_descriptor_buffer{kNotEnabled};
@@ -658,6 +659,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_border_color_swizzle{kNotEnabled};
     ExtEnabled vk_ext_pageable_device_local_memory{kNotEnabled};
     ExtEnabled vk_arm_shader_core_properties{kNotEnabled};
+    ExtEnabled vk_arm_scheduling_controls{kNotEnabled};
     ExtEnabled vk_ext_image_sliced_view_of_3d{kNotEnabled};
     ExtEnabled vk_valve_descriptor_set_host_mapping{kNotEnabled};
     ExtEnabled vk_ext_depth_clamp_zero_one{kNotEnabled};
@@ -1379,6 +1381,7 @@ struct DeviceExtensions : public InstanceExtensions {
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
+            {VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_cuda_kernel_launch, {})},
             {VK_NV_LOW_LATENCY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_low_latency, {})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
             {VK_EXT_METAL_OBJECTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
@@ -1553,6 +1556,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_ARM_SHADER_CORE_PROPERTIES_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_arm_shader_core_properties,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_arm_scheduling_controls,
+                        {{{&DeviceExtensions::vk_arm_shader_core_builtins, VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME}}})},
             {VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_image_sliced_view_of_3d,
                         {{{&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME},
@@ -2127,6 +2133,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
     VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME,
+    VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME,
     VK_NV_LOW_LATENCY_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_METAL_EXT
     VK_EXT_METAL_OBJECTS_EXTENSION_NAME,
@@ -2183,6 +2190,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME,
     VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME,
     VK_ARM_SHADER_CORE_PROPERTIES_EXTENSION_NAME,
+    VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME,
     VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME,
     VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME,
     VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME,

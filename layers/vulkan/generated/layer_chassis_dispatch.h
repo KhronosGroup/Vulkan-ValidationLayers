@@ -943,6 +943,14 @@ VkResult DispatchSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uin
                                    VkPrivateDataSlot privateDataSlot, uint64_t data);
 void DispatchGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
                                uint64_t* pData);
+VkResult DispatchCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule);
+VkResult DispatchGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData);
+VkResult DispatchCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction);
+void DispatchDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator);
+void DispatchDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, const VkAllocationCallbacks* pAllocator);
+void DispatchCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo);
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo);
 #endif  // VK_USE_PLATFORM_METAL_EXT

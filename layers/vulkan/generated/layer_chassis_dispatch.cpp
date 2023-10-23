@@ -6986,6 +6986,97 @@ void DispatchDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privat
     layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 }
 
+VkResult DispatchCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
+
+    VkResult result = layer_data->device_dispatch_table.CreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
+    if (VK_SUCCESS == result) {
+        *pModule = layer_data->WrapNew(*pModule);
+    }
+    return result;
+}
+
+VkResult DispatchGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetCudaModuleCacheNV(device, module, pCacheSize, pCacheData);
+    { module = layer_data->Unwrap(module); }
+    VkResult result = layer_data->device_dispatch_table.GetCudaModuleCacheNV(device, module, pCacheSize, pCacheData);
+
+    return result;
+}
+
+VkResult DispatchCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction);
+    safe_VkCudaFunctionCreateInfoNV var_local_pCreateInfo;
+    safe_VkCudaFunctionCreateInfoNV* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->module) {
+                local_pCreateInfo->module = layer_data->Unwrap(pCreateInfo->module);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateCudaFunctionNV(
+        device, (const VkCudaFunctionCreateInfoNV*)local_pCreateInfo, pAllocator, pFunction);
+    if (VK_SUCCESS == result) {
+        *pFunction = layer_data->WrapNew(*pFunction);
+    }
+    return result;
+}
+
+void DispatchDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
+
+    uint64_t module_id = CastToUint64(module);
+    auto iter = unique_id_mapping.pop(module_id);
+    if (iter != unique_id_mapping.end()) {
+        module = (VkCudaModuleNV)iter->second;
+    } else {
+        module = (VkCudaModuleNV)0;
+    }
+    layer_data->device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
+}
+
+void DispatchDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
+
+    uint64_t function_id = CastToUint64(function);
+    auto iter = unique_id_mapping.pop(function_id);
+    if (iter != unique_id_mapping.end()) {
+        function = (VkCudaFunctionNV)iter->second;
+    } else {
+        function = (VkCudaFunctionNV)0;
+    }
+    layer_data->device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
+}
+
+void DispatchCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
+    safe_VkCudaLaunchInfoNV var_local_pLaunchInfo;
+    safe_VkCudaLaunchInfoNV* local_pLaunchInfo = nullptr;
+    {
+        if (pLaunchInfo) {
+            local_pLaunchInfo = &var_local_pLaunchInfo;
+            local_pLaunchInfo->initialize(pLaunchInfo);
+
+            if (pLaunchInfo->function) {
+                local_pLaunchInfo->function = layer_data->Unwrap(pLaunchInfo->function);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCudaLaunchKernelNV(commandBuffer, (const VkCudaLaunchInfoNV*)local_pLaunchInfo);
+}
+
 void DispatchGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);

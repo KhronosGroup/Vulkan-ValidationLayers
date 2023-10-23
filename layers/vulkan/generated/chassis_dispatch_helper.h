@@ -1245,6 +1245,24 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetPrivateDataEXT,
     InterceptIdPreCallRecordGetPrivateDataEXT,
     InterceptIdPostCallRecordGetPrivateDataEXT,
+    InterceptIdPreCallValidateCreateCudaModuleNV,
+    InterceptIdPreCallRecordCreateCudaModuleNV,
+    InterceptIdPostCallRecordCreateCudaModuleNV,
+    InterceptIdPreCallValidateGetCudaModuleCacheNV,
+    InterceptIdPreCallRecordGetCudaModuleCacheNV,
+    InterceptIdPostCallRecordGetCudaModuleCacheNV,
+    InterceptIdPreCallValidateCreateCudaFunctionNV,
+    InterceptIdPreCallRecordCreateCudaFunctionNV,
+    InterceptIdPostCallRecordCreateCudaFunctionNV,
+    InterceptIdPreCallValidateDestroyCudaModuleNV,
+    InterceptIdPreCallRecordDestroyCudaModuleNV,
+    InterceptIdPostCallRecordDestroyCudaModuleNV,
+    InterceptIdPreCallValidateDestroyCudaFunctionNV,
+    InterceptIdPreCallRecordDestroyCudaFunctionNV,
+    InterceptIdPostCallRecordDestroyCudaFunctionNV,
+    InterceptIdPreCallValidateCmdCudaLaunchKernelNV,
+    InterceptIdPreCallRecordCmdCudaLaunchKernelNV,
+    InterceptIdPostCallRecordCmdCudaLaunchKernelNV,
     InterceptIdPreCallValidateExportMetalObjectsEXT,
     InterceptIdPreCallRecordExportMetalObjectsEXT,
     InterceptIdPostCallRecordExportMetalObjectsEXT,
@@ -2948,6 +2966,24 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPrivateDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateCudaModuleNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateCudaModuleNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateCudaModuleNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetCudaModuleCacheNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetCudaModuleCacheNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetCudaModuleCacheNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateCudaFunctionNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateCudaFunctionNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateCudaFunctionNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCudaModuleNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCudaModuleNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCudaModuleNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCudaFunctionNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCudaFunctionNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCudaFunctionNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdCudaLaunchKernelNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdCudaLaunchKernelNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdCudaLaunchKernelNV);
 #ifdef VK_USE_PLATFORM_METAL_EXT
     BUILD_DISPATCH_VECTOR(PreCallValidateExportMetalObjectsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordExportMetalObjectsEXT);

@@ -130,6 +130,7 @@ std::vector<VkObjectType> ValidationObject::ValidParamValues() const {
         { &DeviceExtensions::vk_intel_performance_query, { VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL } },
         { &DeviceExtensions::vk_nv_device_generated_commands, { VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV } },
         { &DeviceExtensions::vk_ext_private_data, { VK_OBJECT_TYPE_PRIVATE_DATA_SLOT } },
+        { &DeviceExtensions::vk_nv_cuda_kernel_launch, { VK_OBJECT_TYPE_CUDA_MODULE_NV, VK_OBJECT_TYPE_CUDA_FUNCTION_NV } },
         { &DeviceExtensions::vk_fuchsia_buffer_collection, { VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA } },
         { &DeviceExtensions::vk_ext_opacity_micromap, { VK_OBJECT_TYPE_MICROMAP_EXT } },
         { &DeviceExtensions::vk_nv_optical_flow, { VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV } },
@@ -891,6 +892,7 @@ std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() con
         { &DeviceExtensions::vk_khr_sampler_ycbcr_conversion, { VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT } },
         { &DeviceExtensions::vk_nvx_binary_import, { VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_CU_FUNCTION_NVX_EXT } },
         { &DeviceExtensions::vk_nv_ray_tracing, { VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT } },
+        { &DeviceExtensions::vk_nv_cuda_kernel_launch, { VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_MODULE_NV, VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV } },
         { &DeviceExtensions::vk_fuchsia_buffer_collection, { VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT } },
         { &DeviceExtensions::vk_khr_acceleration_structure, { VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT } },
     };

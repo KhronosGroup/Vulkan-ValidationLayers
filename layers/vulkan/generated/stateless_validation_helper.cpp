@@ -5534,6 +5534,19 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceCudaKernelLaunchFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV: {  // Covers
+                                                                                  // VUID-VkPhysicalDeviceCudaKernelLaunchFeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCudaKernelLaunchFeaturesNV);
+                VkPhysicalDeviceCudaKernelLaunchFeaturesNV* structure = (VkPhysicalDeviceCudaKernelLaunchFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::cudaKernelLaunchFeatures), structure->cudaKernelLaunchFeatures);
+            }
+        } break;
+
+        // No Validation code for VkPhysicalDeviceCudaKernelLaunchPropertiesNV structure members  -- Covers
+        // VUID-VkPhysicalDeviceCudaKernelLaunchPropertiesNV-sType-sType
+
         // Validation code for VkQueryLowLatencySupportNV structure members
         case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV: {  // Covers VUID-VkQueryLowLatencySupportNV-sType-sType
             if (is_const_param) {
@@ -6416,6 +6429,34 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPhysicalDeviceShaderCorePropertiesARM structure members  -- Covers
         // VUID-VkPhysicalDeviceShaderCorePropertiesARM-sType-sType
 
+        // No Validation code for VkDeviceQueueShaderCoreControlCreateInfoARM structure members  -- Covers
+        // VUID-VkDeviceQueueShaderCoreControlCreateInfoARM-sType-sType
+
+        // Validation code for VkPhysicalDeviceSchedulingControlsFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_FEATURES_ARM: {  // Covers
+                                                                                    // VUID-VkPhysicalDeviceSchedulingControlsFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSchedulingControlsFeaturesARM);
+                VkPhysicalDeviceSchedulingControlsFeaturesARM* structure = (VkPhysicalDeviceSchedulingControlsFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::schedulingControls), structure->schedulingControls);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceSchedulingControlsPropertiesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM: {  // Covers
+                                                                                      // VUID-VkPhysicalDeviceSchedulingControlsPropertiesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSchedulingControlsPropertiesARM);
+                VkPhysicalDeviceSchedulingControlsPropertiesARM* structure =
+                    (VkPhysicalDeviceSchedulingControlsPropertiesARM*)header;
+                skip |= ValidateFlags(
+                    pNext_loc.dot(Field::schedulingControlsFlags), "VkPhysicalDeviceSchedulingControlsFlagBitsARM",
+                    AllVkPhysicalDeviceSchedulingControlsFlagBitsARM, structure->schedulingControlsFlags, kRequiredFlags,
+                    "VUID-VkPhysicalDeviceSchedulingControlsPropertiesARM-schedulingControlsFlags-parameter",
+                    "VUID-VkPhysicalDeviceSchedulingControlsPropertiesARM-schedulingControlsFlags-requiredbitmask");
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT: {  // Covers
                                                                                         // VUID-VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT-sType-sType
@@ -7030,16 +7071,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             }
         } break;
 
-        // Validation code for VkLatencySurfaceCapabilitiesNV structure members
-        case VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV: {  // Covers VUID-VkLatencySurfaceCapabilitiesNV-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkLatencySurfaceCapabilitiesNV);
-                VkLatencySurfaceCapabilitiesNV* structure = (VkLatencySurfaceCapabilitiesNV*)header;
-                skip |= ValidateArray(pNext_loc.dot(Field::presentModeCount), pNext_loc.dot(Field::pPresentModes),
-                                      structure->presentModeCount, &structure->pPresentModes, true, false, kVUIDUndefined,
-                                      "VUID-VkLatencySurfaceCapabilitiesNV-pPresentModes-parameter");
-            }
-        } break;
+        // No Validation code for VkLatencySurfaceCapabilitiesNV structure members  -- Covers
+        // VUID-VkLatencySurfaceCapabilitiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM: {  // Covers
@@ -7553,6 +7586,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
             VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD,
             VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO,
+            VK_STRUCTURE_TYPE_DEVICE_QUEUE_SHADER_CORE_CONTROL_CREATE_INFO_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES,
@@ -7578,6 +7612,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_CLAMP_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
@@ -7678,6 +7713,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT,
@@ -7744,7 +7780,8 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
                 [[maybe_unused]] const Location pQueueCreateInfos_loc =
                     pCreateInfo_loc.dot(Field::pQueueCreateInfos, queueCreateInfoIndex);
                 constexpr std::array allowed_structs_VkDeviceQueueCreateInfo = {
-                    VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR};
+                    VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR,
+                    VK_STRUCTURE_TYPE_DEVICE_QUEUE_SHADER_CORE_CONTROL_CREATE_INFO_ARM};
 
                 skip |= ValidateStructPnext(pQueueCreateInfos_loc, pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].pNext,
                                             allowed_structs_VkDeviceQueueCreateInfo.size(),
@@ -11823,6 +11860,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT,
@@ -11878,6 +11916,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD,
@@ -16481,6 +16520,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT,
@@ -16536,6 +16576,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD,
@@ -24672,6 +24713,200 @@ bool StatelessValidation::PreCallValidateGetPrivateDataEXT(VkDevice device, VkOb
         ValidateRangedEnum(loc.dot(Field::objectType), "VkObjectType", objectType, "VUID-vkGetPrivateData-objectType-parameter");
     skip |= ValidateRequiredHandle(loc.dot(Field::privateDataSlot), privateDataSlot);
     skip |= ValidateRequiredPointer(loc.dot(Field::pData), pData, "VUID-vkGetPrivateData-pData-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
+    skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV", pCreateInfo,
+                               VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV, true,
+                               "VUID-vkCreateCudaModuleNV-pCreateInfo-parameter", "VUID-VkCudaModuleCreateInfoNV-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                    "VUID-VkCudaModuleCreateInfoNV-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= ValidateArray(pCreateInfo_loc.dot(Field::dataSize), pCreateInfo_loc.dot(Field::pData), pCreateInfo->dataSize,
+                              &pCreateInfo->pData, true, true, "VUID-VkCudaModuleCreateInfoNV-dataSize-arraylength",
+                              "VUID-VkCudaModuleCreateInfoNV-pData-parameter");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
+                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
+                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
+                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
+
+        if (pAllocator->pfnInternalAllocation != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+
+        if (pAllocator->pfnInternalFree != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+    }
+    skip |= ValidateRequiredPointer(loc.dot(Field::pModule), pModule, "VUID-vkCreateCudaModuleNV-pModule-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize,
+                                                              void* pCacheData, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
+    skip |= ValidateRequiredHandle(loc.dot(Field::module), module);
+    skip |= ValidateArray(loc.dot(Field::pCacheSize), loc.dot(Field::pCacheData), pCacheSize, &pCacheData, true, false, false,
+                          kVUIDUndefined, "VUID-vkGetCudaModuleCacheNV-pCacheData-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
+    skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_CUDA_FUNCTION_CREATE_INFO_NV", pCreateInfo,
+                               VK_STRUCTURE_TYPE_CUDA_FUNCTION_CREATE_INFO_NV, true,
+                               "VUID-vkCreateCudaFunctionNV-pCreateInfo-parameter", "VUID-VkCudaFunctionCreateInfoNV-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                    "VUID-VkCudaFunctionCreateInfoNV-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= ValidateRequiredHandle(pCreateInfo_loc.dot(Field::module), pCreateInfo->module);
+
+        skip |= ValidateRequiredPointer(pCreateInfo_loc.dot(Field::pName), pCreateInfo->pName,
+                                        "VUID-VkCudaFunctionCreateInfoNV-pName-parameter");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
+                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
+                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
+                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
+
+        if (pAllocator->pfnInternalAllocation != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+
+        if (pAllocator->pfnInternalFree != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+    }
+    skip |= ValidateRequiredPointer(loc.dot(Field::pFunction), pFunction, "VUID-vkCreateCudaFunctionNV-pFunction-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
+    skip |= ValidateRequiredHandle(loc.dot(Field::module), module);
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
+                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
+                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
+                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
+
+        if (pAllocator->pfnInternalAllocation != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+
+        if (pAllocator->pfnInternalFree != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
+    skip |= ValidateRequiredHandle(loc.dot(Field::function), function);
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
+                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
+                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
+                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+
+        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
+                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
+
+        if (pAllocator->pfnInternalAllocation != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+
+        if (pAllocator->pfnInternalFree != nullptr) {
+            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
+                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
+                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
+    skip |= ValidateStructType(loc.dot(Field::pLaunchInfo), "VK_STRUCTURE_TYPE_CUDA_LAUNCH_INFO_NV", pLaunchInfo,
+                               VK_STRUCTURE_TYPE_CUDA_LAUNCH_INFO_NV, true, "VUID-vkCmdCudaLaunchKernelNV-pLaunchInfo-parameter",
+                               "VUID-VkCudaLaunchInfoNV-sType-sType");
+    if (pLaunchInfo != nullptr) {
+        [[maybe_unused]] const Location pLaunchInfo_loc = loc.dot(Field::pLaunchInfo);
+        skip |= ValidateStructPnext(pLaunchInfo_loc, pLaunchInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                    "VUID-VkCudaLaunchInfoNV-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= ValidateRequiredHandle(pLaunchInfo_loc.dot(Field::function), pLaunchInfo->function);
+    }
     return skip;
 }
 

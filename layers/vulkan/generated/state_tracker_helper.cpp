@@ -880,6 +880,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->diagnosticsConfig |= enabled->diagnosticsConfig == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV: {
+                const VkPhysicalDeviceCudaKernelLaunchFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCudaKernelLaunchFeaturesNV *>(pNext);
+                features->cudaKernelLaunchFeatures |= enabled->cudaKernelLaunchFeatures == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT: {
                 const VkPhysicalDeviceDescriptorBufferFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDescriptorBufferFeaturesEXT *>(pNext);
@@ -1121,6 +1127,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(pNext);
                 features->pageableDeviceLocalMemory |= enabled->pageableDeviceLocalMemory == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_FEATURES_ARM: {
+                const VkPhysicalDeviceSchedulingControlsFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceSchedulingControlsFeaturesARM *>(pNext);
+                features->schedulingControls |= enabled->schedulingControls == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT: {

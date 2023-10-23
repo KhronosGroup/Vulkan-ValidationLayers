@@ -61,6 +61,8 @@ WRAPPER(VkValidationCacheEXT)
 WRAPPER(VkAccelerationStructureNV)
 WRAPPER(VkPerformanceConfigurationINTEL)
 WRAPPER(VkIndirectCommandsLayoutNV)
+WRAPPER(VkCudaModuleNV)
+WRAPPER(VkCudaFunctionNV)
 WRAPPER(VkAccelerationStructureKHR)
 #ifdef VK_USE_PLATFORM_FUCHSIA
 WRAPPER(VkBufferCollectionFUCHSIA)

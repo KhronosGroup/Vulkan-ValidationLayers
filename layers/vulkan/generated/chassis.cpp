@@ -13068,6 +13068,141 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objec
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateCudaModuleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateCudaModuleNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    RecordObject record_obj(vvl::Func::vkCreateCudaModuleNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateCudaModuleNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
+    }
+    VkResult result = DispatchCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
+    record_obj.result = result;
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCudaModuleNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetCudaModuleCacheNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetCudaModuleCacheNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    RecordObject record_obj(vvl::Func::vkGetCudaModuleCacheNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetCudaModuleCacheNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
+    }
+    VkResult result = DispatchGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData);
+    record_obj.result = result;
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetCudaModuleCacheNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateCudaFunctionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateCudaFunctionNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    RecordObject record_obj(vvl::Func::vkCreateCudaFunctionNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateCudaFunctionNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
+    }
+    VkResult result = DispatchCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction);
+    record_obj.result = result;
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCudaFunctionNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkDestroyCudaModuleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateDestroyCudaModuleNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateDestroyCudaModuleNV(device, module, pAllocator, error_obj);
+        if (skip) return;
+    }
+    RecordObject record_obj(vvl::Func::vkDestroyCudaModuleNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyCudaModuleNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordDestroyCudaModuleNV(device, module, pAllocator, record_obj);
+    }
+    DispatchDestroyCudaModuleNV(device, module, pAllocator);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCudaModuleNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordDestroyCudaModuleNV(device, module, pAllocator, record_obj);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
+                                                 const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkDestroyCudaFunctionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateDestroyCudaFunctionNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateDestroyCudaFunctionNV(device, function, pAllocator, error_obj);
+        if (skip) return;
+    }
+    RecordObject record_obj(vvl::Func::vkDestroyCudaFunctionNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyCudaFunctionNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordDestroyCudaFunctionNV(device, function, pAllocator, record_obj);
+    }
+    DispatchDestroyCudaFunctionNV(device, function, pAllocator);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCudaFunctionNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordDestroyCudaFunctionNV(device, function, pAllocator, record_obj);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdCudaLaunchKernelNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCudaLaunchKernelNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo, error_obj);
+        if (skip) return;
+    }
+    RecordObject record_obj(vvl::Func::vkCmdCudaLaunchKernelNV);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCudaLaunchKernelNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo, record_obj);
+    }
+    DispatchCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCudaLaunchKernelNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo, record_obj);
+    }
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -17226,6 +17361,12 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkDestroyPrivateDataSlotEXT", {kFuncTypeDev, (void*)DestroyPrivateDataSlotEXT}},
     {"vkSetPrivateDataEXT", {kFuncTypeDev, (void*)SetPrivateDataEXT}},
     {"vkGetPrivateDataEXT", {kFuncTypeDev, (void*)GetPrivateDataEXT}},
+    {"vkCreateCudaModuleNV", {kFuncTypeDev, (void*)CreateCudaModuleNV}},
+    {"vkGetCudaModuleCacheNV", {kFuncTypeDev, (void*)GetCudaModuleCacheNV}},
+    {"vkCreateCudaFunctionNV", {kFuncTypeDev, (void*)CreateCudaFunctionNV}},
+    {"vkDestroyCudaModuleNV", {kFuncTypeDev, (void*)DestroyCudaModuleNV}},
+    {"vkDestroyCudaFunctionNV", {kFuncTypeDev, (void*)DestroyCudaFunctionNV}},
+    {"vkCmdCudaLaunchKernelNV", {kFuncTypeDev, (void*)CmdCudaLaunchKernelNV}},
 #ifdef VK_USE_PLATFORM_METAL_EXT
     {"vkExportMetalObjectsEXT", {kFuncTypeDev, (void*)ExportMetalObjectsEXT}},
 #endif  // VK_USE_PLATFORM_METAL_EXT
