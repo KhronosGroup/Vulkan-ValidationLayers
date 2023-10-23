@@ -315,18 +315,12 @@ jobs:
       - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
         run: ccache --show-stats
 
-  # Test to ensure we don't accidentally break the Chromium build.
-  integration_test:
-    runs-on: ubuntu-22.04
+  chromium:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install WSI dependencies
-        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Test chromium build
-        run: python scripts/gn.py
+      - uses: actions/checkout@v4
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: python scripts/gn.py
 
   check_vvl:
     runs-on: ubuntu-latest
