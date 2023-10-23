@@ -9,7 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "ray_tracing_nv.h"
+#include "ray_tracing_helper_nv.h"
 
 namespace nv {
 namespace rt {
