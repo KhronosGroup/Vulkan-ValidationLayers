@@ -996,9 +996,16 @@ bool CoreChecks::ValidateEventStageMask(const CMD_BUFFER_STATE &cb_state, size_t
     const auto max_event = std::min((firstEventIndex + eventCount), cb_state.events.size());
     for (size_t event_index = firstEventIndex; event_index < max_event; ++event_index) {
         auto event = cb_state.events[event_index];
-        auto event_data = localEventToStageMap->find(event);
-        if (event_data != localEventToStageMap->end()) {
-            stage_mask |= event_data->second;
+
+        // The event signal map tracks src_stage from the last SetEvent within the
+        // *current* queue submission. If the current submission does not have
+        // SetEvent before WaitEvents then we need to find the last SetEvent (if any)
+        // in the previous submissions to the same queue. This information is
+        // conveniently stored in the EVENT_STATE object itself (after each queue
+        // submit, CMD_BUFFER_STATE::Submit() updates EVENT_STATE, so it contains
+        // the last src_stage from that submission).
+        if (auto event_src_stage = localEventToStageMap->find(event); event_src_stage != localEventToStageMap->end()) {
+            stage_mask |= event_src_stage->second;
         } else {
             auto global_event_data = state_data->Get<EVENT_STATE>(event);
             assert(global_event_data);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter

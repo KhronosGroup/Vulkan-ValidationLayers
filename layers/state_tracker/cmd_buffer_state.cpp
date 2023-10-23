@@ -1486,25 +1486,31 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(Func command, VkPipelineStageFlags2K
 }
 
 void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
-    VkQueryPool first_pool = VK_NULL_HANDLE;
-    EventToStageMap local_event_to_stage_map;
-    QueryMap local_query_to_state_map;
-    for (auto &function : queryUpdates) {
-        function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
+    // Update QUERY_POOL_STATE with a query state at the end of the command buffer.
+    // Ultimately, it tracks the final query state for the entire submission.
+    {
+        VkQueryPool first_pool = VK_NULL_HANDLE;
+        QueryMap local_query_to_state_map;
+        for (auto &function : queryUpdates) {
+            function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
+        }
+        for (const auto &query_state_pair : local_query_to_state_map) {
+            auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
+            query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, query_state_pair.second);
+        }
     }
 
-    for (const auto &query_state_pair : local_query_to_state_map) {
-        auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
-        query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, query_state_pair.second);
-    }
-
-    for (const auto &function : eventUpdates) {
-        function(*this, /*do_validate*/ false, &local_event_to_stage_map);
-    }
-
-    for (const auto &eventStagePair : local_event_to_stage_map) {
-        auto event_state = dev_data->Get<EVENT_STATE>(eventStagePair.first);
-        event_state->stageMask = eventStagePair.second;
+    // Update EVENT_STATE with src_stage from the last recorded SetEvent.
+    // Ultimately, it tracks the last SetEvent for the entire submission.
+    {
+        EventToStageMap local_event_to_stage_map;
+        for (const auto &function : eventUpdates) {
+            function(*this, /*do_validate*/ false, &local_event_to_stage_map);
+        }
+        for (const auto &eventStagePair : local_event_to_stage_map) {
+            auto event_state = dev_data->Get<EVENT_STATE>(eventStagePair.first);
+            event_state->stageMask = eventStagePair.second;
+        }
     }
 
     for (const auto &it : video_session_updates) {
