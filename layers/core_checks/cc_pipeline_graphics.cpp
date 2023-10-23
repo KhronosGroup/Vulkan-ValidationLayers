@@ -47,18 +47,9 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
     safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
     const auto &rp_state = pipeline.RenderPassState();
-    if (pipeline.IsRenderPassStateRequired()) {
-        if (!rp_state) {
-            const char *vuid = nullptr;
-            if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575";
-            } else if (!enabled_features.dynamicRendering) {
-                vuid = "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576";
-            }
-            if (vuid) {
-                skip |= LogError(vuid, device, create_info_loc, "requires a valid renderPass, but one was not provided");
-            }
-        }
+    if (!rp_state && pipeline.IsRenderPassStateRequired() && !enabled_features.dynamicRendering) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576", device, create_info_loc,
+                         "requires a valid renderPass, but one was not provided");
     }
 
     const auto subpass = pipeline.Subpass();

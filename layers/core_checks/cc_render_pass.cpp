@@ -4326,7 +4326,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
                         if (!b_has_non_zero_view_masks && layer_count != 1) {
                             LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
-                            skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02747", objlist, attachment_loc,
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
                                              "has a layer count (%" PRIu32
                                              ") not equal to 1 but renderPass (%s) was not specified with non-zero view masks.",
                                              layer_count, FormatHandle(pCreateInfo->renderPass).c_str());
@@ -4372,7 +4372,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                     if (view_state->normalized_subresource_range.layerCount != 1 &&
                         !IsExtEnabled(device_extensions.vk_khr_multiview)) {
                         LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
-                        skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02747", objlist, attachment_loc,
+                        skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
                                          "is referenced by "
                                          "VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment in "
                                          "the pNext chain, but it was create with subresourceRange.layerCount (%" PRIu32

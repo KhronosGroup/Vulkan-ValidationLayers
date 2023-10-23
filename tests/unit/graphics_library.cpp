@@ -413,7 +413,7 @@ TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
 
     pipe.gp_ci_.layout = pipe.pipeline_layout_.handle();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
