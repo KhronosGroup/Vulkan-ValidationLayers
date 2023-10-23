@@ -37,8 +37,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/test_framework.cpp
     framework/ray_tracing_objects.h
     framework/ray_tracing_objects.cpp
-    framework/ray_tracing_nv.h
-    framework/ray_tracing_nv.cpp
+    framework/ray_tracing_helper_nv.h
+    framework/ray_tracing_helper_nv.cpp
     framework/external_memory_sync.h
     framework/external_memory_sync.cpp
     framework/barrier_queue_family.h
@@ -119,9 +119,13 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/push_descriptor_positive.cpp
     unit/query_positive.cpp
     unit/ray_tracing.cpp
+    unit/ray_tracing_nv.cpp
+    unit/ray_tracing_gpu_nv.cpp
     unit/ray_tracing_gpu.cpp
     unit/ray_tracing_pipeline.cpp
     unit/ray_tracing_pipeline_positive.cpp
+    unit/ray_tracing_pipeline_nv.cpp
+    unit/ray_tracing_pipeline_positive_nv.cpp
     unit/ray_tracing_positive.cpp
     unit/render_pass_positive.cpp
     unit/renderpass.cpp

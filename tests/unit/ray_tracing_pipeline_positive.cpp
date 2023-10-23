@@ -12,7 +12,6 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/ray_tracing_nv.h"
 #include "../framework/pipeline_helper.h"
 
 TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
@@ -154,22 +153,6 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     VkPipeline library = VK_NULL_HANDLE;
     vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
     vk::DestroyPipeline(device(), library, nullptr);
-}
-
-TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
-    TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-
-    VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(rtnv_props);
-    if (rtnv_props.maxDescriptorSetAccelerationStructures < 1) {
-        GTEST_SKIP() << "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures < 1";
-    }
-
-    RETURN_IF_SKIP(InitState())
-
-    auto ignore_update = [](RayTracingPipelineHelper &helper) {};
-    RayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
 }
 
 TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
