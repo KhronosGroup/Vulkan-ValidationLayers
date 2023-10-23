@@ -141,6 +141,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          "imageType is %s.",
                          string_VkImageType(pCreateInfo->imageType));
     }
+    if ((image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
+        (image_flags &
+         (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT))) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-09403", device, create_info_loc.dot(Field::flags), "is %s.",
+                         string_VkImageCreateFlags(image_flags).c_str());
+    }
 
     if ((image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) && (pCreateInfo->imageType != VK_IMAGE_TYPE_3D)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-07755", device, create_info_loc.dot(Field::flags),
