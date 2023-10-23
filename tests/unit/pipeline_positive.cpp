@@ -1686,3 +1686,66 @@ TEST_F(PositivePipeline, DepthStencilStateIgnored) {
         pipe.CreateGraphicsPipeline();
     }
 }
+
+TEST_F(PositivePipeline, ViewportStateNotSet) {
+    TEST_DESCRIPTION("Create pipeline with viewport state not set");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT eds2_features = vku::InitStructHelper(&eds_features);
+    GetPhysicalDeviceFeatures2(eds2_features);
+    if (!eds_features.extendedDynamicState) {
+        GTEST_SKIP() << "extendedDynamicState not supported";
+    }
+    if (!eds2_features.extendedDynamicState2) {
+        GTEST_SKIP() << "extendedDynamicState2 not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds2_features));
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+    pipe.gp_ci_.pViewportState = nullptr;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
+    TEST_DESCRIPTION("Create pipeline with viewport state not set");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT eds2_features = vku::InitStructHelper(&eds_features);
+    GetPhysicalDeviceFeatures2(eds2_features);
+    if (!eds_features.extendedDynamicState) {
+        GTEST_SKIP() << "extendedDynamicState not supported";
+    }
+    if (!eds2_features.extendedDynamicState2) {
+        GTEST_SKIP() << "extendedDynamicState2 not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds2_features));
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    VkPipelineRasterizationStateCreateInfo rasterization_state = vku::InitStructHelper();
+    rasterization_state.rasterizerDiscardEnable = VK_TRUE;
+    rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterization_state.cullMode = VK_CULL_MODE_NONE;
+    rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+    pipe.gp_ci_.pRasterizationState = &rasterization_state;
+    pipe.gp_ci_.pViewportState = nullptr;
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
