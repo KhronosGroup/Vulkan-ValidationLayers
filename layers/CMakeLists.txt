@@ -29,7 +29,6 @@ target_sources(VkLayer_utils PRIVATE
     error_message/error_location.h
     error_message/record_object.h
     external/xxhash.h
-    external/xxhash.cpp
     ${API_TYPE}/generated/error_location_helper.cpp
     ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/pnext_chain_extraction.cpp
@@ -52,6 +51,7 @@ target_sources(VkLayer_utils PRIVATE
     utils/convert_utils.cpp
     utils/convert_utils.h
     utils/hash_util.h
+    utils/hash_util.cpp
     utils/hash_vk_types.h
     utils/vk_layer_extension_utils.cpp
     utils/vk_layer_extension_utils.h
@@ -62,14 +62,6 @@ target_sources(VkLayer_utils PRIVATE
     vk_layer_config.h
     vk_layer_config.cpp
 )
-
-# XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
-# We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
-#
-# v0.8.1 also has compilation issues that are removed by setting this define.
-# https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
-# https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
-target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
 target_link_libraries(VkLayer_utils PUBLIC
     Vulkan::Headers

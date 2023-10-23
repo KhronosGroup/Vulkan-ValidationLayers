@@ -430,5 +430,3 @@ static inline void EraseCmdDebugUtilsLabel(debug_report_data *report_data, VkCom
     std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     report_data->debugUtilsCmdBufLabels.erase(command_buffer);
 }
-
-uint32_t vvl_vuid_hash(std::string_view vuid);

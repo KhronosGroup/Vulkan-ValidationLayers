@@ -157,4 +157,9 @@ class Dictionary {
     Lock lock;
     Dict dict;
 };
+
+uint32_t vuid_hash(std::string_view vuid);
+
+uint32_t shader_hash(const void *pCode, const size_t codeSize);
+
 }  // namespace hash_util

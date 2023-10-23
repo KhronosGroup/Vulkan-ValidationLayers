@@ -359,10 +359,10 @@ source_set("vulkan_layer_utils") {
     "layers/error_message/logging.cpp",
     "layers/error_message/logging.h",
     "layers/error_message/record_object.h",
-    "layers/external/xxhash.cpp",
     "layers/external/xxhash.h",
     "layers/utils/android_ndk_types.h",
     "layers/utils/cast_utils.h",
+    "layers/utils/hash_util.cpp",
     "layers/utils/hash_util.h",
     "layers/utils/hash_vk_types.h",
     "layers/utils/ray_tracing_utils.cpp",
@@ -385,7 +385,6 @@ source_set("vulkan_layer_utils") {
     "layers/vulkan/generated/vk_safe_struct.h",
     "layers/vulkan/generated/vk_validation_error_messages.h",
   ]
-  defines = [ "XXH_NO_LONG_LONG" ]
   public_configs = [
     ":vulkan_internal_config",
     ":vulkan_memory_allocator_config",

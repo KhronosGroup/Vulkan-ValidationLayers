@@ -217,8 +217,6 @@ class ValidationCache {
         for (auto h : other->good_shader_hashes_) good_shader_hashes_.insert(h);
     }
 
-    static uint32_t MakeShaderHash(const void *pCode, const size_t codeSize);
-
     bool Contains(uint32_t hash) {
         auto guard = ReadLock();
         return good_shader_hashes_.count(hash) != 0;

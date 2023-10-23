@@ -26,8 +26,8 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
-#include "external/xxhash.h"
 #include "utils/shader_utils.h"
+#include "utils/hash_util.h"
 
 // Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const SPIRV_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline,
@@ -2383,8 +2383,6 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
     return false;
 }
 
-uint32_t ValidationCache::MakeShaderHash(const void *pCode, const size_t codeSize) { return XXH32(pCode, codeSize, 0); }
-
 static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
     const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
     if (validation_cache_ci) {
@@ -2435,10 +2433,14 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         auto cache = GetValidationCacheInfo(pCreateInfo);
         uint32_t hash = 0;
         // If app isn't using a shader validation cache, use the default one from CoreChecks
-        if (!cache) cache = CastFromHandle<ValidationCache *>(core_validation_cache);
+        if (!cache) {
+            cache = CastFromHandle<ValidationCache *>(core_validation_cache);
+        }
         if (cache) {
-            hash = ValidationCache::MakeShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-            if (cache->Contains(hash)) return false;
+            hash = hash_util::shader_hash(pCreateInfo->pCode, pCreateInfo->codeSize);
+            if (cache->Contains(hash)) {
+                return false;
+            }
         }
 
         // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
