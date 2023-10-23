@@ -16,6 +16,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_helper.h"
 
 TEST_F(NegativePipeline, NotBound) {
     TEST_DESCRIPTION("Pass in an invalid pipeline object handle into a Vulkan API call.");
@@ -3544,4 +3545,57 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
+}
+
+TEST_F(NegativePipeline, MissingPipelineViewportState) {
+    TEST_DESCRIPTION("Create pipeline with dynamic state discard enable, but no viewport state");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT eds2_features = vku::InitStructHelper(&eds_features);
+    GetPhysicalDeviceFeatures2(eds2_features);
+    if (!eds_features.extendedDynamicState) {
+        GTEST_SKIP() << "extendedDynamicState not supported";
+    }
+    if (!eds2_features.extendedDynamicState2) {
+        GTEST_SKIP() << "extendedDynamicState2 not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds2_features));
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+        pipe.gp_ci_.pViewportState = nullptr;
+        pipe.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+        pipe.gp_ci_.pViewportState = nullptr;
+        pipe.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        pipe.gp_ci_.pViewportState = nullptr;
+        pipe.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
