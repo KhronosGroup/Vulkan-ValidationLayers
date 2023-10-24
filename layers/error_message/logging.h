@@ -229,6 +229,7 @@ typedef struct _debug_report_data {
     }
 
     std::string FormatHandle(const char *handle_type_name, uint64_t handle) const {
+        std::unique_lock<std::mutex> lock(debug_output_mutex);
         std::string handle_name = DebugReportGetUtilsObjectName(handle);
         if (handle_name.empty()) {
             handle_name = DebugReportGetMarkerObjectName(handle);
