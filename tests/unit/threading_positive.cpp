@@ -142,4 +142,111 @@ TEST_F(PositiveThreading, NullFenceCollision) {
 
     m_errorMonitor->SetBailout(NULL);
 }
+
+TEST_F(PositiveThreading, DebugObjectNames) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr uint32_t count = 10000u;
+
+    VkDescriptorPoolSize pool_size;
+    pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    pool_size.descriptorCount = count;
+
+    VkDescriptorPoolCreateInfo descriptor_pool_ci = vku::InitStructHelper();
+    descriptor_pool_ci.maxSets = count;
+    descriptor_pool_ci.poolSizeCount = 1u;
+    descriptor_pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool descriptor_pool(*m_device, descriptor_pool_ci);
+
+    VkDescriptorSetLayoutBinding binding;
+    binding.binding = 0u;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    binding.descriptorCount = 1u;
+    binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo set_layout_ci = vku::InitStructHelper();
+    set_layout_ci.bindingCount = 1u;
+    set_layout_ci.pBindings = &binding;
+    vkt::DescriptorSetLayout set_layout(*m_device, set_layout_ci);
+
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    vkt::DescriptorSetLayout set_layout2(*m_device, set_layout_ci);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout2});
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = descriptor_pool.handle();
+    allocate_info.descriptorSetCount = 1u;
+    allocate_info.pSetLayouts = &set_layout.handle();
+
+    VkDescriptorSet descriptor_sets[count];
+    for (uint32_t i = 0; i < count; ++i) {
+        vk::AllocateDescriptorSets(*m_device, &allocate_info, &descriptor_sets[i]);
+    }
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.buffer = buffer.handle();
+    buffer_info.offset = 0u;
+    buffer_info.range = 256u;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pTexelBufferView = nullptr;
+
+    for (uint32_t i = 0; i < count; ++i) {
+        descriptor_write.dstSet = descriptor_sets[i];
+        vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
+    }
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
+
+    std::atomic<bool> bailout{false};
+
+    for (uint32_t i = 0; i < count; ++i) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+    }
+
+    m_errorMonitor->SetBailout(&bailout);
+    const auto set_name = [&]() {
+        for (uint32_t i = 0; i < count; ++i) {
+            std::string name = "handle" + std::to_string(i);
+            name_info.objectHandle = (uint64_t)descriptor_sets[i];
+            name_info.pObjectName = name.c_str();
+            vk::SetDebugUtilsObjectNameEXT(*m_device, &name_info);
+            if (i % 3 == 0) {
+                name_info.pObjectName = nullptr;
+                vk::SetDebugUtilsObjectNameEXT(*m_device, &name_info);
+            }
+        }
+    };
+    const auto bind_descriptor = [&]() {
+        m_commandBuffer->begin();
+        for (uint32_t i = 0; i < count; ++i) {
+            vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
+                                      &descriptor_sets[i], 0u, nullptr);
+        }
+        m_commandBuffer->end();
+    };
+
+    std::thread thread2(bind_descriptor);
+    std::thread thread1(set_name);
+
+    thread1.join();
+    thread2.join();
+
+    m_errorMonitor->SetBailout(NULL);
+
+    m_errorMonitor->VerifyFound();
+}
+
 #endif  // GTEST_IS_THREADSAFE
