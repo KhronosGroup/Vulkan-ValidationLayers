@@ -32,8 +32,12 @@ struct CommandBufferSubmitState {
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
     std::vector<VkCommandBuffer> current_cmds;
     GlobalImageLayoutMap overlay_image_layout_map;
+
+    // The "local" prefix is about tracking state within a *single* queue submission
+    // (accross all command buffers of that submission), as opposed to globally
+    // tracking state accross *all* submissions to the same queue.
     QueryMap local_query_to_state_map;
-    EventToStageMap local_event_to_stage_map;
+    EventToStageMap local_event_signal_info;
     vvl::unordered_map<VkVideoSessionKHR, VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks *c, const QUEUE_STATE *q) : core(c), queue_state(q) {}
@@ -87,7 +91,7 @@ struct CommandBufferSubmitState {
             skip |= function(*core, *queue_state, cb_state);
         }
         for (auto &function : cb_state.eventUpdates) {
-            skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, &local_event_to_stage_map);
+            skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, local_event_signal_info);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
         for (auto &function : cb_state.queryUpdates) {

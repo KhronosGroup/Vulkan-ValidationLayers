@@ -844,8 +844,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateActionState(const CMD_BUFFER_STATE& cb_state, const VkPipelineBindPoint bind_point, const Location& loc) const;
     bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, const VkPipelineBindPoint bind_point,
                                   const Location& loc) const;
-    static bool ValidateEventStageMask(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,
-                                       VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap* localEventToStageMap);
+    static bool ValidateWaitEventsAtSubmit(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,
+                                           VkPipelineStageFlags2 sourceStageMask, const EventToStageMap& local_event_signal_info);
     bool ValidateQueueFamilyIndices(const Location& loc, const CMD_BUFFER_STATE& cb_state, VkQueue queue) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
