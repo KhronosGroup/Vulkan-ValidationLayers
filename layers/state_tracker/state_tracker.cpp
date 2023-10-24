@@ -3316,6 +3316,7 @@ void ValidationStateTracker::PreCallRecordSetEvent(VkDevice device, VkEvent even
     auto event_state = Get<EVENT_STATE>(event);
     if (event_state) {
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;
+        event_state->signaling_queue = VK_NULL_HANDLE;
     }
 }
 

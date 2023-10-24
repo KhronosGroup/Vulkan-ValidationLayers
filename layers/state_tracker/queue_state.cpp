@@ -66,7 +66,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
             secondary_cmd_buffer->IncrementResources();
         }
         cb_state->IncrementResources();
-        cb_state->Submit(submission.perf_submit_pass);
+        cb_state->Submit(Queue(), submission.perf_submit_pass);
     }
     // seq_ is atomic so we don't need a lock until updating the deque below.
     // Note that this relies on the external synchonization requirements for the

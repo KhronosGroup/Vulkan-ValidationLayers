@@ -1394,9 +1394,10 @@ void CMD_BUFFER_STATE::RecordSetEvent(Func command, VkEvent event, VkPipelineSta
     if (!waitedEvents.count(event)) {
         writeEventsBeforeWait.push_back(event);
     }
-    eventUpdates.emplace_back([event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info) {
-        return SetEventSignalInfo(event, stageMask, local_event_signal_info);
-    });
+    eventUpdates.emplace_back(
+        [event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue) {
+            return SetEventSignalInfo(event, stageMask, local_event_signal_info);
+        });
 }
 
 void CMD_BUFFER_STATE::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
@@ -1412,7 +1413,7 @@ void CMD_BUFFER_STATE::RecordResetEvent(Func command, VkEvent event, VkPipelineS
         writeEventsBeforeWait.push_back(event);
     }
 
-    eventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info) {
+    eventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue) {
         return SetEventSignalInfo(event, VK_PIPELINE_STAGE_2_NONE, local_event_signal_info);
     });
 }
@@ -1481,7 +1482,7 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(Func command, VkPipelineStageFlags2K
     EndQuery(query_obj);
 }
 
-void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
+void CMD_BUFFER_STATE::Submit(VkQueue queue, uint32_t perf_submit_pass) {
     // Update QUERY_POOL_STATE with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
@@ -1501,11 +1502,13 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     {
         EventToStageMap local_event_signal_info;
         for (const auto &function : eventUpdates) {
-            function(*this, /*do_validate*/ false, local_event_signal_info);
+            function(*this, /*do_validate*/ false, local_event_signal_info,
+                     VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */);
         }
         for (const auto &event_signal : local_event_signal_info) {
             auto event_state = dev_data->Get<EVENT_STATE>(event_signal.first);
             event_state->signal_src_stage_mask = event_signal.second;
+            event_state->signaling_queue = queue;
         }
     }
 
