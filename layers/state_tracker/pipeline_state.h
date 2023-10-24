@@ -398,28 +398,6 @@ class PIPELINE_STATE : public BASE_NODE {
 
     bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }
 
-    template <typename CI>
-    VkPipeline BasePipeline() const {
-        // TODO this _should_ be a static_assert, but that only works on MSVC currently
-        assert(false && "Not implemented");
-        return {};
-    }
-
-    template <typename CI>
-    int32_t BasePipelineIndex() const {
-        // TODO this _should_ be a static_assert, but that only works on MSVC currently
-        assert(false && "Not implemented");
-        return {};
-    }
-
-    // Return the ith shader module where i indexes into CreateInfo::pStages
-    template <typename CI>
-    VkShaderModule GetShaderModuleByCIIndex(uint32_t i) {
-        // TODO this _should_ be a static_assert, but that only works on MSVC currently
-        assert(false && "Not implemented");
-        return {};
-    }
-
     const safe_VkPipelineDynamicStateCreateInfo *DynamicState() const {
         // TODO Each library can contain its own dynamic state (apparently?). Which one should be returned here? Union?
         return create_info.graphics.pDynamicState;
@@ -707,33 +685,6 @@ struct PIPELINE_STATE::CreateInfo::Traits<VkRayTracingPipelineCreateInfoNV> {
         return ci.raytracing;
     }
 };
-
-template <>
-VkPipeline PIPELINE_STATE::BasePipeline<VkGraphicsPipelineCreateInfo>() const;
-template <>
-VkPipeline PIPELINE_STATE::BasePipeline<VkComputePipelineCreateInfo>() const;
-template <>
-VkPipeline PIPELINE_STATE::BasePipeline<VkRayTracingPipelineCreateInfoKHR>() const;
-template <>
-VkPipeline PIPELINE_STATE::BasePipeline<VkRayTracingPipelineCreateInfoNV>() const;
-
-template <>
-int32_t PIPELINE_STATE::BasePipelineIndex<VkGraphicsPipelineCreateInfo>() const;
-template <>
-int32_t PIPELINE_STATE::BasePipelineIndex<VkComputePipelineCreateInfo>() const;
-template <>
-int32_t PIPELINE_STATE::BasePipelineIndex<VkRayTracingPipelineCreateInfoKHR>() const;
-template <>
-int32_t PIPELINE_STATE::BasePipelineIndex<VkRayTracingPipelineCreateInfoNV>() const;
-
-template <>
-VkShaderModule PIPELINE_STATE::PIPELINE_STATE::GetShaderModuleByCIIndex<VkGraphicsPipelineCreateInfo>(uint32_t i);
-template <>
-VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkComputePipelineCreateInfo>(uint32_t);
-template <>
-VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCreateInfoKHR>(uint32_t i);
-template <>
-VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCreateInfoNV>(uint32_t i);
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LAST_BOUND_STATE {

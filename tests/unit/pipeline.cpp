@@ -2377,6 +2377,39 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     }
 }
 
+TEST_F(NegativePipeline, GraphicsPipelineWithBadBasePointer) {
+    TEST_DESCRIPTION("Create Graphics Pipeline with bad base pointer");
+
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    CreatePipelineHelper base_pipe(*this);
+    base_pipe.InitState();
+    base_pipe.CreateGraphicsPipeline();
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.gp_ci_.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+        pipe.gp_ci_.basePipelineHandle = VK_NULL_HANDLE;
+        pipe.gp_ci_.basePipelineIndex = 2;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07985");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.gp_ci_.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+        pipe.gp_ci_.basePipelineHandle = base_pipe.Handle();
+        pipe.gp_ci_.basePipelineIndex = 2;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07986");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativePipeline, DiscardRectangle) {
     TEST_DESCRIPTION("Create a graphics pipeline invalid VkPipelineDiscardRectangleStateCreateInfoEXT");
 
