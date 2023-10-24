@@ -6267,6 +6267,88 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCommand, CopyImageOverlappingMemory) {
+    TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
+    auto image_ci =
+        VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+
+    vkt::Buffer buffer;
+    VkDeviceSize buff_size = 32 * 32 * 4;
+    buffer.init_no_mem(*DeviceObj(),
+                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+    const auto buffer_memory_requirements = buffer.memory_requirements();
+
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_ci);
+    const auto image_memory_requirements = image.memory_requirements();
+
+    vkt::DeviceMemory mem;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
+    bool has_memtype = m_device->phy().set_memory_type(
+        buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
+    if (!has_memtype) {
+        GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
+    }
+    mem.init(*DeviceObj(), alloc_info);
+
+    buffer.bind_memory(mem, 0);
+    image.bind_memory(mem, 0);
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.bufferOffset = 0;
+
+    region.imageExtent = {32, 32, 1};
+    region.imageSubresource.mipLevel = 0;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-pRegions-00184");
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-00173");
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    VkBufferImageCopy2 bic2_region = vku::InitStructHelper();
+    bic2_region.bufferRowLength = 0;
+    bic2_region.bufferImageHeight = 0;
+    bic2_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    bic2_region.imageSubresource.layerCount = 1;
+    bic2_region.imageOffset = {0, 0, 0};
+    bic2_region.bufferOffset = 0;
+    bic2_region.imageExtent = {32, 32, 1};
+    bic2_region.imageSubresource.mipLevel = 0;
+
+    VkCopyImageToBufferInfo2 i2b2_info = vku::InitStructHelper();
+    i2b2_info.dstBuffer = buffer.handle();
+    i2b2_info.pRegions = &bic2_region;
+    i2b2_info.regionCount = 1;
+    i2b2_info.srcImage = image.handle();
+    i2b2_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToBufferInfo2-pRegions-00184");
+    vk::CmdCopyImageToBuffer2(m_commandBuffer->handle(), &i2b2_info);
+    m_errorMonitor->VerifyFound();
+
+    VkCopyBufferToImageInfo2 b2i2_info = vku::InitStructHelper();
+    b2i2_info.srcBuffer = buffer.handle();
+    b2i2_info.pRegions = &bic2_region;
+    b2i2_info.regionCount = 1;
+    b2i2_info.dstImage = image.handle();
+    b2i2_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2-pRegions-00173");
+    vk::CmdCopyBufferToImage2(m_commandBuffer->handle(), &b2i2_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeCommand, ResolveUsage) {
     TEST_DESCRIPTION("Resolve image with missing usage flags.");
 

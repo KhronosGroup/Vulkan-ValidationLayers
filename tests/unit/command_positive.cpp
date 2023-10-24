@@ -1359,3 +1359,52 @@ TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
 
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 }
+
+TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
+    TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
+    auto image_ci =
+        VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+
+    vkt::Buffer buffer;
+    VkDeviceSize buff_size = 32 * 32 * 4;
+    buffer.init_no_mem(*DeviceObj(),
+                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+    const auto buffer_memory_requirements = buffer.memory_requirements();
+
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_ci);
+    const auto image_memory_requirements = image.memory_requirements();
+
+    vkt::DeviceMemory mem;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = buffer_memory_requirements.size + image_memory_requirements.size;
+    bool has_memtype = m_device->phy().set_memory_type(
+        buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
+    if (!has_memtype) {
+        GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
+    }
+    mem.init(*DeviceObj(), alloc_info);
+
+    buffer.bind_memory(mem, 0);
+    image.bind_memory(mem, buffer_memory_requirements.size);
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.bufferOffset = 0;
+
+    region.imageExtent = {32, 32, 1};
+    region.imageSubresource.mipLevel = 0;
+    m_commandBuffer->begin();
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_commandBuffer->end();
+}
