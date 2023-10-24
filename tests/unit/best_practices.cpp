@@ -2175,55 +2175,6 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     }
 }
 
-TEST_F(VkBestPracticesLayerTest, DescriptorTypeNotInPool) {
-    TEST_DESCRIPTION("With maintenance1, allocate descriptor with type not in pool");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);  // Need VK_KHR_maintenance1
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
-    InitRenderTarget();
-
-    // Create Pool with 2 Sampler descriptors, but try to alloc
-    // - 1 Sampler
-    // - 1 Uniform Buffer
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 2;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
-    ds_pool_ci.flags = 0;
-    ds_pool_ci.maxSets = 2;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding dsl_binding_sampler = {};
-    dsl_binding_sampler.binding = 0;
-    dsl_binding_sampler.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding_sampler.descriptorCount = 1;
-    dsl_binding_sampler.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_sampler.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding dsl_binding_uniform = {};
-    dsl_binding_uniform.binding = 1;
-    dsl_binding_uniform.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding_uniform.descriptorCount = 1;
-    dsl_binding_uniform.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_uniform.pImmutableSamplers = nullptr;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding_sampler, dsl_binding_uniform});
-
-    VkDescriptorSet descriptor_set;
-    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
-    alloc_info.pSetLayouts = &ds_layout.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DescriptorTypeNotInPool");
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState())

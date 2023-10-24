@@ -49,25 +49,6 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
                                    pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(),
                                    pool_state->GetAvailableSets());
             }
-
-            for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-                auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
-                if (layout) {  // if null, this is validated/logged in object_tracker
-                    const uint32_t binding_count = layout->GetBindingCount();
-                    for (uint32_t j = 0; j < binding_count; ++j) {
-                        const VkDescriptorType type = layout->GetTypeFromIndex(j);
-                        if (!pool_state->IsAvailableType(type)) {
-                            // This check would be caught by validation if VK_KHR_maintenance1 was not enabled
-                            skip |=
-                                LogWarning(kVUID_BestPractices_DescriptorTypeNotInPool, pool_state->Handle(), error_obj.location,
-                                           "pSetLayouts[%" PRIu32 "] binding %" PRIu32
-                                           " was created with %s but the "
-                                           "Descriptor Pool was not created with this type",
-                                           i, j, string_VkDescriptorType(type));
-                        }
-                    }
-                }
-            }
         }
     }
 
