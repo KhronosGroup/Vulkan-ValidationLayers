@@ -1512,6 +1512,61 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
+TEST_F(PositiveSyncObject, BasicSetAndWaitEvent) {
+    TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent/CmdWaitEvents");
+    RETURN_IF_SKIP(Init())
+
+    const vkt::Event event(*m_device);
+
+    // Record time validation
+    m_commandBuffer->begin();
+    vk::CmdSetEvent(*m_commandBuffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdWaitEvents(*m_commandBuffer, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
+    m_commandBuffer->end();
+
+    // Also submit to the queue to test submit time validation
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::DeviceWaitIdle(*m_device);
+}
+
+TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
+    TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent2/CmdWaitEvents2");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = 0;
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_NONE;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    const vkt::Event event(*m_device);
+
+    // Record time validation
+    m_commandBuffer->begin();
+    vk::CmdSetEvent2(*m_commandBuffer, event, &dependency_info);
+    vk::CmdWaitEvents2(*m_commandBuffer, 1, &event.handle(), &dependency_info);
+    m_commandBuffer->end();
+
+    // Also submit to the queue to test submit time validation
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::DeviceWaitIdle(*m_device);
+}
+
 TEST_F(PositiveSyncObject, WaitEventThenSet) {
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 

@@ -2178,8 +2178,8 @@ TEST_F(NegativeSyncObject, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     }
 }
 
-TEST_F(NegativeSyncObject, WaitEventsDifferentQueues) {
-    TEST_DESCRIPTION("Using CmdWaitEvents with invalid barrier queues");
+TEST_F(NegativeSyncObject, WaitEventsDifferentQueueFamilies) {
+    TEST_DESCRIPTION("Using CmdWaitEvents with invalid barrier queue families");
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
@@ -3414,6 +3414,89 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_default_queue);
+}
+
+TEST_F(NegativeSyncObject, DetectInterQueueEventUsage) {
+    TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent/CmdWaitEvents)");
+    RETURN_IF_SKIP(Init())
+
+    if (m_device->graphics_queues().size() < 2) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+    const VkQueue other_gfx_queue = m_device->graphics_queues()[1]->handle();
+    assert(other_gfx_queue != m_default_queue);
+
+    const vkt::Event event(*m_device);
+
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    cb1.begin();
+    vk::CmdSetEvent(cb1, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    cb1.end();
+
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdWaitEvents(cb2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr,
+                      0, nullptr, 0, nullptr);
+    cb2.end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cb1.handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    submit_info.pCommandBuffers = &cb2.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
+    vk::QueueSubmit(other_gfx_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    vk::DeviceWaitIdle(*m_device);
+}
+
+TEST_F(NegativeSyncObject, DetectInterQueueEventUsage2) {
+    TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent2/CmdWaitEvents2)");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    if (m_device->graphics_queues().size() < 2) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+    const VkQueue other_gfx_queue = m_device->graphics_queues()[1]->handle();
+    assert(other_gfx_queue != m_default_queue);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = 0;
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_NONE;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    const vkt::Event event(*m_device);
+
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    cb1.begin();
+    vk::CmdSetEvent2(cb1, event, &dependency_info);
+    cb1.end();
+
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdWaitEvents2(cb2, 1, &event.handle(), &dependency_info);
+    cb2.end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cb1.handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    submit_info.pCommandBuffers = &cb2.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
+    vk::QueueSubmit(other_gfx_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    vk::DeviceWaitIdle(*m_device);
 }
 
 TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
