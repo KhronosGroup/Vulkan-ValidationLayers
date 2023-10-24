@@ -29,7 +29,7 @@ if (WIN32)
 elseif(APPLE)
     set_target_properties(VkLayer_device_profile_api PROPERTIES SUFFIX ".dylib")
 else()
-    target_link_options(VkLayer_device_profile_api PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_device_profile_api.map,-Bsymbolic)
+    target_link_options(VkLayer_device_profile_api PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_device_profile_api.map)
 endif()
 
 target_compile_options(VkLayer_device_profile_api PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
