@@ -272,7 +272,6 @@ struct DrawDispatchVuid {
     const char* shaders_push_constants_08878 = kVUIDUndefined;
     const char* shaders_descriptor_layouts_08879 = kVUIDUndefined;
     const char* set_attachment_feedback_loop_enable_08880 = kVUIDUndefined;
-    const char* set_vertex_input_08882 = kVUIDUndefined;
     const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
     const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_line_width_08618 = kVUIDUndefined;
@@ -322,6 +321,11 @@ struct DrawDispatchVuid {
     const char* sample_locations_enable_07936 = kVUIDUndefined;
     const char* sample_locations_enable_07937 = kVUIDUndefined;
     const char* sample_locations_enable_07938 = kVUIDUndefined;
+    const char* set_blend_advanced_09417 = kVUIDUndefined;
+    const char* set_blend_equation_09418 = kVUIDUndefined;
+    const char* set_color_write_09419 = kVUIDUndefined;
+    const char* set_coverage_to_color_location_09420 = kVUIDUndefined;
+    const char* set_viewport_swizzle_09421 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
