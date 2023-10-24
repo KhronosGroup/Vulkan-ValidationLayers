@@ -3011,3 +3011,17 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
 
     vk::QueueWaitIdle(m_default_queue);
 }
+
+TEST_F(VkLayerTest, MissingExtensionPhysicalDeviceProperties) {
+    TEST_DESCRIPTION("Don't enable instance extension needed");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // requires VK_KHR_external_fence_capabilities
+    VkPhysicalDeviceIDPropertiesKHR id_properties = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 properties2 = vku::InitStructHelper(&id_properties);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    m_errorMonitor->VerifyFound();
+}
