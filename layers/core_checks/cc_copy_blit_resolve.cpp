@@ -537,6 +537,14 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-VkCopyImageToBufferInfo2-srcImage-07978",
             kVUIDUndefined,
             kVUIDUndefined,
+        }},
+        {"00173", {
+            "VUID-vkCmdCopyBufferToImage-pRegions-00173",
+            "VUID-vkCmdCopyImageToBuffer-pRegions-00184",
+            "VUID-VkCopyBufferToImageInfo2-pRegions-00173",
+            "VUID-VkCopyImageToBufferInfo2-pRegions-00184",
+            kVUIDUndefined,
+            kVUIDUndefined,
         }}
     };
     // clang-format on
@@ -2425,6 +2433,49 @@ bool CoreChecks::ValidateImageSampleCount(const HandleT handle, const IMAGE_STAT
 }
 
 template <typename RegionType>
+bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const CMD_BUFFER_STATE &cb_state, uint32_t regionCount,
+                                                      const RegionType *pRegions, const IMAGE_STATE &image_state,
+                                                      const BUFFER_STATE &buffer_state, const Location &loc, bool image_to_buffer,
+                                                      bool is_2) const {
+    bool skip = false;
+    auto element_size = vkuFormatElementSize(image_state.createInfo.format);
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        const RegionType &region = pRegions[i];
+        VkDeviceSize image_offset;
+        if (image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+            // Can only know actual offset for linearly tiled images
+            VkImageSubresource isr = {};
+            isr.arrayLayer = region.imageSubresource.baseArrayLayer;
+            isr.aspectMask = region.imageSubresource.aspectMask;
+            isr.mipLevel = region.imageSubresource.mipLevel;
+            VkSubresourceLayout srl = {};
+            DispatchGetImageSubresourceLayout(device, image_state.image(), &isr, &srl);
+            if (image_state.createInfo.arrayLayers == 1) srl.arrayPitch = 0;
+            if (image_state.createInfo.imageType != VK_IMAGE_TYPE_3D) srl.depthPitch = 0;
+            image_offset = (region.imageSubresource.baseArrayLayer * srl.arrayPitch) + (region.imageOffset.x * element_size) +
+                           (region.imageOffset.y * srl.rowPitch) + (region.imageOffset.z * srl.depthPitch) + srl.offset;
+        } else {
+            image_offset = region.imageOffset.x * region.imageOffset.y * region.imageOffset.z * element_size;
+        }
+        uint64_t copy_size;
+        if (region.bufferRowLength != 0 && region.bufferImageHeight != 0) {
+            copy_size = ((region.bufferRowLength * region.bufferImageHeight) * element_size);
+        } else {
+            copy_size = ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * element_size);
+        }
+        auto image_region = sparse_container::range<VkDeviceSize>{image_offset, image_offset + copy_size};
+        auto buffer_region = sparse_container::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
+        if (image_state.DoesResourceMemoryOverlap(image_region, &buffer_state, buffer_region)) {
+            const Location region_loc = loc.dot(Field::pRegions, i);
+            const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
+            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("00173", image_to_buffer, is_2), objlist, region_loc,
+                             "Detected overlap between source and dest regions in memory.");
+        }
+    }
+    return skip;
+}
+
+template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
                                               const Location &loc) const {
@@ -2516,6 +2567,10 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07968" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07968";
         skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc, vuid);
+    }
+
+    if (!skip && !dst_buffer_state->sparse && !src_image_state->sparse) {
+        skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *src_image_state, *dst_buffer_state, loc, true, is_2);
     }
     return skip;
 }
@@ -2676,6 +2731,11 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                                           ss.str().c_str());
         }
     }
+
+    if (!skip && !src_buffer_state->sparse && !dst_image_state->sparse){
+        skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *dst_image_state, *src_buffer_state, loc, false, is_2);
+    }
+
     return skip;
 }
 

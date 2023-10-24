@@ -794,6 +794,10 @@ class CoreChecks : public ValidationStateTracker {
     template <typename HandleT>
     bool ValidateImageSampleCount(const HandleT handle, const IMAGE_STATE& image_state, VkSampleCountFlagBits sample_count,
                                   const Location& loc, const std::string& vuid) const;
+    template <typename RegionType>
+    bool ValidateImageBufferCopyMemoryOverlap(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
+                               const IMAGE_STATE& image_state, const BUFFER_STATE& buffer_state, const Location& loc,
+                               bool image_to_buffer, bool is_2) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateCmd(const CMD_BUFFER_STATE& cb_state, const Location& loc) const;
     bool ValidateIndirectCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& loc) const;
