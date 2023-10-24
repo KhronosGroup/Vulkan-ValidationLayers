@@ -68,13 +68,6 @@ config("vulkan_internal_config") {
   if (is_clang && is_mac) {
     cflags += [ "-Wno-unguarded-availability-new" ]
   }
-  if (is_linux) {
-    defines += [
-      "SYSCONFDIR=\"/etc\"",
-      "FALLBACK_CONFIG_DIRS=\"/etc/xdg\"",
-      "FALLBACK_DATA_DIRS=\"/usr/local/share:/usr/share\"",
-    ]
-  }
 
   # Suppress warnings the vulkan code doesn't comply with.
   if (is_fuchsia) {
