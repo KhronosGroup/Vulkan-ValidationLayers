@@ -131,7 +131,6 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_SemaphoreCount = "UNASSIGNED-BestPractices-SemaphoreCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_EmptyDescriptorPool =
     "UNASSIGNED-BestPractices-EmptyDescriptorPool";
-[[maybe_unused]] static const char *kVUID_BestPractices_DescriptorTypeNotInPool = "UNASSIGNED-BestPractices-DescriptorTypeNotInPool";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearValueWithoutLoadOpClear = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueWithoutLoadOpClear";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueCountHigherThanAttachmentCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-StoreOpDontCareThenLoadOpLoad";

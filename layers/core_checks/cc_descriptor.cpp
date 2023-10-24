@@ -4078,6 +4078,44 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
     return skip;
 }
 
+void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                      VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
+                                                      void *ads_state) {
+    // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
+    // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY they think they over-allocated, but if they instead allocated type not
+    // avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking they ran out. It was decided
+    // that this deserves to be a Core Validation check
+    if (record_obj.result == VK_ERROR_OUT_OF_POOL_MEMORY && pAllocateInfo) {
+        // result type added in VK_KHR_maintenance1
+        auto pool_state = Get<DESCRIPTOR_POOL_STATE>(pAllocateInfo->descriptorPool);
+        if (!pool_state) {
+            return;
+        }
+        for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
+            auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
+            if (!layout) {
+                continue;
+            }
+
+            const uint32_t binding_count = layout->GetBindingCount();
+            for (uint32_t j = 0; j < binding_count; ++j) {
+                const VkDescriptorType type = layout->GetTypeFromIndex(j);
+                if (!pool_state->IsAvailableType(type)) {
+                    // This check would be caught by validation if VK_KHR_maintenance1 was not enabled
+                    LogWarning("UNASSIGNED-CoreValidation-AllocateDescriptorSets-WrongType", pool_state->Handle(),
+                               record_obj.location.dot(Field::pAllocateInfo).dot(Field::pSetLayouts, i),
+                               "binding %" PRIu32
+                               " was created with %s but the "
+                               "Descriptor Pool was not created with this type and returned VK_ERROR_OUT_OF_POOL_MEMORY",
+                               j, string_VkDescriptorType(type));
+                }
+            }
+        }
+    }
+
+    StateTracker::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, ads_state);
+}
+
 // Validate that given set is valid and that it's not being used by an in-flight CmdBuffer
 // func_str is the name of the calling function
 // Return false if no errors occur
