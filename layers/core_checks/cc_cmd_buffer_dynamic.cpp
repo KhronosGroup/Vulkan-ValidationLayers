@@ -1060,10 +1060,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                                   loc, vuid.set_clip_space_w_scaling_09232);
             }
         }
-        if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, objlist, loc,
-                                              vuid.set_viewport_swizzle_08675);
-        }
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_POLYGON_MODE_EXT] &&
             cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
@@ -1073,8 +1069,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
     if (vertex_shader_bound) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, objlist, loc,
                                           vuid.dynamic_primitive_topology_07842);
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT, objlist, loc,
-                                          vuid.set_vertex_input_08882);
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, objlist, loc,
                                           vuid.primitive_restart_enable_04879);
     }
@@ -1105,12 +1099,17 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LOGIC_OP_EXT, objlist, loc,
                                                   vuid.set_logic_op_08641);
             }
+            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, objlist,
+                                              loc, vuid.set_color_blend_enable_08657);
+            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, objlist,
+                                              loc, vuid.set_blend_equation_09418);
+
             const std::array<VkBlendFactor, 4> const_factors = {
                 VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
                 VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
             for (uint32_t i = 0; i < cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount(); ++i) {
                 if (!cb_state.dynamic_state_value.color_blend_enable_attachments[i]) {
-                    skip |= LogError(vuid.set_color_blend_enable_08657, objlist, loc,
+                    skip |= LogError(vuid.set_blend_advanced_09417, objlist, loc,
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT), i);
                 } else if (cb_state.dynamic_state_value.color_blend_enabled[i]) {
@@ -1131,6 +1130,11 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                             }
                         }
                     }
+                }
+                if (!cb_state.dynamic_state_value.color_write_mask_attachments[i]) {
+                    skip |= LogError(vuid.set_color_write_09419, objlist, loc,
+                                     "%s state not set for this command buffer for attachment %" PRIu32 ".",
+                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT), i);
                 }
             }
             if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
@@ -1161,6 +1165,19 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                     skip |=
                         ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV,
                                                   objlist, loc, vuid.set_coverage_to_color_location_08677);
+                    if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV]) {
+                        VkFormat format = VK_FORMAT_UNDEFINED;
+                        if (cb_state.dynamic_state_value.coverage_to_color_location < cb_state.active_attachments->size()) {
+                            format = (*cb_state.active_attachments)[cb_state.dynamic_state_value.coverage_to_color_location]
+                                         ->create_info.format;
+                        }
+                        if (!IsValueIn(format, {VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT,
+                                                VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT})) {
+                            skip |= LogError(vuid.set_coverage_to_color_location_09420, cb_state.commandBuffer(), loc,
+                                             "Color attachment format selected by coverageToColorLocation (%" PRIu32 ") is %s.",
+                                             cb_state.dynamic_state_value.coverage_to_color_location, string_VkFormat(format));
+                        }
+                    }
                 }
             }
             if (enabled_features.colorWriteEnable) {
@@ -1179,6 +1196,19 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                      cb_state.dynamic_state_value.color_write_enable_attachment_count,
                                      cb_state.GetDynamicColorAttachmentCount());
                 }
+            }
+        }
+    }
+    if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
+        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, objlist, loc,
+                                          vuid.set_viewport_swizzle_08675);
+        if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV]) {
+            if (cb_state.dynamic_state_value.viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
+                skip |=
+                    LogError(vuid.set_viewport_swizzle_09421, cb_state.commandBuffer(), loc,
+                             "viewportCount (%" PRIu32 ") set with vkCmdSetViewportSwizzleNV() is less than viewportCount (%" PRIu32
+                             ") set with vkCmdSetViewportWithCount()",
+                             cb_state.dynamic_state_value.viewport_swizzle_count, cb_state.dynamic_state_value.viewport_count);
             }
         }
     }

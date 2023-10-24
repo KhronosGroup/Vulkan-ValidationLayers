@@ -235,6 +235,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         bool stippled_line_enable;
         // VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV
         bool coverage_to_color_enable;
+        // VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV
+        uint32_t coverage_to_color_location;
         // VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV
         VkCoverageModulationModeNV coverage_modulation_mode;
         // VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV
@@ -286,6 +288,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         uint32_t viewport_w_scaling_count;
         // VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE
         bool viewport_w_scaling_enable;
+        // VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV
+        uint32_t viewport_swizzle_count;
         // VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV
         uint32_t shading_rate_palette_count;
         // VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV

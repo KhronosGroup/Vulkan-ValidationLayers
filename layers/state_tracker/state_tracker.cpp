@@ -5254,6 +5254,7 @@ void ValidationStateTracker::PostCallRecordCmdSetViewportSwizzleNV(VkCommandBuff
                                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV);
+    cb_state->dynamic_state_value.viewport_swizzle_count = viewportCount;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer,
@@ -5269,6 +5270,7 @@ void ValidationStateTracker::PostCallRecordCmdSetCoverageToColorLocationNV(VkCom
                                                                            const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV);
+    cb_state->dynamic_state_value.coverage_to_color_location = coverageToColorLocation;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
