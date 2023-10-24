@@ -37,7 +37,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     for (uint32_t i = 0; i < count; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         skip |= ValidateGraphicsPipeline(*cgpl_state->pipe_state[i].get(), create_info_loc);
-        skip |= ValidatePipelineDerivatives(cgpl_state->pipe_state, i, create_info_loc);
+        skip |= ValidateGraphicsPipelineDerivatives(cgpl_state->pipe_state, i, create_info_loc);
     }
     return skip;
 }
@@ -3617,5 +3617,37 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipelines,
+                                                     uint32_t pipe_index, const Location &loc) const {
+    bool skip = false;
+    const auto &pipeline = *pipelines[pipe_index].get();
+    // If create derivative bit is set, check that we've specified a base
+    // pipeline correctly, and that the base pipeline was created to allow
+    // derivatives.
+    if (pipeline.create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+        std::shared_ptr<const PIPELINE_STATE> base_pipeline;
+        const VkPipeline base_handle = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().basePipelineHandle;
+        const int32_t base_index = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().basePipelineIndex;
+        if (base_index != -1 && base_index < static_cast<int32_t>(pipelines.size())) {
+            if (static_cast<uint32_t>(base_index) >= pipe_index) {
+                skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00720", base_handle, loc,
+                                 "base pipeline (index %" PRId32
+                                 ") must occur earlier in array than derivative pipeline (index %" PRIu32 ").",
+                                 base_index, pipe_index);
+            } else {
+                base_pipeline = pipelines[base_index];
+            }
+        } else if (base_handle != VK_NULL_HANDLE) {
+            base_pipeline = Get<PIPELINE_STATE>(base_handle);
+        }
+
+        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+            skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00721", base_pipeline->pipeline(), loc,
+                             "base pipeline does not allow derivatives.");
+        }
+    }
     return skip;
 }

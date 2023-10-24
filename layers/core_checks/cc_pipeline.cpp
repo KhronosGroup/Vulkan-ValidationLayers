@@ -25,41 +25,6 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
-bool CoreChecks::ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipelines, uint32_t pipe_index,
-                                             const Location &loc) const {
-    bool skip = false;
-    const auto &pipeline = *pipelines[pipe_index].get();
-    // If create derivative bit is set, check that we've specified a base
-    // pipeline correctly, and that the base pipeline was created to allow
-    // derivatives.
-    if (pipeline.create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
-        std::shared_ptr<const PIPELINE_STATE> base_pipeline;
-        const VkPipeline base_handle = pipeline.BasePipeline<VkGraphicsPipelineCreateInfo>();
-        const int32_t base_index = pipeline.BasePipelineIndex<VkGraphicsPipelineCreateInfo>();
-        if (!((base_handle != VK_NULL_HANDLE) ^ (base_index != -1))) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07986", device, loc,
-                             "exactly one of base pipeline index and handle must be specified");
-        } else if (base_index != -1) {
-            if (static_cast<uint32_t>(base_index) >= pipe_index) {
-                skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00720", base_handle, loc,
-                                 "base pipeline (index %" PRId32
-                                 ") must occur earlier in array than derivative pipeline (index %" PRIu32 ").",
-                                 base_index, pipe_index);
-            } else {
-                base_pipeline = pipelines[base_index];
-            }
-        } else if (base_handle != VK_NULL_HANDLE) {
-            base_pipeline = Get<PIPELINE_STATE>(base_handle);
-        }
-
-        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
-            skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00721", base_pipeline->pipeline(), loc,
-                             "base pipeline does not allow derivatives.");
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, const Location &loc, const char *vuid) const {
     bool skip = false;
     if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {

@@ -511,8 +511,8 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkPipelineLibraryCreateInfoKHR& link_info,
                                       const VkPipelineRenderingCreateInfo* rendering_struct, const Location& loc, int lib_index,
                                       const char* vuid) const;
-    bool ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, uint32_t pipe_index,
-                                     const Location& loc) const;
+    bool ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, uint32_t pipe_index,
+                                             const Location& loc) const;
     bool ValidateGraphicsPipeline(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices, const Location& loc) const;
