@@ -65,6 +65,9 @@ class EVENT_STATE : public BASE_NODE {
     // Source stage specified by the "set event" command
     VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
 
+    // Queue that signaled this event. It's null if event was signaled from the host
+    VkQueue signaling_queue = VK_NULL_HANDLE;
+
     EVENT_STATE(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
         : BASE_NODE(event_, kVulkanObjectTypeEvent),
           write_in_use(0),
@@ -424,8 +427,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
 
-    using EventCallback =
-        std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info)>;
+    using EventCallback = std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
+                                             VkQueue waiting_queue)>;
     std::vector<EventCallback> eventUpdates;
 
     std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
@@ -592,7 +595,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
     void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers, VkImageLayout layout);
 
-    void Submit(uint32_t perf_submit_pass);
+    void Submit(VkQueue queue, uint32_t perf_submit_pass);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
 
     uint32_t GetDynamicColorAttachmentCount() const {

@@ -988,8 +988,9 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
     return skip;
 }
 
-bool CoreChecks::ValidateWaitEventsAtSubmit(const CMD_BUFFER_STATE &cb_state, size_t eventCount, size_t firstEventIndex,
-                                            VkPipelineStageFlags2 sourceStageMask, const EventToStageMap &local_event_signal_info) {
+bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const CMD_BUFFER_STATE &cb_state, size_t eventCount,
+                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
+                                            const EventToStageMap &local_event_signal_info, VkQueue waiting_queue) {
     bool skip = false;
     const ValidationStateTracker *state_data = cb_state.dev_data;
     VkPipelineStageFlags2KHR stage_mask = 0;
@@ -1006,10 +1007,20 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(const CMD_BUFFER_STATE &cb_state, si
         // the last src_stage from that submission).
         if (auto signal_info = local_event_signal_info.find(event); signal_info != local_event_signal_info.end()) {
             stage_mask |= signal_info->second;
+            // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
         } else {
             auto event_state = state_data->Get<EVENT_STATE>(event);
             assert(event_state);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
             stage_mask |= event_state->signal_src_stage_mask;
+
+            if (event_state->signaling_queue != VK_NULL_HANDLE && event_state->signaling_queue != waiting_queue) {
+                const LogObjectList objlist(cb_state.commandBuffer(), event, event_state->signaling_queue, waiting_queue);
+                skip |=
+                    state_data->LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, Location(command),
+                                         "waits for event %s on the queue %s but the event was signaled on a different queue %s",
+                                         state_data->FormatHandle(event).c_str(), state_data->FormatHandle(waiting_queue).c_str(),
+                                         state_data->FormatHandle(event_state->signaling_queue).c_str());
+            }
         }
     }
     // TODO: Need to validate that host_bit is only set if set event is called
@@ -1103,12 +1114,13 @@ void CORE_CMD_BUFFER_STATE::RecordWaitEvents(vvl::Func command, uint32_t eventCo
     auto first_event_index = events.size();
     CMD_BUFFER_STATE::RecordWaitEvents(command, eventCount, pEvents, srcStageMask);
     auto event_added_count = events.size() - first_event_index;
-    eventUpdates.emplace_back([event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb_state, bool do_validate,
-                                                                                   EventToStageMap &local_event_signal_info) {
-        if (!do_validate) return false;
-        return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, srcStageMask,
-                                                      local_event_signal_info);
-    });
+    eventUpdates.emplace_back(
+        [command, event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb_state, bool do_validate,
+                                                                      EventToStageMap &local_event_signal_info, VkQueue queue) {
+            if (!do_validate) return false;
+            return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, srcStageMask,
+                                                          local_event_signal_info, queue);
+        });
 }
 
 void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
