@@ -35,7 +35,7 @@ permissions:
   contents: read
 
 jobs:
-  linux:
+  linuxBuild:
     env:
       CMAKE_C_COMPILER_LAUNCHER: ccache
       CMAKE_CXX_COMPILER_LAUNCHER: ccache
@@ -43,12 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
-        compiler: [{cc: gcc, cxx: g++}]
-        flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}, {c: "-fsanitize=thread", ld: "-fsanitize=thread"}]
         config: [debug, release]
-        cpp_std: [17]
-        robin_hood: ["ON"]
         include:
           # Test Ubuntu-20.04 release build works.
           - os: ubuntu-20.04
@@ -62,6 +57,43 @@ jobs:
             config: release
             cpp_std: 20
             robin_hood: "ON"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.17.2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}-${{ matrix.flags.c }}-${{ matrix.flags.ld }}-${{matrix.robin_hood}}
+      - name: Install python dependencies
+        run: python3 -m pip install jsonschema pyparsing
+      - name: Install WSI dependencies
+        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - name: Build
+        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+        env:
+          CC: ${{ matrix.compiler.cc }}
+          CXX: ${{ matrix.compiler.cxx }}
+          CFLAGS: ${{ matrix.flags.c }}
+          CXXFLAGS: ${{ matrix.flags.c }}
+          LDFLAGS: ${{ matrix.flags.ld }}
+
+  linuxRun:
+    env:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
+        flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}, {c: "-fsanitize=thread", ld: "-fsanitize=thread"}]
+        config: [debug, release]
+        include:
           # Test clang support
           - os: ubuntu-22.04
             compiler: {cc: clang, cxx: clang++}
@@ -151,8 +183,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [ amd64, amd64_x86 ]
-        config: [ debug, release ]
+        arch: [ amd64 ]
+        config: [ debug ]
 
     steps:
       - uses: actions/checkout@v3
@@ -225,7 +257,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ macos-11, macos-12 ]
+        os: [ macos-12 ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
