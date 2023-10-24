@@ -379,19 +379,19 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 else:
                     extension_check = f'if (!instance_extensions.{extension.name.lower()}) {{'
                 pnext_check += f'''
-                    if (is_const_param) {{
-                                {extension_check}
-                                skip |= LogError(
-                                    pnext_vuid, instance, loc.dot(Field::pNext),
-                                    "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
-                                    "{extension.name} has not been enabled.");
+                        {extension_check}
+                            skip |= LogError(
+                                pnext_vuid, instance, loc.dot(Field::pNext),
+                                "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
+                                "{extension.name} has not been enabled.");
                         }}
-                    }}
                     '''
 
             expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [])
             struct_validation_source = self.ScrubStructCode(expr)
             if struct_validation_source != '':
+                # Only reasonable to validate content of structs if const as otherwise the date inside has not been writen to yet
+                # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3122
                 pnext_check += 'if (is_const_param) {\n'
                 pnext_check += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
                 struct_validation_source = f'{struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
