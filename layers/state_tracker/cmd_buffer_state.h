@@ -60,8 +60,10 @@ class EVENT_STATE : public BASE_NODE {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_event_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
-    VkPipelineStageFlags2KHR stageMask = VkPipelineStageFlags2KHR(0);
-    VkEventCreateFlags flags;
+    const VkEventCreateFlags flags;
+
+    // Source stage specified by the "set event" command
+    VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
 
     EVENT_STATE(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
         : BASE_NODE(event_, kVulkanObjectTypeEvent),
@@ -421,8 +423,11 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
-    std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap *localEventToStageMap)>>
-        eventUpdates;
+
+    using EventCallback =
+        std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info)>;
+    std::vector<EventCallback> eventUpdates;
+
     std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;

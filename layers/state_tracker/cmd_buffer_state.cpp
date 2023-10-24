@@ -1372,8 +1372,13 @@ void CMD_BUFFER_STATE::RecordTransferCmd(Func command, std::shared_ptr<BINDABLE>
     }
 }
 
-static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags2KHR stageMask, EventToStageMap *localEventToStageMap) {
-    (*localEventToStageMap)[event] = stageMask;
+// Stores information associated with the event's signal operation.
+// This function is also used for unsignal (reset) operation which sets source stage to NONE.
+// NOTE: for additional event validation we might need to store a boolean flag to
+// distinguish between signal/unsignal operations (NONE stage can not be used for this,
+// since it's a valid source stage in sync2).
+static bool SetEventSignalInfo(VkEvent event, VkPipelineStageFlags2 src_stage_mask, EventToStageMap &local_event_signal_info) {
+    local_event_signal_info[event] = src_stage_mask;
     return false;
 }
 
@@ -1389,8 +1394,8 @@ void CMD_BUFFER_STATE::RecordSetEvent(Func command, VkEvent event, VkPipelineSta
     if (!waitedEvents.count(event)) {
         writeEventsBeforeWait.push_back(event);
     }
-    eventUpdates.emplace_back([event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
-        return SetEventStageMask(event, stageMask, localEventToStageMap);
+    eventUpdates.emplace_back([event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info) {
+        return SetEventSignalInfo(event, stageMask, local_event_signal_info);
     });
 }
 
@@ -1407,8 +1412,8 @@ void CMD_BUFFER_STATE::RecordResetEvent(Func command, VkEvent event, VkPipelineS
         writeEventsBeforeWait.push_back(event);
     }
 
-    eventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
-        return SetEventStageMask(event, VkPipelineStageFlags2KHR(0), localEventToStageMap);
+    eventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info) {
+        return SetEventSignalInfo(event, VK_PIPELINE_STAGE_2_NONE, local_event_signal_info);
     });
 }
 
@@ -1494,13 +1499,13 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     // Update EVENT_STATE with src_stage from the last recorded SetEvent.
     // Ultimately, it tracks the last SetEvent for the entire submission.
     {
-        EventToStageMap local_event_to_stage_map;
+        EventToStageMap local_event_signal_info;
         for (const auto &function : eventUpdates) {
-            function(*this, /*do_validate*/ false, &local_event_to_stage_map);
+            function(*this, /*do_validate*/ false, local_event_signal_info);
         }
-        for (const auto &eventStagePair : local_event_to_stage_map) {
-            auto event_state = dev_data->Get<EVENT_STATE>(eventStagePair.first);
-            event_state->stageMask = eventStagePair.second;
+        for (const auto &event_signal : local_event_signal_info) {
+            auto event_state = dev_data->Get<EVENT_STATE>(event_signal.first);
+            event_state->signal_src_stage_mask = event_signal.second;
         }
     }
 

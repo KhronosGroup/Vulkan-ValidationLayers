@@ -988,8 +988,8 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
     return skip;
 }
 
-bool CoreChecks::ValidateEventStageMask(const CMD_BUFFER_STATE &cb_state, size_t eventCount, size_t firstEventIndex,
-                                        VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap *localEventToStageMap) {
+bool CoreChecks::ValidateWaitEventsAtSubmit(const CMD_BUFFER_STATE &cb_state, size_t eventCount, size_t firstEventIndex,
+                                            VkPipelineStageFlags2 sourceStageMask, const EventToStageMap &local_event_signal_info) {
     bool skip = false;
     const ValidationStateTracker *state_data = cb_state.dev_data;
     VkPipelineStageFlags2KHR stage_mask = 0;
@@ -1004,12 +1004,12 @@ bool CoreChecks::ValidateEventStageMask(const CMD_BUFFER_STATE &cb_state, size_t
         // conveniently stored in the EVENT_STATE object itself (after each queue
         // submit, CMD_BUFFER_STATE::Submit() updates EVENT_STATE, so it contains
         // the last src_stage from that submission).
-        if (auto event_src_stage = localEventToStageMap->find(event); event_src_stage != localEventToStageMap->end()) {
-            stage_mask |= event_src_stage->second;
+        if (auto signal_info = local_event_signal_info.find(event); signal_info != local_event_signal_info.end()) {
+            stage_mask |= signal_info->second;
         } else {
-            auto global_event_data = state_data->Get<EVENT_STATE>(event);
-            assert(global_event_data);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
-            stage_mask |= global_event_data->stageMask;
+            auto event_state = state_data->Get<EVENT_STATE>(event);
+            assert(event_state);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
+            stage_mask |= event_state->signal_src_stage_mask;
         }
     }
     // TODO: Need to validate that host_bit is only set if set event is called
@@ -1104,10 +1104,10 @@ void CORE_CMD_BUFFER_STATE::RecordWaitEvents(vvl::Func command, uint32_t eventCo
     CMD_BUFFER_STATE::RecordWaitEvents(command, eventCount, pEvents, srcStageMask);
     auto event_added_count = events.size() - first_event_index;
     eventUpdates.emplace_back([event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb_state, bool do_validate,
-                                                                                   EventToStageMap *localEventToStageMap) {
+                                                                                   EventToStageMap &local_event_signal_info) {
         if (!do_validate) return false;
-        return CoreChecks::ValidateEventStageMask(cb_state, event_added_count, first_event_index, srcStageMask,
-                                                  localEventToStageMap);
+        return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, srcStageMask,
+                                                      local_event_signal_info);
     });
 }
 
