@@ -176,6 +176,8 @@ struct ImageAccess {
     bool is_sampler_bias_offset = false;
     bool is_written_to = false;
     bool is_read_from = false;
+    bool is_sign_extended = false;
+    bool is_zero_extended = false;
 
     uint32_t image_access_chain_index = kInvalidSpirvValue;    // OpAccessChain's Index 0
     uint32_t sampler_access_chain_index = kInvalidSpirvValue;  // OpAccessChain's Index 0
@@ -327,6 +329,11 @@ struct ResourceInterfaceVariable : public VariableBase {
         bool is_read_without_format{false};   // For storage images
         bool is_write_without_format{false};  // For storage images
         bool is_dref{false};
+
+        // vkspec.html#spirvenv-image-signedness describes how SignExtend/ZeroExtend can be used per-access to adjust the Signedness
+        // Only need to check if one access has explicit signedness, mixing should be caught in spirv-val
+        bool is_sign_extended{false};  // if at least one access has SignExtended
+        bool is_zero_extended{false};  // if at least one access has ZeroExtended
     } info;
     uint64_t descriptor_hash = 0;
     bool IsImage() const { return info.image_format_type != NumericTypeUnknown; }

@@ -2406,3 +2406,59 @@ TEST_F(NegativeShaderSpirv, DynamicUniformIndex) {
                                           "VUID-VkShaderModuleCreateInfo-pCode-08740");
     }
 }
+
+// TODO - This logic is illegal, but should be done in SPIRV-Tools
+// see https://github.com/KhronosGroup/SPIRV-Tools/pull/4748
+TEST_F(NegativeShaderSpirv, DISABLED_ImageFormatTypeMismatchWithZeroExtend) {
+    TEST_DESCRIPTION("Use ZeroExtend to turn a SINT resource into a UINT, but only for some of the accesses.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    const char *csSource = R"(
+                     OpCapability Shader
+                     OpCapability StorageImageExtendedFormats
+                     OpMemoryModel Logical GLSL450
+                     OpEntryPoint GLCompute %main "main" %image_ptr
+                     OpExecutionMode %main LocalSize 1 1 1
+                     OpSource GLSL 450
+                     OpDecorate %image_ptr DescriptorSet 0
+                     OpDecorate %image_ptr Binding 0
+                     OpDecorate %image_ptr NonReadable
+%type_void         = OpTypeVoid
+%type_u32          = OpTypeInt 32 0
+%type_i32          = OpTypeInt 32 1
+%type_vec3_u32     = OpTypeVector %type_u32 3
+%type_vec4_u32     = OpTypeVector %type_u32 4
+%type_vec2_i32     = OpTypeVector %type_i32 2
+%type_fn_void      = OpTypeFunction %type_void
+%type_ptr_fn       = OpTypePointer Function %type_vec4_u32
+%type_image        = OpTypeImage %type_u32 2D 0 0 0 2 Rgba32ui
+%type_ptr_image    = OpTypePointer UniformConstant %type_image
+%image_ptr         = OpVariable %type_ptr_image UniformConstant
+%const_i32_0       = OpConstant %type_i32 0
+%const_vec2_i32_00 = OpConstantComposite %type_vec2_i32 %const_i32_0 %const_i32_0
+%main              = OpFunction %type_void None %type_fn_void
+%label             = OpLabel
+%store_location    = OpVariable %type_ptr_fn Function
+%image             = OpLoad %type_image %image_ptr
+                   ; Is accessing a SINT, no error
+%value             = OpImageRead %type_vec4_u32 %image %const_vec2_i32_00 SignExtend
+                   ; But this will still be accessing a UINT, so errors
+%value2            = OpImageRead %type_vec4_u32 %image %const_vec2_i32_00
+                     OpStore %store_location %value
+                     OpReturn
+                     OpFunctionEnd
+              )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-StandaloneSpirv-Image-04965");
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}

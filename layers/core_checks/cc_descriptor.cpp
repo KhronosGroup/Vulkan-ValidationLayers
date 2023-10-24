@@ -896,14 +896,17 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         if (!(variable.info.image_format_type & image_view_state->descriptor_format_bits)) {
-            // bad component type
-            auto set = context.descriptor_set.GetSet();
-            const LogObjectList objlist(set, image_view);
-            return LogError(context.vuids.image_view_numeric_format_07753, objlist, context.loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") requires %s component type, but bound descriptor format is %s.",
-                            FormatHandle(set).c_str(), binding, index, string_NumericType(variable.info.image_format_type),
-                            string_VkFormat(image_view_ci.format));
+            const bool signed_override = ((variable.info.image_format_type & NumericTypeUint) && variable.info.is_sign_extended);
+            const bool unsigned_override = ((variable.info.image_format_type & NumericTypeSint) && variable.info.is_zero_extended);
+            if (!signed_override && !unsigned_override) {
+                auto set = context.descriptor_set.GetSet();
+                const LogObjectList objlist(set, image_view);
+                return LogError(context.vuids.image_view_numeric_format_07753, objlist, context.loc,
+                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                ") requires %s component type, but bound descriptor format is %s.",
+                                FormatHandle(set).c_str(), binding, index, string_NumericType(variable.info.image_format_type),
+                                string_VkFormat(image_view_ci.format));
+            }
         }
 
         const bool image_format_width_64 = vkuFormatHasComponentSize(image_view_ci.format, 64);
@@ -1464,13 +1467,16 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     const auto format_bits = GetFormatType(buffer_view_format);
 
     if (!(variable.info.image_format_type & format_bits)) {
-        // bad component type
-        auto set = context.descriptor_set.GetSet();
-        return LogError(context.vuids.descriptor_buffer_bit_set_08114, set, context.loc,
-                        "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                        ") requires %s component type, but bound descriptor format is %s.",
-                        FormatHandle(set).c_str(), binding, index, string_NumericType(variable.info.image_format_type),
-                        string_VkFormat(buffer_view_format));
+        const bool signed_override = ((variable.info.image_format_type & NumericTypeUint) && variable.info.is_sign_extended);
+        const bool unsigned_override = ((variable.info.image_format_type & NumericTypeSint) && variable.info.is_zero_extended);
+        if (!signed_override && !unsigned_override) {
+            auto set = context.descriptor_set.GetSet();
+            return LogError(context.vuids.descriptor_buffer_bit_set_08114, set, context.loc,
+                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                            ") requires %s component type, but bound descriptor format is %s.",
+                            FormatHandle(set).c_str(), binding, index, string_NumericType(variable.info.image_format_type),
+                            string_VkFormat(buffer_view_format));
+        }
     }
 
     const bool buffer_format_width_64 = vkuFormatHasComponentSize(buffer_view_format, 64);
