@@ -3352,7 +3352,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidMode) {
 
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)));
+    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_info.SetMode(static_cast<VkBuildAccelerationStructureModeKHR>(42));

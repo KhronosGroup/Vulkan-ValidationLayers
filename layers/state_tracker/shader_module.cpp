@@ -521,11 +521,6 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
             is_dref = true;
             is_sampler_implicitLod_dref_proj = true;
             is_sampler_sampled = true;
-
-            const uint32_t image_operand_index = 6;
-            if (image_insn.Length() > image_operand_index && IsImageOperandsBiasOffset(image_insn.Word(image_operand_index))) {
-                is_sampler_bias_offset = true;
-            }
             break;
         }
 
@@ -537,22 +532,12 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
         case spv::OpImageSparseSampleProjExplicitLod: {
             is_sampler_implicitLod_dref_proj = true;
             is_sampler_sampled = true;
-
-            const uint32_t image_operand_index = 5;
-            if (image_insn.Length() > image_operand_index && IsImageOperandsBiasOffset(image_insn.Word(image_operand_index))) {
-                is_sampler_bias_offset = true;
-            }
             break;
         }
 
         case spv::OpImageSampleExplicitLod:
         case spv::OpImageSparseSampleExplicitLod: {
             is_sampler_sampled = true;
-
-            const uint32_t image_operand_index = 5;
-            if (image_insn.Length() > image_operand_index && IsImageOperandsBiasOffset(image_insn.Word(image_operand_index))) {
-                is_sampler_bias_offset = true;
-            }
             break;
         }
 
@@ -585,6 +570,22 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
         default:
             assert(false);  // This is an OpImage* we are not catching
             break;
+    }
+
+    // Find any optional Image Operands
+    const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
+    if (image_insn.Length() > image_operand_position) {
+        const uint32_t image_operand_word = image_insn.Word(image_operand_position);
+
+        if (is_sampler_sampled && IsImageOperandsBiasOffset(image_operand_word)) {
+            is_sampler_bias_offset = true;
+        }
+
+        if ((image_operand_word & spv::ImageOperandsSignExtendMask) != 0) {
+            is_sign_extended = true;
+        } else if ((image_operand_word & spv::ImageOperandsZeroExtendMask) != 0) {
+            is_zero_extended = true;
+        }
     }
 
     // First find the OpLoad for the Image (and optional Sampler)
@@ -1837,6 +1838,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 info.is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
                 info.is_sampler_sampled |= image_access.is_sampler_sampled;
                 info.is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
+                info.is_sign_extended |= image_access.is_sign_extended;
+                info.is_zero_extended |= image_access.is_zero_extended;
                 is_written_to |= image_access.is_written_to;
                 is_read_from |= image_access.is_read_from;
 
