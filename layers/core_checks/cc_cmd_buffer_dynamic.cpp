@@ -481,7 +481,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
 
     if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
-        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT] && pipeline.MultisampleState()) {
         const auto sample_locations =
             vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pipeline.MultisampleState()->pNext);
         if (sample_locations &&
