@@ -824,15 +824,6 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     return skip;
 }
 
-// TODO - This is being called from anywhere
-bool StatelessValidation::manual_PreCallValidateEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
-                                                                                   const char *pLayerName, uint32_t *pPropertyCount,
-                                                                                   VkExtensionProperties *pProperties) const {
-    const Location loc(Func::vkEnumerateDeviceExtensionProperties);
-    return ValidateArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true, false,
-                         false, kVUIDUndefined, "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
-}
-
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
                                                                            const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
                                                                            const ErrorObject &error_obj) const {

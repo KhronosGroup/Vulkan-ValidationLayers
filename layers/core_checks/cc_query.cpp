@@ -319,7 +319,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
 }
 
 bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const Location &loc, VkQueueFlags required_flags,
-                                       const char *vuid) const {
+                                       const char *vuid, const char *extra_message) const {
     auto pool = cb_state.command_pool;
     if (pool) {
         const uint32_t queue_family_index = pool->queueFamilyIndex;
@@ -334,11 +334,12 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const L
                     required_flags_string += string_VkQueueFlagBits(flag);
                 }
             }
-            return LogError(vuid, cb_state.commandBuffer(), loc,
-                            "Called in command buffer %s which was allocated from the command pool %s which was created with "
+            const LogObjectList objlist(cb_state.commandBuffer(), pool->commandPool());
+            return LogError(vuid, objlist, loc,
+                            "%scalled in command buffer %s which was allocated from the command pool %s which was created with "
                             "queueFamilyIndex %u which contains the capability flags %s (but requires %s).",
-                            FormatHandle(cb_state).c_str(), FormatHandle(pool->commandPool()).c_str(), queue_family_index,
-                            string_VkQueueFlags(queue_flags).c_str(), required_flags_string.c_str());
+                            extra_message, FormatHandle(cb_state).c_str(), FormatHandle(pool->commandPool()).c_str(),
+                            queue_family_index, string_VkQueueFlags(queue_flags).c_str(), required_flags_string.c_str());
         }
     }
     return false;
