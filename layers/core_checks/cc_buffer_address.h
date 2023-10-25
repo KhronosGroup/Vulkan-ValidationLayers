@@ -83,26 +83,24 @@ class BufferAddressValidation {
     // using details provided by the other parameters.
     [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker,
                                          vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
-                                         std::string_view api_name, const std::string& device_address_name,
-                                         VkDeviceAddress device_address) const noexcept;
+                                         const Location& device_address_loc, VkDeviceAddress device_address) const noexcept;
 
     [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker,
                                                 vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
-                                                std::string_view api_name, const std::string& device_address_name,
-                                                VkDeviceAddress device_address) const noexcept {
+                                                const Location& device_address_loc, VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (!HasValidBuffer(buffer_list)) {
-            skip |= LogInvalidBuffers(checker, buffer_list, api_name, device_address_name, device_address);
+            skip |= LogInvalidBuffers(checker, buffer_list, device_address_loc, device_address);
         }
         return skip;
     }
     [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker,
-                                                vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
-                                                std::string_view api_name, const std::string& device_address_name,
-                                                VkDeviceAddress device_address) const noexcept {
+                                                     vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
+                                                     const Location& device_address_loc,
+                                                     VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (HasInvalidBuffer(buffer_list)) {
-            skip |= LogInvalidBuffers(checker, buffer_list, api_name, device_address_name, device_address);
+            skip |= LogInvalidBuffers(checker, buffer_list, device_address_loc, device_address);
         }
         return skip;
     }
@@ -167,24 +165,22 @@ bool BufferAddressValidation<N>::HasInvalidBuffer(
 template <size_t N>
 bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
                                                    vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
-                                                   std::string_view api_name, const std::string& device_address_name,
+                                                   const Location& device_address_loc,
                                                    VkDeviceAddress device_address) const noexcept {
     std::array<Error, N> errors;
 
     // Build error message beginning. Then, only per buffer error needs to be appended.
-    std::string error_msg_beginning(api_name);
+    std::string error_msg_beginning;
     {
         const std::string address_string = [&]() {
             std::stringstream address_ss;
             address_ss << "0x" << std::hex << device_address;
             return address_ss.str();
         }();
-        error_msg_beginning += ": No buffer associated to ";
-        error_msg_beginning += device_address_name;
-        error_msg_beginning += " (";
+        error_msg_beginning += "(";
         error_msg_beginning += address_string;
         error_msg_beginning +=
-            ") was found such that valid usage passes. "
+            ") has no buffer associated to it. "
             "At least one buffer associated to this device address must be valid. ";
     }
 
@@ -227,7 +223,8 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
         const auto& vuidAndValidation = vuidsAndValidationFunctions[i];
         const auto& error = errors[i];
         if (!error.Empty()) {
-            skip |= checker.LogError(error.objlist, vuidAndValidation.vuid.data(), "%s", error.error_msg.c_str());
+            skip |=
+                checker.LogError(vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s", error.error_msg.c_str());
         }
     }
 

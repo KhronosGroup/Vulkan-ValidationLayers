@@ -1688,8 +1688,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              }},
         }}};
 
-        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, table_loc.StringFunc(),
-                                                                  table_loc.dot(Field::deviceAddress).Fields(),
+        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, table_loc.dot(Field::deviceAddress),
                                                                   binding_table.deviceAddress);
     }
 

@@ -146,8 +146,8 @@ class GpuAssisted : public GpuAssistedBase {
                                         const RecordObject& record_obj) override;
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, create_shader_module_api_state* csm_state);
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, create_shader_object_api_state* cso_state);
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
-                          uint32_t unique_shader_id) override;
+    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
+                          const Location& loc) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          const RecordObject& record_obj, void* csm_state_data) override;

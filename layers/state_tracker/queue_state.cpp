@@ -58,7 +58,7 @@ void CB_SUBMISSION::EndUse() {
     }
 }
 
-uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
+uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission, const Location &loc) {
     for (auto &cb_state : submission.cbs) {
         auto cb_guard = cb_state->WriteLock();
         for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
@@ -66,7 +66,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
             secondary_cmd_buffer->IncrementResources();
         }
         cb_state->IncrementResources();
-        cb_state->Submit(Queue(), submission.perf_submit_pass);
+        cb_state->Submit(Queue(), submission.perf_submit_pass, loc);
     }
     // seq_ is atomic so we don't need a lock until updating the deque below.
     // Note that this relies on the external synchonization requirements for the
@@ -115,12 +115,12 @@ std::shared_future<void> QUEUE_STATE::Wait(uint64_t until_seq) {
     return submissions_[static_cast<size_t>(index)].waiter;
 }
 
-void QUEUE_STATE::NotifyAndWait(uint64_t until_seq) {
+void QUEUE_STATE::NotifyAndWait(const Location &loc, uint64_t until_seq) {
     until_seq = Notify(until_seq);
     auto waiter = Wait(until_seq);
     auto result = waiter.wait_until(GetCondWaitTimeout());
     if (result != std::future_status::ready) {
-        dev_data_.LogError(Handle(), "UNASSIGNED-VkQueue-state-timeout",
+        dev_data_.LogError("UNASSIGNED-VkQueue-state-timeout", Handle(), loc,
                            "Timeout waiting for queue state to update. This is most likely a validation bug."
                            " seq=%" PRIu64 " until=%" PRIu64,
                            seq_.load(), until_seq);
@@ -195,6 +195,9 @@ void QUEUE_STATE::ThreadFunc() {
         return false;
     };
 
+    // TODO - Pass Location in correctly
+    const Location loc(vvl::Func::vkQueueSubmit);
+
     // Roll this queue forward, one submission at a time.
     while (true) {
         submission = NextSubmission();
@@ -204,7 +207,7 @@ void QUEUE_STATE::ThreadFunc() {
 
         submission->EndUse();
         for (auto &wait : submission->wait_semaphores) {
-            wait.semaphore->Retire(this, wait.payload);
+            wait.semaphore->Retire(this, loc, wait.payload);
         }
         for (auto &cb_state : submission->cbs) {
             auto cb_guard = cb_state->WriteLock();
@@ -215,7 +218,7 @@ void QUEUE_STATE::ThreadFunc() {
             cb_state->Retire(submission->perf_submit_pass, is_query_updated_after);
         }
         for (auto &signal : submission->signal_semaphores) {
-            signal.semaphore->Retire(this, signal.payload);
+            signal.semaphore->Retire(this, loc, signal.payload);
         }
         if (submission->fence) {
             submission->fence->Retire();
@@ -242,7 +245,7 @@ bool FENCE_STATE::EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq) {
 }
 
 // Called from a non-queue operation, such as vkWaitForFences()
-void FENCE_STATE::NotifyAndWait() {
+void FENCE_STATE::NotifyAndWait(const Location &loc) {
     std::shared_future<void> waiter;
     {
         // Hold the lock only while updating members, but not
@@ -263,7 +266,7 @@ void FENCE_STATE::NotifyAndWait() {
     if (waiter.valid()) {
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
-            dev_data_.LogError(Handle(), "UNASSIGNED-VkFence-state-timeout",
+            dev_data_.LogError("UNASSIGNED-VkFence-state-timeout", Handle(), loc,
                                "Timeout waiting for fence state to update. This is most likely a validation bug.");
         }
     }
@@ -434,7 +437,7 @@ void SEMAPHORE_STATE::Notify(uint64_t payload) {
     }
 }
 
-void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
+void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, const Location &loc, uint64_t payload) {
     auto guard = WriteLock();
     if (payload <= completed_.payload) {
         return;
@@ -481,7 +484,7 @@ void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
         guard.unlock();
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
-            dev_data_.LogError(Handle(), "UNASSIGNED-VkSemaphore-state-timeout",
+            dev_data_.LogError("UNASSIGNED-VkSemaphore-state-timeout", Handle(), loc,
                                "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
                                " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
                                completed_.payload, payload);
@@ -507,7 +510,7 @@ std::shared_future<void> SEMAPHORE_STATE::Wait(uint64_t payload) {
     return timepoint.waiter;
 }
 
-void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
+void SEMAPHORE_STATE::NotifyAndWait(const Location &loc, uint64_t payload) {
     if (scope_ == kSyncScopeInternal) {
         Notify(payload);
         auto waiter = Wait(payload);
@@ -515,7 +518,7 @@ void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
         auto result = waiter.wait_until(GetCondWaitTimeout());
         dev_data_.EndBlockingOperation();
         if (result != std::future_status::ready) {
-            dev_data_.LogError(Handle(), "UNASSIGNED-VkSemaphore-state-timeout",
+            dev_data_.LogError("UNASSIGNED-VkSemaphore-state-timeout", Handle(), loc,
                                "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
                                " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
                                completed_.payload, payload);
@@ -534,7 +537,7 @@ void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
         if (!already_signaled) {
             EnqueueSignal(nullptr, 0, payload);
         }
-        Retire(nullptr, payload);
+        Retire(nullptr, loc, payload);
     }
 }
 

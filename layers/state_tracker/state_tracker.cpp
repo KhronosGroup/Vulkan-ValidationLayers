@@ -1093,7 +1093,7 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
     if (submitCount == 0) {
         CB_SUBMISSION submission;
         submission.AddFence(Get<FENCE_STATE>(fence));
-        early_retire_seq = queue_state->Submit(std::move(submission));
+        early_retire_seq = queue_state->Submit(std::move(submission), record_obj.location);
     }
 
     // Now process each individual submit
@@ -1131,23 +1131,28 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
         if (submit_idx == (submitCount - 1) && fence != VK_NULL_HANDLE) {
             submission.AddFence(Get<FENCE_STATE>(fence));
         }
-        auto submit_seq = queue_state->Submit(std::move(submission));
+        auto submit_seq = queue_state->Submit(std::move(submission), record_obj.location);
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
 
     if (early_retire_seq) {
-        queue_state->NotifyAndWait(early_retire_seq);
+        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
     }
 }
 
-void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence) {
+void ValidationStateTracker::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                          VkFence fence, const RecordObject &record_obj) {
+    PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                       VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<QUEUE_STATE>(queue);
     uint64_t early_retire_seq = 0;
     if (submitCount == 0) {
         CB_SUBMISSION submission;
         submission.AddFence(Get<FENCE_STATE>(fence));
-        early_retire_seq = queue_state->Submit(std::move(submission));
+        early_retire_seq = queue_state->Submit(std::move(submission), record_obj.location);
     }
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -1170,22 +1175,12 @@ void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCo
         if (submit_idx == (submitCount - 1)) {
             submission.AddFence(Get<FENCE_STATE>(fence));
         }
-        auto submit_seq = queue_state->Submit(std::move(submission));
+        auto submit_seq = queue_state->Submit(std::move(submission), record_obj.location);
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
     if (early_retire_seq) {
-        queue_state->NotifyAndWait(early_retire_seq);
+        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
     }
-}
-
-void ValidationStateTracker::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                          VkFence fence, const RecordObject &record_obj) {
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence);
-}
-
-void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
-                                                       VkFence fence, const RecordObject &record_obj) {
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence);
 }
 
 void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
@@ -1313,12 +1308,12 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
         if (bind_idx == (bindInfoCount - 1)) {
             submission.AddFence(Get<FENCE_STATE>(fence));
         }
-        auto submit_seq = queue_state->Submit(std::move(submission));
+        auto submit_seq = queue_state->Submit(std::move(submission), record_obj.location);
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
 
     if (early_retire_seq) {
-        queue_state->NotifyAndWait(early_retire_seq);
+        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
     }
 }
 
@@ -1357,7 +1352,7 @@ void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, cons
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
     if (semaphore_state) {
-        semaphore_state->Retire(nullptr, pSignalInfo->value);
+        semaphore_state->Retire(nullptr, record_obj.location, pSignalInfo->value);
     }
 }
 
@@ -1384,7 +1379,7 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
         for (uint32_t i = 0; i < fenceCount; i++) {
             auto fence_state = Get<FENCE_STATE>(pFences[i]);
             if (fence_state) {
-                fence_state->NotifyAndWait();
+                fence_state->NotifyAndWait(record_obj.location.dot(vvl::Field::pFences, i));
             }
         }
     }
@@ -1420,10 +1415,11 @@ void ValidationStateTracker::PostRecordWaitSemaphores(VkDevice device, const VkS
     // Same logic as vkWaitForFences(). If some semaphores are not signaled, we will get their status when
     // the application calls vkGetSemaphoreCounterValue() on each of them.
     if ((pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0 || pWaitInfo->semaphoreCount == 1) {
+        const Location wait_info_loc = record_obj.location.dot(vvl::Field::pWaitInfo);
         for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
             auto semaphore_state = Get<SEMAPHORE_STATE>(pWaitInfo->pSemaphores[i]);
             if (semaphore_state) {
-                semaphore_state->NotifyAndWait(pWaitInfo->pValues[i]);
+                semaphore_state->NotifyAndWait(wait_info_loc.dot(vvl::Field::pValues, i), pWaitInfo->pValues[i]);
             }
         }
     }
@@ -1445,7 +1441,7 @@ void ValidationStateTracker::RecordGetSemaphoreCounterValue(VkDevice device, VkS
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
     if (semaphore_state) {
-        semaphore_state->NotifyAndWait(*pValue);
+        semaphore_state->NotifyAndWait(record_obj.location, *pValue);
     }
 }
 
@@ -1463,7 +1459,7 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
     if (VK_SUCCESS != record_obj.result) return;
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
-        fence_state->NotifyAndWait();
+        fence_state->NotifyAndWait(record_obj.location);
     }
 }
 
@@ -1493,14 +1489,14 @@ void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, const Re
     if (VK_SUCCESS != record_obj.result) return;
     auto queue_state = Get<QUEUE_STATE>(queue);
     if (queue_state) {
-        queue_state->NotifyAndWait();
+        queue_state->NotifyAndWait(record_obj.location);
     }
 }
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     for (auto &queue : queue_map_.snapshot()) {
-        queue.second->NotifyAndWait();
+        queue.second->NotifyAndWait(record_obj.location);
     }
 }
 
@@ -3362,7 +3358,7 @@ void ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(VkDevice devic
                                                                   const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                                   HANDLE *pHandle, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    RecordGetExternalFenceState(pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType);
+    RecordGetExternalFenceState(pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType, record_obj.location);
 }
 #endif
 
@@ -3426,11 +3422,12 @@ void ValidationStateTracker::PostCallRecordImportFenceFdKHR(VkDevice device, con
     RecordImportFenceState(pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
 }
 
-void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type) {
+void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type,
+                                                         const Location &loc) {
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
         // We no longer can track inflight fence after the export - perform early retire.
-        fence_state->NotifyAndWait();
+        fence_state->NotifyAndWait(loc);
         fence_state->Export(handle_type);
     }
 }
@@ -3438,7 +3435,7 @@ void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExtern
 void ValidationStateTracker::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                          const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    RecordGetExternalFenceState(pGetFdInfo->fence, pGetFdInfo->handleType);
+    RecordGetExternalFenceState(pGetFdInfo->fence, pGetFdInfo->handleType, record_obj.location);
 }
 
 void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
@@ -3546,9 +3543,9 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         }
     }
 
-    auto early_retire_seq = queue_state->Submit(std::move(submission));
+    auto early_retire_seq = queue_state->Submit(std::move(submission), record_obj.location);
     if (early_retire_seq) {
-        queue_state->NotifyAndWait(early_retire_seq);
+        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
     }
 }
 

@@ -78,7 +78,7 @@ void DebugPrintf::DestroyBuffer(DPFBufferInfo &buffer_info) {
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool DebugPrintf::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
-                                   uint32_t unique_shader_id) {
+                                   uint32_t unique_shader_id, const Location &loc) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
@@ -99,12 +99,12 @@ bool DebugPrintf::InstrumentShader(const vvl::span<const uint32_t> &input, std::
     opt_options.set_validator_options(val_options);
     Optimizer optimizer(target_env);
     const spvtools::MessageConsumer debug_printf_console_message_consumer =
-        [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
+        [this, loc](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
         switch (level) {
             case SPV_MSG_FATAL:
             case SPV_MSG_INTERNAL_ERROR:
             case SPV_MSG_ERROR:
-                this->LogError(this->device, "UNASSIGNED-Debug-Printf", "Error during shader instrumentation: line %zu: %s",
+                this->LogError("UNASSIGNED-Debug-Printf", this->device, loc, "Error during shader instrumentation: line %zu: %s",
                                position.index, message);
                 break;
             default:
@@ -128,7 +128,7 @@ void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     csm_state->unique_shader_id = unique_shader_module_id++;
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_spirv, csm_state->unique_shader_id);
+                                       csm_state->instrumented_spirv, csm_state->unique_shader_id, record_obj.location);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
@@ -147,7 +147,7 @@ void DebugPrintf::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
         csm_state->unique_shader_ids[i] = unique_shader_module_id++;
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i]);
+            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i], record_obj.location);
         if (pass) {
             csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
             csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);

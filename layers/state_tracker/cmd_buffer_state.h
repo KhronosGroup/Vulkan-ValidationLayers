@@ -428,7 +428,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         cmd_execute_commands_functions;
 
     using EventCallback = std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
-                                             VkQueue waiting_queue)>;
+                                             VkQueue waiting_queue, const Location &loc)>;
     std::vector<EventCallback> eventUpdates;
 
     std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
@@ -595,7 +595,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
     void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers, VkImageLayout layout);
 
-    void Submit(VkQueue queue, uint32_t perf_submit_pass);
+    void Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
 
     uint32_t GetDynamicColorAttachmentCount() const {

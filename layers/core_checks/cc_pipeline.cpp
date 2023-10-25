@@ -346,8 +346,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                 *subpass_rasterization_samples != multisample_state->rasterizationSamples) {
                                 const LogObjectList objlist(device, render_pass->Handle(), pipeline_state.Handle());
                                 skip |= LogError(
-                                    objlist, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758",
-                                    "vkCreateGraphicsPipelines(): VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE "
+                                    "VUID-VkGraphicsPipelineCreateInfo-subpass-00758", objlist, error_obj.location,
+                                    "variableMultisampleRate is VK_FALSE "
                                     "and "
                                     "pipeline has pMultisampleState->rasterizationSamples equal to %s, while a previously bound "
                                     "pipeline in the current subpass (%" PRIu32

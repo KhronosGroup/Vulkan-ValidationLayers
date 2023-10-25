@@ -177,7 +177,8 @@ class GpuAssistedBase : public ValidationStateTracker {
             logit += stats_string;
             vmaFreeStatsString(vmaAllocator, stats_string);
         }
-        LogError(object, setup_vuid, "Setup Error. Detail: (%s)", logit.c_str());
+        Location loc(vvl::Func::vkCreateDevice);
+        LogError(setup_vuid, object, loc, "Setup Error. Detail: (%s)", logit.c_str());
     }
     bool CheckForGpuAvEnabled(const void *pNext);
 
@@ -209,8 +210,8 @@ class GpuAssistedBase : public ValidationStateTracker {
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                          const VkPipelineBindPoint bind_point, const SafeCreateInfo &modified_create_infos);
 
-    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
-                                  uint32_t unique_shader_id) = 0;
+    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm, uint32_t unique_shader_id,
+                                  const Location &loc) = 0;
 
   public:
     bool aborted = false;
