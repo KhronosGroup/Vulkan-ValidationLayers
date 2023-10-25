@@ -37,9 +37,6 @@ permissions:
 jobs:
   # CI we just care builds, but no need to spend Github Action minutes running the tests
   linuxBuild:
-    env:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -47,90 +44,75 @@ jobs:
         include:
           # Test Ubuntu-20.04 release build works.
           - os: ubuntu-20.04
-            compiler: {cc: gcc, cxx: g++}
             config: release
             cpp_std: 17
-            robin_hood: "ON"
           # Test C++ 20 build support
           # debug builds faster than release
           - os: ubuntu-22.04
-            compiler: {cc: gcc, cxx: g++}
             config: debug
             cpp_std: 20
-            robin_hood: "ON"
     steps:
       - uses: actions/checkout@v3
-      - uses: lukka/get-cmake@latest
+      - name: Test Minimum CMake Version
+        uses: lukka/get-cmake@latest
         with:
           cmakeVersion: 3.17.2
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}-${{matrix.robin_hood}}
-      - name: Install python dependencies
-        run: python3 -m pip install jsonschema pyparsing
-      - name: Install WSI dependencies
-        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.cpp_std }}
+      - run: python3 -m pip install jsonschema pyparsing
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Build
-        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }}'
         env:
-          CC: ${{ matrix.compiler.cc }}
-          CXX: ${{ matrix.compiler.cxx }}
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          # Linker warnings as errors
+          LDFLAGS: -Wl,--fatal-warnings
 
   linuxRun:
-    env:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
         flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}, {c: "-fsanitize=thread", ld: "-fsanitize=thread"}]
         config: [debug, release]
         include:
           # Test clang support
-          - os: ubuntu-22.04
-            compiler: {cc: clang, cxx: clang++}
+          - compiler: {cc: clang, cxx: clang++}
             config: release
-            cpp_std: 17
             robin_hood: "ON"
           # Test with Robin Hood disabled
           # Chromium build, and some package managers don't use it.
-          - os: ubuntu-22.04
-            compiler: {cc: clang, cxx: clang++}
+          - compiler: {cc: clang, cxx: clang++}
             config: release
-            cpp_std: 17
             robin_hood: "OFF"
             flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}]
 
     steps:
       - uses: actions/checkout@v3
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: 3.17.2
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}-${{ matrix.flags.c }}-${{ matrix.flags.ld }}-${{matrix.robin_hood}}
-      - name: Install python dependencies
-        run: python3 -m pip install jsonschema pyparsing
-      - name: Install WSI dependencies
-        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+          key: ${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.flags.c }}-${{ matrix.flags.ld }}-${{matrix.robin_hood}}
+      - run: python3 -m pip install jsonschema pyparsing
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Build
-        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
           CC: ${{ matrix.compiler.cc }}
           CXX: ${{ matrix.compiler.cxx }}
           CFLAGS: ${{ matrix.flags.c }}
           CXXFLAGS: ${{ matrix.flags.c }}
           LDFLAGS: ${{ matrix.flags.ld }}
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
         run: python scripts/tests.py --test
         env:
@@ -145,32 +127,25 @@ jobs:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
 
   androidOnLinux:
-    env:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     runs-on: ubuntu-22.04
-
     steps:
       - uses: actions/checkout@v3
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: 3.17.2
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: androidOnLinux-ccache
-      - name: Install python dependencies
-        run: python3 -m pip install jsonschema pyparsing
-      - name: Install WSI dependencies
-        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: python3 -m pip install jsonschema pyparsing
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Build
-        run: python scripts/tests.py --build --mockAndroid --config release --cmake='-DVVL_CPP_STANDARD=20 -DUSE_ROBIN_HOOD_HASHING=ON'
+        run: python scripts/tests.py --build --mockAndroid --config release --cmake='-DVVL_CPP_STANDARD=17 -DUSE_ROBIN_HOOD_HASHING=ON'
         env:
           CC: clang
           CXX: clang++
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
         run: python scripts/tests.py --test --mockAndroid
         env:
@@ -179,11 +154,8 @@ jobs:
   windows:
     runs-on: windows-2022
     strategy:
-      fail-fast: false
       matrix:
         arch: [ amd64, amd64_x86 ]
-        config: [ debug ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -192,8 +164,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.arch }}
-      - name: Install build dependencies
-        run: python3 -m pip install jsonschema pyparsing
+      - run: python3 -m pip install jsonschema pyparsing
       - name: Cache dependent components
         id: cache-deps
         uses: actions/cache@v3
@@ -206,9 +177,12 @@ jobs:
             build-ci/external/SPIRV-Headers/build/install
             build-ci/external/SPIRV-Tools/build/install
             build-ci/external/Vulkan-Headers/build/install
-          key: windows-dependencies-${{ matrix.arch }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+          key: windows-dependencies-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
-        run: python3 scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+        run: python3 scripts/tests.py --build --config debug --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+        env:
+          # Linker warnings as errors
+          LDFLAGS: /WX
       - name: Test Max Profile
         run: python scripts/tests.py --test
 
@@ -361,8 +335,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install python dependencies
-        run: python3 -m pip install jsonschema pyparsing
+      - run: python3 -m pip install jsonschema pyparsing
       - run: scripts/update_deps.py --dir ext --no-build
       - run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/ ext/SPIRV-Headers/include/spirv/unified1/
       - run: scripts/vk_validation_stats.py ext/Vulkan-Headers/registry/validusage.json -summary -c
