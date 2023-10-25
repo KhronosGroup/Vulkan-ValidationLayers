@@ -208,6 +208,22 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             }
         ]
 
+        # Will create a validate function for the struct to be called by non-generated code.
+        # There are cases where `noautovalidity` and `optional` are both true, but really are just
+        # guarded by other conditions.
+        #
+        # Example: pViewportState should always be validated, when not ignored. The logic of when it
+        # isn't ignored gets complex and best done by hand in sl_pipeline.cpp
+        self.generateStructHelper = [
+            'VkPipelineViewportStateCreateInfo',
+            'VkPipelineTessellationStateCreateInfo',
+            'VkPipelineVertexInputStateCreateInfo',
+            'VkPipelineMultisampleStateCreateInfo',
+            'VkPipelineColorBlendStateCreateInfo',
+            'VkPipelineDepthStencilStateCreateInfo',
+            'VkPipelineInputAssemblyStateCreateInfo',
+        ]
+
         # Map of structs type names to generated validation code for that struct type
         self.validatedStructs = dict()
         # Map of flags typenames
@@ -275,6 +291,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             prototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
             out.append(prototype)
         out.extend(guard_helper.add_guard(None))
+
+        for struct in [self.vk.structs[x] for x in self.generateStructHelper]:
+            out.append(f'bool Validate{struct.name[2:]}(const {struct.name} &info, const Location &loc) const;')
+
         self.write("".join(out))
 
     def generateSource(self):
@@ -464,6 +484,13 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             out.append('}\n')
         out.extend(guard_helper.add_guard(None, extra_newline=True))
 
+        for struct in [self.vk.structs[x] for x in self.generateStructHelper]:
+            out.append(f'bool StatelessValidation::Validate{struct.name[2:]}(const {struct.name} &info, const Location &loc) const {{\n')
+            out.append('    bool skip = false;\n')
+            out.extend(self.expandStructCode(struct.name, struct.name, 'loc', 'info.', '', []))
+            out.append('    return skip;\n')
+            out.append('}\n')
+
         self.write("".join(out))
 
     def genType(self, typeinfo, name, alias):
@@ -537,7 +564,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         if '->' in member.length:
                             count_loc = f'{errorLoc}.dot(Field::{member.length.split("->")[0]}).dot(Field::{member.length.split("->")[1]})'
                         elif ' + ' in member.length:
-                            count_loc = f'{errorLoc}.dot(Field::samples)' # hardcoded only instance for now
+                            # hardcoded only instance for now
+                            if 'samples' in member.length: # "(samples + 31) / 32"
+                                count_loc = f'{errorLoc}.dot(Field::samples)'
+                            elif 'rasterizationSamples' in member.length: # "(rasterizationSamples + 31) / 32"
+                                count_loc = f'{errorLoc}.dot(Field::rasterizationSamples)'
+                                member.length = 'rasterizationSamples'
                         elif ' / ' in member.length:
                             count_loc = f'{errorLoc}.dot(Field::{member.length.split(" / ")[0]})'
                         checkExpr.append(f'skip |= ValidateArray({count_loc}, {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
@@ -612,9 +644,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         if kwargs:
             # Need to escape the C++ curly braces
-            if 'IndexVector' in line:
-                line = line.replace('IndexVector{ ', 'IndexVector{{ ')
-                line = line.replace(' }),', ' }}),')
             return line.format(**kwargs)
         return line
 
@@ -632,8 +661,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             line = line.replace('{errorLoc}', '')
             line = line.replace('{valuePrefix}', '')
             line = line.replace('{displayNamePrefix}', '')
-            line = line.replace('{IndexVector}', '')
-            line = line.replace('local_data->', '')
             scrubbed_lines += line
         return scrubbed_lines
 
@@ -861,6 +888,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         vuid = self.GetVuid(member.type, "sType-sType")
                         sType = self.vk.structs[member.type].sType
                         usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), "{sType}", &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {vuid});\n')
+                    elif member.name == 'sType' and structTypeName in self.generateStructHelper:
+                        # special case when dealing with isolated struct helper functions
+                        vuid = self.GetVuid(struct.name, "sType-sType")
+                        usedLines.append(f'skip |= ValidateStructType(loc, "{struct.sType}", &info, {struct.sType}, false, kVUIDUndefined, {vuid});\n')
                     elif member.type in self.vk.handles:
                         if not member.optional:
                             usedLines.append(f'skip |= ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')

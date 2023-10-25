@@ -28604,4 +28604,254 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkComm
     return skip;
 }
 
+bool StatelessValidation::ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo& info,
+                                                                  const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineViewportStateCreateInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkPipelineViewportStateCreateInfo = {
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineViewportStateCreateInfo.size(),
+                                allowed_structs_VkPipelineViewportStateCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineViewportStateCreateInfo-sType-unique", false, true);
+
+    skip |= ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
+    return skip;
+}
+bool StatelessValidation::ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo& info,
+                                                                      const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkPipelineTessellationStateCreateInfo = {
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineTessellationStateCreateInfo.size(),
+                                allowed_structs_VkPipelineTessellationStateCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineTessellationStateCreateInfo-sType-unique", false, true);
+
+    skip |=
+        ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
+    return skip;
+}
+bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo& info,
+                                                                     const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkPipelineVertexInputStateCreateInfo = {
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineVertexInputStateCreateInfo.size(),
+                                allowed_structs_VkPipelineVertexInputStateCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique", false, true);
+
+    skip |= ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask");
+
+    skip |= ValidateArray(loc.dot(Field::vertexBindingDescriptionCount), loc.dot(Field::pVertexBindingDescriptions),
+                          info.vertexBindingDescriptionCount, &info.pVertexBindingDescriptions, false, true, kVUIDUndefined,
+                          "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
+
+    if (info.pVertexBindingDescriptions != nullptr) {
+        for (uint32_t vertexBindingDescriptionIndex = 0; vertexBindingDescriptionIndex < info.vertexBindingDescriptionCount;
+             ++vertexBindingDescriptionIndex) {
+            [[maybe_unused]] const Location pVertexBindingDescriptions_loc =
+                loc.dot(Field::pVertexBindingDescriptions, vertexBindingDescriptionIndex);
+            skip |= ValidateRangedEnum(pVertexBindingDescriptions_loc.dot(Field::inputRate), "VkVertexInputRate",
+                                       info.pVertexBindingDescriptions[vertexBindingDescriptionIndex].inputRate,
+                                       "VUID-VkVertexInputBindingDescription-inputRate-parameter");
+        }
+    }
+
+    skip |= ValidateArray(loc.dot(Field::vertexAttributeDescriptionCount), loc.dot(Field::pVertexAttributeDescriptions),
+                          info.vertexAttributeDescriptionCount, &info.pVertexAttributeDescriptions, false, true, kVUIDUndefined,
+                          "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
+
+    if (info.pVertexAttributeDescriptions != nullptr) {
+        for (uint32_t vertexAttributeDescriptionIndex = 0; vertexAttributeDescriptionIndex < info.vertexAttributeDescriptionCount;
+             ++vertexAttributeDescriptionIndex) {
+            [[maybe_unused]] const Location pVertexAttributeDescriptions_loc =
+                loc.dot(Field::pVertexAttributeDescriptions, vertexAttributeDescriptionIndex);
+            skip |= ValidateRangedEnum(pVertexAttributeDescriptions_loc.dot(Field::format), "VkFormat",
+                                       info.pVertexAttributeDescriptions[vertexAttributeDescriptionIndex].format,
+                                       "VUID-VkVertexInputAttributeDescription-format-parameter");
+        }
+    }
+    return skip;
+}
+bool StatelessValidation::ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo& info,
+                                                                     const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineMultisampleStateCreateInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkPipelineMultisampleStateCreateInfo = {
+        VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineMultisampleStateCreateInfo.size(),
+                                allowed_structs_VkPipelineMultisampleStateCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique", false, true);
+
+    skip |= ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineMultisampleStateCreateInfo-flags-zerobitmask");
+
+    skip |= ValidateFlags(loc.dot(Field::rasterizationSamples), "VkSampleCountFlagBits", AllVkSampleCountFlagBits,
+                          info.rasterizationSamples, kRequiredSingleBit,
+                          "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter",
+                          "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::sampleShadingEnable), info.sampleShadingEnable);
+
+    skip |= ValidateArray(loc.dot(Field::rasterizationSamples), loc.dot(Field::pSampleMask), info.rasterizationSamples,
+                          &info.pSampleMask, true, false, kVUIDUndefined,
+                          "VUID-VkPipelineMultisampleStateCreateInfo-pSampleMask-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::alphaToCoverageEnable), info.alphaToCoverageEnable);
+
+    skip |= ValidateBool32(loc.dot(Field::alphaToOneEnable), info.alphaToOneEnable);
+    return skip;
+}
+bool StatelessValidation::ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo& info,
+                                                                    const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineColorBlendStateCreateInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkPipelineColorBlendStateCreateInfo = {
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineColorBlendStateCreateInfo.size(),
+                                allowed_structs_VkPipelineColorBlendStateCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineColorBlendStateCreateInfo-sType-unique", false, true);
+
+    skip |=
+        ValidateFlags(loc.dot(Field::flags), "VkPipelineColorBlendStateCreateFlagBits", AllVkPipelineColorBlendStateCreateFlagBits,
+                      info.flags, kOptionalFlags, "VUID-VkPipelineColorBlendStateCreateInfo-flags-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::logicOpEnable), info.logicOpEnable);
+
+    if (info.pAttachments != nullptr) {
+        for (uint32_t attachmentIndex = 0; attachmentIndex < info.attachmentCount; ++attachmentIndex) {
+            [[maybe_unused]] const Location pAttachments_loc = loc.dot(Field::pAttachments, attachmentIndex);
+            skip |= ValidateBool32(pAttachments_loc.dot(Field::blendEnable), info.pAttachments[attachmentIndex].blendEnable);
+
+            skip |= ValidateRangedEnum(pAttachments_loc.dot(Field::srcColorBlendFactor), "VkBlendFactor",
+                                       info.pAttachments[attachmentIndex].srcColorBlendFactor,
+                                       "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-parameter");
+
+            skip |= ValidateRangedEnum(pAttachments_loc.dot(Field::dstColorBlendFactor), "VkBlendFactor",
+                                       info.pAttachments[attachmentIndex].dstColorBlendFactor,
+                                       "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-parameter");
+
+            skip |= ValidateRangedEnum(pAttachments_loc.dot(Field::colorBlendOp), "VkBlendOp",
+                                       info.pAttachments[attachmentIndex].colorBlendOp,
+                                       "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-parameter");
+
+            skip |= ValidateRangedEnum(pAttachments_loc.dot(Field::srcAlphaBlendFactor), "VkBlendFactor",
+                                       info.pAttachments[attachmentIndex].srcAlphaBlendFactor,
+                                       "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-parameter");
+
+            skip |= ValidateRangedEnum(pAttachments_loc.dot(Field::dstAlphaBlendFactor), "VkBlendFactor",
+                                       info.pAttachments[attachmentIndex].dstAlphaBlendFactor,
+                                       "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-parameter");
+
+            skip |= ValidateRangedEnum(pAttachments_loc.dot(Field::alphaBlendOp), "VkBlendOp",
+                                       info.pAttachments[attachmentIndex].alphaBlendOp,
+                                       "VUID-VkPipelineColorBlendAttachmentState-alphaBlendOp-parameter");
+
+            skip |= ValidateFlags(pAttachments_loc.dot(Field::colorWriteMask), "VkColorComponentFlagBits",
+                                  AllVkColorComponentFlagBits, info.pAttachments[attachmentIndex].colorWriteMask, kOptionalFlags,
+                                  "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
+        }
+    }
+    return skip;
+}
+bool StatelessValidation::ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo& info,
+                                                                      const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineDepthStencilStateCreateInfo-sType-sType");
+
+    skip |= ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
+
+    skip |= ValidateFlags(loc.dot(Field::flags), "VkPipelineDepthStencilStateCreateFlagBits",
+                          AllVkPipelineDepthStencilStateCreateFlagBits, info.flags, kOptionalFlags,
+                          "VUID-VkPipelineDepthStencilStateCreateInfo-flags-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::depthTestEnable), info.depthTestEnable);
+
+    skip |= ValidateBool32(loc.dot(Field::depthWriteEnable), info.depthWriteEnable);
+
+    skip |= ValidateRangedEnum(loc.dot(Field::depthCompareOp), "VkCompareOp", info.depthCompareOp,
+                               "VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::depthBoundsTestEnable), info.depthBoundsTestEnable);
+
+    skip |= ValidateBool32(loc.dot(Field::stencilTestEnable), info.stencilTestEnable);
+
+    skip |= ValidateRangedEnum(loc.dot(Field::failOp), "VkStencilOp", info.front.failOp, "VUID-VkStencilOpState-failOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::passOp), "VkStencilOp", info.front.passOp, "VUID-VkStencilOpState-passOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::depthFailOp), "VkStencilOp", info.front.depthFailOp,
+                               "VUID-VkStencilOpState-depthFailOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::compareOp), "VkCompareOp", info.front.compareOp,
+                               "VUID-VkStencilOpState-compareOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::failOp), "VkStencilOp", info.back.failOp, "VUID-VkStencilOpState-failOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::passOp), "VkStencilOp", info.back.passOp, "VUID-VkStencilOpState-passOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::depthFailOp), "VkStencilOp", info.back.depthFailOp,
+                               "VUID-VkStencilOpState-depthFailOp-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::compareOp), "VkCompareOp", info.back.compareOp,
+                               "VUID-VkStencilOpState-compareOp-parameter");
+    return skip;
+}
+bool StatelessValidation::ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo& info,
+                                                                       const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineInputAssemblyStateCreateInfo-sType-sType");
+
+    skip |= ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
+
+    skip |=
+        ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineInputAssemblyStateCreateInfo-flags-zerobitmask");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::topology), "VkPrimitiveTopology", info.topology,
+                               "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::primitiveRestartEnable), info.primitiveRestartEnable);
+    return skip;
+}
+
 // NOLINTEND

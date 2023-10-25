@@ -1789,5 +1789,11 @@ bool PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, V
 bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                      uint32_t stride, const ErrorObject& error_obj) const override;
-
+bool ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo& info, const Location& loc) const;
 // NOLINTEND
