@@ -646,7 +646,7 @@ void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const V
 }
 
 // Helper for data obtained from vkGetPhysicalDeviceSurfacePresentModesKHR
-std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev,
+std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
                                                              const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
@@ -658,10 +658,10 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice ph
         return result;
     }
 
-    const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+    const auto log_internal_error = [validation_obj, loc](VkResult err, auto &&...objects) {
         if (validation_obj) {
             LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
-            validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfacePresentModesKHR", err);
+            validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, loc, "vkGetPhysicalDeviceSurfacePresentModesKHR", err);
         }
     };
 
@@ -687,7 +687,7 @@ void SURFACE_STATE::SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSur
 }
 
 vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                                    const void *surface_info2_pnext,
+                                                                    const void *surface_info2_pnext, const Location &loc,
                                                                     const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
@@ -698,10 +698,10 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
 
     std::vector<safe_VkSurfaceFormat2KHR> result;
     if (get_surface_capabilities2) {
-        const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+        const auto log_internal_error = [validation_obj, loc](VkResult err, auto &&...objects) {
             if (validation_obj) {
                 LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
-                validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfaceFormats2KHR", err);
+                validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, loc, "vkGetPhysicalDeviceSurfaceFormats2KHR", err);
             }
         };
 
@@ -726,10 +726,10 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
         }
 
     } else {
-        const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+        const auto log_internal_error = [validation_obj, loc](VkResult err, auto &&...objects) {
             if (validation_obj) {
                 LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
-                validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfaceFormatsKHR", err);
+                validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, loc, "vkGetPhysicalDeviceSurfaceFormatsKHR", err);
             }
         };
 
@@ -766,7 +766,7 @@ void SURFACE_STATE::SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurf
 }
 
 safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                              const void *surface_info2_pnext,
+                                                              const void *surface_info2_pnext, const Location &loc,
                                                               const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
@@ -775,10 +775,10 @@ safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_c
         return search->second;
     }
 
-    const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+    const auto log_internal_error = [validation_obj, loc](VkResult err, auto &&...objects) {
         if (validation_obj) {
             LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
-            validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfaceCapabilities2KHR", err);
+            validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, loc, "vkGetPhysicalDeviceSurfaceCapabilities2KHR", err);
         }
     };
 

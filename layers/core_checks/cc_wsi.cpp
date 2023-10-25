@@ -68,7 +68,7 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
     bool skip = false;
     std::vector<VkPresentModeKHR> present_modes{};
     if (surface_state) {
-        present_modes = surface_state->GetPresentModes(physical_device, this);
+        present_modes = surface_state->GetPresentModes(physical_device, create_info_loc, this);
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         present_modes = physical_device_state->surfaceless_query_state.present_modes;
     }
@@ -370,8 +370,9 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         surface_caps_query_pnext = &present_mode_info;
     }
 
-    const auto surface_caps2 = surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                              physical_device_state->PhysDev(), surface_caps_query_pnext, this);
+    const auto surface_caps2 =
+        surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
+                                       physical_device_state->PhysDev(), surface_caps_query_pnext, create_info_loc, this);
 
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
@@ -494,7 +495,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         vvl::span<const safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
             formats = surface_state->GetFormats(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                physical_device_state->PhysDev(), surface_caps_query_pnext, this);
+                                                physical_device_state->PhysDev(), surface_caps_query_pnext, create_info_loc, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             formats = physical_device_state->surfaceless_query_state.formats;
         }
@@ -534,9 +535,9 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
                                   surface_caps2.surfaceCapabilities.maxImageExtent)) {
             safe_VkSurfaceCapabilities2KHR cached_capabilities{};
             if (surface_state) {
-                cached_capabilities =
-                    surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                   physical_device_state->PhysDev(), surface_caps_query_pnext, this);
+                cached_capabilities = surface_state->GetCapabilities(
+                    IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2), physical_device_state->PhysDev(),
+                    surface_caps_query_pnext, create_info_loc, this);
             } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
                 cached_capabilities = physical_device_state->surfaceless_query_state.capabilities;
             }
@@ -1096,7 +1097,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         safe_VkSurfaceCapabilities2KHR surface_caps2{};
         if (swapchain_data->surface) {
             surface_caps2 = swapchain_data->surface->GetCapabilities(
-                IsExtEnabled(device_extensions.vk_khr_get_surface_capabilities2), physical_device, nullptr, this);
+                IsExtEnabled(device_extensions.vk_khr_get_surface_capabilities2), physical_device, nullptr, loc, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             surface_caps2 = physical_device_state->surfaceless_query_state.capabilities;
         }
@@ -1525,7 +1526,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
             VkPresentModeKHR present_mode = surface_present_mode->presentMode;
             std::vector<VkPresentModeKHR> present_modes{};
             if (surface_state) {
-                present_modes = surface_state->GetPresentModes(physicalDevice, this);
+                present_modes = surface_state->GetPresentModes(physicalDevice, error_obj.location, this);
             }
             bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
             if (!found_match) {
