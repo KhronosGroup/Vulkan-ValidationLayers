@@ -391,7 +391,6 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 #endif
-    // TODO: VUIDs ending in 00643, 00644, 00646, 00647, 01745, 00645, 00648, 01744
     return skip;
 }
 

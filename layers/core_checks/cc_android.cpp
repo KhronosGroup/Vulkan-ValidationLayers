@@ -324,16 +324,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                              ahb_desc.height, ahb_desc.layers, import_ahb_info->buffer);
             }
 
-            // If the Android hardware buffer's usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, the image must
-            // have either a full mipmap chain or exactly 1 mip level.
-            //
-            // NOTE! The language of this VUID contradicts the language in the spec (1.1.93), which says "The
-            // AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE flag does not correspond to a Vulkan image usage or creation flag. Instead,
-            // its presence indicates that the Android hardware buffer contains a complete mipmap chain, and its absence indicates
-            // that the Android hardware buffer contains only a single mip level."
-            //
-            // TODO: This code implements the VUID's meaning, but it seems likely that the spec text is actually correct.
-            // Clarification requested.
             if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) != 0) {
                 if ((ici->mipLevels != 1) && (ici->mipLevels != FullMipChainLevels(ici->extent))) {
                     skip |= LogError(

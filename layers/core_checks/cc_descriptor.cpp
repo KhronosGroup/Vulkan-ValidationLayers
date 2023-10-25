@@ -2534,8 +2534,6 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                                              "Attempted copy update to sampler descriptor with invalid sampler (%s).",
                                              FormatHandle(update_sampler).c_str());
                         }
-                    } else {
-                        // TODO : Warn here
                     }
                 }
             }
@@ -2555,8 +2553,6 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                                          "Attempted copy update to sampler descriptor with invalid sampler (%s).",
                                          FormatHandle(update_sampler).c_str());
                     }
-                } else {
-                    // TODO : Warn here
                 }
                 // Validate image
                 auto image_view = img_samp_desc.GetImageView();
@@ -4830,8 +4826,6 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Extension exposes new properties limits
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
-        // XXX TODO: replace with correct VU messages
-
         // Max descriptors by type, within a single pipeline stage
         std::valarray<uint32_t> max_descriptors_per_stage_update_after_bind =
             GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, false);

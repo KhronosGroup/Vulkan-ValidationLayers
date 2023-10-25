@@ -766,9 +766,6 @@ class StatelessValidation : public ValidationObject {
                                                          const VkCoarseSampleOrderCustomNV *pCustomSampleOrders,
                                                          const ErrorObject &error_obj) const;
 
-    bool manual_PreCallValidateEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName,
-                                                                  uint32_t *pPropertyCount,
-                                                                  VkExtensionProperties *pProperties) const;
     bool manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                               const ErrorObject &error_obj) const;

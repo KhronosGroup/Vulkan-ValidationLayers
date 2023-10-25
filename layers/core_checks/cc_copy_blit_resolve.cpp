@@ -919,20 +919,12 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
             }
         }
 
-        // TODO - Don't use ValidateCmdQueueFlags due to currently not having way to add more descriptive message
-        const COMMAND_POOL_STATE *command_pool = cb_state.command_pool;
-        assert(command_pool != nullptr);
-        const uint32_t queue_family_index = command_pool->queueFamilyIndex;
-        const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
-        if (((queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == 0) && (SafeModulo(bufferOffset, 4) != 0)) {
-            const LogObjectList objlist(cb_state.commandBuffer(), command_pool->commandPool(), image_state.image());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("04052", image_to_buffer, is_2), objlist,
-                             region_loc.dot(Field::bufferOffset),
-                             "(%" PRIu64
-                             ") is not a multiple of 4 because, but the command buffer %s was allocated from the command pool %s "
-                             "which was created with queueFamilyIndex %" PRIu32 " of type %s.",
-                             bufferOffset, FormatHandle(cb_state).c_str(), FormatHandle(command_pool->commandPool()).c_str(),
-                             queue_family_index, string_VkQueueFlags(queue_flags).c_str());
+        if (SafeModulo(bufferOffset, 4) != 0) {
+            std::stringstream ss;
+            ss << "(" << bufferOffset << ") is not a multiple of 4, but is ";
+            const char *vuid = GetBufferMemoryImageCopyCommandVUID("04052", image_to_buffer, is_2);
+            skip |= ValidateCmdQueueFlags(cb_state, region_loc.dot(Field::bufferOffset),
+                                          VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid, ss.str().c_str());
         }
     }
 
@@ -2675,22 +2667,13 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc, vuid);
 
-        // TODO - Don't use ValidateCmdQueueFlags due to currently not having way to add more descriptive message
-        const COMMAND_POOL_STATE *command_pool = cb_state.command_pool;
-        assert(command_pool != nullptr);
-        const uint32_t queue_family_index = command_pool->queueFamilyIndex;
-        const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
         const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
-        if (((queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
-            ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0)) {
-            const LogObjectList objlist(commandBuffer, command_pool->commandPool(), srcBuffer, dstImage);
+        if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+            std::stringstream ss;
+            ss << "is " << string_VkImageAspectFlags(region_aspect_mask) << ", but is ";
             vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
-            skip |= LogError(vuid, objlist, subresource_loc.dot(Field::aspectMask),
-                             "is %s but the command buffer (%s) was allocated from the command pool (%s) "
-                             "which was created with queueFamilyIndex %" PRIu32 ", which has queue type %s.",
-                             string_VkImageAspectFlags(region_aspect_mask).c_str(), FormatHandle(cb_state).c_str(),
-                             FormatHandle(command_pool->commandPool()).c_str(), queue_family_index,
-                             string_VkQueueFlags(queue_flags).c_str());
+            skip |= ValidateCmdQueueFlags(cb_state, subresource_loc.dot(Field::aspectMask), VK_QUEUE_GRAPHICS_BIT, vuid,
+                                          ss.str().c_str());
         }
     }
     return skip;
