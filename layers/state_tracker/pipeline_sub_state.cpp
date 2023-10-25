@@ -212,6 +212,11 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
             if (module_state) {
                 fs_state.fragment_shader = std::move(module_state);
                 fs_state.fragment_shader_ci = ToShaderStageCI(create_info.pStages[i]);
+                // can be null if using VK_EXT_shader_module_identifier
+                if (fs_state.fragment_shader->spirv) {
+                    fs_state.fragment_entry_point = fs_state.fragment_shader->spirv->FindEntrypoint(
+                        fs_state.fragment_shader_ci->pName, fs_state.fragment_shader_ci->stage);
+                }
             }
         }
     }

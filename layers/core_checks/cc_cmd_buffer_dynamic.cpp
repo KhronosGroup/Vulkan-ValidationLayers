@@ -639,24 +639,23 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         const bool dyn_depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
         const bool dyn_stencil_write_mask = pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
         if ((dyn_depth_write_enable || dyn_stencil_write_mask) &&
-            (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader)) {
-            // TODO - Find better way to get SPIR-V static data
-            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
-            const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
-            auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
-            const bool mode_early_fragment_test =
-                entrypoint && entrypoint->execution_mode.Has(ExecutionModeSet::early_fragment_test_bit);
+            (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point)) {
+            auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
+            const bool mode_early_fragment_test = entrypoint->execution_mode.Has(ExecutionModeSet::early_fragment_test_bit);
+            const bool depth_read =
+                pipeline.fragment_shader_state->fragment_shader->spirv->static_data_.has_shader_tile_image_depth_read;
+            const bool stencil_read =
+                pipeline.fragment_shader_state->fragment_shader->spirv->static_data_.has_shader_tile_image_stencil_read;
 
-            if (module_state->spirv->static_data_.has_shader_tile_image_depth_read && dyn_depth_write_enable &&
-                mode_early_fragment_test && cb_state.dynamic_state_value.depth_write_enable) {
+            if (depth_read && dyn_depth_write_enable && mode_early_fragment_test &&
+                cb_state.dynamic_state_value.depth_write_enable) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(vuid.dynamic_depth_enable_08715, objlist, loc,
                                  "Fragment shader contains OpDepthAttachmentReadEXT, but depthWriteEnable parameter in the last "
                                  "call to vkCmdSetDepthWriteEnable is not false.");
             }
 
-            if (module_state->spirv->static_data_.has_shader_tile_image_stencil_read && dyn_stencil_write_mask &&
-                mode_early_fragment_test &&
+            if (stencil_read && dyn_stencil_write_mask && mode_early_fragment_test &&
                 ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(vuid.dynamic_stencil_write_mask_08716, objlist, loc,

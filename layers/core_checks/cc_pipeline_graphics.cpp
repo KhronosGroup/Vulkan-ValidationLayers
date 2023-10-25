@@ -841,12 +841,8 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const PIPELINE_ST
                              external_format);
         }
 
-        if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader) {
-            // TODO - Find better way to get SPIR-V static data
-            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
-            const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
-            auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
-
+        if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point) {
+            auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
             if (entrypoint->execution_mode.Has(ExecutionModeSet::depth_replacing_bit)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
                                  create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
@@ -2713,15 +2709,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
 
     if (pipeline && pipeline->IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
-        if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_shader) {
-            // TODO - Find better way to get SPIR-V static data
-            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline->fragment_shader_state->fragment_shader;
-            const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline->fragment_shader_state->fragment_shader_ci.get();
-            auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
-
+        if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_entry_point) {
             // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
             // Currently lack support to test each index.
-            if (entrypoint && !entrypoint->has_alpha_to_coverage_variable && !pipeline->DualSourceBlending()) {
+            if (!pipeline->fragment_shader_state->fragment_entry_point->has_alpha_to_coverage_variable &&
+                !pipeline->DualSourceBlending()) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
                 skip |= LogError(vuid.dynamic_alpha_to_coverage_component_08919, objlist, loc,
                                  "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
@@ -3385,12 +3377,8 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 }
             }
 
-            if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_shader) {
-                // TODO - Find better way to get SPIR-V static data
-                std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline->fragment_shader_state->fragment_shader;
-                const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline->fragment_shader_state->fragment_shader_ci.get();
-                auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
-
+            if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_entry_point) {
+                auto entrypoint = pipeline->fragment_shader_state->fragment_entry_point;
                 if (entrypoint->execution_mode.Has(ExecutionModeSet::depth_replacing_bit)) {
                     skip |= LogError(vuid.external_format_resolve_09372, objlist, loc,
                                      "pipeline externalFormat is %" PRIu64 " but the fragment shader declares DepthReplacing.",
