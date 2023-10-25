@@ -342,14 +342,14 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_state.commandBuffer(), image_state->Handle());
-                        skip |= LogError(objlist, kVUID_Core_DrawState_InvalidImageLayout,
-                                         "%s command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
+                        skip |= LogError(kVUID_Core_DrawState_InvalidImageLayout, objlist, loc,
+                                         "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                          ", mip level %" PRIu32
                                          ") "
                                          "to be in layout %s--instead, current layout is %s.",
-                                         loc.Message().c_str(), FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
-                                         subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
-                                         string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
+                                         FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(), subresource.aspectMask,
+                                         subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(initial_layout),
+                                         string_VkImageLayout(image_layout));
                     }
                 }
             }

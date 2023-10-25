@@ -847,7 +847,8 @@ class CoreChecks : public ValidationStateTracker {
                                   const Location& loc) const;
     static bool ValidateWaitEventsAtSubmit(vvl::Func command, const CMD_BUFFER_STATE& cb_state, size_t eventCount,
                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
-                                           const EventToStageMap& local_event_signal_info, VkQueue waiting_queue);
+                                           const EventToStageMap& local_event_signal_info, VkQueue waiting_queue,
+                                           const Location& loc);
     bool ValidateQueueFamilyIndices(const Location& loc, const CMD_BUFFER_STATE& cb_state, VkQueue queue) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
@@ -1030,7 +1031,6 @@ class CoreChecks : public ValidationStateTracker {
                                    const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info,
                                  const Location& loc) const;
-    bool RequireFeature(const SPIRV_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name, const char* vuid) const;
     bool ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE& producer, const EntryPoint& producer_entrypoint,
                                         const SPIRV_MODULE_STATE& consumer, const EntryPoint& consumer_entrypoint,
                                         const Location& create_info_loc) const;

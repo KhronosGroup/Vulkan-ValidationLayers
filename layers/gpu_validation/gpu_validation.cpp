@@ -978,8 +978,10 @@ void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
                                                                  mapped_validation_buffer->invalid_handle_bits_1};
                 const uint64_t invalid_handle = vvl_bit_cast<uint64_t>(invalid_handles);
 
+                // TODO - pass in Locaiton correctly
+                const Location loc(vvl::Func::vkQueueSubmit);
                 device_state->LogError(
-                    as_validation_buffer_info.acceleration_structure, "UNASSIGNED-AccelerationStructure",
+                    "UNASSIGNED-AccelerationStructure", as_validation_buffer_info.acceleration_structure, loc,
                     "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
                     "handle (%" PRIu64 ")",
                     invalid_handle);
@@ -1094,17 +1096,17 @@ bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRelaxBloc
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
-                                   const uint32_t unique_shader_id) {
+                                   const uint32_t unique_shader_id, const Location &loc) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
     const spvtools::MessageConsumer gpu_console_message_consumer =
-        [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
+        [this, loc](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
         switch (level) {
             case SPV_MSG_FATAL:
             case SPV_MSG_INTERNAL_ERROR:
             case SPV_MSG_ERROR:
-                this->LogError(this->device, "UNASSIGNED-GPU-Assisted", "Error during shader instrumentation: line %zu: %s",
+                this->LogError("UNASSIGNED-GPU-Assisted", this->device, loc, "Error during shader instrumentation: line %zu: %s",
                                position.index, message);
                 break;
             default:
@@ -1255,7 +1257,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
         shader_id = unique_shader_module_id++;
     }
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_spirv, shader_id);
+                                       csm_state->instrumented_spirv, shader_id, record_obj.location);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
@@ -1288,7 +1290,7 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
         }
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i]);
+            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i], record_obj.location);
         if (pass) {
             csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
             csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);

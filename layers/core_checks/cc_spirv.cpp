@@ -279,17 +279,6 @@ static std::string string_DescriptorTypeSet(const vvl::unordered_set<uint32_t> &
     return ss.str();
 }
 
-bool CoreChecks::RequireFeature(const SPIRV_MODULE_STATE &module_state, VkBool32 feature, char const *feature_name,
-                                const char *vuid) const {
-    if (!feature) {
-        if (LogError(module_state.handle(), vuid, "Shader requires %s but is not enabled on the device", feature_name)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool CoreChecks::ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                     const Location &loc) const {
     bool skip = false;
@@ -300,9 +289,12 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE &mo
         // Check the quad operations.
         if ((insn.Opcode() == spv::OpGroupNonUniformQuadBroadcast) || (insn.Opcode() == spv::OpGroupNonUniformQuadSwap)) {
             if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
-                skip |=
-                    RequireFeature(module_state, phys_dev_props_core11.subgroupQuadOperationsInAllStages,
-                                   "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages", "VUID-RuntimeSpirv-None-06342");
+                if (!phys_dev_props_core11.subgroupQuadOperationsInAllStages) {
+                    skip |= LogError("VUID-RuntimeSpirv-None-06342", module_state.handle(), loc,
+                                     "Can't use for stage %s because VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages "
+                                     "is not supported on this VkDevice",
+                                     string_VkShaderStageFlagBits(stage));
+                }
             }
         }
 
@@ -340,9 +332,11 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE &mo
 
                 if ((type->Opcode() == spv::OpTypeFloat && width == 16) ||
                     (type->Opcode() == spv::OpTypeInt && (width == 8 || width == 16 || width == 64))) {
-                    skip |= RequireFeature(module_state, enabled_features.shaderSubgroupExtendedTypes,
-                                           "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes",
-                                           "VUID-RuntimeSpirv-None-06275");
+                    if (!enabled_features.shaderSubgroupExtendedTypes) {
+                        skip |= LogError(
+                            "VUID-RuntimeSpirv-None-06275", module_state.handle(), loc,
+                            "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes was not enabled");
+                    }
                 }
             }
         }
@@ -1728,15 +1722,19 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE &modu
             !variable.decorations.Has(DecorationSet::nonwritable_bit)) {
             switch (variable.stage) {
                 case VK_SHADER_STAGE_FRAGMENT_BIT:
-                    skip |= RequireFeature(module_state, enabled_features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics",
-                                           "VUID-RuntimeSpirv-NonWritable-06340");
+                    if (!enabled_features.fragmentStoresAndAtomics) {
+                        skip |= LogError("VUID-RuntimeSpirv-NonWritable-06340", module_state.handle(), loc,
+                                         "fragmentStoresAndAtomics was not enabled");
+                    }
                     break;
                 case VK_SHADER_STAGE_VERTEX_BIT:
                 case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
                 case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
                 case VK_SHADER_STAGE_GEOMETRY_BIT:
-                    skip |= RequireFeature(module_state, enabled_features.vertexPipelineStoresAndAtomics,
-                                           "vertexPipelineStoresAndAtomics", "VUID-RuntimeSpirv-NonWritable-06341");
+                    if (!enabled_features.fragmentStoresAndAtomics) {
+                        skip |= LogError("VUID-RuntimeSpirv-NonWritable-06341", module_state.handle(), loc,
+                                         "vertexPipelineStoresAndAtomics was not enabled");
+                    }
                     break;
                 default:
                     // No feature requirements for writes and atomics for other stages
@@ -2039,19 +2037,19 @@ bool CoreChecks::ValidateShaderTileImage(const SPIRV_MODULE_STATE &module_state,
         }
     }
 
-    if (module_state.static_data_.has_shader_tile_image_depth_read) {
-        skip |= RequireFeature(module_state, enabled_features.shaderTileImageDepthReadAccess, "shaderTileImageDepthReadAccess",
-                               "VUID-RuntimeSpirv-shaderTileImageDepthReadAccess-08729");
+    if (module_state.static_data_.has_shader_tile_image_depth_read && !enabled_features.shaderTileImageDepthReadAccess) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderTileImageDepthReadAccess-08729", module_state.handle(), loc,
+                         "shaderTileImageDepthReadAccess was not enabled");
     }
 
-    if (module_state.static_data_.has_shader_tile_image_stencil_read) {
-        skip |= RequireFeature(module_state, enabled_features.shaderTileImageStencilReadAccess, "shaderTileImageStencilReadAccess",
-                               "VUID-RuntimeSpirv-shaderTileImageStencilReadAccess-08730");
+    if (module_state.static_data_.has_shader_tile_image_stencil_read && !enabled_features.shaderTileImageStencilReadAccess) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderTileImageStencilReadAccess-08730", module_state.handle(), loc,
+                         "shaderTileImageStencilReadAccess was not enabled");
     }
 
-    if (module_state.static_data_.has_shader_tile_image_color_read) {
-        skip |= RequireFeature(module_state, enabled_features.shaderTileImageColorReadAccess, "shaderTileImageColorReadAccess",
-                               "VUID-RuntimeSpirv-shaderTileImageColorReadAccess-08728");
+    if (module_state.static_data_.has_shader_tile_image_color_read && !enabled_features.shaderTileImageColorReadAccess) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderTileImageColorReadAccess-08728", module_state.handle(), loc,
+                         "shaderTileImageColorReadAccess was not enabled");
     }
 
     return skip;
@@ -2504,8 +2502,10 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const SPIRV_MODULE_STATE &module_s
     bool skip = false;
 
     const uint32_t requiredSubgroupSize = required_subgroup_size.requiredSubgroupSize;
-    skip |= RequireFeature(module_state, enabled_features.subgroupSizeControl, "subgroupSizeControl",
-                           "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
+    if (!enabled_features.subgroupSizeControl) {
+        skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02755", module_state.handle(), loc,
+                         "subgroupSizeControl was not enabled");
+    }
     if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.GetStage()) == 0) {
         skip |= LogError(
             "VUID-VkPipelineShaderStageCreateInfo-pNext-02755", module_state.handle(), loc,

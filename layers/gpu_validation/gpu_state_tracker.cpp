@@ -1017,7 +1017,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         }
                         if (!cached) {
                             pass = InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv,
-                                                    csm_state.unique_shader_id);
+                                                    csm_state.unique_shader_id, record_obj.location);
                         }
                         if (cached || pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;

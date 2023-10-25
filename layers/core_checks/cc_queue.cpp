@@ -92,7 +92,7 @@ struct CommandBufferSubmitState {
         }
         for (auto &function : cb_state.eventUpdates) {
             skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, local_event_signal_info,
-                             queue_state->Queue());
+                             queue_state->Queue(), loc);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
         for (auto &function : cb_state.queryUpdates) {

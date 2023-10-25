@@ -225,7 +225,8 @@ class ObjectLifetimes : public ValidationObject {
         if (item == object_map[object_type].end()) {
             // We've already checked that the object exists. If we couldn't find and atomically remove it
             // from the map, there must have been a race condition in the app. Report an error and move on.
-            (void)LogError(device, kVUID_ObjectTracker_Info,
+            const Location loc(Func::vkDestroyDevice);
+            (void)LogError(kVUID_ObjectTracker_Info, device, loc,
                            "Couldn't destroy %s Object 0x%" PRIxLEAST64
                            ", not found. This should not happen and may indicate a race condition in the application.",
                            object_string[object_type], object);

@@ -3250,9 +3250,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  }},
             }}};
 
-            const std::string address_name = "pBindingInfos[" + std::to_string(i) + "].address";
-            skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT()",
-                                                                      address_name, bindingInfo.address);
+            skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, binding_loc.dot(Field::address),
+                                                                      bindingInfo.address);
         }
 
         const auto *buffer_handle = vku::FindStructInPNextChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(pBindingInfos[i].pNext);
@@ -3594,7 +3593,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
                    return true;
                }}}}};
 
-        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT", "address",
+        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, address_loc.dot(Field::address),
                                                                   address_info->address);
     }
 
@@ -3738,9 +3737,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08030";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
-                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
-                                                                              pDescriptorInfo->data.pUniformBuffer->address);
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer).dot(Field::address),
+                        pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-VkDescriptorDataEXT-type-08039", device, descriptor_info_loc.dot(Field::type),
@@ -3753,9 +3752,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08031";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
-                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
-                                                                              pDescriptorInfo->data.pUniformBuffer->address);
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer).dot(Field::address),
+                        pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-VkDescriptorDataEXT-type-08040", device, descriptor_info_loc.dot(Field::type),
@@ -3768,9 +3767,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08032";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
-                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
-                                                                              pDescriptorInfo->data.pUniformBuffer->address);
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer).dot(Field::address),
+                        pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-VkDescriptorDataEXT-type-08037", device, descriptor_info_loc.dot(Field::type),
@@ -3783,9 +3782,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08033";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
-                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
-                                                                              pDescriptorInfo->data.pUniformBuffer->address);
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer).dot(Field::address),
+                        pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-VkDescriptorDataEXT-type-08038", device, descriptor_info_loc.dot(Field::type),
@@ -4035,8 +4034,8 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
-            skip |= LogError(pool_state->Handle(), "VUID-VkDescriptorSetAllocateInfo-apiVersion-07895",
-                             "vkAllocateDescriptorSets(): Unable to allocate %" PRIu32
+            skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07895", pool_state->Handle(), error_obj.location,
+                             "Unable to allocate %" PRIu32
                              " descriptorSets from %s"
                              ". This pool only has %" PRIu32 " descriptorSets remaining.",
                              pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(), pool_state->GetAvailableSets());
@@ -4046,8 +4045,8 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             auto available_count = pool_state->GetAvailableCount(it->first);
 
             if (ds_data->required_descriptors_by_type.at(it->first) > available_count) {
-                skip |= LogError(pool_state->Handle(), "VUID-VkDescriptorSetAllocateInfo-apiVersion-07896",
-                                 "vkAllocateDescriptorSets(): Unable to allocate %" PRIu32
+                skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07896", pool_state->Handle(), error_obj.location,
+                                 "Unable to allocate %" PRIu32
                                  " descriptors of type %s from %s"
                                  ". This pool only has %" PRIu32 " descriptors of this type remaining.",
                                  ds_data->required_descriptors_by_type.at(it->first),

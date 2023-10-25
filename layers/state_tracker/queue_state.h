@@ -57,7 +57,7 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
     // Notify the queue that the fence has signalled and then wait for the queue
     // to update state.
-    void NotifyAndWait();
+    void NotifyAndWait(const Location &loc);
 
     // Update state of the completed fence. This should only be called by QUEUE_STATE.
     void Retire();
@@ -224,10 +224,10 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     std::shared_future<void> Wait(uint64_t payload);
 
     // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
-    void NotifyAndWait(uint64_t payload);
+    void NotifyAndWait(const Location &loc, uint64_t payload);
 
     // Remove completed operations and signal any waiters. This should only be called by QUEUE_STATE
-    void Retire(QUEUE_STATE *current_queue, uint64_t payload);
+    void Retire(QUEUE_STATE *current_queue, const Location &loc, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
@@ -313,14 +313,14 @@ class QUEUE_STATE : public BASE_NODE {
 
     VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 
-    uint64_t Submit(CB_SUBMISSION &&submission);
+    uint64_t Submit(CB_SUBMISSION &&submission, const Location &loc);
 
     // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
     uint64_t Notify(uint64_t until_seq = vvl::kU64Max);
 
     // Tell the queue and then wait for it to finish updating its state.
     // UINT64_MAX means to finish all submissions.
-    void NotifyAndWait(uint64_t until_seq = vvl::kU64Max);
+    void NotifyAndWait(const Location &loc, uint64_t until_seq = vvl::kU64Max);
     std::shared_future<void> Wait(uint64_t until_seq = vvl::kU64Max);
 
     const uint32_t queueFamilyIndex;

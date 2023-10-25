@@ -990,7 +990,8 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
 
 bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const CMD_BUFFER_STATE &cb_state, size_t eventCount,
                                             size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
-                                            const EventToStageMap &local_event_signal_info, VkQueue waiting_queue) {
+                                            const EventToStageMap &local_event_signal_info, VkQueue waiting_queue,
+                                            const Location &loc) {
     bool skip = false;
     const ValidationStateTracker *state_data = cb_state.dev_data;
     VkPipelineStageFlags2KHR stage_mask = 0;
@@ -1027,7 +1028,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const CMD_BUFFER_
     // but set event can be called at any time.
     if (sourceStageMask != stage_mask && sourceStageMask != (stage_mask | VK_PIPELINE_STAGE_HOST_BIT)) {
         skip |= state_data->LogError(
-            cb_state.commandBuffer(), "VUID-vkCmdWaitEvents-srcStageMask-parameter",
+            "VUID-vkCmdWaitEvents-srcStageMask-parameter", cb_state.commandBuffer(), loc,
             "Submitting cmdbuffer with call to VkCmdWaitEvents using srcStageMask 0x%" PRIx64
             " which must be the bitwise OR of "
             "the stageMask parameters used in calls to vkCmdSetEvent and VK_PIPELINE_STAGE_HOST_BIT if used with "
@@ -1114,13 +1115,13 @@ void CORE_CMD_BUFFER_STATE::RecordWaitEvents(vvl::Func command, uint32_t eventCo
     auto first_event_index = events.size();
     CMD_BUFFER_STATE::RecordWaitEvents(command, eventCount, pEvents, srcStageMask);
     auto event_added_count = events.size() - first_event_index;
-    eventUpdates.emplace_back(
-        [command, event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb_state, bool do_validate,
-                                                                      EventToStageMap &local_event_signal_info, VkQueue queue) {
-            if (!do_validate) return false;
-            return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, srcStageMask,
-                                                          local_event_signal_info, queue);
-        });
+    eventUpdates.emplace_back([command, event_added_count, first_event_index, srcStageMask](
+                                  CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
+                                  VkQueue queue, const Location &loc) {
+        if (!do_validate) return false;
+        return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, srcStageMask,
+                                                      local_event_signal_info, queue, loc);
+    });
 }
 
 void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
