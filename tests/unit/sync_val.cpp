@@ -5001,6 +5001,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
     test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
+    m_device->wait();
 }
 
 TEST_F(NegativeSyncVal, QSOBarrierHazard) {
