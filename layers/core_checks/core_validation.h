@@ -1763,8 +1763,12 @@ class CoreChecks : public ValidationStateTracker {
                                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                          size_t dataSize, void* pData, const ErrorObject& error_obj) const override;
+    // Validate buffers accessed using a device address
     bool ValidateAccelerationBuffers(uint32_t info_index, const VkAccelerationStructureBuildGeometryInfoKHR& info,
                                      const Location& loc) const;
+    bool ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, uint32_t info_i,
+                                                       const ErrorObject& error_obj) const;
     bool PreCallValidateCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                           const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
