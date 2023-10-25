@@ -116,6 +116,52 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipeline
     return skip;
 }
 
+bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo &rendering_struct,
+                                                              const Location &loc) const {
+    bool skip = false;
+
+    if ((rendering_struct.depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
+        skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat), "VkFormat",
+                                   rendering_struct.depthAttachmentFormat, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
+
+        if (!vkuFormatHasDepth(rendering_struct.depthAttachmentFormat)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06587", device,
+                             loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
+                             "(%s) does not have a depth aspect.", string_VkFormat(rendering_struct.depthAttachmentFormat));
+        }
+    }
+
+    if ((rendering_struct.stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) {
+        skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat), "VkFormat",
+                                   rendering_struct.stencilAttachmentFormat, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
+        if (!vkuFormatHasStencil(rendering_struct.stencilAttachmentFormat)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06588", device,
+                             loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
+                             "(%s) does not have a "
+                             "stencil aspect.",
+                             string_VkFormat(rendering_struct.stencilAttachmentFormat));
+        }
+    }
+
+    if (rendering_struct.colorAttachmentCount != 0) {
+        skip |=
+            ValidateRangedEnumArray(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
+                                    loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats),
+                                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579", "VkFormat",
+                                    rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats, true, true);
+    }
+
+    if (rendering_struct.pColorAttachmentFormats) {
+        for (uint32_t j = 0; j < rendering_struct.colorAttachmentCount; ++j) {
+            skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, j),
+                                       "VkFormat", rendering_struct.pColorAttachmentFormats[j],
+                                       "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
+        }
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
     VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj) const {
@@ -168,56 +214,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
         uint32_t color_attachment_count = 0;
 
         if (!create_info.renderPass) {
-            if (create_info.pColorBlendState && create_info.pMultisampleState) {
+            // Pipeline has fragment output state
+            if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0 ||
+                (create_info.pColorBlendState && create_info.pMultisampleState)) {
                 const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
-                // Pipeline has fragment output state
                 if (rendering_struct) {
                     color_attachment_count = rendering_struct->colorAttachmentCount;
-
-                    if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
-                        skip |= ValidateRangedEnum(
-                            create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat), "VkFormat",
-                            rendering_struct->depthAttachmentFormat, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
-
-                        if (!vkuFormatHasDepth(rendering_struct->depthAttachmentFormat)) {
-                            skip |= LogError(
-                                "VUID-VkGraphicsPipelineCreateInfo-renderPass-06587", device,
-                                create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
-                                "(%s) does not have a depth aspect.", string_VkFormat(rendering_struct->depthAttachmentFormat));
-                        }
-                    }
-
-                    if ((rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) {
-                        skip |= ValidateRangedEnum(
-                            create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
-                            "VkFormat", rendering_struct->stencilAttachmentFormat,
-                            "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
-                        if (!vkuFormatHasStencil(rendering_struct->stencilAttachmentFormat)) {
-                            skip |= LogError(
-                                "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588", device,
-                                create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
-                                "(%s) does not have a "
-                                "stencil aspect.",
-                                string_VkFormat(rendering_struct->stencilAttachmentFormat));
-                        }
-                    }
-
-                    if (color_attachment_count != 0) {
-                        skip |= ValidateRangedEnumArray(
-                            create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
-                            create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats),
-                            "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579", "VkFormat", color_attachment_count,
-                            rendering_struct->pColorAttachmentFormats, true, true);
-                    }
-
-                    if (rendering_struct->pColorAttachmentFormats) {
-                        for (uint32_t j = 0; j < color_attachment_count; ++j) {
-                            skip |= ValidateRangedEnum(
-                                create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, j),
-                                "VkFormat", rendering_struct->pColorAttachmentFormats[j],
-                                "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
-                        }
-                    }
+                    skip |= ValidatePipelineRenderingCreateInfo(*rendering_struct, create_info_loc);
                 }
 
                 // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
