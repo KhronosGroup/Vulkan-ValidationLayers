@@ -24,6 +24,7 @@
 //
 class RENDER_PASS_STATE;
 struct SHADER_MODULE_STATE;
+struct EntryPoint;
 
 template <typename CreateInfoType>
 static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateInfoType &create_info) {
@@ -135,6 +136,8 @@ struct FragmentShaderState : public PipelineSubState {
 
     std::shared_ptr<const SHADER_MODULE_STATE> fragment_shader;
     std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> fragment_shader_ci;
+    // many times we need to quickly get the entry point to access the SPIR-V static data
+    std::shared_ptr<const EntryPoint> fragment_entry_point;
 
   private:
     static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
