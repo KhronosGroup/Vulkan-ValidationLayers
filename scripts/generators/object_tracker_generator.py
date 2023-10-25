@@ -829,7 +829,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
                 allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
                 objectDest = f'{command.params[-1].name}[index]' if objectArray else f'*{command.params[-1].name}'
-                post_call_record += f'CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator});\n'
+                location = f'record_obj.location.dot(Field::{command.params[-1].name}, index)' if objectArray else 'record_obj.location'
+
+                post_call_record += f'CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator}, {location});\n'
                 if objectArray:
                     post_call_record += '}\n'
                     post_call_record += '}\n'
