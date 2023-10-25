@@ -81,13 +81,14 @@ class ObjectLifetimes : public ValidationObject {
     }
 
     template <typename T1>
-    void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, std::shared_ptr<ObjTrackState> pNode) {
+    void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, const Location &loc,
+                      std::shared_ptr<ObjTrackState> pNode) {
         uint64_t object_handle = HandleToUint64(object);
         const bool inserted = map.insert(object_handle, pNode);
         if (!inserted) {
             // The object should not already exist. If we couldn't add it to the map, there was probably
             // a race condition in the app. Report an error and move on.
-            (void)LogError(object, kVUID_ObjectTracker_Info,
+            (void)LogError(kVUID_ObjectTracker_Info, object, loc,
                            "Couldn't insert %s Object 0x%" PRIxLEAST64
                            ", already existed. This should not happen and may indicate a "
                            "race condition in the application.",
@@ -105,10 +106,11 @@ class ObjectLifetimes : public ValidationObject {
 
     void DestroyUndestroyedObjects(VulkanObjectType object_type);
 
-    void CreateQueue(VkQueue vkObj);
-    void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level);
-    void AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
-    void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
+    void CreateQueue(VkQueue vkObj, const Location &loc);
+    void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level,
+                               const Location &loc);
+    void AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc);
+    void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location &loc);
     void DestroyLeakedInstanceObjects();
     void DestroyLeakedDeviceObjects();
     void DestroyQueueDataStructures();
@@ -197,7 +199,7 @@ class ObjectLifetimes : public ValidationObject {
     }
 
     template <typename T1>
-    void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
+    void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator, const Location &loc) {
         uint64_t object_handle = HandleToUint64(object);
         const bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].contains(object_handle)) {
@@ -206,7 +208,7 @@ class ObjectLifetimes : public ValidationObject {
             pNewObjNode->status = custom_allocator ? OBJSTATUS_CUSTOM_ALLOCATOR : OBJSTATUS_NONE;
             pNewObjNode->handle = object_handle;
 
-            InsertObject(object_map[object_type], object, object_type, pNewObjNode);
+            InsertObject(object_map[object_type], object, object_type, loc, pNewObjNode);
             num_objects[object_type]++;
             num_total_objects++;
 

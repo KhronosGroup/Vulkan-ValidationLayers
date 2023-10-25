@@ -60,7 +60,7 @@ bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
-                                            VkCommandBufferLevel level) {
+                                            VkCommandBufferLevel level, const Location &loc) {
     auto new_obj_node = std::make_shared<ObjTrackState>();
     new_obj_node->object_type = kVulkanObjectTypeCommandBuffer;
     new_obj_node->handle = HandleToUint64(command_buffer);
@@ -70,7 +70,7 @@ void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, co
     } else {
         new_obj_node->status = OBJSTATUS_NONE;
     }
-    InsertObject(object_map[kVulkanObjectTypeCommandBuffer], command_buffer, kVulkanObjectTypeCommandBuffer, new_obj_node);
+    InsertObject(object_map[kVulkanObjectTypeCommandBuffer], command_buffer, kVulkanObjectTypeCommandBuffer, loc, new_obj_node);
     num_objects[kVulkanObjectTypeCommandBuffer]++;
     num_total_objects++;
 }
@@ -97,13 +97,13 @@ bool ObjectLifetimes::ValidateCommandBuffer(VkCommandPool command_pool, VkComman
     return skip;
 }
 
-void ObjectLifetimes::AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) {
+void ObjectLifetimes::AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) {
     auto new_obj_node = std::make_shared<ObjTrackState>();
     new_obj_node->object_type = kVulkanObjectTypeDescriptorSet;
     new_obj_node->status = OBJSTATUS_NONE;
     new_obj_node->handle = HandleToUint64(descriptor_set);
     new_obj_node->parent_object = HandleToUint64(descriptor_pool);
-    InsertObject(object_map[kVulkanObjectTypeDescriptorSet], descriptor_set, kVulkanObjectTypeDescriptorSet, new_obj_node);
+    InsertObject(object_map[kVulkanObjectTypeDescriptorSet], descriptor_set, kVulkanObjectTypeDescriptorSet, loc, new_obj_node);
     num_objects[kVulkanObjectTypeDescriptorSet]++;
     num_total_objects++;
 
@@ -237,12 +237,12 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer com
     return skip;
 }
 
-void ObjectLifetimes::CreateQueue(VkQueue vkObj) {
+void ObjectLifetimes::CreateQueue(VkQueue vkObj, const Location &loc) {
     std::shared_ptr<ObjTrackState> p_obj_node = NULL;
     auto queue_item = object_map[kVulkanObjectTypeQueue].find(HandleToUint64(vkObj));
     if (queue_item == object_map[kVulkanObjectTypeQueue].end()) {
         p_obj_node = std::make_shared<ObjTrackState>();
-        InsertObject(object_map[kVulkanObjectTypeQueue], vkObj, kVulkanObjectTypeQueue, p_obj_node);
+        InsertObject(object_map[kVulkanObjectTypeQueue], vkObj, kVulkanObjectTypeQueue, loc, p_obj_node);
         num_objects[kVulkanObjectTypeQueue]++;
         num_total_objects++;
     } else {
@@ -253,14 +253,14 @@ void ObjectLifetimes::CreateQueue(VkQueue vkObj) {
     p_obj_node->handle = HandleToUint64(vkObj);
 }
 
-void ObjectLifetimes::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain) {
+void ObjectLifetimes::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location &loc) {
     if (!swapchainImageMap.contains(HandleToUint64(swapchain_image))) {
         auto new_obj_node = std::make_shared<ObjTrackState>();
         new_obj_node->object_type = kVulkanObjectTypeImage;
         new_obj_node->status = OBJSTATUS_NONE;
         new_obj_node->handle = HandleToUint64(swapchain_image);
         new_obj_node->parent_object = HandleToUint64(swapchain);
-        InsertObject(swapchainImageMap, swapchain_image, kVulkanObjectTypeImage, new_obj_node);
+        InsertObject(swapchainImageMap, swapchain_image, kVulkanObjectTypeImage, loc, new_obj_node);
     }
 }
 
@@ -340,7 +340,8 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDevices(VkInstance instance
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pPhysicalDevices) {
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
-            CreateObject(pPhysicalDevices[i], kVulkanObjectTypePhysicalDevice, nullptr);
+            CreateObject(pPhysicalDevices[i], kVulkanObjectTypePhysicalDevice, nullptr,
+                         record_obj.location.dot(Field::pPhysicalDevices, i));
         }
     }
 }
@@ -405,7 +406,7 @@ bool ObjectLifetimes::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t qu
 void ObjectLifetimes::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
                                                    const RecordObject &record_obj) {
     auto lock = WriteSharedLock();
-    CreateQueue(*pQueue);
+    CreateQueue(*pQueue, record_obj.location);
 }
 
 bool ObjectLifetimes::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
@@ -418,7 +419,7 @@ bool ObjectLifetimes::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDe
 void ObjectLifetimes::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
                                                     const RecordObject &record_obj) {
     auto lock = WriteSharedLock();
-    CreateQueue(*pQueue);
+    CreateQueue(*pQueue, record_obj.location);
 }
 
 bool ObjectLifetimes::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
@@ -527,7 +528,7 @@ void ObjectLifetimes::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwa
     auto lock = WriteSharedLock();
     if (pSwapchainImages != NULL) {
         for (uint32_t i = 0; i < *pSwapchainImageCount; i++) {
-            CreateSwapchainImageObject(pSwapchainImages[i], swapchain);
+            CreateSwapchainImageObject(pSwapchainImages[i], swapchain, record_obj.location.dot(Field::pSwapchainImages, i));
         }
     }
 }
@@ -563,7 +564,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorSetLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkDescriptorSetLayout *pSetLayout, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator);
+    CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator, record_obj.location);
 }
 
 bool ObjectLifetimes::ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const Location &loc) const {
@@ -617,7 +618,7 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhy
 void ObjectLifetimes::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                                    VkInstance *pInstance, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    CreateObject(*pInstance, kVulkanObjectTypeInstance, pAllocator);
+    CreateObject(*pInstance, kVulkanObjectTypeInstance, pAllocator, record_obj.location);
 }
 
 bool ObjectLifetimes::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
@@ -632,7 +633,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
                                                  const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                  const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator);
+    CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator, record_obj.location);
 
     auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     auto object_tracking = device_data->GetValidationObject<ObjectLifetimes>();
@@ -657,7 +658,8 @@ void ObjectLifetimes::PostCallRecordAllocateCommandBuffers(VkDevice device, cons
                                                            VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
     for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
-        AllocateCommandBuffer(pAllocateInfo->commandPool, pCommandBuffers[i], pAllocateInfo->level);
+        AllocateCommandBuffer(pAllocateInfo->commandPool, pCommandBuffers[i], pAllocateInfo->level,
+                              record_obj.location.dot(Field::pCommandBuffers, i));
     }
 }
 
@@ -683,7 +685,8 @@ void ObjectLifetimes::PostCallRecordAllocateDescriptorSets(VkDevice device, cons
     if (record_obj.result != VK_SUCCESS) return;
     auto lock = WriteSharedLock();
     for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-        AllocateDescriptorSet(pAllocateInfo->descriptorPool, pDescriptorSets[i]);
+        AllocateDescriptorSet(pAllocateInfo->descriptorPool, pDescriptorSets[i],
+                              record_obj.location.dot(Field::pDescriptorSets, i));
     }
 }
 
@@ -884,7 +887,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhys
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
+            CreateObject(pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr,
+                         record_obj.location.dot(Field::pProperties, i).dot(Field::display));
         }
     }
 }
@@ -908,7 +912,8 @@ void ObjectLifetimes::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
+            CreateObject(pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr,
+                         record_obj.location.dot(Field::pProperties, i).dot(Field::displayMode));
         }
     }
 }
@@ -929,7 +934,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhy
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
+            CreateObject(pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr,
+                         record_obj.location.dot(Field::pProperties, index).dot(Field::displayProperties).dot(Field::display));
         }
     }
 }
@@ -954,7 +960,9 @@ void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevic
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
+            CreateObject(
+                pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr,
+                record_obj.location.dot(Field::pProperties, index).dot(Field::displayModeProperties).dot(Field::displayMode));
         }
     }
 }
@@ -966,7 +974,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(V
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(pProperties[index].currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr);
+            CreateObject(pProperties[index].currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr,
+                         record_obj.location.dot(Field::pProperties, index).dot(Field::currentDisplay));
         }
     }
 }
@@ -978,7 +987,9 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(pProperties[index].displayPlaneProperties.currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr);
+            CreateObject(
+                pProperties[index].displayPlaneProperties.currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr,
+                record_obj.location.dot(Field::pProperties, index).dot(Field::displayPlaneProperties).dot(Field::currentDisplay));
         }
     }
 }
@@ -1009,7 +1020,7 @@ void ObjectLifetimes::PostCallRecordCreateFramebuffer(VkDevice device, const VkF
                                                       const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                       const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    CreateObject(*pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator);
+    CreateObject(*pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator, record_obj.location);
 }
 
 bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
@@ -1072,7 +1083,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice devi
                                                                    VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
                                                                    const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
+    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator, record_obj.location);
 }
 
 void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
@@ -1191,10 +1202,10 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         if (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR) {
-            auto register_fn = [this, pAllocator](const std::vector<VkPipeline> &pipelines) {
+            auto register_fn = [this, pAllocator, record_obj](const std::vector<VkPipeline> &pipelines) {
                 for (auto pipe : pipelines) {
                     if (!pipe) continue;
-                    this->CreateObject(pipe, kVulkanObjectTypePipeline, pAllocator);
+                    this->CreateObject(pipe, kVulkanObjectTypePipeline, pAllocator, record_obj.location);
                 }
             };
 
@@ -1212,7 +1223,7 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device
         } else {
             for (uint32_t index = 0; index < createInfoCount; index++) {
                 if (!pPipelines[index]) continue;
-                CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+                CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator, record_obj.location);
             }
         }
     }
