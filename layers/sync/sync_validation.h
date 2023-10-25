@@ -936,7 +936,6 @@ class SyncOpBase {
     virtual ~SyncOpBase() = default;
 
     const char *CmdName() const { return vvl::String(command_); }
-    vvl::Func Cmd() const { return command_; }
 
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
     virtual ResourceUsageTag Record(CommandBufferAccessContext *cb_context) = 0;
