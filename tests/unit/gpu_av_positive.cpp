@@ -738,6 +738,7 @@ TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Should not get a warning since buggy vertex shader wasn't instrumented
+    m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_default_queue);
 }
