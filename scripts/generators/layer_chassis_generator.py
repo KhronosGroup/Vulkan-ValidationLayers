@@ -593,12 +593,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, std::string_view entrypoint,
+                void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, const Location& loc, std::string_view entrypoint,
                                     VkResult err) const {
                     const std::string_view err_string = string_VkResult(err);
                     std::string vuid = "INTERNAL-ERROR-";
                     vuid += entrypoint;
-                    LogError(obj_list, vuid, "In %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                    LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
                             failure_location.data(), entrypoint.data(), err_string.data());
                 }
 

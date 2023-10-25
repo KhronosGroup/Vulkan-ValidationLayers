@@ -419,16 +419,18 @@ class SURFACE_STATE : public BASE_NODE {
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
 
     void SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes);
-    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const ValidationObject *validation_obj) const;
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
+                                                  const ValidationObject *validation_obj) const;
 
     void SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts);
     vvl::span<const safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                         const void *surface_info2_pnext,
+                                                         const void *surface_info2_pnext, const Location &loc,
                                                          const ValidationObject *validation_obj) const;
 
     void SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps);
     safe_VkSurfaceCapabilities2KHR GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                   const void *surface_info2_pnext, const ValidationObject *validation_obj) const;
+                                                   const void *surface_info2_pnext, const Location &loc,
+                                                   const ValidationObject *validation_obj) const;
 
     void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
                             vvl::span<const VkPresentModeKHR> compatible_modes);
