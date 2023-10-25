@@ -3632,3 +3632,29 @@ TEST_F(NegativePipeline, MissingPipelineViewportState) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormatWithoutFragmentState) {
+    TEST_DESCRIPTION("Create pipeline with invalid pipeline rendering formats");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
+    pipeline_rendering_ci.stencilAttachmentFormat = VK_FORMAT_D16_UNORM;
+
+    VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pNext = &pipeline_rendering_ci;
+    pipe.gp_ci_.pColorBlendState = nullptr;
+    pipe.cb_ci_.attachmentCount = 0u;
+    pipe.ds_ci_ = ds;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
