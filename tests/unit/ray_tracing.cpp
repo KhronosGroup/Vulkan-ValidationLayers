@@ -2659,8 +2659,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     m_commandBuffer->end();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6040
-TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
+// Partially disabled, see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6040
+TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     TEST_DESCRIPTION(
         "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
 
@@ -2685,6 +2685,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
     alloc_info.allocationSize = 8192;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
+#if 0
     // Test overlapping scratch buffers
     {
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
@@ -2715,6 +2716,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
+#endif
 
     // Test overlapping destination acceleration structures
     {
@@ -2746,7 +2748,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
-
+#if 0
     // Test overlapping destination acceleration structure and scratch buffer
     {
         VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
@@ -2796,6 +2798,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
+#endif
 
     // Test overlapping source acceleration structure and destination acceleration structures
     {
@@ -2837,19 +2840,22 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         }
 
         // Since all the source and destination acceleration structures are bound to the same memory, 03701 and 03702 will be
-        // triggered for each pair of elements in `build_infos`
+        // triggered for each pair of elements in `build_infos`, and 03668 for each element
         for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
         }
+        for (size_t i = 0; i < build_info_count; ++i) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03668");
+        }
         m_commandBuffer->begin();
         vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
-
+#if 0
     // Test overlapping source acceleration structure and scratch buffer
     {
         VkBufferCreateInfo blas_buffer_ci = vku::InitStructHelper();
@@ -2911,6 +2917,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
+#endif
 }
 
 TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
