@@ -26,12 +26,8 @@
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageAspect = "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidRenderpass = "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass";
-[[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidSecondaryCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidSecondaryCommandBuffer";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_QueueForwardProgress = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
-
-[[maybe_unused]] static const char *kVUID_Core_Shader_AllowVaryingSubgroupSize = "UNASSIGNED-CoreValidation-Shader-AllowVaryingSubgroupSize";
-[[maybe_unused]] static const char *kVUID_Core_Shader_RequireFullSubgroups = "UNASSIGNED-CoreValidation-Shader-RequireFullSubgroups";
 
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 

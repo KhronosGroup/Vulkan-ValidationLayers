@@ -1831,19 +1831,19 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
 
     // These error messages align with VkDescriptorType struct
     std::string error_codes[] = {
-        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // placeholder, no error for SAMPLER descriptor
-        "VUID-VkWriteDescriptorSet-descriptorType-00337",        // COMBINED_IMAGE_SAMPLER
-        "VUID-VkWriteDescriptorSet-descriptorType-00337",        // SAMPLED_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-00339",        // STORAGE_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-08765",        // UNIFORM_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-08766",        // STORAGE_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER_DYNAMIC
-        "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER_DYNAMIC
-        "VUID-VkWriteDescriptorSet-descriptorType-00338"         // INPUT_ATTACHMENT
+        "",                                                // placeholder, no error for SAMPLER descriptor
+        "VUID-VkWriteDescriptorSet-descriptorType-00337",  // COMBINED_IMAGE_SAMPLER
+        "VUID-VkWriteDescriptorSet-descriptorType-00337",  // SAMPLED_IMAGE
+        "VUID-VkWriteDescriptorSet-descriptorType-00339",  // STORAGE_IMAGE
+        "VUID-VkWriteDescriptorSet-descriptorType-08765",  // UNIFORM_TEXEL_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-08766",  // STORAGE_TEXEL_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00330",  // UNIFORM_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00331",  // STORAGE_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00330",  // UNIFORM_BUFFER_DYNAMIC
+        "VUID-VkWriteDescriptorSet-descriptorType-00331",  // STORAGE_BUFFER_DYNAMIC
+        "VUID-VkWriteDescriptorSet-descriptorType-00338"   // INPUT_ATTACHMENT
     };
-    // Start loop at 1 as SAMPLER desc type has no usage bit error
+
     for (uint32_t i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
         if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
             // Now check for UNIFORM_TEXEL_BUFFER using storage_texel_buffer_view

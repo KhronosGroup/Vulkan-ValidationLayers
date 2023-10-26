@@ -7436,7 +7436,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOutputPatchSize) {
 TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
     TEST_DESCRIPTION("Create shader with invalid flags when subgroupSizeControl is not enabled.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-AllowVaryingSubgroupSize");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-09404");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (::testing::Test::IsSkipped()) return;
@@ -7460,7 +7460,7 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
 TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
     TEST_DESCRIPTION("Create shader with invalid flags when computeFullSubgroups is not enabled.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-RequireFullSubgroups");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-09405");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (::testing::Test::IsSkipped()) return;

@@ -1788,14 +1788,9 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    auto ivci =
-        vku::InitStruct<VkImageViewCreateInfo>(nullptr, 0u, image.handle(), VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_B8G8R8A8_UNORM,
-                                             VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                                VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                             VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-    vkt::ImageView view(*m_device, ivci);
+    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
 
-    auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view.handle(), 32u, 32u, 1u);
+    auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view, 32u, 32u, 1u);
     vkt::Framebuffer fb(*m_device, fci);
 
     VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
@@ -1803,29 +1798,75 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     cbai.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     cbai.commandBufferCount = 1;
 
-    VkCommandBuffer sec_cb;
-    auto err = vk::AllocateCommandBuffers(m_device->device(), &cbai, &sec_cb);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vkt::CommandBuffer sec_cb(*m_device, cbai);
+
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = renderPass();
     cbii.framebuffer = fb.handle();
     cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     cbbi.pInheritanceInfo = &cbii;
-    vk::BeginCommandBuffer(sec_cb, &cbbi);
-    vk::EndCommandBuffer(sec_cb);
+    sec_cb.begin(&cbbi);
+    sec_cb.end();
 
-    VkCommandBufferBeginInfo cbbi2 = vku::InitStructHelper();
-    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi2);
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00099");
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cb);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cb.handle());
     m_errorMonitor->VerifyFound();
-    // Cleanup
 
     m_commandBuffer->EndRenderPass();
-    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
+    TEST_DESCRIPTION(
+        "Bind a secondary command buffer with a framebuffer that does not match the framebuffer for the active renderpass.");
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    // A renderpass with one color attachment.
+    VkAttachmentDescription attachment = {0,
+                                          VK_FORMAT_B8G8R8A8_UNORM,
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_STORE,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          VK_IMAGE_LAYOUT_UNDEFINED,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
+
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &attachment, 1u, &subpass, 0u, nullptr);
+    vkt::RenderPass rp(*m_device, rpci);
+
+    // A compatible framebuffer.
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
+    auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view, 32u, 32u, 1u);
+    vkt::Framebuffer fb(*m_device, fci);
+
+    VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
+    cbai.commandPool = m_commandPool->handle();
+    cbai.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    cbai.commandBufferCount = 1;
+
+    vkt::CommandBuffer sec_cb(*m_device, cbai);
+
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
+    cbii.renderPass = renderPass();
+    cbii.framebuffer = CastFromUint64<VkFramebuffer>(0xFFFFEEEE);
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cbbi.pInheritanceInfo = &cbii;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-00055");
+    vk::BeginCommandBuffer(sec_cb.handle(), &cbbi);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRenderPass, NullRenderPass) {
