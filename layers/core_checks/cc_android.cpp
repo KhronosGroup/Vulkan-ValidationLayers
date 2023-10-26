@@ -150,15 +150,16 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
     // with non-NULL image member, then that image must already be bound to memory.
-    if (mem_info->IsDedicatedImage()) {
-        auto image_state = Get<IMAGE_STATE>(mem_info->dedicated->handle.Cast<VkImage>());
+    VkImage dedicated_image = mem_info->GetDedicatedImage();
+    if (dedicated_image != VK_NULL_HANDLE) {
+        auto image_state = Get<IMAGE_STATE>(dedicated_image);
         if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->deviceMemory())))) {
-            const LogObjectList objlist(device, pInfo->memory, mem_info->dedicated->handle);
+            const LogObjectList objlist(device, pInfo->memory, dedicated_image);
             skip |= LogError("VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883", objlist,
                              error_obj.location.dot(Field::pInfo).dot(Field::memory),
                              "(%s) was allocated using a dedicated "
                              "%s, but that image is not bound to the VkDeviceMemory object.",
-                             FormatHandle(pInfo->memory).c_str(), FormatHandle(mem_info->dedicated->handle).c_str());
+                             FormatHandle(pInfo->memory).c_str(), FormatHandle(dedicated_image).c_str());
         }
     }
 

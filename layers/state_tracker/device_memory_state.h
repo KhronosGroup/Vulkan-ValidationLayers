@@ -69,9 +69,14 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
     }
     bool IsExport() const { return export_handle_types != 0; }
 
-    bool IsDedicatedBuffer() const { return dedicated && dedicated->handle.type == kVulkanObjectTypeBuffer; }
+    VkBuffer GetDedicatedBuffer() const {
+        return (dedicated && dedicated->handle.type == kVulkanObjectTypeBuffer) ? dedicated->handle.Cast<VkBuffer>()
+                                                                                : VK_NULL_HANDLE;
+    }
 
-    bool IsDedicatedImage() const { return dedicated && dedicated->handle.type == kVulkanObjectTypeImage; }
+    VkImage GetDedicatedImage() const {
+        return (dedicated && dedicated->handle.type == kVulkanObjectTypeImage) ? dedicated->handle.Cast<VkImage>() : VK_NULL_HANDLE;
+    }
 
     VkDeviceMemory deviceMemory() const { return handle_.Cast<VkDeviceMemory>(); }
 };
