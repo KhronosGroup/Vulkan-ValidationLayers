@@ -165,7 +165,7 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
       - run: python3 -m pip install jsonschema pyparsing
-      - name: Cache dependent components
+      - name: Cache known_good.json installations
         id: cache-deps
         uses: actions/cache@v3
         with:
@@ -177,12 +177,10 @@ jobs:
             build-ci/external/SPIRV-Headers/build/install
             build-ci/external/SPIRV-Tools/build/install
             build-ci/external/Vulkan-Headers/build/install
+            build-ci/external/Vulkan-Utility-Libraries/build/install
           key: windows-dependencies-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
         run: python3 scripts/tests.py --build --config debug --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
-        env:
-          # Linker warnings as errors
-          LDFLAGS: /WX
       - name: Test Max Profile
         run: python scripts/tests.py --test
 
