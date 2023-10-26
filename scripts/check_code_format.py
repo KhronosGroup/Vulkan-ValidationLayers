@@ -282,6 +282,11 @@ def main():
         target_files = target_files_data.decode('utf-8')
         target_files = target_files.split("\n")
 
+        # Skip checking dependabot commits
+        authors = subprocess.check_output(['git', 'log', '-n' , '1', '--format=%ae', commit]).decode('utf-8')
+        if "dependabot" in authors:
+            continue
+
         failure |= VerifyClangFormatSource(commit, target_files)
         failure |= VerifyCopyrights(commit, target_files)
         failure |= VerifyCommitMessageFormat(commit, target_files)
