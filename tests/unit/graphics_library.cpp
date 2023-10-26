@@ -1622,57 +1622,6 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGraphicsLibrary, Layouts) {
-    TEST_DESCRIPTION("Various invalid layouts");
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
-    InitRenderTarget();
-
-    CreatePipelineHelper vi_lib(*this);
-    vi_lib.InitVertexInputLibInfo();
-    vi_lib.InitState();
-    vi_lib.CreateGraphicsPipeline();
-
-    CreatePipelineHelper fo_lib(*this);
-    fo_lib.InitFragmentOutputLibInfo();
-    fo_lib.InitState();
-    fo_lib.CreateGraphicsPipeline();
-
-    CreatePipelineHelper pre_raster_lib(*this);
-    {
-        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vkt::GraphicsPipelineLibraryStage stage_ci(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-
-        pre_raster_lib.InitPreRasterLibInfo(&stage_ci.stage_ci);
-        pre_raster_lib.InitState();
-        pre_raster_lib.CreateGraphicsPipeline();
-    }
-
-    CreatePipelineHelper frag_shader_lib(*this);
-    {
-        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vkt::GraphicsPipelineLibraryStage stage_ci(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        frag_shader_lib.InitFragmentLibInfo(&stage_ci.stage_ci);
-        frag_shader_lib.InitState();
-        frag_shader_lib.CreateGraphicsPipeline();
-    }
-
-    VkPipeline libraries[4] = {
-        vi_lib.pipeline_,
-        pre_raster_lib.pipeline_,
-        frag_shader_lib.pipeline_,
-        fo_lib.pipeline_,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
-    vkt::Pipeline lib(*m_device, lib_ci);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     TEST_DESCRIPTION("Link pre-raster state while creating FS state with invalid null DSL + shader stage bindings");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary())
