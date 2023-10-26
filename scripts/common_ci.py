@@ -248,6 +248,9 @@ def RunVVLTests(args):
 
     RunShellCmd(lvt_cmd + f" --gtest_filter={failing_tsan_tests}", env=lvt_env)
 
+    print("Re-Running syncval tests with core validation enabled")
+    RunShellCmd(lvt_cmd + f' --gtest_filter=*SyncVal*:{failing_tsan_tests} --syncval-enable-core', env=lvt_env)
+
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING disabled")
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '0'
     RunShellCmd(lvt_cmd + f' --gtest_filter=*Thread*:{failing_tsan_tests}', env=lvt_env)
