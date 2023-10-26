@@ -149,7 +149,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     constexpr uint32_t height = 128;
     constexpr VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
 
-    vkt::Buffer buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
 
@@ -722,7 +722,13 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
 
 TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using constant indices. There should be no hazards");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitSyncValFramework());
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features2);
+    if (!features2.features.fragmentStoresAndAtomics) {
+        GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
+    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -792,7 +798,13 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
 
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the texel buffer array using constant indices. There should be no hazards");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitSyncValFramework());
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features2);
+    if (!features2.features.fragmentStoresAndAtomics) {
+        GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
+    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 

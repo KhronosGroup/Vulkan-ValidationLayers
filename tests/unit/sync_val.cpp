@@ -3182,6 +3182,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             m_errorMonitor->VerifyFound();
         }
 
+        // Suppress core validation that render pass ends before reaching final subpass.
+        // NextSubpass does not update current subpass (Record is skipped) due to syncval error.
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndRenderPass-None-00910");
+
         // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
         // No sync error here, as all of the NextSubpass calls *failed*
         m_commandBuffer->EndRenderPass();
@@ -3262,6 +3266,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             m_commandBuffer->NextSubpass();
             if (i > 1) {
                 m_errorMonitor->VerifyFound();
+
+                // Suppress core validation that current subpass index should match pipeline's subpass.
+                // NextSubpass does not update current subpass (Record is skipped) due to syncval error.
+                m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             }
 
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
@@ -3270,6 +3278,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
+
+        // Suppress core validation that render pass ends before reaching final subpass.
+        // NextSubpass does not update current subpass (Record is skipped) due to syncval error.
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndRenderPass-None-00910");
+
         // There is no race, because the NextSubpass calls failed above
         m_commandBuffer->EndRenderPass();
 
@@ -3990,8 +4003,8 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     VkSubpassDependency subpass_dependency = {};
     subpass_dependency.srcSubpass = 0;
     subpass_dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-    subpass_dependency.srcStageMask = VK_SHADER_STAGE_ALL_GRAPHICS;
-    subpass_dependency.dstStageMask = VK_SHADER_STAGE_ALL_GRAPHICS;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
     subpass_dependency.srcAccessMask = 0;
     subpass_dependency.dstAccessMask = 0;
     subpass_dependency.dependencyFlags = 0;
@@ -4961,6 +4974,9 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
 
     test.Submit0(test.cba);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
+    // Suppress submit time validation about inter-queue event usage.
+    // TODO: update test to avoid inter-queue event usage.
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
     test.Submit1(test.cbb);
     m_errorMonitor->VerifyFound();
 
@@ -4969,6 +4985,9 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
 
     test.Submit0Signal(test.cba);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
+    // Suppress submit time validation about inter-queue event usage.
+    // TODO: update test to avoid inter-queue event usage.
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
     test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 
@@ -5007,7 +5026,9 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
 TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState());
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     QSTestContext test(m_device);
     if (!test.Valid()) {
@@ -5158,7 +5179,6 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
     cb0.NextSubpass();
     m_errorMonitor->VerifyFound();
-    cb0.end();
 
     cb0.reset();
     cb0.begin();
@@ -5271,9 +5291,6 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
         return result;
     };
 
-    uint32_t acquired_index = 0;
-    REQUIRE_SUCCESS(acquire_used_image(nullptr, &fence, acquired_index), "acquire_used_image", cleanup());
-
     auto write_barrier_cb = [this](const VkImage h_image, VkImageLayout from, VkImageLayout to) {
         VkImageSubresourceRange full_image{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
         VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
@@ -5289,6 +5306,21 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
                                nullptr, 0, nullptr, 1, &image_barrier);
         m_commandBuffer->end();
     };
+
+    // Transition swapchain images to PRESENT_SRC layout for presentation
+    for (VkImage image : images) {
+        write_barrier_cb(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        VkSubmitInfo submit = vku::InitStructHelper();
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &cb;
+        vk::QueueSubmit(q, 1, &submit, VK_NULL_HANDLE);
+        m_device->wait();
+        m_commandBuffer->reset();
+    }
+
+    uint32_t acquired_index = 0;
+    REQUIRE_SUCCESS(acquire_used_image(nullptr, &fence, acquired_index), "acquire_used_image", cleanup());
+
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // Look for errors between the acquire and first use...
@@ -5439,6 +5471,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
     vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
+    m_device->wait();
 }
 
 TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
@@ -5496,6 +5529,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
     vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
+    m_device->wait();
 }
 
 TEST_F(NegativeSyncVal, AvailabilityWithoutVisibilityForBuffer) {
