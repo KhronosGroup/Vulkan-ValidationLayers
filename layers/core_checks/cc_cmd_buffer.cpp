@@ -1622,20 +1622,23 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     if (pConditionalRenderingBegin) {
         auto buffer_state = Get<BUFFER_STATE>(pConditionalRenderingBegin->buffer);
         if (buffer_state) {
+            const Location conditional_loc = error_obj.location.dot(Field::pConditionalRenderingBegin);
+            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, conditional_loc.dot(Field::buffer),
+                                                  "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01981");
+
             if ((buffer_state->usage & VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
                 const LogObjectList objlist(commandBuffer, buffer_state->buffer());
-                skip |= LogError("VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982", objlist,
-                                 error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::buffer),
-                                 "(%s) was created with %s.", FormatHandle(pConditionalRenderingBegin->buffer).c_str(),
-                                 string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
+                skip |=
+                    LogError("VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982", objlist, conditional_loc.dot(Field::buffer),
+                             "(%s) was created with %s.", FormatHandle(pConditionalRenderingBegin->buffer).c_str(),
+                             string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
             }
             if (pConditionalRenderingBegin->offset + 4 > buffer_state->createInfo.size) {
                 const LogObjectList objlist(commandBuffer, buffer_state->buffer());
-                skip |= LogError("VUID-VkConditionalRenderingBeginInfoEXT-offset-01983", objlist,
-                                 error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::offset),
-                                 "(%" PRIu64 ") + 4 bytes is not less than the size of pConditionalRenderingBegin->buffer (%" PRIu64
-                                 ").",
-                                 pConditionalRenderingBegin->offset, buffer_state->createInfo.size);
+                skip |= LogError(
+                    "VUID-VkConditionalRenderingBeginInfoEXT-offset-01983", objlist, conditional_loc.dot(Field::offset),
+                    "(%" PRIu64 ") + 4 bytes is not less than the size of pConditionalRenderingBegin->buffer (%" PRIu64 ").",
+                    pConditionalRenderingBegin->offset, buffer_state->createInfo.size);
             }
         }
     }

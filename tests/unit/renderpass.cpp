@@ -1826,31 +1826,6 @@ TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
-    // A renderpass with one color attachment.
-    VkAttachmentDescription attachment = {0,
-                                          VK_FORMAT_B8G8R8A8_UNORM,
-                                          VK_SAMPLE_COUNT_1_BIT,
-                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                          VK_ATTACHMENT_STORE_OP_STORE,
-                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                          VK_IMAGE_LAYOUT_UNDEFINED,
-                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
-
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &attachment, 1u, &subpass, 0u, nullptr);
-    vkt::RenderPass rp(*m_device, rpci);
-
-    // A compatible framebuffer.
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-
-    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
-
-    auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view, 32u, 32u, 1u);
-    vkt::Framebuffer fb(*m_device, fci);
-
     VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
     cbai.commandPool = m_commandPool->handle();
     cbai.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
