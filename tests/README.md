@@ -158,7 +158,7 @@ This file will **never** fully cover all tests because some require certain prop
 
 ASAN (Address Sanitization) has become a part of our CI process to ensure high quality code.
 
-`-D VVL_ENABLE_ASAN=ON` will enable address sanitization in the build for GCC/Clang users. NOTE: This will only enable address sanitzation for validation layer code.
+`-D VVL_ENABLE_ASAN=ON` will enable address sanitization in the build.
 
 You could also set the needed compiler flags via environment variables:
 ```bash
@@ -170,8 +170,7 @@ export LDFLAGS=-fsanitize=address
 - https://clang.llvm.org/docs/AddressSanitizer.html
 - https://github.com/google/sanitizers/wiki/AddressSanitizer
 - https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html
-
-NOTE: `MSVC` offers thread sanitization but isn't yet part of our CI process.
+- https://learn.microsoft.com/en-us/cpp/sanitizers/asan?view=msvc-170
 
 ### Thread Sanitization (TSAN)
 

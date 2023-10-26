@@ -491,22 +491,10 @@ class GoodRepo(object):
 
         # Optionally build dependencies with ASAN enabled
         if self._args.asan:
-            cmake_cxx_flags = os.getenv('CMAKE_CXX_FLAGS')
-            cmake_c_flags = os.getenv('CMAKE_C_FLAGS')
-            if cmake_cxx_flags is None:
-                cmake_cxx_flags = ''
-            if cmake_c_flags is None:
-                cmake_c_flags = ''
-            if platform.system() == 'Windows':
-                cmake_cxx_flags = cmake_cxx_flags + ' /fsanitize=address'
-                cmake_c_flags = cmake_c_flags + ' /fsanitize=address'
-            else:
-                cmake_cxx_flags = cmake_cxx_flags + ' -fsanitize=address -fno-omit-frame-pointer'
-                cmake_c_flags = cmake_c_flags + ' -fsanitize=address -fno-omit-frame-pointer'
-            cmake_cxx_flags = cmake_cxx_flags.strip()
-            cmake_c_flags = cmake_c_flags.strip()
-            cmake_cmd.append(f'-DCMAKE_CXX_FLAGS="{cmake_cxx_flags}" -DCMAKE_C_FLAGS="{cmake_c_flags}"')
-
+            cmake_cmd.append(f'-D CMAKE_CXX_FLAGS=-fsanitize=address')
+            cmake_cmd.append(f'-D CMAKE_C_FLAGS=-fsanitize=address')
+            if platform.system() != 'Windows':
+                os.environ['LDFLAGS'] = '-fsanitize=address'
 
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
