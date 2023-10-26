@@ -149,6 +149,22 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     }
 #endif
 
+    if (auto fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
+        if (fd_info->handleType != 0) {
+            if (fd_info->fd < 0) {
+                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00670", device,
+                                 allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd),
+                                 "(%d) is not a valid POSIX file descriptor.", fd_info->fd);
+            }
+            if (fd_info->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT &&
+                fd_info->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT) {
+                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00669", device,
+                                 allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::handleType), "%s is not allowed.",
+                                 string_VkExternalMemoryHandleTypeFlagBits(fd_info->handleType));
+            }
+        }
+    }
+
     if (flags) {
         const Location flags_loc = allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
         VkBool32 capture_replay = false;

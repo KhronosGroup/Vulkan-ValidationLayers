@@ -1830,3 +1830,43 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeExternalMemorySync, ImportMemoryFdBadFd) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init())
+
+    auto buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_info);
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    import_info.fd = -1;  // invalid
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportMemoryFdInfoKHR-handleType-00670");
+    VkMemoryAllocateInfo alloc_info =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, ImportMemoryFdHandleType) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init())
+
+    auto buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_info);
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    import_info.fd = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportMemoryFdInfoKHR-handleType-00669");
+    VkMemoryAllocateInfo alloc_info =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}

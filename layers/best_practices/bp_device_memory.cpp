@@ -116,7 +116,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
 
         // Exclude memory free events on dedicated allocations, or imported/exported allocations.
-        if (mem_info->GetDedicatedBuffer() != VK_NULL_HANDLE && mem_info->GetDedicatedImage() != VK_NULL_HANDLE &&
+        if (mem_info->GetDedicatedBuffer() == VK_NULL_HANDLE && mem_info->GetDedicatedImage() == VK_NULL_HANDLE &&
             !mem_info->IsExport() && !mem_info->IsImport()) {
             MemoryFreeEvent event;
             event.time = std::chrono::high_resolution_clock::now();
