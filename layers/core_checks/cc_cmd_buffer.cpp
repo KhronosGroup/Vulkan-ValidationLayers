@@ -326,8 +326,6 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state.createInfo.level) ||
         !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-        // This needs spec clarification to update valid usage, see comments in PR:
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/165
         skip |= InsideRenderPass(cb_state, error_obj.location, "VUID-vkEndCommandBuffer-commandBuffer-00060");
     }
 
