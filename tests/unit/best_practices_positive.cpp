@@ -198,3 +198,23 @@ TEST_F(VkPositiveBestPracticesLayerTest, ImageInputAttachmentLayout) {
                            nullptr, 0u, nullptr, 1u, &image_memory_barrier);
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, PipelineLibraryNoRendering) {
+    TEST_DESCRIPTION("Create a pipeline library without a render pass or rendering info");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.InitState();
+    pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+    pre_raster_lib.CreateGraphicsPipeline();
+}
