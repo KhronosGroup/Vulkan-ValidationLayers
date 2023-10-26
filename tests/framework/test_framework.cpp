@@ -162,6 +162,8 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             m_canonicalize_spv = true;
         } else if (current_argument == "--print-vu") {
             m_print_vu = true;
+        } else if (current_argument == "--syncval-enable-core") {
+            m_syncval_enable_core = true;
         } else if (current_argument == "--device-index" && ((i + 1) < *argc)) {
             m_phys_device_index = std::atoi(argv[++i]);
         } else if ((current_argument == "--help") || (current_argument == "-h")) {
@@ -169,6 +171,10 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             printf(
                 "\t--print-vu\n"
                 "\t\tPrints all VUs - help see what new VU will look like.\n");
+            printf(
+                "\t--syncval-enable-core\n"
+                "\t\tEnable both syncval and core validation when running syncval tests.\n"
+                "\t\tBy default only syncval validation is enabled.\n");
             printf(
                 "\t--strip-SPV\n"
                 "\t\tStrip SPIR-V debug information (line numbers, names, etc).\n");

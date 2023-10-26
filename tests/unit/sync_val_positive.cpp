@@ -20,14 +20,22 @@ class PositiveSyncVal : public VkSyncValTest {};
 
 void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     // Enable synchronization validation
+    features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 
-    // Optional feature definition, add if requested (but they can't be defined at the conditional scope)
-    const char *kEnableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
-    const VkLayerSettingEXT settings[] = {
+    // Optionally enable core validation (by disabling nothing)
+    if (m_syncval_enable_core) {
+        features_.disabledValidationFeatureCount = 0;
+    }
+
+    // Optionally enable syncval submit validation
+    static const char *kEnableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
+    static const VkLayerSettingEXT settings[] = {
         {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, kEnableQueuSubmitSyncValidation}};
-    const VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                                   static_cast<uint32_t>(std::size(settings)), settings};
-
+    // The pNext of qs_settings is modified by InitFramework that's why it can't
+    // be static (should be separate instance per stack frame). Also we show
+    // explicitly that it's not const (InitFramework casts const pNext to non-const).
+    VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+                                             static_cast<uint32_t>(std::size(settings)), settings};
     if (enable_queue_submit_validation) {
         features_.pNext = &qs_settings;
     }
