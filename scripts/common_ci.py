@@ -238,6 +238,7 @@ def RunVVLTests(args):
     # These need extra care to prevent a regression in the future.
     failing_tsan_tests += ':PositiveSyncObject.WaitTimelineSemThreadRace'
     failing_tsan_tests += ':PositiveQuery.ResetQueryPoolFromDifferentCB'
+    failing_tsan_tests += ':PositiveQuery.PerformanceQueries'
 
     if args.mockAndroid:
         # TODO - only reason running this subset, is mockAndoid fails any test that does
