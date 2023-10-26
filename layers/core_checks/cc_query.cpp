@@ -512,10 +512,11 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
             if (active_query_pool_state->createInfo.queryType == query_pool_ci.queryType && active_query_obj.index == index) {
                 const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool, active_query_obj.pool);
                 skip |= LogError(vuids->vuid_dup_query_type, objlist, loc,
-                                 "Within the same command buffer %s, query %d from pool %s has same queryType as active query "
+                                 "Within the same command buffer %s, query %d from pool %s has same queryType %s as active query "
                                  "%d from pool %s.",
                                  FormatHandle(cb_state).c_str(), query_obj.index, FormatHandle(query_obj.pool).c_str(),
-                                 active_query_obj.index, FormatHandle(active_query_obj.pool).c_str());
+                                 string_VkQueryType(query_pool_ci.queryType), active_query_obj.index,
+                                 FormatHandle(active_query_obj.pool).c_str());
             }
         }
     }
