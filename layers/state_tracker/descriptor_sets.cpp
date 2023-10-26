@@ -1052,7 +1052,7 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, co
                 ReplaceStatePtr(set_state, buffer_view_state_, mutable_src.GetSharedBufferViewState(), is_bindless);
             } break;
             case AccelerationStructure: {
-                if (is_khr_) {
+                if (mutable_src.is_khr()) {
                     acc_ = mutable_src.GetAccelerationStructureKHR();
                     ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
                                     is_bindless);
