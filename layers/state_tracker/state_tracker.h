@@ -1751,7 +1751,13 @@ class ValidationStateTracker : public ValidationObject {
         return {};
     }
 
-    inline std::optional<VkMemoryAllocateInfo> GetAllocateInfoFromFdHandle(int fd) const {
+    struct ExternalMemoryFdInfo {
+        VkDeviceSize allocation_size;
+        uint32_t memory_type_index;
+        VkBuffer dedicated_buffer;
+        VkImage dedicated_image;
+    };
+    inline std::optional<ExternalMemoryFdInfo> GetAllocateInfoFromFdHandle(int fd) const {
         ReadLockGuard guard(fd_handle_map_lock_);
         if (const auto itr = fd_handle_map_.find(fd); itr != fd_handle_map_.cend()) {
             return itr->second;
@@ -1891,7 +1897,7 @@ class ValidationStateTracker : public ValidationObject {
     mutable std::shared_mutex shader_identifier_map_lock_;
 
     // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
-    vvl::unordered_map<int, VkMemoryAllocateInfo> fd_handle_map_;
+    vvl::unordered_map<int, ExternalMemoryFdInfo> fd_handle_map_;
     mutable std::shared_mutex fd_handle_map_lock_;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR

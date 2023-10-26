@@ -3404,15 +3404,17 @@ void ValidationStateTracker::PostCallRecordGetMemoryFdKHR(VkDevice device, const
     if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
-        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        alloc_info.allocationSize = memory_state->alloc_info.allocationSize;
-        alloc_info.memoryTypeIndex = memory_state->alloc_info.memoryTypeIndex;
+        ExternalMemoryFdInfo fd_info = {};
+        fd_info.allocation_size = memory_state->alloc_info.allocationSize;
+        fd_info.memory_type_index = memory_state->alloc_info.memoryTypeIndex;
+        fd_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
+        fd_info.dedicated_image = memory_state->GetDedicatedImage();
 
         WriteLockGuard guard(fd_handle_map_lock_);
         // `insert_or_assign` ensures that information is updated when the system decides to re-use
         // closed handle value for a new handle. The fd handle created inside Vulkan _can_ be closed
         // using the 'close' system call, which is not tracked by the validation layer.
-        fd_handle_map_.insert_or_assign(*pFd, alloc_info);
+        fd_handle_map_.insert_or_assign(*pFd, fd_info);
     }
 }
 
