@@ -309,8 +309,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
             // A valid pipeline layout must _always_ be provided, even if the pipeline is defined completely from libraries.
             // This a change from the original GPL spec. See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3334 for some
             // context
+            // If libraries are included then pipeline layout can be NULL. See
+            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6144
             auto &pipe_ci = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
-            if (!pipe_ci.layout) {
+            if (!pipe_ci.layout && (!pipeline.library_create_info || pipeline.library_create_info->libraryCount == 0)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
                                  "is not a valid VkPipelineLayout, but defines a complete set of state.");
             }
