@@ -695,6 +695,7 @@ class MutableDescriptor : public Descriptor {
     bool AddParent(BASE_NODE *base_node) override;
     void RemoveParent(BASE_NODE *base_node) override;
 
+    bool is_khr() const { return is_khr_; }
     bool Invalid() const override;
 
     VkDescriptorType ActiveType() const { return active_descriptor_type_; }
