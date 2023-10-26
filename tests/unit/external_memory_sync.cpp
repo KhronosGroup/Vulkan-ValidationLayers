@@ -856,7 +856,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     si[2] = si[0];
     si[3] = si[1];
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-03238");
     vk::QueueSubmit(m_default_queue, si.size(), si.data(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
@@ -872,7 +872,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
 
         bi[2] = bi[0];
         bi[3] = bi[1];
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueBindSparse-pWaitSemaphores-03245");
         vk::QueueBindSparse(m_default_queue, bi.size(), bi.data(), VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }

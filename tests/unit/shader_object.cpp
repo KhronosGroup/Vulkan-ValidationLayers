@@ -235,7 +235,7 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
     TEST_DESCRIPTION("Create task shader with invalid next stage.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08435");
-    
+
     RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_2, true, false));
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
@@ -410,7 +410,6 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadersEXT-pShaders-08470");
 
-    
     RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_3, true, false));
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -3214,7 +3213,7 @@ TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08690");
-    
+
     RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_1, true, true));
     InitDynamicRenderTarget();
 
@@ -7367,7 +7366,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOutputPatchSize) {
 TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
     TEST_DESCRIPTION("Create shader with invalid flags when subgroupSizeControl is not enabled.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-AllowVaryingSubgroupSize");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-09404");
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
@@ -7391,7 +7390,7 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
 TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
     TEST_DESCRIPTION("Create shader with invalid flags when computeFullSubgroups is not enabled.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-RequireFullSubgroups");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-09405");
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;

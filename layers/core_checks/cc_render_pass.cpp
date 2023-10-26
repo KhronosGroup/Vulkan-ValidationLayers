@@ -4802,14 +4802,6 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffe
                              FormatHandle(secondaryBuffer).c_str(), FormatHandle(secondary_fb).c_str(),
                              FormatHandle(primary_fb).c_str());
         }
-        auto fb = Get<FRAMEBUFFER_STATE>(secondary_fb);
-        if (!fb) {
-            const LogObjectList objlist(primaryBuffer, secondaryBuffer, secondary_fb);
-            skip |= LogError(kVUID_Core_DrawState_InvalidSecondaryCommandBuffer, objlist, loc,
-                             "called w/ invalid %s which has invalid %s.", FormatHandle(secondaryBuffer).c_str(),
-                             FormatHandle(secondary_fb).c_str());
-            return skip;
-        }
     }
     return skip;
 }

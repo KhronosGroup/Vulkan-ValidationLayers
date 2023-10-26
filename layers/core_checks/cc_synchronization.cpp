@@ -97,8 +97,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
         } else if (CannotWait(semaphore_state)) {
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kBinaryCannotBeSignalled);
             const LogObjectList objlist(semaphore, queue);
-            skip |= core->LogError(semaphore_state.Scope() == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
-                                   objlist, loc, "queue (%s) is waiting on semaphore (%s) that has no way to be signaled.",
+            skip |= core->LogError(vuid, objlist, loc, "queue (%s) is waiting on semaphore (%s) that has no way to be signaled.",
                                    core->FormatHandle(queue).c_str(), core->FormatHandle(semaphore).c_str());
         } else {
             signaled_semaphores.erase(semaphore);
