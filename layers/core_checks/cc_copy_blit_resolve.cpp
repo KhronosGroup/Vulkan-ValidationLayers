@@ -2466,9 +2466,9 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-07973" : "VUID-vkCmdCopyImageToBuffer-srcImage-07973";
     skip |= ValidateImageSampleCount(commandBuffer, *src_image_state, VK_SAMPLE_COUNT_1_BIT, src_image_loc, vuid);
 
-    vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer-srcImage-07966" : "VUID-vkCmdCopyImageToBuffer-srcImage-07966";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-07966" : "VUID-vkCmdCopyImageToBuffer-srcImage-07966";
     skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, srcImage), *src_image_state, src_image_loc, vuid);
-    vuid = is_2 ? "vkCmdCopyImageToBuffer-dstBuffer2-00192" : "vkCmdCopyImageToBuffer dstBuffer-00192";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-dstBuffer-00192" : "VUID-vkCmdCopyImageToBuffer-dstBuffer-00192";
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, dst_buffer_loc, vuid);
 
     // Validate that SRC image & DST buffer have correct usage flags set
