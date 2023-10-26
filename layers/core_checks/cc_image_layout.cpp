@@ -344,9 +344,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                         const LogObjectList objlist(cb_state.commandBuffer(), image_state->Handle());
                         skip |= LogError(kVUID_Core_DrawState_InvalidImageLayout, objlist, loc,
                                          "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
-                                         ", mip level %" PRIu32
-                                         ") "
-                                         "to be in layout %s--instead, current layout is %s.",
+                                         ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
                                          FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(), subresource.aspectMask,
                                          subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(initial_layout),
                                          string_VkImageLayout(image_layout));

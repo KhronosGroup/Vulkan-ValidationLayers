@@ -1262,8 +1262,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, cb_loc,
                                          "was executed using %s (subresource: aspectMask 0x%x array layer %" PRIu32
-                                         ", "
-                                         "mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",
+                                         ", mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",
                                          FormatHandle(image).c_str(), subresource.aspectMask, subresource.arrayLayer,
                                          subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
                                          string_VkImageLayout(cb_layout));
@@ -1296,11 +1295,12 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 active_occlusion_query->control_flags) {
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
                 skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00103", objlist, cb_loc,
-                                 "(%s) was recorded with VkCommandBufferInheritanceInfo::queryFlags 0X%" PRIx32
-                                 ", but primary command buffer %s has an active occlusion query with VkQueryControlFlags 0X%" PRIx32
-                                 ".",
-                                 FormatHandle(pCommandBuffers[i]).c_str(), sub_cb_state.inheritanceInfo.queryFlags,
-                                 FormatHandle(commandBuffer).c_str(), active_occlusion_query->control_flags);
+                                 "(%s) was recorded with VkCommandBufferInheritanceInfo::queryFlags %s, but primary command buffer "
+                                 "%s has an active occlusion query with VkQueryControlFlags %s.",
+                                 FormatHandle(pCommandBuffers[i]).c_str(),
+                                 string_VkQueryControlFlags(sub_cb_state.inheritanceInfo.queryFlags).c_str(),
+                                 FormatHandle(commandBuffer).c_str(),
+                                 string_VkQueryControlFlags(active_occlusion_query->control_flags).c_str());
             }
         }
     }

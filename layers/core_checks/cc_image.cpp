@@ -306,9 +306,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
             skip |= LogError("VUID-VkImageCreateInfo-samples-02258", device, create_info_loc.dot(Field::samples),
-                             "(%s) is not supported by format %s (format sampleCounts: 0x%.8X).",
+                             "(%s) is not supported by format %s (format sampleCounts: %s).",
                              string_VkSampleCountFlagBits(pCreateInfo->samples), string_VkFormat(pCreateInfo->format),
-                             format_limits.sampleCounts);
+                             string_VkSampleCountFlags(format_limits.sampleCounts).c_str());
         }
 
         if (pCreateInfo->extent.width > format_limits.maxExtent.width) {
@@ -611,16 +611,16 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             }
 
             if (!supported_video_format) {
-                skip |=
-                    LogError("VUID-VkImageCreateInfo-pNext-06811", device, create_info_loc,
-                             "image creation parameters (flags: 0x%08x, format: %s, imageType: %s, "
-                             "tiling: %s) are not supported by any of the supported video format properties for "
-                             "the video profiles specified in the VkVideoProfileListInfoKHR structure included in "
-                             "the pCreateInfo->pNext chain, as reported by "
-                             "vkGetPhysicalDeviceVideoFormatPropertiesKHR for the same video profiles "
-                             "and the image usage flags specified in pCreateInfo->usage (0x%08x)",
-                             pCreateInfo->flags, string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
-                             string_VkImageTiling(pCreateInfo->tiling), pCreateInfo->usage);
+                skip |= LogError("VUID-VkImageCreateInfo-pNext-06811", device, create_info_loc,
+                                 "image creation parameters (flags: %s, format: %s, imageType: %s, "
+                                 "tiling: %s) are not supported by any of the supported video format properties for "
+                                 "the video profiles specified in the VkVideoProfileListInfoKHR structure included in "
+                                 "the pCreateInfo->pNext chain, as reported by "
+                                 "vkGetPhysicalDeviceVideoFormatPropertiesKHR for the same video profiles "
+                                 "and the image usage flags specified in pCreateInfo->usage (%s)",
+                                 string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkFormat(pCreateInfo->format),
+                                 string_VkImageType(pCreateInfo->imageType), string_VkImageTiling(pCreateInfo->tiling),
+                                 string_VkImageUsageFlags(pCreateInfo->usage).c_str());
             }
         }
     }

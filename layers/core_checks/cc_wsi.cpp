@@ -452,8 +452,8 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & surface_caps2.surfaceCapabilities.supportedUsageFlags)) && !shared_present_mode) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01427", device, create_info_loc.dot(Field::imageUsage),
-                     "(0x%08x) are not in supportedUsageFlags (0x%08x).", image_usage,
-                     surface_caps2.surfaceCapabilities.supportedUsageFlags)) {
+                     "(%s) are not in supportedUsageFlags (%s).", string_VkImageUsageFlags(image_usage).c_str(),
+                     string_VkImageUsageFlags(surface_caps2.surfaceCapabilities.supportedUsageFlags).c_str())) {
             return true;
         }
     }
@@ -588,10 +588,9 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device, create_info_loc.dot(Field::imageUsage),
-                         "(0x%08x), but the supported flag bits for %s "
-                         "present mode are 0x%08x.",
-                         image_usage, string_VkPresentModeKHR(pCreateInfo->presentMode),
-                         shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
+                         "(%s), but the supported flag bits for %s present mode are %s.",
+                         string_VkImageUsageFlags(image_usage).c_str(), string_VkPresentModeKHR(pCreateInfo->presentMode),
+                         string_VkImageUsageFlags(shared_present_capabilities.sharedPresentSupportedUsageFlags).c_str())) {
                 return true;
             }
         }
@@ -1335,10 +1334,10 @@ bool CoreChecks::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance
                 if ((pCreateInfo->alphaMode & plane_capabilities.supportedAlpha) == 0) {
                     skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255", display_mode, create_info_loc,
                                      "alphaMode is %s but planeIndex %" PRIu32
-                                     " supportedAlpha (0x%x) "
+                                     " supportedAlpha (%s) "
                                      "does not support the mode.",
                                      string_VkDisplayPlaneAlphaFlagBitsKHR(pCreateInfo->alphaMode), plane_index,
-                                     plane_capabilities.supportedAlpha);
+                                     string_VkDisplayPlaneAlphaFlagsKHR(plane_capabilities.supportedAlpha).c_str());
                 }
             }
         }
