@@ -1029,11 +1029,9 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const CMD_BUFFER_
     if (sourceStageMask != stage_mask && sourceStageMask != (stage_mask | VK_PIPELINE_STAGE_HOST_BIT)) {
         skip |= state_data->LogError(
             "VUID-vkCmdWaitEvents-srcStageMask-parameter", cb_state.commandBuffer(), loc,
-            "Submitting cmdbuffer with call to VkCmdWaitEvents using srcStageMask 0x%" PRIx64
-            " which must be the bitwise OR of "
-            "the stageMask parameters used in calls to vkCmdSetEvent and VK_PIPELINE_STAGE_HOST_BIT if used with "
-            "vkSetEvent but instead is 0x%" PRIx64 ".",
-            sourceStageMask, stage_mask);
+            "Submitting cmdbuffer with call to VkCmdWaitEvents using srcStageMask %s which must be the bitwise OR of the stageMask "
+            "parameters used in calls to vkCmdSetEvent and VK_PIPELINE_STAGE_HOST_BIT if used with vkSetEvent but instead is %s.",
+            string_VkPipelineStageFlags2(sourceStageMask).c_str(), string_VkPipelineStageFlags2(stage_mask).c_str());
     }
     return skip;
 }
@@ -1510,8 +1508,8 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &layout_loc, V
 
     if (is_error) {
         const auto &vuid = sync_vuid_maps::GetBadImageLayoutVUID(layout_loc, layout);
-        skip |= LogError(vuid, image, layout_loc, "(%s) is not compatible with %s usage flags 0x%" PRIx32 ".",
-                         string_VkImageLayout(layout), FormatHandle(image).c_str(), usage_flags);
+        skip |= LogError(vuid, image, layout_loc, "(%s) is not compatible with %s usage flags %s.",
+                         string_VkImageLayout(layout), FormatHandle(image).c_str(), string_VkImageUsageFlags(usage_flags).c_str());
     }
     return skip;
 }
