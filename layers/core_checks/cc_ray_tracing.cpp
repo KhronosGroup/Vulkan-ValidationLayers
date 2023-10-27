@@ -637,8 +637,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                     const LogObjectList objlist(device, commandBuffer, info->srcAccelerationStructure);
                     skip |=
                         LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03759", objlist, info_loc.dot(Field::mode),
-                                 "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but flags (%s) must have the same value which"
+                                 "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but %s (%s) must have the same value which"
                                  " was specified when srcAccelerationStructure was last built (%s).",
+                                 info_loc.dot(Field::flags).Fields().c_str(),
                                  string_VkBuildAccelerationStructureFlagsKHR(info->flags).c_str(),
                                  string_VkBuildAccelerationStructureFlagsKHR(src_as_state->build_info_khr.flags).c_str());
                 }
@@ -814,7 +815,8 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                     skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03759", pInfos[i].srcAccelerationStructure,
                                      info_loc.dot(Field::mode),
                                      "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
-                                     " but flags (%s) is different then srcAccelerationStructure value (%s).",
+                                     " but %s (%s) is different then srcAccelerationStructure value (%s).",
+                                     info_loc.dot(Field::flags).Fields().c_str(),
                                      string_VkBuildAccelerationStructureFlagsKHR(pInfos[i].flags).c_str(),
                                      string_VkBuildAccelerationStructureFlagsKHR(src_as_state->build_info_khr.flags).c_str());
                 }
@@ -1236,7 +1238,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03759",
                                  pInfos[i].srcAccelerationStructure, info_loc.dot(Field::mode),
                                  "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
-                                 " but flags (%s) is different than srcAccelerationStructure value (%s).",
+                                 " but %s (%s) is different than srcAccelerationStructure value (%s).",
+                                 info_loc.dot(Field::flags).Fields().c_str(),
                                  string_VkBuildAccelerationStructureFlagsKHR(pInfos[i].flags).c_str(),
                                  string_VkBuildAccelerationStructureFlagsKHR(src_as_state->build_info_khr.flags).c_str());
             }
