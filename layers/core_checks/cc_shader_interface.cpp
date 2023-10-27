@@ -224,7 +224,11 @@ bool CoreChecks::ValidatePrimitiveTopology(const SPIRV_MODULE_STATE &module_stat
         if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             has_tess = true;
             if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                topology = stage_state.entrypoint->execution_mode.primitive_topology;
+                if (stage_state.entrypoint->execution_mode.Has(ExecutionModeSet::point_mode_bit)) {
+                    topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+                } else {
+                    topology = stage_state.entrypoint->execution_mode.primitive_topology;
+                }
             }
         }
     }
