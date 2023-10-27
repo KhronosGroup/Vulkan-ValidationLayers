@@ -564,11 +564,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                      string_VkBufferUsageFlags(external_info.usage).c_str());
                 }
                 if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
-                    auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
-                    auto dedicated_info_nv = vku::FindStructInPNextChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
-                    const bool has_dedicated_info = dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE;
-                    const bool has_dedicated_info_nv = dedicated_info_nv && dedicated_info_nv->buffer != VK_NULL_HANDLE;
-                    if (!has_dedicated_info && !has_dedicated_info_nv) {
+                    if (mem_info->GetDedicatedBuffer() == VK_NULL_HANDLE) {
                         const LogObjectList objlist(buffer, memory);
                         skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00639", objlist, loc.dot(Field::memory),
                                          "(%s) has VkExportMemoryAllocateInfo::handleTypes with the %s flag "
@@ -1342,12 +1338,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                              string_VkImageCreateFlags(image_info.flags).c_str());
                         }
                         if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
-                            auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
-                            auto dedicated_info_nv =
-                                vku::FindStructInPNextChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
-                            const bool has_dedicated_info = dedicated_info && dedicated_info->image != VK_NULL_HANDLE;
-                            const bool has_dedicated_info_nv = dedicated_info_nv && dedicated_info_nv->image != VK_NULL_HANDLE;
-                            if (!has_dedicated_info && !has_dedicated_info_nv) {
+                            if (mem_info->GetDedicatedImage() == VK_NULL_HANDLE) {
                                 const LogObjectList objlist(bind_info.image, bind_info.memory);
                                 skip |= LogError(
                                     "VUID-VkMemoryAllocateInfo-pNext-00639", objlist, loc.dot(Field::memory),
