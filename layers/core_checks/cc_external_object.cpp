@@ -42,46 +42,67 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
     return skip;
 }
 
-bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info,
+bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    auto sem_state = Get<SEMAPHORE_STATE>(pImportSemaphoreFdInfo->semaphore);
     if (sem_state) {
-        skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location, "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
+        const Location info_loc = error_obj.location.dot(Field::pImportSemaphoreFdInfo);
+        skip |=
+            ValidateObjectNotInUse(sem_state.get(), info_loc.dot(Field::semaphore), "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
 
-        if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-            skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-flags-03323", sem_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::flags),
-                             "includes VK_SEMAPHORE_IMPORT_TEMPORARY_BIT and semaphore is VK_SEMAPHORE_TYPE_TIMELINE.");
+        if ((pImportSemaphoreFdInfo->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0) {
+            if (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+                skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-flags-03323", sem_state->Handle(), info_loc.dot(Field::flags),
+                                 "includes VK_SEMAPHORE_IMPORT_TEMPORARY_BIT and semaphore is VK_SEMAPHORE_TYPE_TIMELINE.");
+            }
+        } else {
+            // only valid type with copy payload transference semantics currently
+            if (pImportSemaphoreFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
+                skip |=
+                    LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-07307", sem_state->Handle(), info_loc.dot(Field::flags),
+                             "is %s and handleType is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT.",
+                             string_VkSemaphoreImportFlags(pImportSemaphoreFdInfo->flags).c_str());
+            }
+        }
+
+        if (pImportSemaphoreFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT) {
+            if (const auto payload_info = GetOpaqueInfoFromFdHandle(pImportSemaphoreFdInfo->fd)) {
+                if (sem_state->flags != payload_info->semaphore_flags) {
+                    // would use string_VkSemaphoreCreateFlags but no valid flags yet
+                    skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-03263", device, info_loc.dot(Field::semaphore),
+                                     "was created with flags 0x%" PRIx32 " but fd (%d) was exported with 0x%" PRIx32 ".",
+                                     sem_state->flags, pImportSemaphoreFdInfo->fd, payload_info->semaphore_flags);
+                }
+            }
         }
     }
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *info, int *pFd,
+bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    auto sem_state = Get<SEMAPHORE_STATE>(pGetFdInfo->semaphore);
     if (sem_state) {
-        if ((info->handleType & sem_state->exportHandleTypes) == 0) {
-            skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-01132", sem_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::handleType),
+        const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
+        if ((pGetFdInfo->handleType & sem_state->exportHandleTypes) == 0) {
+            skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-01132", sem_state->Handle(), info_loc.dot(Field::handleType),
                              "(%s) is different from VkExportSemaphoreCreateInfo::handleTypes (%s).",
-                             string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
+                             string_VkExternalSemaphoreHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
 
-        if (info->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
+        if (pGetFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
             if (sem_state->type != VK_SEMAPHORE_TYPE_BINARY) {
-                skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03253", sem_state->Handle(),
-                                 error_obj.location.dot(Field::info).dot(Field::handleType),
-                                 "is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT, but semaphore type is %s.",
-                                 string_VkSemaphoreType(sem_state->type));
+                skip |=
+                    LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03253", sem_state->Handle(), info_loc.dot(Field::handleType),
+                             "is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT, but semaphore type is %s.",
+                             string_VkSemaphoreType(sem_state->type));
             }
             if (!sem_state->CanBeWaited()) {
                 skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03254", sem_state->Handle(),
-                                 error_obj.location.dot(Field::info).dot(Field::semaphore),
-                                 "must be signaled or have a pending signal operation.");
+                                 info_loc.dot(Field::semaphore), "must be signaled or have a pending signal operation.");
             }
         }
     }
@@ -103,21 +124,20 @@ bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImport
                                error_obj.location.dot(Field::pImportFenceFdInfo));
 }
 
-bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd,
+bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
                                               const ErrorObject &error_obj) const {
     bool skip = false;
-    auto fence_state = Get<FENCE_STATE>(info->fence);
+    auto fence_state = Get<FENCE_STATE>(pGetFdInfo->fence);
     if (fence_state) {
-        if ((info->handleType & fence_state->exportHandleTypes) == 0) {
-            skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01453", fence_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::handleType),
+        const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
+        if ((pGetFdInfo->handleType & fence_state->exportHandleTypes) == 0) {
+            skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01453", fence_state->Handle(), info_loc.dot(Field::handleType),
                              "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s). ",
-                             string_VkExternalFenceHandleTypeFlagBits(info->handleType),
+                             string_VkExternalFenceHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
-        if (info->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == FENCE_UNSIGNALED) {
-            skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01454", fence_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::handleType),
+        if (pGetFdInfo->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == FENCE_UNSIGNALED) {
+            skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01454", fence_state->Handle(), info_loc.dot(Field::handleType),
                              "is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT which cannot be exported unless the fence has a pending "
                              "signal operation or is already signaled.");
         }
@@ -136,21 +156,22 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, c
 
         if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-03322", sem_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::semaphore),
+                             error_obj.location.dot(Field::pImportSemaphoreWin32HandleInfo).dot(Field::semaphore),
                              "includes VK_SEMAPHORE_IMPORT_TEMPORARY_BIT and semaphore is VK_SEMAPHORE_TYPE_TIMELINE.");
         }
     }
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR *info,
+bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
+                                                           const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                            HANDLE *pHandle, const ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
         if ((info->handleType & sem_state->exportHandleTypes) == 0) {
             skip |= LogError("VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126", sem_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
                              "(%s) is different from VkExportSemaphoreCreateInfo::handleTypes (%s)",
                              string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
@@ -173,7 +194,7 @@ bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const Vk
     if (fence_state) {
         if ((info->handleType & fence_state->exportHandleTypes) == 0) {
             skip |= LogError("VUID-VkFenceGetWin32HandleInfoKHR-handleType-01448", fence_state->Handle(),
-                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
                              "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s)",
                              string_VkExternalFenceHandleTypeFlagBits(info->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
@@ -194,9 +215,9 @@ bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(VkDevice devi
                                        "VUID-vkImportSemaphoreZirconHandleFUCHSIA-semaphore-04764");
 
         if (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-            skip |=
-                LogError("VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-semaphoreType-04768", sem_state->Handle(),
-                         error_obj.location.dot(Field::info).dot(Field::semaphore), "was created with VK_SEMAPHORE_TYPE_TIMELINE.");
+            skip |= LogError("VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-semaphoreType-04768", sem_state->Handle(),
+                             error_obj.location.dot(Field::pImportSemaphoreZirconHandleInfo).dot(Field::semaphore),
+                             "was created with VK_SEMAPHORE_TYPE_TIMELINE.");
         }
     }
     return skip;

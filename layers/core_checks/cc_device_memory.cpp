@@ -348,7 +348,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     const bool imported_opaque_fd =
         import_memory_fd_info && import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     if (imported_opaque_fd) {
-        if (const auto payload_info = GetAllocateInfoFromFdHandle(import_memory_fd_info->fd)) {
+        if (const auto payload_info = GetOpaqueInfoFromFdHandle(import_memory_fd_info->fd)) {
             const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd);
             if (pAllocateInfo->allocationSize != payload_info->allocation_size) {
                 skip |=
@@ -405,24 +405,25 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     const bool imported_win32 = import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
                                 import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
     if (imported_win32) {
-        if (const auto payload_info = GetAllocateInfoFromWin32Handle(import_memory_win32_info->handle)) {
+        if (const auto payload_info = GetOpaqueInfoFromWin32Handle(import_memory_win32_info->handle)) {
             const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryWin32HandleInfoKHR, Field::handle);
             static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
-            if (pAllocateInfo->allocationSize != payload_info->allocationSize) {
+            if (pAllocateInfo->allocationSize != payload_info->allocation_size) {
                 skip |= LogError(
                     "VUID-VkMemoryAllocateInfo-allocationSize-01743", device, allocate_info_loc.dot(Field::allocationSize),
                     "allocationSize (%" PRIu64 ") does not match %s (0x%" PRIxPTR ") of type %s allocationSize (%" PRIu64 ").",
                     pAllocateInfo->allocationSize, import_loc.Fields().c_str(),
                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                    string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType), payload_info->allocationSize);
+                    string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType), payload_info->allocation_size);
             }
-            if (pAllocateInfo->memoryTypeIndex != payload_info->memoryTypeIndex) {
+            if (pAllocateInfo->memoryTypeIndex != payload_info->memory_type_index) {
                 skip |= LogError(
                     "VUID-VkMemoryAllocateInfo-allocationSize-01743", device, allocate_info_loc.dot(Field::memoryTypeIndex),
                     "memoryTypeIndex (%" PRIu32 ") does not match %s (0x%" PRIxPTR ") of type %s memoryTypeIndex (%" PRIu32 ").",
                     pAllocateInfo->memoryTypeIndex, import_loc.Fields().c_str(),
                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                    string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType), payload_info->memoryTypeIndex);
+                    string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
+                    payload_info->memory_type_index);
             }
         }
     }
@@ -564,7 +565,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                      string_VkBufferUsageFlags(external_info.usage).c_str());
                 }
                 if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
-                    if (mem_info->GetDedicatedBuffer() == VK_NULL_HANDLE) {
+                    if (!mem_info->IsDedicatedBuffer()) {
                         const LogObjectList objlist(buffer, memory);
                         skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00639", objlist, loc.dot(Field::memory),
                                          "(%s) has VkExportMemoryAllocateInfo::handleTypes with the %s flag "
@@ -614,7 +615,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         }
 
         // Validate dedicated allocation
-        VkBuffer dedicated_buffer = mem_info->GetDedicatedBuffer();
+        const VkBuffer dedicated_buffer = mem_info->GetDedicatedBuffer();
         if (dedicated_buffer != VK_NULL_HANDLE && ((dedicated_buffer != buffer) || (memoryOffset != 0))) {
             const char *vuid =
                 bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
@@ -1221,7 +1222,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
 
                 // Validate dedicated allocation
-                VkImage dedicated_image = mem_info->GetDedicatedImage();
+                const VkImage dedicated_image = mem_info->GetDedicatedImage();
                 if (dedicated_image != VK_NULL_HANDLE) {
                     if (enabled_features.dedicatedAllocationImageAliasing) {
                         auto current_image_state = Get<IMAGE_STATE>(bind_info.image);
@@ -1338,7 +1339,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                              string_VkImageCreateFlags(image_info.flags).c_str());
                         }
                         if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
-                            if (mem_info->GetDedicatedImage() == VK_NULL_HANDLE) {
+                            if (!mem_info->IsDedicatedImage()) {
                                 const LogObjectList objlist(bind_info.image, bind_info.memory);
                                 skip |= LogError(
                                     "VUID-VkMemoryAllocateInfo-pNext-00639", objlist, loc.dot(Field::memory),

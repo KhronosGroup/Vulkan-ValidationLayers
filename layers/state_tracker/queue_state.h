@@ -191,6 +191,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
           metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
+          flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
           completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, 0,
                      type_create_info ? type_create_info->initialValue : 0},
@@ -245,6 +246,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     const bool metal_semaphore_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
     const VkSemaphoreType type;
+    const VkSemaphoreCreateFlags flags;
     const VkExternalSemaphoreHandleTypeFlags exportHandleTypes;
 
   private:

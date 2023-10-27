@@ -73,10 +73,12 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
         return (dedicated && dedicated->handle.type == kVulkanObjectTypeBuffer) ? dedicated->handle.Cast<VkBuffer>()
                                                                                 : VK_NULL_HANDLE;
     }
+    bool IsDedicatedBuffer() const { return GetDedicatedBuffer() != VK_NULL_HANDLE; }
 
     VkImage GetDedicatedImage() const {
         return (dedicated && dedicated->handle.type == kVulkanObjectTypeImage) ? dedicated->handle.Cast<VkImage>() : VK_NULL_HANDLE;
     }
+    bool IsDedicatedImage() const { return GetDedicatedImage() != VK_NULL_HANDLE; }
 
     VkDeviceMemory deviceMemory() const { return handle_.Cast<VkDeviceMemory>(); }
 };
