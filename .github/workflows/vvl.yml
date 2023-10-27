@@ -35,45 +35,30 @@ permissions:
   contents: read
 
 jobs:
-  # CI we just care builds, but no need to spend Github Action minutes running the tests
-  linuxBuild:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Test Ubuntu-20.04 release build works.
-          - os: ubuntu-20.04
-            config: release
-            cpp_std: 17
-          # Test C++ 20 build support
-          # debug builds faster than release
-          - os: ubuntu-22.04
-            config: debug
-            cpp_std: 20
+  # Ensure we can build on an older Ubuntu distro with an older version of CMake.
+  linux_back_compat:
+    runs-on: ubuntu-20.04
+    name: "Ubuntu Backcompat"
     steps:
       - uses: actions/checkout@v3
       - name: Test Minimum CMake Version
         uses: lukka/get-cmake@latest
         with:
           cmakeVersion: 3.17.2
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.cpp_std }}
-      - run: python3 -m pip install jsonschema pyparsing
+          key: linux_back_compat
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Build
-        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }}'
+      - run: cmake -S . -B build/ -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
           # Linker warnings as errors
           LDFLAGS: -Wl,--fatal-warnings
+      - run: cmake --build build
+      - run: cmake --install build --prefix /tmp
 
-  linuxRun:
+  linux:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -140,7 +125,7 @@ jobs:
       - run: python3 -m pip install jsonschema pyparsing
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Build
-        run: python scripts/tests.py --build --mockAndroid --config release --cmake='-DVVL_CPP_STANDARD=17 -DUSE_ROBIN_HOOD_HASHING=ON'
+        run: python scripts/tests.py --build --mockAndroid --config release
         env:
           CC: clang
           CXX: clang++
