@@ -221,12 +221,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
-        std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdBindPipeline-pipelineBindPoint-00778"),
-        std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdBindPipeline-pipelineBindPoint-00777"),
-        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "VUID-vkCmdBindPipeline-pipelineBindPoint-02391")};
-
-    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location, bindpoint_errors);
+    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
 
     auto pPipeline = Get<PIPELINE_STATE>(pipeline);
     assert(pPipeline);
@@ -401,21 +396,49 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
-bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point, const Location &loc,
-                                           const std::map<VkPipelineBindPoint, std::string> &bind_errors) const {
+bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point,
+                                           const Location &loc) const {
     bool skip = false;
     auto pool = cb_state->command_pool;
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
-        static const std::map<VkPipelineBindPoint, VkQueueFlags> flag_mask = {
-            std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)),
-            std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, static_cast<VkQueueFlags>(VK_QUEUE_COMPUTE_BIT)),
-            std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                           static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)),
-        };
+        const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)  ? VK_QUEUE_GRAPHICS_BIT
+                                           : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) ? VK_QUEUE_COMPUTE_BIT
+                                           : (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point)
+                                               ? (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
+                                               : VK_QUEUE_FLAG_BITS_MAX_ENUM;
+
         const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
-        if (0 == (qfp.queueFlags & flag_mask.at(bind_point))) {
-            const std::string &vuid = bind_errors.at(bind_point);
+        if (0 == (qfp.queueFlags & required_mask)) {
             const LogObjectList objlist(cb_state->commandBuffer(), cb_state->createInfo.commandPool);
+            const char *vuid = kVUIDUndefined;
+            switch (loc.function) {
+                case Func::vkCmdBindDescriptorSets:
+                    vuid = "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361";
+                    break;
+                case Func::vkCmdSetDescriptorBufferOffsetsEXT:
+                    vuid = "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067";
+                    break;
+                case Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT:
+                    vuid = "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-pipelineBindPoint-08069";
+                    break;
+                case Func::vkCmdPushDescriptorSetKHR:
+                    vuid = "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363";
+                    break;
+                case Func::vkCmdPushDescriptorSetWithTemplateKHR:
+                    vuid = "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366";
+                    break;
+                case Func::vkCmdBindPipeline:
+                    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
+                        vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00778";
+                    } else if (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) {
+                        vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00777";
+                    } else if (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point) {
+                        vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-02391";
+                    }
+                    break;
+                default:
+                    break;
+            }
             skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
                              FormatHandle(cb_state->commandBuffer()).c_str(),
                              FormatHandle(cb_state->createInfo.commandPool).c_str(), string_VkPipelineBindPoint(bind_point));
