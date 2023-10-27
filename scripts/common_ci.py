@@ -237,6 +237,7 @@ def RunVVLTests(args):
     # NOTE: These test(s) fails sporadically.
     # These need extra care to prevent a regression in the future.
     failing_tsan_tests += ':PositiveSyncObject.WaitTimelineSemThreadRace'
+    failing_tsan_tests += ':PositiveSyncObject.WaitEventThenSet'
     failing_tsan_tests += ':PositiveQuery.ResetQueryPoolFromDifferentCB'
     failing_tsan_tests += ':PositiveQuery.PerformanceQueries'
 
