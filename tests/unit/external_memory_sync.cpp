@@ -262,8 +262,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Bind buffer memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(Init())
 
     VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
     const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
@@ -301,8 +300,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Bind image memory with unsupported external memory handle type.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(Init())
 
     VkExternalMemoryImageCreateInfo external_image_info = vku::InitStructHelper();
     VkImageCreateInfo image_info = vku::InitStructHelper(&external_image_info);
