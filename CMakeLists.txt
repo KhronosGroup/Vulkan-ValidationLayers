@@ -24,8 +24,7 @@ set(API_TYPE "vulkan")
 
 add_subdirectory(scripts)
 
-set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against.")
-set(CMAKE_CXX_STANDARD ${VVL_CPP_STANDARD})
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
