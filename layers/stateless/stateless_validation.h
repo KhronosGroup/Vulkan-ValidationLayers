@@ -1093,5 +1093,7 @@ class StatelessValidation : public ValidationObject {
                                                      const ErrorObject &error_obj) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+    bool ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo, VkMemoryAllocateFlags flags,
+                                        const Location &allocate_info_loc) const;
 #include "generated/stateless_validation_helper.h"
 };  // Class StatelessValidation
