@@ -101,3 +101,63 @@ TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
+    TEST_DESCRIPTION("Create pipeline with tessellation evaluation shader using point mode");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework())
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+        VkPhysicalDeviceFeatures2 features2;
+        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!features2.features.tessellationShader || !features2.features.shaderTessellationAndGeometryPointSize) {
+            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
+        }
+        if (!portability_subset_features.tessellationPointMode) {
+            GTEST_SKIP() << "tessellationPointMode not supported";
+        }
+        RETURN_IF_SKIP(InitState(nullptr, &features2))
+    } else {
+        VkPhysicalDeviceFeatures features;
+        GetPhysicalDeviceFeatures(&features);
+        if (!features.tessellationShader || !features.shaderTessellationAndGeometryPointSize) {
+            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
+        }
+        RETURN_IF_SKIP(InitState(&features));
+    }
+    InitRenderTarget();
+
+    static const char tess_src[] = R"glsl(
+        #version 460
+        layout(triangles, equal_spacing, cw, point_mode) in;
+        void main() { gl_Position = vec4(1); }
+    )glsl";
+
+    static char const geom_src[] = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (points) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0f, 0.5f, 0.5f, 0.0f);
+            gl_PointSize = 1.0f;
+            EmitVertex();
+        }
+    )glsl";
+
+    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, tess_src, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
+    tess_ci.patchControlPoints = 4u;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
+                           gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    pipe.tess_ci_ = tess_ci;
+    pipe.CreateGraphicsPipeline();
+}
