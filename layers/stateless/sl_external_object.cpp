@@ -249,3 +249,169 @@ bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice d
     return skip;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+namespace {
+
+// Uses bool where the pointer is not needed to remove the ifdef macros from the core logic
+struct ExternalOperationsInfo {
+    bool import_info_win32 = false;
+    bool import_info_win32_nv = false;
+    bool export_info_win32 = false;
+    bool export_info_win32_nv = false;
+
+    const VkImportMemoryFdInfoKHR *import_info_fd = nullptr;
+    const VkImportMemoryHostPointerInfoEXT *import_info_host_pointer = nullptr;
+
+    const VkExportMemoryAllocateInfo *export_info = nullptr;
+    const VkExportMemoryAllocateInfoNV *export_info_nv = nullptr;
+
+    uint32_t total_import_ops = 0;
+    bool has_export = false;
+};
+
+// vkspec.html#memory-import-operation describes all the various ways for import operations
+ExternalOperationsInfo GetExternalOperationsInfo(const void *pNext) {
+    ExternalOperationsInfo ext = {};
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    // VK_KHR_external_memory_win32
+    auto import_info_win32 = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pNext);
+    ext.import_info_win32 = (import_info_win32 && import_info_win32->handleType);
+    ext.total_import_ops += import_info_win32;
+
+    auto import_info_win32_nv = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoNV>(pNext);
+    ext.import_info_win32_nv = (import_info_win32_nv && import_info_win32_nv->handleType);
+    ext.total_import_ops += import_info_win32_nv;
+
+    ext.export_info_win32 = vku::FindStructInPNextChain<VkExportMemoryWin32HandleInfoKHR>(pNext) != nullptr;
+
+    ext.export_info_win32_nv = vku::FindStructInPNextChain<VkExportMemoryWin32HandleInfoNV>(pNext) != nullptr;
+#endif
+
+    // VK_KHR_external_memory_fd
+    ext.import_info_fd = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pNext);
+    ext.total_import_ops += (ext.import_info_fd && ext.import_info_fd->handleType);
+
+    // VK_EXT_external_memory_host
+    ext.import_info_host_pointer = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(pNext);
+    ext.total_import_ops += (ext.import_info_host_pointer && ext.import_info_host_pointer->handleType);
+
+    // All exports need a VkExportMemoryAllocateInfo or they are ignored
+    // VK_KHR_external_memory
+    ext.export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(pNext);
+    ext.has_export |= (ext.export_info && ext.export_info->handleTypes);
+
+    // VK_NV_external_memory
+    ext.export_info_nv = vku::FindStructInPNextChain<VkExportMemoryAllocateInfoNV>(pNext);
+    ext.has_export |= (ext.export_info_nv && ext.export_info_nv->handleTypes);
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    // VK_ANDROID_external_memory_android_hardware_buffer
+    auto import_info_ahb = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(pNext);
+    ext.total_import_ops += (import_info_ahb && import_info_ahb->buffer);
+#endif
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    // VK_FUCHSIA_external_memory
+    auto import_info_zircon = vku::FindStructInPNextChain<VkImportMemoryZirconHandleInfoFUCHSIA>(pNext);
+    ext.total_import_ops += (import_info_zircon && import_info_zircon->handleType);
+
+    // VK_FUCHSIA_buffer_collection
+    // NOTE: There's no handleType on VkImportMemoryBufferCollectionFUCHSIA, so we can't check that, and from the "Valid Usage
+    // (Implicit)" collection has to  always be valid.
+    ext.total_import_ops += vku::FindStructInPNextChain<VkImportMemoryBufferCollectionFUCHSIA>(pNext) != nullptr;
+#endif
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    // VK_QNX_external_memory_screen_buffer
+    auto import_info_qnx = vku::FindStructInPNextChain<VkImportScreenBufferInfoQNX>(pNext);
+    ext.total_import_ops += (import_info_qnx && import_info_qnx->buffer);
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+    return ext;
+}
+}  // namespace
+
+bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                                         VkMemoryAllocateFlags flags, const Location &allocate_info_loc) const {
+    bool skip = false;
+
+    // Used to remove platform ifdef logic below
+    const ExternalOperationsInfo ext = GetExternalOperationsInfo(pAllocateInfo->pNext);
+
+    if (!ext.has_export && ext.total_import_ops == 0 && pAllocateInfo->allocationSize == 0) {
+        skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-07897", device, allocate_info_loc.dot(Field::allocationSize),
+                         "is 0.");
+    }
+
+    auto opaque_alloc_info = vku::FindStructInPNextChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
+    if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
+        const Location address_loc =
+            allocate_info_loc.pNext(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress);
+        if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
+            skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329", device, address_loc,
+                             "is non-zero (%" PRIu64
+                             ") so VkMemoryAllocateFlagsInfo::flags must include "
+                             "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
+                             opaque_alloc_info->opaqueCaptureAddress);
+        }
+
+        if (ext.import_info_host_pointer) {
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-03332", device, address_loc,
+                             "is non-zero (%" PRIu64 ") but the pNext chain includes a VkImportMemoryHostPointerInfoEXT structure.",
+                             opaque_alloc_info->opaqueCaptureAddress);
+        }
+
+        if (ext.total_import_ops > 0) {
+            skip |=
+                LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333", device, address_loc,
+                         "is non-zero (%" PRIu64 ") but an import operation is defined.", opaque_alloc_info->opaqueCaptureAddress);
+        }
+    }
+
+    if (ext.total_import_ops > 1) {
+        skip |= LogError("VUID-VkMemoryAllocateInfo-None-06657", device, allocate_info_loc,
+                         "%" PRIu32 " import operations are defined", ext.total_import_ops);
+    }
+
+    if (ext.export_info) {
+        if (ext.export_info_nv) {
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, allocate_info_loc,
+                             "pNext chain includes both VkExportMemoryAllocateInfo and "
+                             "VkExportMemoryAllocateInfoNV");
+        }
+        if (ext.export_info_win32_nv) {
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, allocate_info_loc,
+                             "pNext chain includes both VkExportMemoryAllocateInfo and "
+                             "VkExportMemoryWin32HandleInfoNV");
+        }
+    }
+
+    if (ext.import_info_win32 && ext.import_info_win32_nv) {
+        skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00641", device, allocate_info_loc,
+                         "pNext chain includes both VkImportMemoryWin32HandleInfoKHR and "
+                         "VkImportMemoryWin32HandleInfoNV");
+    }
+
+    if (ext.import_info_fd && ext.import_info_fd->handleType != 0) {
+        if (ext.import_info_fd->fd < 0) {
+            skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00670", device,
+                             allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd),
+                             "(%d) is not a valid POSIX file descriptor.", ext.import_info_fd->fd);
+        }
+        if (ext.import_info_fd->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT &&
+            ext.import_info_fd->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT) {
+            skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00669", device,
+                             allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::handleType), "%s is not allowed.",
+                             string_VkExternalMemoryHandleTypeFlagBits(ext.import_info_fd->handleType));
+        }
+    }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    skip |=
+        ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-06780",
+                                    allocate_info_loc, "VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT", pAllocateInfo->pNext);
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+    return skip;
+}
