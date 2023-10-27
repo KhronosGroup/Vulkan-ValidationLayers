@@ -150,7 +150,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
     // with non-NULL image member, then that image must already be bound to memory.
-    VkImage dedicated_image = mem_info->GetDedicatedImage();
+    const VkImage dedicated_image = mem_info->GetDedicatedImage();
     if (dedicated_image != VK_NULL_HANDLE) {
         auto image_state = Get<IMAGE_STATE>(dedicated_image);
         if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->deviceMemory())))) {

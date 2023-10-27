@@ -1751,13 +1751,24 @@ class ValidationStateTracker : public ValidationObject {
         return {};
     }
 
-    struct ExternalMemoryFdInfo {
+    // the VK_EXTERNAL_*_HANDLE_TYPE_OPAQUE_* handles are designed to created/exported in Vulkan, that means we can track the
+    // values and compare when re-importing later. While FD and Win32 have differnt handles to access the struct, the information
+    // needed is non-platform specific Vulkan values.
+    //
+    // This also works on the assumption that an FD/Win32 Handle is never allowed to be 2 different primatives (fence, semaphore,
+    // memory) at the same time.
+    struct ExternalOpaqueInfo {
+        // External Memory
         VkDeviceSize allocation_size;
         uint32_t memory_type_index;
         VkBuffer dedicated_buffer;
         VkImage dedicated_image;
+
+        // External Semaphore
+        VkSemaphoreCreateFlags semaphore_flags;
     };
-    inline std::optional<ExternalMemoryFdInfo> GetAllocateInfoFromFdHandle(int fd) const {
+
+    inline std::optional<ExternalOpaqueInfo> GetOpaqueInfoFromFdHandle(int fd) const {
         ReadLockGuard guard(fd_handle_map_lock_);
         if (const auto itr = fd_handle_map_.find(fd); itr != fd_handle_map_.cend()) {
             return itr->second;
@@ -1766,7 +1777,7 @@ class ValidationStateTracker : public ValidationObject {
     }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    inline std::optional<VkMemoryAllocateInfo> GetAllocateInfoFromWin32Handle(HANDLE handle) const {
+    inline std::optional<ExternalOpaqueInfo> GetOpaqueInfoFromWin32Handle(HANDLE handle) const {
         ReadLockGuard guard(win32_handle_map_lock_);
         if (const auto itr = win32_handle_map_.find(handle); itr != win32_handle_map_.cend()) {
             return itr->second;
@@ -1897,12 +1908,12 @@ class ValidationStateTracker : public ValidationObject {
     mutable std::shared_mutex shader_identifier_map_lock_;
 
     // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
-    vvl::unordered_map<int, ExternalMemoryFdInfo> fd_handle_map_;
+    vvl::unordered_map<int, ExternalOpaqueInfo> fd_handle_map_;
     mutable std::shared_mutex fd_handle_map_lock_;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     // If vkGetMemoryWin32HandleKHR is called, keep track of HANDLE -> allocation info
-    vvl::unordered_map<HANDLE, VkMemoryAllocateInfo> win32_handle_map_;
+    vvl::unordered_map<HANDLE, ExternalOpaqueInfo> win32_handle_map_;
     mutable std::shared_mutex win32_handle_map_lock_;
 #endif
 
