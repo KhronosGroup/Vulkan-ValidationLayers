@@ -4223,6 +4223,8 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
 // Update the common AllocateDescriptorSetsData
 void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                               cvdescriptorset::AllocateDescriptorSetsData *ds_data) const {
+    const auto *count_allocate_info =
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         auto layout = Get<cvdescriptorset::DescriptorSetLayout>(p_alloc_info->pSetLayouts[i]);
         if (layout) {
@@ -4231,7 +4233,11 @@ void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptor
             for (uint32_t j = 0; j < layout->GetBindingCount(); ++j) {
                 const auto &binding_layout = layout->GetDescriptorSetLayoutBindingPtrFromIndex(j);
                 uint32_t type_index = static_cast<uint32_t>(binding_layout->descriptorType);
-                ds_data->required_descriptors_by_type[type_index] += binding_layout->descriptorCount;
+                uint32_t descriptor_count = binding_layout->descriptorCount;
+                if (count_allocate_info && i < count_allocate_info->descriptorSetCount) {
+                    descriptor_count = count_allocate_info->pDescriptorCounts[i];
+                }
+                ds_data->required_descriptors_by_type[type_index] += descriptor_count;
             }
         }
         // Any unknown layouts will be flagged as errors during ValidateAllocateDescriptorSets() call
