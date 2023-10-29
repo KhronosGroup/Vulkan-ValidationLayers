@@ -119,6 +119,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetFenceWin32HandleKHR',
             'vkImportSemaphoreWin32HandleKHR',
             'vkGetSemaphoreWin32HandleKHR',
+            'vkGetMemoryHostPointerPropertiesEXT',
             'vkCmdBindVertexBuffers',
             'vkCreateImageView',
             'vkCopyAccelerationStructureToMemoryKHR',

@@ -2107,6 +2107,7 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
         VkImportMemoryWin32HandleInfoNV import_memory_info_win32_nv = vku::InitStructHelper(&import_memory_info_win32_khr);
         import_memory_info_win32_nv.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
+        m_errorMonitor->SetUnexpectedError("VUID-VkMemoryAllocateInfo-None-06657");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00641");
         mem_alloc.pNext = &import_memory_info_win32_nv;
         vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);

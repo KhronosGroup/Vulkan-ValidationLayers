@@ -1140,7 +1140,9 @@
                     "shaderRoundingModeRTZFloat32": true,
                     "shaderRoundingModeRTZFloat64": true
                 },
-                "VkPhysicalDeviceExternalMemoryHostPropertiesEXT": {},
+                "VkPhysicalDeviceExternalMemoryHostPropertiesEXT": {
+                    "minImportedHostPointerAlignment": 4096
+                },
                 "VkPhysicalDeviceConservativeRasterizationPropertiesEXT": {
                     "primitiveUnderestimation": true,
                     "conservativePointAndLineRasterization": true,

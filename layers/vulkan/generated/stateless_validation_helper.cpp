@@ -23033,6 +23033,9 @@ bool StatelessValidation::PreCallValidateGetMemoryHostPointerPropertiesEXT(
                                     GeneratedVulkanHeaderVersion, "VUID-VkMemoryHostPointerPropertiesEXT-pNext-pNext",
                                     kVUIDUndefined, false, false);
     }
+    if (!skip)
+        skip |= manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer,
+                                                                        pMemoryHostPointerProperties, error_obj);
     return skip;
 }
 

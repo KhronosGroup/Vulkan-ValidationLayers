@@ -129,6 +129,30 @@ bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(
+    VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void *pHostPointer,
+    VkMemoryHostPointerPropertiesEXT *pMemoryHostPointerProperties, const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT &&
+        handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT) {
+        skip |=
+            LogError("VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-01752", device, error_obj.location.dot(Field::handleType),
+                     "is %s.", string_VkExternalMemoryHandleTypeFlagBits(handleType));
+    }
+
+    const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(pHostPointer);
+    if (SafeModulo(host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
+        skip |= LogError("VUID-vkGetMemoryHostPointerPropertiesEXT-pHostPointer-01753", device,
+                         error_obj.location.dot(Field::pHostPointer),
+                         "(0x%" PRIxLEAST64
+                         ") is not aligned "
+                         "to minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
+                         host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
+    }
+
+    return skip;
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
@@ -411,6 +435,61 @@ bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const 
             skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00669", device,
                              allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::handleType), "%s is not allowed.",
                              string_VkExternalMemoryHandleTypeFlagBits(ext.import_info_fd->handleType));
+        }
+    }
+
+    if (ext.import_info_host_pointer && ext.import_info_host_pointer->handleType != 0) {
+        if (ext.import_info_host_pointer->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT &&
+            ext.import_info_host_pointer->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT) {
+            skip |= LogError("VUID-VkImportMemoryHostPointerInfoEXT-handleType-01748", device,
+                             allocate_info_loc.pNext(Struct::VkImportMemoryHostPointerInfoEXT, Field::handleType), "is %s.",
+                             string_VkExternalMemoryHandleTypeFlagBits(ext.import_info_host_pointer->handleType));
+        }
+
+        const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(ext.import_info_host_pointer->pHostPointer);
+        if (SafeModulo(host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
+            skip |= LogError("VUID-VkImportMemoryHostPointerInfoEXT-pHostPointer-01749", device,
+                             allocate_info_loc.pNext(Struct::VkImportMemoryHostPointerInfoEXT, Field::pHostPointer),
+                             "(0x%" PRIxLEAST64
+                             ") is not aligned "
+                             "to minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
+                             host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
+        }
+
+        if (SafeModulo(pAllocateInfo->allocationSize,
+                       phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
+            skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-01745", device, allocate_info_loc.dot(Field::allocationSize),
+                             "(%" PRIuLEAST64 ") is not a multiple of minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
+                             pAllocateInfo->allocationSize,
+                             phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
+        }
+
+        // only dispatch if known valid handle and host pointer
+        if (!skip) {
+            VkMemoryHostPointerPropertiesEXT host_pointer_props = vku::InitStructHelper();
+            DispatchGetMemoryHostPointerPropertiesEXT(device, ext.import_info_host_pointer->handleType,
+                                                      ext.import_info_host_pointer->pHostPointer, &host_pointer_props);
+            if (((1 << pAllocateInfo->memoryTypeIndex) & host_pointer_props.memoryTypeBits) == 0) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-01744", device,
+                                 allocate_info_loc.dot(Field::memoryTypeIndex),
+                                 "is %" PRIu32 " but VkMemoryHostPointerPropertiesEXT::memoryTypeBits is 0x%" PRIx32 ".",
+                                 pAllocateInfo->memoryTypeIndex, host_pointer_props.memoryTypeBits);
+            }
+        }
+
+        auto dedicated_allocate_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+        if (dedicated_allocate_info) {
+            if (dedicated_allocate_info->buffer != VK_NULL_HANDLE) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02806", device,
+                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                 "is %s but also using a host import with VkImportMemoryHostPointerInfoEXT.",
+                                 FormatHandle(dedicated_allocate_info->buffer).c_str());
+            } else if (dedicated_allocate_info->image != VK_NULL_HANDLE) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02806", device,
+                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                 "is %s but also using a host import with VkImportMemoryHostPointerInfoEXT.",
+                                 FormatHandle(dedicated_allocate_info->image).c_str());
+            }
         }
     }
 
