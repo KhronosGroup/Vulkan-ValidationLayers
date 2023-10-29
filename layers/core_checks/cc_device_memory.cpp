@@ -402,8 +402,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto import_memory_win32_info = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
-    const bool imported_win32 = import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
-                                import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
+    const bool imported_win32 =
+        import_memory_win32_info && (import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
+                                     import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT);
     if (imported_win32) {
         if (const auto payload_info = GetOpaqueInfoFromWin32Handle(import_memory_win32_info->handle)) {
             const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryWin32HandleInfoKHR, Field::handle);

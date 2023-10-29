@@ -370,6 +370,13 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_external_memory_host)) {
+        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&external_memory_host_props);
+        GetPhysicalDeviceProperties2(physicalDevice, prop2);
+        phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object

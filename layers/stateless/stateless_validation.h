@@ -69,6 +69,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceMaintenance4PropertiesKHR maintenance4_props;
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
+        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -882,6 +883,11 @@ class StatelessValidation : public ValidationObject {
                                                 const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
                                              const ErrorObject &error_obj) const;
+
+    bool manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                                 const void *pHostPointer,
+                                                                 VkMemoryHostPointerPropertiesEXT *pMemoryHostPointerProperties,
+                                                                 const ErrorObject &error_obj) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
