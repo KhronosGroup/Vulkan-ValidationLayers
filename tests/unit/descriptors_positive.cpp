@@ -1201,3 +1201,68 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDescriptors, VariableDescriptorCount) {
+    TEST_DESCRIPTION("Allocate descriptors with variable count.");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(descriptor_indexing_features);
+    if (!descriptor_indexing_features.descriptorBindingVariableDescriptorCount) {
+        GTEST_SKIP() << "descriptorBindingVariableDescriptorCount not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features));
+    InitRenderTarget();
+
+    // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    // Create Pool w/ 1 Sampler descriptor, but try to alloc Uniform Buffer
+    // descriptor from it
+    VkDescriptorPoolSize pool_sizes[2] = {};
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    pool_sizes[0].descriptorCount = 2;
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_sizes[1].descriptorCount = 2;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 3;
+    ds_pool_ci.poolSizeCount = 2;
+    ds_pool_ci.pPoolSizes = pool_sizes;
+
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 0;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    dsl_binding.descriptorCount = 3;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding.pImmutableSamplers = NULL;
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo dsl_binding_flags = vku::InitStructHelper();
+    dsl_binding_flags.bindingCount = 1u;
+    dsl_binding_flags.pBindingFlags = &binding_flags;
+
+    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper(&dsl_binding_flags);
+    dsl_ci.bindingCount = 1u;
+    dsl_ci.pBindings = &dsl_binding;
+
+    const vkt::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
+
+    uint32_t descriptor_count = 1u;
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_allocate = vku::InitStructHelper();
+    variable_allocate.descriptorSetCount = 1u;
+    variable_allocate.pDescriptorCounts = &descriptor_count;
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper(&variable_allocate);
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet descriptor_set;
+    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+}
