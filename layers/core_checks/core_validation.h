@@ -326,6 +326,7 @@ struct DrawDispatchVuid {
     const char* set_color_write_09419 = kVUIDUndefined;
     const char* set_coverage_to_color_location_09420 = kVUIDUndefined;
     const char* set_viewport_swizzle_09421 = kVUIDUndefined;
+    const char* convervative_rasterization_07499 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
