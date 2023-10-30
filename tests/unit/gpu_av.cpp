@@ -14,29 +14,12 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
-
-static std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-static std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
-                                     VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
-
-// All VkGpuAssistedLayerTest should use this for setup as a single access point to more easily toggle which validation features are
-// enabled/disabled
-VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
-    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
-    features.enabledValidationFeatureCount = size32(gpu_av_enables);
-    // TODO - Add command line flag or env var or another system for setting this to 'zero' to allow for someone writting a new
-    // GPU-AV test to easily check the test is valid
-    features.disabledValidationFeatureCount = size32(gpu_av_disables);
-    features.pEnabledValidationFeatures = gpu_av_enables.data();
-    features.pDisabledValidationFeatures = gpu_av_disables.data();
-    return features;
-}
+#include "../framework/gpu_av_helper.h"
 
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
 void VkGpuAssistedLayerTest::InitGpuAvFramework() {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFramework(&validation_features));
 
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
@@ -46,25 +29,6 @@ void VkGpuAssistedLayerTest::InitGpuAvFramework() {
     } else if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-}
-
-// This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
-bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
-    // Check version first before trying to call GetPhysicalDeviceFeatures2
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("At least Vulkan version 1.1 is required for GPU-AV\n");
-        return false;
-    }
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
-        printf("fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV\n");
-        return false;
-    } else if (IsPlatformMockICD()) {
-        printf("Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw\n");
-        return false;
-    }
-    return true;
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
@@ -1977,13 +1941,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
     validation_features.pEnabledValidationFeatures = enables;
     validation_features.enabledValidationFeatureCount = 2;
     RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
@@ -2323,7 +2287,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
 TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
@@ -2429,7 +2393,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
 
-    auto validation_features = GetValidationFeatures();
+    auto validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
@@ -2603,7 +2567,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
 
-    auto validation_features = GetValidationFeatures();
+    auto validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
@@ -2812,7 +2776,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFramework(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
@@ -2921,10 +2885,10 @@ TEST_F(VkGpuAssistedLayerTest, SelectInstrumentedShaders) {
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     validation_features.pNext = &layer_settings_create_info;
     RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
