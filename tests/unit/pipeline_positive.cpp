@@ -1749,3 +1749,58 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, InterpolateAtSample) {
+    TEST_DESCRIPTION("Test using spirv instruction InterpolateAtSample");
+
+    RETURN_IF_SKIP(InitFramework());
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+        auto features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!portability_subset_features.shaderSampleRateInterpolationFunctions) {
+            GTEST_SKIP() << "shaderSampleRateInterpolationFunctions not supported";
+        }
+        RETURN_IF_SKIP(InitState(nullptr, &features2));
+        if (!features2.features.sampleRateShading) {
+            GTEST_SKIP() << "sampleRateShading not supported";
+        }
+    } else {
+        RETURN_IF_SKIP(InitState());
+        if (!m_device->phy().features().sampleRateShading) {
+            GTEST_SKIP() << "sampleRateShading not supported";
+        }
+    }
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    static const char vs_src[] = R"glsl(
+        #version 460
+        layout(location = 0) out vec2 uv;
+        void main() {
+            uv = vec2(gl_VertexIndex & 1, (gl_VertexIndex >> 1) & 1);
+		    gl_Position = vec4(uv, 0.0f, 1.0f);
+        }
+    )glsl";
+    static const char fs_src[] = R"glsl(
+        #version 460
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in vec2 v;
+        void main() {
+		    vec2 sample1 = interpolateAtSample(v, 0);
+            uFragColor = vec4(0.1f);
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
