@@ -436,7 +436,10 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     allocate_info.pSetLayouts = layouts;
 
     VkDescriptorSet descriptor_sets[2];
-    vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+    VkResult result = vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+    if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
+        GTEST_SKIP() << "Pool memory not allocated";
+    }
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;

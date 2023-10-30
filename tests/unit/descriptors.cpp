@@ -4186,7 +4186,9 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDescriptors, AllocatingVariableDescriptorSets) {
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/3297
+// This should be checked earlier as causes some driver to crash
+TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
     TEST_DESCRIPTION("Test allocating large variable descriptor sets");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
