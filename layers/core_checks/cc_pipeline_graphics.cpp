@@ -77,6 +77,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
     skip |= ValidateGraphicsPipelineLibrary(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineTessellationState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
@@ -960,6 +961,23 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE
                              "is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST but no tessellation shaders.");
         }
     };
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineTessellationState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+    bool skip = false;
+
+    if (pipeline.OwnsSubState(pipeline.pre_raster_state) &&
+        (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
+        (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+        if (!pipeline.TessellationState() && (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
+                                              !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3))) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
+                             "includes a tessellation control "
+                             "shader stage and a tessellation evaluation shader stage, "
+                             "but pTessellationState is NULL.");
+        }
+    }
     return skip;
 }
 

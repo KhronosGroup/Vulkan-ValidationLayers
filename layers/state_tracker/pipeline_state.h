@@ -339,6 +339,13 @@ class PIPELINE_STATE : public BASE_NODE {
         return nullptr;
     }
 
+    const safe_VkPipelineTessellationStateCreateInfo *TessellationState() const {
+        if (pre_raster_state) {
+            return pre_raster_state->tess_create_info;
+        }
+        return nullptr;
+    }
+
     const safe_VkPipelineColorBlendStateCreateInfo *ColorBlendState() const {
         if (fragment_output_state) {
             return fragment_output_state->color_blend_state.get();
