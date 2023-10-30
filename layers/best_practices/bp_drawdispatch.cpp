@@ -61,6 +61,24 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
             }
         }
     }
+    skip |= ValidatePushConstants(cmd_buffer, loc);
+    return skip;
+}
+
+bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const {
+    bool skip = false;
+
+    const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
+    for (size_t i = 0; i < cb_state->push_constant_data_set.size(); ++i) {
+        if (!cb_state->push_constant_data_set[i]) {
+            skip |= LogWarning(kVUID_BestPractices_PushConstants, cmd_buffer, loc,
+                               "Pipeline uses push constants with %" PRIu32 " bytes, but byte %" PRIu32
+                               " was never set with vkCmdPushConstants.",
+                               static_cast<uint32_t>(cb_state->push_constant_data_set.size()), static_cast<uint32_t>(i));
+            break;
+        }
+    }
+
     return skip;
 }
 

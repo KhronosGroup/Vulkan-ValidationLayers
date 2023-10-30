@@ -332,6 +332,9 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     CommandBufferStateNV nv;
     uint64_t num_submits = 0;
     bool is_one_time_submit = false;
+
+    std::vector<uint8_t> push_constant_data_set;
+    void UnbindResources() { push_constant_data_set.clear(); }
 };
 
 class DescriptorPool : public DESCRIPTOR_POOL_STATE {
@@ -377,6 +380,8 @@ class BestPractices : public ValidationStateTracker {
     void LogErrorCode(const RecordObject& record_obj) const;
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const;
+
+    bool ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const;
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count);
 
@@ -569,6 +574,15 @@ class BestPractices : public ValidationStateTracker {
 
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                       const RecordObject& record_obj) override;
+    void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                          const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
+    void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                       const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
+    void RecordCmdNextSubpass(VkCommandBuffer commandBuffer);
+
+    void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                        uint32_t offset, uint32_t size, const void* pValues,
+                                        const RecordObject& record_obj) override;
 
     void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
     void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
