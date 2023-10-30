@@ -394,12 +394,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                      "%" PRIu32 ", but should between 0 and maxTessellationPatchSize (%" PRIu32 ").",
                                      create_info.pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
                 }
-            } else if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
-                       !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
-                                 "includes a tessellation control "
-                                 "shader stage and a tessellation evaluation shader stage, "
-                                 "but pTessellationState is NULL.");
             }
         }
 
