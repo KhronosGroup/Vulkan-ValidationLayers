@@ -129,6 +129,7 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_TransitionUndefinedToReadOnly =
     "UNASSIGNED-BestPractices-TransitionUndefinedToReadOnly";
 [[maybe_unused]] static const char *kVUID_BestPractices_SemaphoreCount = "UNASSIGNED-BestPractices-SemaphoreCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_PushConstants = "UNASSIGNED-BestPractices-PushConstants";
 [[maybe_unused]] static const char *kVUID_BestPractices_EmptyDescriptorPool =
     "UNASSIGNED-BestPractices-EmptyDescriptorPool";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearValueWithoutLoadOpClear = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueWithoutLoadOpClear";
