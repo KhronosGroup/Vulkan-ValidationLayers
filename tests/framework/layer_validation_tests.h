@@ -191,10 +191,10 @@ class VkLayerTest : public VkLayerTestBase {
         }
         return proc;
     }
+    APIVersion DeviceValidationVersion() const;
 
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);
-    APIVersion DeviceValidationVersion() const;
     bool LoadDeviceProfileLayer(
         PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
         PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);
@@ -255,7 +255,6 @@ class VkGpuAssistedLayerTest : public virtual VkLayerTest {
                               VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error, bool shader_objects = false);
 
   protected:
-    bool CanEnableGpuAV();
 };
 
 class NegativeDebugPrintf : public VkLayerTest {

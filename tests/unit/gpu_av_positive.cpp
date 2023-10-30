@@ -18,6 +18,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/gpu_av_helper.h"
 #include "../../layers/gpu_shaders/gpu_shaders_constants.h"
 
 class PositiveGpuAssistedLayer : public VkGpuAssistedLayerTest {};
@@ -680,10 +681,10 @@ TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     validation_features.pNext = &layer_settings_create_info;
     RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();

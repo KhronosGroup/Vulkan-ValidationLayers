@@ -651,7 +651,8 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
         VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                            VK_COMPONENT_SWIZZLE_IDENTITY},
         VK_CHROMA_LOCATION_COSITED_EVEN, VK_CHROMA_LOCATION_COSITED_EVEN, VK_FILTER_NEAREST, VK_FALSE);
-    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
+    bool khr = (DeviceValidationVersion() < VK_API_VERSION_1_1);
+    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, khr);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},

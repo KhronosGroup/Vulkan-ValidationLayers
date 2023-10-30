@@ -15,6 +15,7 @@
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/ray_tracing_helper_nv.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/gpu_av_helper.h"
 #include "../framework/shader_helper.h"
 
 TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInvalidHandle) {
@@ -23,10 +24,10 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState())
@@ -103,10 +104,10 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState())
@@ -192,10 +193,10 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState())
@@ -301,10 +302,10 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
-    if (!CanEnableGpuAV()) {
+    if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState())
