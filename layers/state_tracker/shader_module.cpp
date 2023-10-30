@@ -1159,7 +1159,11 @@ uint32_t SPIRV_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
             const uint32_t result_type_id = insn->Word(1);
             const Instruction* result_type = FindDef(result_type_id);
             const Instruction* type = FindDef(result_type->Word(3));
-            const uint32_t variable_shared_size = GetTypeBytesSize(type);
+
+            // structs might have an offset padding
+            const uint32_t variable_shared_size = (type->Opcode() == spv::OpTypeStruct)
+                                                      ? GetTypeStructInfo(type->Word(1))->GetSize(*this).size
+                                                      : GetTypeBytesSize(type);
 
             if (find_max_block) {
                 total_size = std::max(total_size, variable_shared_size);
@@ -1923,38 +1927,9 @@ PushConstantVariable::PushConstantVariable(const SPIRV_MODULE_STATE& module_stat
     : VariableBase(module_state, insn, stage), offset(vvl::kU32Max), size(0) {
     assert(type_struct_info != nullptr);  // Push Constants need to be structs
 
-    // Currently to know the range we only need to know
-    // - The lowest offset element is in root struct
-    // - how large the highest offset element is in root struct
-    //
-    // Note structs don't have to be ordered, the following is legal
-    //    OpMemberDecorate %x 1 Offset 0
-    //    OpMemberDecorate %x 0 Offset 4
-    uint32_t highest_element_index = 0;
-    uint32_t highest_element_offset = 0;
-    for (uint32_t i = 0; i < type_struct_info->members.size(); i++) {
-        const auto& member = type_struct_info->members[i];
-        // all struct elements are required to have offset decorations in Block
-        const uint32_t memeber_offset = member.decorations->offset;
-        offset = std::min(offset, memeber_offset);
-        if (memeber_offset > highest_element_offset) {
-            highest_element_index = i;
-            highest_element_offset = memeber_offset;
-        }
-    }
-    const auto& highest_member = type_struct_info->members[highest_element_index];
-    uint32_t highest_element_size = 0;
-    if (highest_member.insn->Opcode() == spv::OpTypeArray &&
-        module_state.FindDef(highest_member.insn->Word(3))->Opcode() == spv::OpSpecConstant) {
-        // TODO - This is a work-around because currently we only apply SpecConstant for workgroup size
-        // The shader validation needs to be fixed so we handle all cases when spec constant are applied, while still being catious
-        // of the fact that information is not known until pipeline creation (not at shader module creation time)
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
-        highest_element_size = module_state.FindDef(highest_member.insn->Word(3))->Word(3);
-    } else {
-        highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
-    }
-    size = (highest_element_size + highest_element_offset) - offset;
+    auto struct_size = type_struct_info->GetSize(module_state);
+    offset = struct_size.offset;
+    size = struct_size.size;
 }
 
 TypeStructInfo::TypeStructInfo(const SPIRV_MODULE_STATE& module_state, const Instruction& struct_insn)
@@ -1971,6 +1946,57 @@ TypeStructInfo::TypeStructInfo(const SPIRV_MODULE_STATE& module_state, const Ins
             member.decorations = &it->second;
         }
     }
+}
+
+TypeStructSize TypeStructInfo::GetSize(const SPIRV_MODULE_STATE& module_state) const {
+    uint32_t offset = vvl::kU32Max;
+    uint32_t size = 0;
+
+    // Non-Blocks don't have offset so can get packed size
+    if (!decorations.Has(DecorationSet::block_bit)) {
+        offset = 0;
+        size = module_state.GetTypeBytesSize(module_state.FindDef(id));
+        return {offset, size};
+    }
+
+    // Currently to know the range we only need to know
+    // - The lowest offset element is in root struct
+    // - how large the highest offset element is in root struct
+    //
+    // Note structs don't have to be ordered, the following is legal
+    //    OpMemberDecorate %x 1 Offset 0
+    //    OpMemberDecorate %x 0 Offset 4
+    //
+    // Info at https://gitlab.khronos.org/spirv/SPIR-V/-/issues/763
+    uint32_t highest_element_index = 0;
+    uint32_t highest_element_offset = 0;
+
+    for (uint32_t i = 0; i < members.size(); i++) {
+        const auto& member = members[i];
+        // all struct elements are required to have offset decorations in Block
+        const uint32_t memeber_offset = member.decorations->offset;
+        offset = std::min(offset, memeber_offset);
+        if (memeber_offset > highest_element_offset) {
+            highest_element_index = i;
+            highest_element_offset = memeber_offset;
+        }
+    }
+
+    const auto& highest_member = members[highest_element_index];
+    uint32_t highest_element_size = 0;
+    if (highest_member.insn->Opcode() == spv::OpTypeArray &&
+        module_state.FindDef(highest_member.insn->Word(3))->Opcode() == spv::OpSpecConstant) {
+        // TODO - This is a work-around because currently we only apply SpecConstant for workgroup size
+        // The shader validation needs to be fixed so we handle all cases when spec constant are applied, while still being catious
+        // of the fact that information is not known until pipeline creation (not at shader module creation time)
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+        highest_element_size = module_state.FindDef(highest_member.insn->Word(3))->Word(3);
+    } else {
+        highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
+    }
+    size = (highest_element_size + highest_element_offset) - offset;
+
+    return {offset, size};
 }
 
 uint32_t SPIRV_MODULE_STATE::GetNumComponentsInBaseType(const Instruction* insn) const {
@@ -2019,6 +2045,7 @@ uint32_t SPIRV_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
         uint32_t length = length_type->GetConstantValue();
         bit_size = element_width * length;
     } else if (opcode == spv::OpTypeStruct) {
+        // Will not consider any possible Offset, gets size of a packed struct
         for (uint32_t i = 2; i < insn->Length(); ++i) {
             bit_size += GetTypeBitsSize(FindDef(insn->Word(i)));
         }

@@ -143,6 +143,16 @@ struct ExecutionModeSet {
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
 
+// This info *could* be found/saved in TypeStructInfo, but since
+//  - Only a few places (Push Constants, workgroup size) use this
+//  - It is only good when you know there are no nested strcuts
+// we only get this info when needed, not for every struct
+struct TypeStructSize {
+    uint32_t offset;  // where first member is
+    // This is the "padded" size, if you wanted the packed size, use GetTypeBytesSize(struct_type)
+    uint32_t size;  // total size of block
+};
+
 // Contains all the details for a OpTypeStruct
 struct TypeStructInfo {
     const uint32_t id;
@@ -159,6 +169,8 @@ struct TypeStructInfo {
     std::vector<Member> members;
 
     TypeStructInfo(const SPIRV_MODULE_STATE &module_state, const Instruction &struct_insn);
+
+    TypeStructSize GetSize(const SPIRV_MODULE_STATE &module_state) const;
 };
 
 // Represents the OpImage* instructions and how it maps to the variable
