@@ -259,27 +259,36 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
         }
     }
 
-    std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state;
-    std::shared_ptr<const EntryPoint> entrypoint;
+    std::shared_ptr<const SPIRV_MODULE_STATE> vert_spirv_state;
+    std::shared_ptr<const EntryPoint> vert_entrypoint;
+    std::shared_ptr<const SPIRV_MODULE_STATE> frag_spirv_state;
     if (last_bound_state.pipeline_state) {
-        for (const auto &stage_state : last_bound_state.pipeline_state->stage_states) {
+        for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
             if (stage_state.GetStage() == VK_SHADER_STAGE_VERTEX_BIT) {
-                spirv_state = stage_state.spirv_state;
-                entrypoint = stage_state.entrypoint;
+                vert_spirv_state = stage_state.spirv_state;
+                vert_entrypoint = stage_state.entrypoint;
+            }
+            if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                frag_spirv_state = stage_state.spirv_state;
             }
         }
     } else {
-        const auto &vertex_state = last_bound_state.GetShaderState(ShaderObjectStage::VERTEX);
+        const auto& vertex_state = last_bound_state.GetShaderState(ShaderObjectStage::VERTEX);
         if (vertex_state) {
-            spirv_state = vertex_state->spirv;
-            entrypoint = vertex_state->entrypoint;
+            vert_spirv_state = vertex_state->spirv;
+            vert_entrypoint = vertex_state->entrypoint;
+        }
+        const auto& fragment_state = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT);
+        if (fragment_state) {
+            frag_spirv_state = fragment_state->spirv;
         }
     }
     bool vertex_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
+    bool fragment_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
     if (((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) ||
          (!pipeline_state && vertex_shader_bound)) &&
-        entrypoint) {
-        for (const auto* variable_ptr : entrypoint->user_defined_interface_variables) {
+        vert_entrypoint) {
+        for (const auto* variable_ptr : vert_entrypoint->user_defined_interface_variables) {
             // Validate only input locations
             if (variable_ptr->storage_class != spv::StorageClass::StorageClassInput) {
                 continue;
@@ -289,7 +298,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
                 const auto& description = cb_state.dynamic_state_value.vertex_attribute_descriptions[i];
                 if (variable_ptr->decorations.location == description.location) {
                     location_provided = true;
-                    const auto base_type_instruction = spirv_state->GetBaseTypeInstruction(variable_ptr->type_id);
+                    const auto base_type_instruction = vert_spirv_state->GetBaseTypeInstruction(variable_ptr->type_id);
                     const auto opcode = base_type_instruction->Opcode();
                     if (opcode != spv::Op::OpTypeFloat && opcode != spv::Op::OpTypeInt && opcode != spv::Op::OpTypeBool) {
                         continue;
@@ -297,39 +306,99 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
                     const bool format64 = vkuFormatIs64bit(description.format);
                     const bool shader64 = base_type_instruction->GetBitWidth() == 64;
                     if (format64 && !shader64) {
-                        skip |= LogError(vuid.vertex_input_format_08936, spirv_state->handle(), loc,
+                        skip |= LogError(vuid.vertex_input_format_08936, vert_spirv_state->handle(), loc,
                                          "Attribute at location %" PRIu32
                                          " is a 64-bit format (%s) but vertex shader input is 32-bit type (%s)",
                                          description.location, string_VkFormat(description.format),
-                                         spirv_state->DescribeType(variable_ptr->id).c_str());
+                                         vert_spirv_state->DescribeType(variable_ptr->id).c_str());
                     } else if (!format64 && shader64) {
-                        skip |= LogError(vuid.vertex_input_format_08937, spirv_state->handle(), loc,
+                        skip |= LogError(vuid.vertex_input_format_08937, vert_spirv_state->handle(), loc,
                                          "Attribute at location %" PRIu32
                                          " is a 32-bit format (%s) but vertex shader input is 64-bit type (%s)",
                                          description.location, string_VkFormat(description.format),
-                                         spirv_state->DescribeType(variable_ptr->id).c_str());
+                                         vert_spirv_state->DescribeType(variable_ptr->id).c_str());
                     }
                     if (format64) {
-                        if (spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type) >
+                        if (vert_spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type) >
                             vkuFormatComponentCount(description.format)) {
-                            skip |=
-                                LogError(vuid.vertex_input_format_09203, spirv_state->handle(), loc,
-                                         "Attribute at location %" PRIu32 " uses %" PRIu32 " components, but format %s has %" PRIu32
-                                         " components.",
-                                         description.location, spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type),
-                                         string_VkFormat(description.format), vkuFormatComponentCount(description.format));
+                            skip |= LogError(vuid.vertex_input_format_09203, vert_spirv_state->handle(), loc,
+                                             "Attribute at location %" PRIu32 " uses %" PRIu32
+                                             " components, but format %s has %" PRIu32 " components.",
+                                             description.location,
+                                             vert_spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type),
+                                             string_VkFormat(description.format), vkuFormatComponentCount(description.format));
                         }
                     }
                 }
             }
             if (!location_provided) {
                 skip |=
-                    LogError(vuid.vertex_input_format_07939, spirv_state->handle(), loc,
+                    LogError(vuid.vertex_input_format_07939, vert_spirv_state->handle(), loc,
                              "Shader uses input at location %" PRIu32 ", but it was not provided with vkCmdSetVertexInputEXT().",
                              variable_ptr->decorations.location);
             }
         }
     }
+
+    if ((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) || fragment_shader_bound) {
+        if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT] &&
+            cb_state.dynamic_state_value.sample_locations_enable) {
+            if (cb_state.active_attachments && cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
+                for (const auto attachment : (*cb_state.active_attachments)) {
+                    if (attachment->create_info.subresourceRange.aspectMask &
+                        (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                        if ((attachment->image_state->createInfo.flags &
+                             VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
+                            const LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
+                            skip |=
+                                LogError(vuid.sample_locations_enable_07484, objlist, loc,
+                                         "Sample locations are enabled, but the depth/stencil attachment (%s) in the current "
+                                         "subpass was not created with VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
+                                         FormatHandle(attachment->image_state->Handle()).c_str());
+                        }
+                        break;
+                    }
+                }
+            }
+            if ((!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) &&
+                cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT]) {
+                VkSampleCountFlagBits rasterizationSamples =
+                    (pipeline_state && !pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT))
+                        ? pipeline_state->MultisampleState()->rasterizationSamples
+                        : cb_state.dynamic_state_value.rasterization_samples;
+                VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
+                DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, rasterizationSamples, &multisample_prop);
+                const auto& gridSize = cb_state.dynamic_state_value.sample_locations_info.sampleLocationGridSize;
+                if (SafeModulo(multisample_prop.maxSampleLocationGridSize.width, gridSize.width) != 0) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
+                    skip |= LogError(vuid.sample_locations_enable_07485, objlist, loc,
+                                     "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
+                                     ") with rasterization samples %s is not evenly divided by "
+                                     "sampleLocationsInfo.sampleLocationGridSize.width (%" PRIu32
+                                     ") set with vkCmdSetSampleLocationsEXT().",
+                                     multisample_prop.maxSampleLocationGridSize.width,
+                                     string_VkSampleCountFlagBits(rasterizationSamples), gridSize.width);
+                }
+                if (SafeModulo(multisample_prop.maxSampleLocationGridSize.height, gridSize.height) != 0) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
+                    skip |= LogError(vuid.sample_locations_enable_07486, objlist, loc,
+                                     "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32
+                                     ") with rasterization samples %s is not evenly divided by "
+                                     "sampleLocationsInfo.sampleLocationGridSize.height (%" PRIu32
+                                     ") set with vkCmdSetSampleLocationsEXT().",
+                                     multisample_prop.maxSampleLocationGridSize.height,
+                                     string_VkSampleCountFlagBits(rasterizationSamples), gridSize.height);
+                }
+            }
+            if (frag_spirv_state->static_data_.uses_interpolate_at_sample) {
+                const LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
+                skip |= LogError(vuid.sample_locations_enable_07487, objlist, loc,
+                                 "sampleLocationsEnable set with vkCmdSetSampleLocationsEnableEXT() was VK_TRUE, but fragment "
+                                 "shader uses InterpolateAtSample instruction.");
+            }
+        }
+    }
+
     return skip;
 }
 

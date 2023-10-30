@@ -330,6 +330,10 @@ struct DrawDispatchVuid {
     const char* sample_mask_07472 = kVUIDUndefined;
     const char* sample_mask_07473 = kVUIDUndefined;
     const char* rasterization_sampled_07474 = kVUIDUndefined;
+    const char* sample_locations_enable_07484 = kVUIDUndefined;
+    const char* sample_locations_enable_07485 = kVUIDUndefined;
+    const char* sample_locations_enable_07486 = kVUIDUndefined;
+    const char* sample_locations_enable_07487 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
