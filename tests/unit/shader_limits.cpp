@@ -313,3 +313,67 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
+    TEST_DESCRIPTION("Have an offset that is over maxComputeSharedMemorySize");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
+
+    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR explicit_layout_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(explicit_layout_features);
+    RETURN_IF_SKIP(InitState(nullptr, &explicit_layout_features));
+
+    if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
+        GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
+    }
+
+    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+
+    // layout(constant_id = 0) const uint value = 4;
+    // shared X {
+    //     vec4 x1[value];
+    //     layout(offset = OVER_LIMIT) vec4 x2;
+    // };
+    std::stringstream csSource;
+    csSource << R"asm(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %value SpecId 0
+               OpDecorate %_arr_v4float_value ArrayStride 16
+               OpMemberDecorate %X 0 Offset 0
+               OpMemberDecorate %X 1 Offset )asm";
+    // will be over the max if the spec constant uses default value
+    csSource << (max_shared_memory_size + 16);
+    csSource << R"asm(
+               OpDecorate %X Block
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %value = OpSpecConstant %uint 1
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_arr_v4float_value = OpTypeArray %v4float %value
+          %X = OpTypeStruct %_arr_v4float_value %v4float
+%_ptr_Workgroup_X = OpTypePointer Workgroup %X
+          %_ = OpVariable %_ptr_Workgroup_X Workgroup
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
+                                             SPV_SOURCE_ASM);
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
