@@ -193,11 +193,11 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDraw-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDraw-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDraw-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDraw-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDraw-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDraw-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDraw-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDraw-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDraw-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDraw-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDraw-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDraw-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDraw-None-08652";
@@ -304,6 +304,9 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDraw-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDraw-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDraw-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDraw-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDraw-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDraw-rasterizationSamples-07474";
     }
 };
 
@@ -479,11 +482,11 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMultiEXT-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMultiEXT-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMultiEXT-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMultiEXT-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMultiEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMultiEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMultiEXT-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMultiEXT-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMultiEXT-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMultiEXT-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMultiEXT-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMultiEXT-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMultiEXT-None-08652";
@@ -590,6 +593,9 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMultiEXT-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMultiEXT-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMultiEXT-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMultiEXT-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMultiEXT-rasterizationSamples-07474";
     }
 };
 
@@ -766,11 +772,11 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawIndexed-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawIndexed-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawIndexed-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawIndexed-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawIndexed-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndexed-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndexed-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndexed-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawIndexed-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndexed-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawIndexed-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawIndexed-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawIndexed-None-08652";
@@ -877,6 +883,9 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexed-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexed-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawIndexed-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawIndexed-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawIndexed-rasterizationSamples-07474";
     }
 };
 
@@ -1053,11 +1062,11 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMultiIndexedEXT-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMultiIndexedEXT-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMultiIndexedEXT-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMultiIndexedEXT-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMultiIndexedEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMultiIndexedEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMultiIndexedEXT-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMultiIndexedEXT-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMultiIndexedEXT-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMultiIndexedEXT-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMultiIndexedEXT-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMultiIndexedEXT-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMultiIndexedEXT-None-08652";
@@ -1164,6 +1173,9 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMultiIndexedEXT-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMultiIndexedEXT-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMultiIndexedEXT-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMultiIndexedEXT-rasterizationSamples-07474";
     }
 };
 
@@ -1341,11 +1353,11 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawIndirect-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawIndirect-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawIndirect-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawIndirect-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawIndirect-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndirect-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndirect-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndirect-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawIndirect-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndirect-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawIndirect-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawIndirect-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawIndirect-None-08652";
@@ -1452,6 +1464,9 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirect-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirect-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawIndirect-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawIndirect-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawIndirect-rasterizationSamples-07474";
     }
 };
 
@@ -1630,11 +1645,11 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawIndexedIndirect-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawIndexedIndirect-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawIndexedIndirect-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawIndexedIndirect-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawIndexedIndirect-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndexedIndirect-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndexedIndirect-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndexedIndirect-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawIndexedIndirect-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndexedIndirect-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawIndexedIndirect-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawIndexedIndirect-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawIndexedIndirect-None-08652";
@@ -1741,6 +1756,9 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexedIndirect-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirect-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawIndexedIndirect-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawIndexedIndirect-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawIndexedIndirect-rasterizationSamples-07474";
     }
 };
 
@@ -2007,11 +2025,11 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawIndirectCount-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawIndirectCount-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawIndirectCount-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawIndirectCount-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawIndirectCount-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndirectCount-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndirectCount-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndirectCount-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawIndirectCount-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndirectCount-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawIndirectCount-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawIndirectCount-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawIndirectCount-None-08652";
@@ -2118,6 +2136,9 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirectCount-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectCount-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawIndirectCount-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawIndirectCount-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawIndirectCount-rasterizationSamples-07474";
     }
 };
 
@@ -2299,11 +2320,11 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawIndexedIndirectCount-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawIndexedIndirectCount-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawIndexedIndirectCount-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawIndexedIndirectCount-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawIndexedIndirectCount-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndexedIndirectCount-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndexedIndirectCount-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndexedIndirectCount-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawIndexedIndirectCount-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndexedIndirectCount-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawIndexedIndirectCount-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawIndexedIndirectCount-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawIndexedIndirectCount-None-08652";
@@ -2410,6 +2431,9 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirectCount-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawIndexedIndirectCount-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawIndexedIndirectCount-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawIndexedIndirectCount-rasterizationSamples-07474";
     }
 };
 
@@ -2747,11 +2771,11 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMeshTasksNV-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMeshTasksNV-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMeshTasksNV-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMeshTasksNV-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksNV-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksNV-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksNV-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksNV-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMeshTasksNV-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksNV-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMeshTasksNV-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMeshTasksNV-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMeshTasksNV-None-08652";
@@ -2853,6 +2877,9 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksNV-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksNV-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksNV-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksNV-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMeshTasksNV-rasterizationSamples-07474";
     }
 };
 
@@ -3021,11 +3048,11 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08652";
@@ -3127,6 +3154,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectNV-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectNV-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectNV-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizationSamples-07474";
     }
 };
 
@@ -3298,11 +3328,11 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08652";
@@ -3404,6 +3434,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizationSamples-07474";
     }
 };
 
@@ -3569,11 +3602,11 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMeshTasksEXT-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMeshTasksEXT-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMeshTasksEXT-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMeshTasksEXT-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksEXT-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksEXT-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMeshTasksEXT-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksEXT-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMeshTasksEXT-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMeshTasksEXT-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMeshTasksEXT-None-08652";
@@ -3675,6 +3708,9 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksEXT-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksEXT-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksEXT-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksEXT-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMeshTasksEXT-rasterizationSamples-07474";
     }
 };
 
@@ -3843,11 +3879,11 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08652";
@@ -3949,6 +3985,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectEXT-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectEXT-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizationSamples-07474";
     }
 };
 
@@ -4120,11 +4159,11 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08652";
@@ -4226,6 +4265,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizationSamples-07474";
     }
 };
 
@@ -4403,11 +4445,11 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_depth_bias_enable_08640              = "VUID-vkCmdDrawIndirectByteCountEXT-None-08640";
         set_logic_op_08641                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-08641";
         set_color_blend_enable_08643             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08643";
-        set_rasterization_samples_08644              = "VUID-vkCmdDrawIndirectByteCountEXT-None-08644";
+        set_rasterization_samples_08644          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08647";
         set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08648";
-        set_discard_rectangles_mode_08649      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08649";
+        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndirectByteCountEXT-None-08649";
         set_depth_clamp_enable_08650             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08650";
         set_polygon_mode_08651                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-08651";
         set_rasterization_samples_08652          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08652";
@@ -4514,6 +4556,9 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-09421";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectByteCountEXT-conservativePointAndLineRasterization-07499";
+        sample_mask_07472                        = "VUID-vkCmdDrawIndirectByteCountEXT-samples-07472";
+        sample_mask_07473                       = "VUID-vkCmdDrawIndirectByteCountEXT-samples-07473";
+        rasterization_sampled_07474              = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizationSamples-07474";
     }
 };
 

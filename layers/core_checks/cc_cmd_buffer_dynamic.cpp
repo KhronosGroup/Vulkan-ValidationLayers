@@ -657,6 +657,52 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
 
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_MASK_EXT] &&
+                cb_state.dynamic_state_value.samples_mask_samples < pipeline.MultisampleState()->rasterizationSamples) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |=
+                    LogError(vuid.sample_mask_07472, objlist, loc,
+                             "Currently bound pipeline was created with VkPipelineMultisampleStateCreateInfo::rasterizationSamples "
+                             "%s are greater than samples set with vkCmdSetSampleMaskEXT() were %s",
+                             string_VkSampleCountFlagBits(pipeline.MultisampleState()->rasterizationSamples),
+                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples));
+            }
+        } else {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_MASK_EXT] &&
+                cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+                if (cb_state.dynamic_state_value.samples_mask_samples < cb_state.dynamic_state_value.rasterization_samples) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                    skip |= LogError(vuid.sample_mask_07473, objlist, loc,
+                                     "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() %s are greater than samples "
+                                     "set with vkCmdSetSampleMaskEXT() were %s",
+                                     string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                                     string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples));
+                }
+            }
+        }
+    }
+
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
+            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
+            if (cb_state.active_attachments) {
+                for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
+                    const auto attachment = (*cb_state.active_attachments)[i];
+                    if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
+                        skip |= LogError(vuid.rasterization_sampled_07474, cb_state.commandBuffer(), loc,
+                                         "Render pass attachment %" PRIu32
+                                         " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
+                                         i, string_VkSampleCountFlagBits(attachment->samples),
+                                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+                    }
+                }
+            }
+        }
+    }
+
     // VK_EXT_shader_tile_image
     {
         const bool dyn_depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);

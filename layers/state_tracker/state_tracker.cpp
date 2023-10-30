@@ -5103,6 +5103,7 @@ void ValidationStateTracker::PostCallRecordCmdSetSampleMaskEXT(VkCommandBuffer c
                                                                const VkSampleMask *pSampleMask, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_SAMPLE_MASK_EXT);
+    cb_state->dynamic_state_value.samples_mask_samples = samples;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer,
