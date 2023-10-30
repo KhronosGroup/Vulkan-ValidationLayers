@@ -1604,11 +1604,15 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool skip = false;
                 ErrorObject error_obj(vvl::Func::vkCreateShadersEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-                create_shader_object_api_state csm_state(createInfoCount, pCreateInfos);
+                std::vector<VkShaderCreateInfoEXT> new_shader_create_infos;
+                for (uint32_t i = 0; i < createInfoCount; i++) {
+                    new_shader_create_infos.push_back(pCreateInfos[i]);
+                }
+                create_shader_object_api_state csm_state(createInfoCount, new_shader_create_infos.data());
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->ReadLock();
-                    skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, csm_state.instrumented_create_info, pAllocator, pShaders, error_obj);
+                    skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, error_obj);
                     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
                 }
 
@@ -1621,7 +1625,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
                 if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-                VkResult result = DispatchCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+                VkResult result = DispatchCreateShadersEXT(device, createInfoCount, new_shader_create_infos.data(), pAllocator, pShaders);
                 record_obj.result = result;
 
                 for (ValidationObject* intercept : layer_data->object_dispatch) {
