@@ -509,6 +509,7 @@ struct SPIRV_MODULE_STATE {
 
         bool has_specialization_constants{false};
         bool has_invocation_repack_instruction{false};
+        bool uses_interpolate_at_sample{false};
 
         // EntryPoint has pointer references inside it that need to be preserved
         std::vector<std::shared_ptr<EntryPoint>> entry_points;

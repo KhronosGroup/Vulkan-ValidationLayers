@@ -21,6 +21,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "generated/spirv_grammar_helper.h"
+#include "spirv/1.2/GLSL.std.450.h"
 
 void DecorationBase::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
@@ -966,6 +967,12 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
             case spv::OpTypeCooperativeMatrixKHR:
             case spv::OpCooperativeMatrixMulAddKHR: {
                 cooperative_matrix_inst.push_back(&insn);
+                break;
+            }
+            case spv::OpExtInst: {
+                if (insn.Word(4) == GLSLstd450InterpolateAtSample) {
+                    uses_interpolate_at_sample = true;
+                }
                 break;
             }
 
