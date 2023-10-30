@@ -191,6 +191,23 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, present_modes.data());
 }
 
+TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
+    TEST_DESCRIPTION("VkPhysicalDeviceIDProperties can be enabled from 1 of 3 extensions");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    VkPhysicalDeviceIDProperties id_props =  vku::InitStructHelper();
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&id_props);
+    vk::GetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+}
+
 TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
 

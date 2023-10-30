@@ -687,6 +687,24 @@ TEST_F(VkLayerTest, SpecLinks) {
     CreateImageViewTest(*this, &imgViewInfo, "Vulkan-Docs/search");
 }
 
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
+// Should be printing an error
+TEST_F(VkLayerTest, DISABLED_DeviceIDPropertiesExtensions) {
+    TEST_DESCRIPTION("VkPhysicalDeviceIDProperties can be enabled from 1 of 3 extensions");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    VkPhysicalDeviceIDProperties id_props =  vku::InitStructHelper();
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&id_props);
+    vk::GetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+}
+
 TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
     TEST_DESCRIPTION(
         "Validate that using VkPipelineTessellationDomainOriginStateCreateInfo in VkPipelineTessellationStateCreateInfo.pNext "
