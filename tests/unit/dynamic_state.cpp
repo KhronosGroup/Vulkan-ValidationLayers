@@ -5391,3 +5391,40 @@ TEST_F(NegativeDynamicState, SampleLocationsEnable) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, InvalidConservativeRasterizationMode) {
+    TEST_DESCRIPTION("Test pipeline with invalid dynamic conservative rasterization mode");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(eds3_features);
+    if (!eds3_features.extendedDynamicState3ConservativeRasterizationMode) {
+        GTEST_SKIP() << "extendedDynamicState3ConservativeRasterizationModenot supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds3_features));
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(conservative_rasterization_props);
+
+    if (conservative_rasterization_props.conservativePointAndLineRasterization) {
+        GTEST_SKIP() << "conservativePointAndLineRasterization is required to be VK_FALSE";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetConservativeRasterizationModeEXT(m_commandBuffer->handle(), VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-conservativePointAndLineRasterization-07499");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
