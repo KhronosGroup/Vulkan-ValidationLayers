@@ -5543,3 +5543,214 @@ TEST_F(NegativeDynamicState, InvalidConservativeRasterizationMode) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
+    TEST_DESCRIPTION("Test dynamically enabling sample locations");
+
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(eds3_features);
+    if (!eds3_features.extendedDynamicState3SampleLocationsEnable) {
+        GTEST_SKIP() << "extendedDynamicState3SampleLocationsEnable not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds3_features));
+
+    VkFormat format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageObj image(m_device);
+    image.Init(32u, 32u, 1u, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    VkImageView image_view = image.targetView(format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0u;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_description.pDepthStencilAttachment = &attachment_reference;
+
+    VkAttachmentDescription attachment_description = {};
+    attachment_description.format = format;
+    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 1u;
+    render_pass_ci.pAttachments = &attachment_description;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass_description;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1u;
+    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkClearValue clear_value;
+    clear_value.depthStencil = {1.0f, 0u};
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
+    render_pass_bi.clearValueCount = 1u;
+    render_pass_bi.pClearValues = &clear_value;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.CreateGraphicsPipeline();
+
+    VkSampleLocationEXT sample_location = {0.5f, 0.5f};
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = 1;
+    sample_locations_info.pSampleLocations = &sample_location;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    vk::CmdSetSampleLocationsEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-07484");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, DynamicSampleLocationsGridSize) {
+    TEST_DESCRIPTION("Test sample locations grid size");
+
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(eds3_features);
+    if (!eds3_features.extendedDynamicState3RasterizationSamples) {
+        GTEST_SKIP() << "extendedDynamicState3RasterizationSamples not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds3_features));
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_location_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_location_properties);
+    if (!sample_location_properties.variableSampleLocations) {
+        GTEST_SKIP() << "variableSampleLocations not supported";
+    }
+
+    VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
+    vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
+    // 1 from VK_SAMPLE_COUNT_1_BIT
+    const uint32_t valid_count =
+        multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
+
+    if (valid_count <= 1) {
+        GTEST_SKIP() << "Need a maxSampleLocationGridSize width x height greater than 1";
+    }
+
+    std::vector<VkSampleLocationEXT> sample_location(valid_count, {0.5f, 0.5f});
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width;
+    sample_locations_info.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height;
+    sample_locations_info.sampleLocationsCount = valid_count;
+    sample_locations_info.pSampleLocations = sample_location.data();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdSetSampleLocationsEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+
+    sample_locations_info.sampleLocationsCount = 12u;
+    sample_locations_info.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width - 1u;
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-07485");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    sample_locations_info.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width;
+    sample_locations_info.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height - 1u;
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-07486");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, InterpolateAtSample) {
+    TEST_DESCRIPTION("Test using spirv instruction InterpolateAtSample");
+
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(eds3_features);
+    if (!eds3_features.extendedDynamicState3RasterizationSamples) {
+        GTEST_SKIP() << "extendedDynamicState3RasterizationSamples not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds3_features));
+    if (!m_device->phy().features().sampleRateShading) {
+        GTEST_SKIP() << "sampleRateShading not supported";
+    }
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    static const char vs_src[] = R"glsl(
+        #version 460
+        layout(location = 0) out vec2 uv;
+        void main() {
+            uv = vec2(gl_VertexIndex & 1, (gl_VertexIndex >> 1) & 1);
+		    gl_Position = vec4(uv, 0.0f, 1.0f);
+        }
+    )glsl";
+    static const char fs_src[] = R"glsl(
+        #version 460
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in vec2 v;
+        void main() {
+		    vec2 sample1 = interpolateAtSample(v, 0);
+            uFragColor = vec4(0.1f);
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetSampleLocationsEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-07487");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
