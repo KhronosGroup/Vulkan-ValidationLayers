@@ -2324,3 +2324,108 @@ TEST_F(VkBestPracticesLayerTest, NonOptimalResolveFormat) {
     vk::CreateRenderPass(*m_device, &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
+    TEST_DESCRIPTION("Set only a part of push constants at end of a struct");
+
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    char const *const vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { uint x[2]; } constants;
+        void main(){
+           gl_Position = vec4(constants.x[0] * constants.x[1]);
+        }
+    )glsl";
+
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    uint32_t data[2] = {1u, 2u};
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(data)};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t),
+                         data);
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_PushConstants);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(uint32_t),
+                         sizeof(uint32_t), &data[1]);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
+    TEST_DESCRIPTION("Set only a part of push constants in middle of as struct");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    VkPhysicalDevice8BitStorageFeatures storage_8_bit_features = vku::InitStructHelper();
+    VkPhysicalDeviceFloat16Int8FeaturesKHR float16int8_features = vku::InitStructHelper(&storage_8_bit_features);
+    GetPhysicalDeviceFeatures2(float16int8_features);
+    if (!float16int8_features.shaderInt8) {
+        GTEST_SKIP() << "shaderInt8 not supported";
+    }
+    if (!storage_8_bit_features.storagePushConstant8) {
+        GTEST_SKIP() << "storagePushConstant8 not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &float16int8_features));
+    InitRenderTarget();
+
+    char const *const vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+        layout(push_constant, std430) uniform foo {
+            uint8_t a; // set
+            uint8_t b; // not set
+            uint8_t c; // set
+        } constants;
+        void main(){
+           gl_Position = vec4(float(constants.a * constants.b * constants.c));
+        }
+    )glsl";
+
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    uint8_t data = 1u;
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint8_t) * 3};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint8_t),
+                         &data);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 2, sizeof(uint8_t),
+                         &data);
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_PushConstants);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
