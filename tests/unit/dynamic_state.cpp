@@ -2373,6 +2373,7 @@ TEST_F(NegativeDynamicState, RasterizationSamples) {
 
     vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_4_BIT);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizationSamples-07474");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -5388,6 +5389,120 @@ TEST_F(NegativeDynamicState, SampleLocationsEnable) {
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
+    TEST_DESCRIPTION("Test using pipeline with invalid dynamic sample mask samples");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(eds3_features);
+    if (!eds3_features.extendedDynamicState3SampleMask) {
+        GTEST_SKIP() << "extendedDynamicState3SampleMask not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds3_features));
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32u, 32u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0u;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_description.colorAttachmentCount = 1u;
+    subpass_description.pColorAttachments = &attachment_reference;
+
+    VkAttachmentDescription attachment_description = {};
+    attachment_description.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment_description.samples = VK_SAMPLE_COUNT_2_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 1u;
+    render_pass_ci.pAttachments = &attachment_description;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass_description;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1u;
+    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkClearValue clear_value;
+    clear_value.color = {{0, 0, 0, 0}};
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
+    render_pass_bi.clearValueCount = 1u;
+    render_pass_bi.pClearValues = &clear_value;
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitState();
+    pipe1.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
+    pipe1.pipe_ms_state_ci_ = ms_state_ci;
+    pipe1.gp_ci_.renderPass = render_pass.handle();
+    pipe1.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitState();
+    pipe2.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
+    pipe2.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+    pipe2.pipe_ms_state_ci_ = ms_state_ci;
+    pipe2.gp_ci_.renderPass = render_pass.handle();
+    pipe2.CreateGraphicsPipeline();
+
+    VkSampleMask sample_mask = 1u;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    vk::CmdSetSampleMaskEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT, &sample_mask);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-samples-07472");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+
+    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_2_BIT);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-samples-07473");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+
+    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizationSamples-07474");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+
+    m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
