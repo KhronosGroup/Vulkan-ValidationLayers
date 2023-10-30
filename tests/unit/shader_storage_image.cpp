@@ -858,7 +858,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
        %main = OpFunction %void None %func
       %label = OpLabel
        %load = OpLoad %image %var
-               OpImageWrite %load %coord %texelU3 ZeroExtend
+               OpImageWrite %load %coord %texelU3
                OpReturn
                OpFunctionEnd
         )";
