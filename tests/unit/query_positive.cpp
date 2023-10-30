@@ -336,8 +336,6 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     }
 
     vk::QueueWaitIdle(queue);
-
-    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, command_buffer);
 }
 
 TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
