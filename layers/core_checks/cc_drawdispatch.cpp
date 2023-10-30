@@ -303,6 +303,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDraw-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDraw-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDraw-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDraw-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -588,6 +589,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMultiEXT-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMultiEXT-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -874,6 +876,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexed-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawIndexed-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -1160,6 +1163,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMultiIndexedEXT-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -1447,6 +1451,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirect-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawIndirect-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -1735,6 +1740,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexedIndirect-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirect-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -2111,6 +2117,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirectCount-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectCount-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -2402,6 +2409,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirectCount-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -2844,6 +2852,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksNV-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksNV-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -3117,6 +3126,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectNV-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -3393,6 +3403,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -3663,6 +3674,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksEXT-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksEXT-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -3936,6 +3948,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectEXT-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -4212,6 +4225,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-conservativePointAndLineRasterization-07499";
     }
 };
 
@@ -4499,6 +4513,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_color_write_09419                    = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09420";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-09421";
+        convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectByteCountEXT-conservativePointAndLineRasterization-07499";
     }
 };
 

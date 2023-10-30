@@ -528,6 +528,29 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
 
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
+        !phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization &&
+        (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
+         cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY])) {
+        const VkPrimitiveTopology topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)
+                                                 ? cb_state.dynamic_state_value.primitive_topology
+                                                 : pipeline.topology_at_rasterizer;
+        if (IsValueIn(topology,
+                      {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+                       VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT] &&
+                cb_state.dynamic_state_value.conservative_rasterization_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(
+                    vuid.convervative_rasterization_07499, objlist, loc,
+                    "Primitive topology is %s and conservativePointAndLineRasterization is VK_FALSE, but "
+                    "conservativeRasterizationMode set with vkCmdSetConservativeRasterizationModeEXT() was %s",
+                    string_VkPrimitiveTopology(topology),
+                    string_VkConservativeRasterizationModeEXT(cb_state.dynamic_state_value.conservative_rasterization_mode));
+            }
+        }
+    }
+
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
     const bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
