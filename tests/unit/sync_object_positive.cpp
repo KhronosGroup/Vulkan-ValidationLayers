@@ -1859,8 +1859,6 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     }
 
     vk::QueueWaitIdle(m_default_queue);
-
-    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
 }
 
 struct FenceSemRaceData {
