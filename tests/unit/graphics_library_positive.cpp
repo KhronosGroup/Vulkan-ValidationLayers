@@ -1515,3 +1515,82 @@ TEST_F(PositiveGraphicsLibrary, PipelineLibraryNoRendering) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
+
+TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
+    TEST_DESCRIPTION("Create a pipeline library with tessellation shader but no tessellation state");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    InitRenderTarget();
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    vertex_input_lib.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+
+    VkPipelineShaderStageCreateInfo stages[2];
+
+    const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
+    VkShaderModuleCreateInfo tcs_ci = vku::InitStructHelper();
+    tcs_ci.codeSize = tcs_spv.size() * sizeof(decltype(tcs_spv)::value_type);
+    tcs_ci.pCode = tcs_spv.data();
+    stages[0] = vku::InitStructHelper(&tcs_ci);
+    stages[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    stages[0].module = VK_NULL_HANDLE;
+    stages[0].pName = "main";
+
+    const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
+    VkShaderModuleCreateInfo tes_ci = vku::InitStructHelper();
+    tes_ci.codeSize = tes_spv.size() * sizeof(decltype(tes_spv)::value_type);
+    tes_ci.pCode = tes_spv.data();
+    stages[1] = vku::InitStructHelper(&tes_ci);
+    stages[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    stages[1].module = VK_NULL_HANDLE;
+    stages[1].pName = "main";
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.InitState();
+        pre_raster_lib.shader_stages_ = {stages[0], stages[1]};
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    layout = pre_raster_lib.gp_ci_.layout;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = layout;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = VK_NULL_HANDLE;
+
+    exe_pipe_ci.stageCount = 2;
+    exe_pipe_ci.pStages = stages;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
+}
