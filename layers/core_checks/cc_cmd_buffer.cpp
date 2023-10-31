@@ -794,6 +794,11 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= viewport_scissor_inheritance.VisitPrimary(cb_state);
     }
 
+    if (!cb_state.IsPrimary() && !enabled_features.nestedCommandBuffer) {
+        skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-09375", commandBuffer,
+                         error_obj.location.dot(Field::commandBuffer), "is a secondary command buffer.");
+    }
+
     const QueryObject *active_occlusion_query = nullptr;
     for (const auto &active_query : cb_state.activeQueries) {
         auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
