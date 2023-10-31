@@ -3407,3 +3407,78 @@ TEST_F(NegativeWsi, ImageCompressionControlSwapchainWithoutFeature) {
     vk::CreateSwapchainKHR(*m_device, &create_info, nullptr, &swapchain);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, PresentDuplicatedSwapchain) {
+    TEST_DESCRIPTION("Test presenting with the swapchain specified twice");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Graphics queue does not support present";
+    }
+
+    SurfaceInformation info = GetSwapchainInfo(m_surface);
+    if (info.surface_capabilities.maxImageCount < 3) {
+        GTEST_SKIP() << "Required maxImageCount not supported";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = info.surface_capabilities.maxImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
+                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    VkResult result = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to create swapchain";
+    }
+
+    auto images = GetSwapchainImages(m_swapchain);
+
+    vkt::Fence fence1;
+    fence1.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence2;
+    fence2.init(*m_device, vkt::Fence::create_info());
+
+    VkSwapchainKHR swapchains[2] = {m_swapchain, m_swapchain};
+    uint32_t image_indices[2];
+
+    result = vk::AcquireNextImageKHR(*m_device, m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence1.handle(), &image_indices[0]);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to acquire image";
+    }
+    result = vk::AcquireNextImageKHR(*m_device, m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence2.handle(), &image_indices[1]);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to acquire image";
+    }
+
+    VkFence fences[2] = {fence1.handle(), fence2.handle()};
+    vk::WaitForFences(device(), 2u, fences, VK_TRUE, kWaitTimeout);
+
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VkPresentInfoKHR present_info = vku::InitStructHelper();
+    present_info.swapchainCount = 2u;
+    present_info.pSwapchains = swapchains;
+    present_info.pImageIndices = image_indices;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pSwapchain-09231");
+    vk::QueuePresentKHR(m_default_queue, &present_info);
+    m_errorMonitor->VerifyFound();
+}
