@@ -269,6 +269,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-09245", device, create_info_loc.dot(Field::flags), "is (%s).",
                              string_VkPipelineCreateFlags(flags).c_str());
         }
+        if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
+            const auto *device_generated_commands_features =
+                vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+            if (!device_generated_commands_features || !device_generated_commands_features->deviceGeneratedCommands) {
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-flags-02877", device, create_info_loc.dot(Field::flags),
+                    "is (%s), but VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::deviceGeneratedCommands is not enabled.",
+                    string_VkPipelineCreateFlags(flags).c_str());
+            }
+        }
 
         // <VkDynamicState, index in pDynamicStates, hash for enum key>
         vvl::unordered_map<VkDynamicState, uint32_t, std::hash<int>> dynamic_state_map;
