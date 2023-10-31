@@ -106,6 +106,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/other_positive.cpp
     unit/others.cpp
     unit/parent.cpp
+    unit/parent_positive.cpp
     unit/pipeline.cpp
     unit/pipeline_advanced_blend.cpp
     unit/pipeline_layout.cpp

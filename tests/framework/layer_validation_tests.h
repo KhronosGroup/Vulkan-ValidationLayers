@@ -589,6 +589,7 @@ class ParentTest : public VkLayerTest {
     vkt::Device *m_second_device = nullptr;
 };
 class NegativeParent : public ParentTest {};
+class PositiveParent : public ParentTest {};
 
 // Thread safety tests and other tests that implement non-trivial threading scenarios
 class ThreadingTest : public VkLayerTest {};
