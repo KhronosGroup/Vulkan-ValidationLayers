@@ -1,20 +1,6 @@
 {
     "repos": [
         {
-            "name": "glslang",
-            "url": "https://github.com/KhronosGroup/glslang.git",
-            "sub_dir": "glslang",
-            "build_dir": "glslang/build",
-            "install_dir": "glslang/build/install",
-            "commit": "be564292f00c5bf0d7251c11f1c9618eb1117762",
-            "cmake_options": [
-                "-DENABLE_OPT=OFF"
-            ],
-            "optional": [
-                "tests"
-            ]
-        },
-        {
             "name": "Vulkan-Headers",
             "api": "vulkan",
             "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
@@ -71,6 +57,23 @@
             "commit": "3.11.5"
         },
         {
+            "name": "mimalloc",
+            "url": "https://github.com/microsoft/mimalloc.git",
+            "sub_dir": "mimalloc",
+            "build_dir": "mimalloc/build",
+            "install_dir": "mimalloc/build/install",
+            "cmake_options": [
+                "-DMI_BUILD_STATIC=ON",
+                "-DMI_BUILD_OBJECT=OFF",
+                "-DMI_BUILD_SHARED=OFF",
+                "-DMI_BUILD_TESTS=OFF"
+            ],
+            "commit": "v2.0.7",
+            "build_platforms": [
+                "windows"
+            ]
+        },
+        {
             "name": "googletest",
             "url": "https://github.com/google/googletest.git",
             "sub_dir": "googletest",
@@ -87,20 +90,53 @@
             ]
         },
         {
-            "name": "mimalloc",
-            "url": "https://github.com/microsoft/mimalloc.git",
-            "sub_dir": "mimalloc",
-            "build_dir": "mimalloc/build",
-            "install_dir": "mimalloc/build/install",
+            "name": "glslang",
+            "url": "https://github.com/KhronosGroup/glslang.git",
+            "sub_dir": "glslang",
+            "build_dir": "glslang/build",
+            "install_dir": "glslang/build/install",
+            "commit": "be564292f00c5bf0d7251c11f1c9618eb1117762",
             "cmake_options": [
-                "-DMI_BUILD_STATIC=ON",
-                "-DMI_BUILD_OBJECT=OFF",
-                "-DMI_BUILD_SHARED=OFF",
-                "-DMI_BUILD_TESTS=OFF"
+                "-DENABLE_OPT=OFF"
             ],
-            "commit": "v2.0.7",
-            "build_platforms": [
-                "windows"
+            "optional": [
+                "tests"
+            ]
+        },
+        {
+            "name": "Vulkan-Loader",
+            "url": "https://github.com/KhronosGroup/Vulkan-Loader.git",
+            "sub_dir": "Vulkan-Loader",
+            "build_dir": "Vulkan-Loader/build",
+            "install_dir": "Vulkan-Loader/build/install",
+            "commit": "v1.3.269",
+            "build_step": "skip",
+            "optional": [
+                "tests"
+            ]
+        },
+        {
+            "name": "Vulkan-Profiles",
+            "url": "https://github.com/KhronosGroup/Vulkan-Profiles.git",
+            "sub_dir": "Vulkan-Profiles",
+            "build_dir": "Vulkan-Profiles/build",
+            "install_dir": "Vulkan-Profiles/build/install",
+            "commit": "5e4b686c6072daba252836d48b13a2e4e100bd62",
+            "build_step": "skip",
+            "optional": [
+                "tests"
+            ]
+        },
+        {
+            "name": "Vulkan-Tools",
+            "url": "https://github.com/KhronosGroup/Vulkan-Tools.git",
+            "sub_dir": "Vulkan-Tools",
+            "build_dir": "Vulkan-Tools/build",
+            "install_dir": "Vulkan-Tools/build/install",
+            "commit": "2d956672d73321bfb22b378c06033f0bd885d61c",
+            "build_step": "skip",
+            "optional": [
+                "tests"
             ]
         }
     ],

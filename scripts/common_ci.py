@@ -111,9 +111,8 @@ def BuildLoader():
     BUILD_DIR = f'{SRC_DIR}/build'
 
     if not os.path.exists(SRC_DIR):
-        print("Clone Loader Source Code")
-        clone_loader_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Loader.git'
-        RunShellCmd(clone_loader_cmd, CI_EXTERNAL_DIR)
+        print("Unable to find Vulkan-Loader")
+        sys.exit(1)
 
     print("Run CMake for Loader")
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR}'
@@ -140,9 +139,8 @@ def BuildMockICD(mockAndroid):
     BUILD_DIR = f'{SRC_DIR}/build'
 
     if not os.path.exists(SRC_DIR):
-        print("Clone Vulkan-Tools Repository")
-        clone_tools_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Tools.git'
-        RunShellCmd(clone_tools_cmd, CI_EXTERNAL_DIR)
+        print("Unable to find Vulkan-Tools")
+        sys.exit(1)
 
     print("Configure Mock ICD")
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR} -D CMAKE_BUILD_TYPE=Release '
@@ -168,9 +166,8 @@ def BuildProfileLayer(mockAndroid):
     BUILD_DIR = f'{SRC_DIR}/build'
 
     if not os.path.exists(SRC_DIR):
-        print("Clone Vulkan-Profiles Repository")
-        clone_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Profiles.git'
-        RunShellCmd(clone_cmd, CI_EXTERNAL_DIR)
+        print("Unable to find Vulkan-Profiles")
+        sys.exit(1)
 
     print("Run CMake for Profile Layer")
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR}'
