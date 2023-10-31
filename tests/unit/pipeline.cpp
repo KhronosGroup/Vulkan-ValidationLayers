@@ -3658,3 +3658,18 @@ TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormatWithoutFragmentState)
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, IndirectBindablePipelineWithoutFeature) {
+    TEST_DESCRIPTION(
+        "Create pipeline with VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV without enabling required deviceGeneratedCommands "
+        "feature");
+
+    RETURN_IF_SKIP(Init());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-02877");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
