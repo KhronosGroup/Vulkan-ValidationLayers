@@ -177,6 +177,18 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
         }
     }
 
+    if (pPresentInfo) {
+        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+            for (uint32_t j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
+                if (pPresentInfo->pSwapchains[i] == pPresentInfo->pSwapchains[j]) {
+                    skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", device, error_obj.location.dot(Field::pSwapchain),
+                                     "at index %" PRIu32 " and index %" PRIu32 " are both %s.", i, j,
+                                     FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+                }
+            }
+        }
+    }
+
     return skip;
 }
 
