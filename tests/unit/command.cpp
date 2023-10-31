@@ -921,7 +921,7 @@ TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeCommand, DISABLED_ExecuteCommandsToSecondaryCB) {
+TEST_F(NegativeCommand, ExecuteCommandsToSecondaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands to a Secondary command buffer");
 
     RETURN_IF_SKIP(Init())
@@ -932,7 +932,7 @@ TEST_F(NegativeCommand, DISABLED_ExecuteCommandsToSecondaryCB) {
     secondary_cb.end();
 
     main_cb.begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-bufferlevel");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-09375");
     vk::CmdExecuteCommands(main_cb.handle(), 1, &secondary_cb.handle());
     m_errorMonitor->VerifyFound();
 }
