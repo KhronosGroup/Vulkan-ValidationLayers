@@ -36,6 +36,7 @@ def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
 verbose_mode = False
+remove_duplicates = False
 vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 
 # Hard-coded flags that could be command line args, if we decide that's useful
@@ -127,13 +128,19 @@ class ValidationJSON:
             sys.exit(-1)
 
         # Parse vuid from json into local databases
+        vuid_duplicate = set()
         for apiname in validation.keys():
             apidict = validation[apiname]
             for ext in apidict.keys():
                 vlist = apidict[ext]
                 for ventry in vlist:
                     vuid_string = ventry['vuid']
-                    if (vuid_string[-5:-1].isdecimal()):
+                    vuid_number = vuid_string[-5:]
+                    if (vuid_number.isdecimal()):
+                        if remove_duplicates:
+                            if vuid_number in vuid_duplicate:
+                                continue
+                            vuid_duplicate.add(vuid_number)
                         self.explicit_vuids.add(vuid_string)    # explicit end in 5 numeric chars
                         vtype = 'explicit'
                     else:
@@ -184,6 +191,7 @@ class ValidationSource:
         if spirv_val and spirv_val.enabled:
             self.source_files.extend(spirv_val.source_files)
 
+        vuid_duplicate = set()
         # build self.vuid_count_dict
         prepend = None
         for sf in self.source_files:
@@ -231,7 +239,12 @@ class ValidationSource:
         # Sort vuids by type
         for vuid in self.vuid_count_dict.keys():
             if (vuid.startswith('VUID-')):
-                if (vuid[-5:-1].isdecimal()):
+                vuid_number = vuid[-5:]
+                if (vuid_number.isdecimal()):
+                    if remove_duplicates:
+                        if vuid_number in vuid_duplicate:
+                            continue
+                        vuid_duplicate.add(vuid_number)
                     self.explicit_vuids.add(vuid)    # explicit end in 5 numeric chars
                     if self.vuid_count_dict[vuid]['spirv']:
                         spirv_val.source_explicit_vuids.add(vuid)
@@ -269,6 +282,7 @@ class ValidationTests:
         if spirv_val and spirv_val.enabled:
             self.test_files.extend(spirv_val.test_files)
 
+        vuid_duplicate = set()
         # For each test file, parse test names into set
         grab_next_line = False # handle testname on separate line than wildcard
         testname = ''
@@ -317,7 +331,12 @@ class ValidationTests:
                                 self.vuid_to_tests[vuid_str].add(testname)
                                 #self.test_to_vuids[testname].append(vuid_str)
                                 if (vuid_str.startswith('VUID-')):
-                                    if (vuid_str[-5:-1].isdecimal()):
+                                    vuid_number = vuid_str[-5:]
+                                    if (vuid_number.isdecimal()):
+                                        if remove_duplicates:
+                                            if vuid_number in vuid_duplicate:
+                                                continue
+                                            vuid_duplicate.add(vuid_number)
                                         self.explicit_vuids.add(vuid_str)    # explicit end in 5 numeric chars
                                         if spirv_file:
                                             spirv_val.test_explicit_vuids.add(vuid_str)
@@ -734,6 +753,8 @@ def main(argv):
                         help=f'export an extension coverage report to <FILENAME>, defaults to {EXTENSION_COVERAGE_FILENAME}')
     parser.add_argument('-export_header', action='store_true',
                         help=f'export a new VUID error text header file to {HEADER_FILENAME}')
+    parser.add_argument('-remove_duplicates', action='store_true',
+                        help='remove duplicate VUID numbers')
     parser.add_argument('-summary', action='store_true',
                         help='output summary of VUID coverage')
     parser.add_argument('-verbose', action='store_true',
@@ -774,6 +795,9 @@ def main(argv):
 
     global verbose_mode
     verbose_mode = args.verbose
+
+    global remove_duplicates
+    remove_duplicates = args.remove_duplicates
 
     # Load in SPIRV-Tools if passed in
     spirv_val = SpirvValidation(args.spirvtools)
