@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
 
 #include "utils/cast_utils.h"
 #include "generated/enum_flag_bits.h"
@@ -31,13 +41,6 @@ struct Surface {
     operator VkSurfaceKHR() const { return handle; }
 };
 }  // namespace
-
-ParentTest::~ParentTest() {
-    if (m_second_device) {
-        delete m_second_device;
-        m_second_device = nullptr;
-    }
-}
 
 TEST_F(NegativeParent, FillBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
