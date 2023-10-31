@@ -26174,6 +26174,7 @@ bool StatelessValidation::PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice dev
     if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory))
         skip |= OutputExtensionError(loc, "VK_EXT_pageable_device_local_memory");
     skip |= ValidateRequiredHandle(loc.dot(Field::memory), memory);
+    if (!skip) skip |= manual_PreCallValidateSetDeviceMemoryPriorityEXT(device, memory, priority, error_obj);
     return skip;
 }
 

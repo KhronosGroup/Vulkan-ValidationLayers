@@ -2315,3 +2315,24 @@ TEST_F(NegativeMemory, MemoryPriorityOutOfRange) {
     vk::AllocateMemory(*m_device, &memory_ai, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeMemory, SetDeviceMemoryPriority) {
+    AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+
+    vkt::DeviceMemory buffer_memory;
+    buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
+    vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), -0.01f);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
+    vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), 1.01f);
+    m_errorMonitor->VerifyFound();
+
+    vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), 1.0f);
+}

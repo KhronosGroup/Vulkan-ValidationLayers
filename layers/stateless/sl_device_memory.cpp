@@ -188,3 +188,13 @@ bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
+                                                                           const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!IsBetweenInclusive(priority, 0.0F, 1.0F)) {
+        skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258", device, error_obj.location.dot(Field::priority),
+                         "is %f.", priority);
+    }
+    return skip;
+}
