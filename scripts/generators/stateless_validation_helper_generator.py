@@ -180,6 +180,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetMemoryFdPropertiesKHR',
             'vkCreateShadersEXT',
             'vkGetShaderBinaryDataEXT',
+            'vkSetDeviceMemoryPriorityEXT',
             'vkQueueBindSparse'
             ]
 

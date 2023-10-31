@@ -1069,6 +1069,9 @@ class StatelessValidation : public ValidationObject {
                                                               const VkBool32 *pExclusiveScissorEnables,
                                                               const ErrorObject &error_obj) const;
 
+    bool manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
+                                                          const ErrorObject &error_obj) const;
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
