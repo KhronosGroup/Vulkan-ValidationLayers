@@ -633,18 +633,18 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Lo
                                  module_identifier->identifierSize, VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT,
                                  string_VkShaderStageFlagBits(stage_ci.stage));
                 }
+                if (stage_ci.module != VK_NULL_HANDLE) {
+                    skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06848", device, loc,
+                                     "has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                                     "struct in the pNext chain, but module is not VK_NULL_HANDLE. (stage %s).",
+                                     string_VkShaderStageFlagBits(stage_ci.stage));
+                }
             }
             if (module_create_info) {
                 skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06844", device, loc,
                                  "has both a "
                                  "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
                                  "struct and a VkShaderModuleCreateInfo struct in the pNext chain. (stage %s).",
-                                 string_VkShaderStageFlagBits(stage_ci.stage));
-            }
-            if (stage_ci.module != VK_NULL_HANDLE) {
-                skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06848", device, loc,
-                                 "has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                                 "struct in the pNext chain, but module is not VK_NULL_HANDLE. (stage %s).",
                                  string_VkShaderStageFlagBits(stage_ci.stage));
             }
         } else {
