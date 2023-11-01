@@ -3677,3 +3677,82 @@ TEST_F(NegativePipeline, IndirectBindablePipelineWithoutFeature) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, GeometryShaderConservativeRasterization) {
+    TEST_DESCRIPTION("Use geometry shader with invalid conservative rasterization mode");
+
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (features.geometryShader == VK_FALSE) {
+        GTEST_SKIP() << "geometryShader not supported";
+    }
+    features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+    RETURN_IF_SKIP(InitState(&features));
+    InitRenderTarget();
+
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (points) out;
+        layout (max_vertices = 1) out;
+        void main() {
+           gl_Position = vec4(1.0f);
+           EmitVertex();
+        }
+    )glsl";
+
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(conservative_rasterization_props);
+    if (conservative_rasterization_props.conservativePointAndLineRasterization) {
+        GTEST_SKIP() << "Test requires conservativePointAndLineRasterization to be VK_FALSE";
+    }
+
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state = vku::InitStructHelper();
+    conservative_state.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.rs_state_ci_.pNext = &conservative_state;
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06760");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, VertexPointOutputConservativeRasterization) {
+    TEST_DESCRIPTION("Use vertex shader with invalid conservative rasterization mode");
+
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (features.geometryShader == VK_FALSE) {
+        GTEST_SKIP() << "geometryShader not supported";
+    }
+    features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+    RETURN_IF_SKIP(InitState(&features));
+    InitRenderTarget();
+
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(conservative_rasterization_props);
+    if (conservative_rasterization_props.conservativePointAndLineRasterization) {
+        GTEST_SKIP() << "Test requires conservativePointAndLineRasterization to be VK_FALSE";
+    }
+
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state = vku::InitStructHelper();
+    conservative_state.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.rs_state_ci_.pNext = &conservative_state;
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-08892");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}

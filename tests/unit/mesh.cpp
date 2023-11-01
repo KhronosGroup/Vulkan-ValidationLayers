@@ -1335,3 +1335,59 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     CreatePipelineHelper::OneshotTest(*this, mesh_tasks_y, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07300");
     CreatePipelineHelper::OneshotTest(*this, mesh_tasks_z, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07301");
 }
+
+TEST_F(NegativeMesh, MeshShaderConservativeRasterization) {
+    TEST_DESCRIPTION("Use mesh shader with invalid conservative rasterization mode");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
+    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (maintenance_4_features.maintenance4 == VK_FALSE) {
+        GTEST_SKIP() << "maintenance4 not supported";
+    }
+    if (mesh_shader_features.meshShader == VK_FALSE) {
+        GTEST_SKIP() << "meshShader not supported";
+    }
+    features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    InitRenderTarget();
+
+    static const char meshShaderText[] = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 1) out;
+        layout(max_primitives = 1) out;
+        layout(points) out;
+        void main() {
+        }
+    )glsl";
+
+    VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(conservative_rasterization_props);
+    if (conservative_rasterization_props.conservativePointAndLineRasterization) {
+        GTEST_SKIP() << "Test requires conservativePointAndLineRasterization to be VK_FALSE";
+    }
+
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state = vku::InitStructHelper();
+    conservative_state.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.rs_state_ci_.pNext = &conservative_state;
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06761");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
