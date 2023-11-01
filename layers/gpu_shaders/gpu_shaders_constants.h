@@ -167,7 +167,8 @@ const int kInstErrorOOB = 4;
 const int kInstErrorPreDrawValidate = 5;
 const int kInstErrorPreDispatchValidate = 6;
 const int kInstErrorBindlessDestroyed = 7;
-const int kInstErrorMax = 7;
+const int kInstErrorPreTraceRaysKhrValidate = 8;
+const int kInstErrorMax = 8;
 
 // Direct Input Buffer Offsets
 //
@@ -230,6 +231,9 @@ const int pre_draw_first_instance_error = 3;
 const int pre_dispatch_count_exceeds_limit_x_error = 1;
 const int pre_dispatch_count_exceeds_limit_y_error = 2;
 const int pre_dispatch_count_exceeds_limit_z_error = 3;
+const int pre_trace_rays_query_dimensions_exceeds_width_limit = 1;
+const int pre_trace_rays_query_dimensions_exceeds_height_limit = 2;
+const int pre_trace_rays_query_dimensions_exceeds_depth_limit = 3;
 
 #ifdef __cplusplus
 }  // namespace glsl

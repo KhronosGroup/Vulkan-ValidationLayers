@@ -15,18 +15,12 @@
 // limitations under the License.
 
 #version 450
-#define VAL_OUT_RECORD_SZ 10
 #extension GL_GOOGLE_include_directive : enable
-#include "gpu_shaders_constants.h"
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-
-layout(set = 0, binding = 0) buffer OutputBuffer {
-    uint flags;
-    uint output_buffer_count;
-    uint output_buffer[];
-};
+#include "gpu_pre_action.h"
 
 layout(set = 0, binding = 1) buffer IndirectBuffer { uint indirect_buffer[]; };
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(push_constant) uniform UniformInfo {
     uint limit_x;
@@ -35,26 +29,17 @@ layout(push_constant) uniform UniformInfo {
     uint indirect_x_offset;
 } u_info;
 
-void valErrorOut(uint error, uint count) {
-    uint vo_idx = atomicAdd(output_buffer_count, VAL_OUT_RECORD_SZ);
-    if (vo_idx + VAL_OUT_RECORD_SZ > output_buffer.length())
-        return;
-    output_buffer[vo_idx + kInstValidationOutError] = kInstErrorPreDispatchValidate;
-    output_buffer[vo_idx + kInstValidationOutError + 1] = error;
-    output_buffer[vo_idx + kInstValidationOutError + 2] = count;
-}
-
 void main() {
     uint indirect_x = indirect_buffer[u_info.indirect_x_offset];
     uint indirect_y = indirect_buffer[u_info.indirect_x_offset + 1];
     uint indirect_z = indirect_buffer[u_info.indirect_x_offset + 2];
 
     if (indirect_x > u_info.limit_x) {
-        valErrorOut(pre_dispatch_count_exceeds_limit_x_error, indirect_x);
+        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_x_error, indirect_x);
     } else if (indirect_y > u_info.limit_y) {
-        valErrorOut(pre_dispatch_count_exceeds_limit_y_error, indirect_y);
+        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_y_error, indirect_y);
     } else if (indirect_z > u_info.limit_z) {
-        valErrorOut(pre_dispatch_count_exceeds_limit_z_error, indirect_z);
+        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_z_error, indirect_z);
     }
 
 }

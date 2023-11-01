@@ -36,56 +36,10 @@ struct GpuVuid {
     const char* group_exceeds_device_limit_x = kVUIDUndefined;
     const char* group_exceeds_device_limit_y = kVUIDUndefined;
     const char* group_exceeds_device_limit_z = kVUIDUndefined;
-};
-
-struct AccelerationStructureBuildValidationState {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-
-    VkAccelerationStructureNV replacement_as = VK_NULL_HANDLE;
-    VmaAllocation replacement_as_allocation = VK_NULL_HANDLE;
-    uint64_t replacement_as_handle = 0;
-
-    void Destroy(VkDevice device, VmaAllocator& vmaAllocator);
-};
-
-struct PreDrawValidationState {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkShaderModule shader_module = VK_NULL_HANDLE;
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vl_concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
-    VkShaderEXT shader_object = VK_NULL_HANDLE;
-
-    void Destroy(VkDevice device);
-};
-
-struct PreDispatchValidationState {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkShaderModule shader_module = VK_NULL_HANDLE;
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkShaderEXT shader_object = VK_NULL_HANDLE;
-
-    void Destroy(VkDevice device);
-};
-
-// Used for draws/dispatch/traceRays indirect
-struct CmdIndirectState {
-    VkBuffer buffer;
-    VkDeviceSize offset;
-    uint32_t draw_count;
-    uint32_t stride;
-    VkBuffer count_buffer;
-    VkDeviceSize count_buffer_offset;
+    // vkCmdTraceRaysIndirectKHR
+    const char* trace_rays_width_exceeds_device_limit = kVUIDUndefined;
+    const char* trace_rays_height_exceeds_device_limit = kVUIDUndefined;
+    const char* trace_rays_depth_exceeds_device_limit = kVUIDUndefined;
 };
 }  // namespace gpuav
 
@@ -131,6 +85,7 @@ class Validator : public gpu_tracker::Validator {
     std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<BUFFER_STATE>& bf, VkBufferView bv,
                                                              const VkBufferViewCreateInfo* ci,
                                                              VkFormatFeatureFlags2KHR buf_ff) override;
+    VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer) const;
     std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(
         const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv, const VkImageViewCreateInfo* ci,
         VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) override;
@@ -150,7 +105,8 @@ class Validator : public gpu_tracker::Validator {
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, create_shader_module_api_state* csm_state);
-    bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, create_shader_object_api_state* cso_state);
+    bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash,
+                                          create_shader_object_api_state* cso_state);
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
                           const Location& loc) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -182,11 +138,11 @@ class Validator : public gpu_tracker::Validator {
                                            CommandBufferImageLayoutMap& layout_updates) const;
 
     void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                         VkSubpassContents contents, const RecordObject& ) override;
+                                         VkSubpassContents contents, const RecordObject&) override;
     void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& ) override;
+                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject&) override;
     void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& ) override;
+                                          const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject&) override;
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -208,17 +164,19 @@ class Validator : public gpu_tracker::Validator {
                                              const uint32_t* pDynamicOffsets, const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                              const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject& ) override;
-    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence, const RecordObject& ) override;
-    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                   const RecordObject &record_obj) override;
-    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                      VkFence fence, const RecordObject& ) override;
-    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence, const RecordObject& ) override;
-    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                       const RecordObject &record_obj) override;
-    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                    const RecordObject &record_obj) override;
+                                              const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject&) override;
+    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                  const RecordObject&) override;
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                   const RecordObject& record_obj) override;
+    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                      const RecordObject&) override;
+    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                                   const RecordObject&) override;
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                       const RecordObject& record_obj) override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                    const RecordObject& record_obj) override;
 
     void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
@@ -304,11 +262,13 @@ class Validator : public gpu_tracker::Validator {
                                                const RecordObject& record_obj) override;
     void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, Func command,
                                      const CmdIndirectState* indirect_state = nullptr);
-    void AllocatePreDrawValidationResources(const DeviceMemoryBlock& output_block, PreDrawResources& resources,
-                                            const VkRenderPass render_pass, const bool use_shader_objects, VkPipeline* pPipeline,
-                                            const CmdIndirectState* indirect_state);
-    void AllocatePreDispatchValidationResources(const DeviceMemoryBlock& output_block, PreDispatchResources& resources,
-                                                const CmdIndirectState* indirect_state, const bool use_shader_objects);
+    void AllocatePreDrawValidationResources(const DeviceMemoryBlock& output_block, const VkRenderPass render_pass,
+                                            const bool use_shader_objects, VkPipeline* pPipeline,
+                                            const CmdIndirectState* indirect_state, PreDrawResources& out_draw_resources);
+    void AllocatePreDispatchValidationResources(const DeviceMemoryBlock& output_block, const CmdIndirectState* indirect_state,
+                                                const bool use_shader_objects, PreDispatchResources& out_dispatch_resources);
+    void AllocatePreTraceRaysValidationResources(const DeviceMemoryBlock& output_block, const CmdIndirectState* indirect_state,
+                                                 PreTraceRaysResources& out_trace_rays_resources);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties,
                                                    const RecordObject& record_obj) override;
@@ -318,97 +278,106 @@ class Validator : public gpu_tracker::Validator {
 
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
-    void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator, const RecordObject& ) override;
-    void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                             VkImage *pSwapchainImages, const RecordObject &record_obj) override;
+    void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject&) override;
+    void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                             VkImage* pSwapchainImages, const RecordObject& record_obj) override;
 
     void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                          const VkClearColorValue* pColor, uint32_t rangeCount,
-                                         const VkImageSubresourceRange* pRanges, const RecordObject& ) override;
+                                         const VkImageSubresourceRange* pRanges, const RecordObject&) override;
     void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                const VkImageSubresourceRange *pRanges, const RecordObject& ) override;
+                                                const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                const VkImageSubresourceRange* pRanges, const RecordObject&) override;
     void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                          const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                          const VkClearRect *pRects, const RecordObject& ) override;
+                                          const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects,
+                                          const RecordObject&) override;
     void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                const VkHostImageLayoutTransitionInfoEXT *pTransitions,
-                                                const RecordObject &record_obj) override;
-    void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                   const VkImageCopy *pRegions, const RecordObject& ) override;
-    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo, const RecordObject& ) override;
-    void PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo, const RecordObject& ) override;
+                                                const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                                const RecordObject& record_obj) override;
+    void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
+                                   const RecordObject&) override;
+    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo,
+                                       const RecordObject&) override;
+    void PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
+                                    const RecordObject&) override;
 
     void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions, const RecordObject& ) override;
+                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                           const RecordObject&) override;
     void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                               const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo, const RecordObject& ) override;
-    void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
-                                            const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo, const RecordObject& ) override;
+                                               const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
+                                               const RecordObject&) override;
+    void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
+                                            const RecordObject&) override;
 
     void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                           VkImageLayout dstImageLayout, uint32_t regionCount,
-                                           const VkBufferImageCopy *pRegions, const RecordObject& ) override;
+                                           VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                           const RecordObject&) override;
     void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                               const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR, const RecordObject& ) override;
-    void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
-                                            const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo, const RecordObject& ) override;
+                                               const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo2KHR,
+                                               const RecordObject&) override;
+    void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
+                                            const RecordObject&) override;
 
     template <typename RegionType>
     void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                            VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                            VkFilter filter);
-    void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                   const VkImageBlit *pRegions, VkFilter filter, const RecordObject& ) override;
-    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo, const RecordObject& ) override;
-    void PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo, const RecordObject& ) override;
+                            VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions, VkFilter filter);
+    void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter,
+                                   const RecordObject&) override;
+    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
+                                       const RecordObject&) override;
+    void PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
+                                    const RecordObject&) override;
 
     void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                       const RecordObject &record_obj) override;
-    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                        const RecordObject &record_obj)  override;
-    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                           const RecordObject &record_obj) override;
+                                       const RecordObject& record_obj) override;
+    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+                                        const RecordObject& record_obj) override;
+    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+                                           const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                     VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                    uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject& ) override;
-    void RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                              const VkDependencyInfo *pDependencyInfos, Func command);
-    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                        const VkDependencyInfoKHR *pDependencyInfos, const RecordObject&) override;
-    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                     const VkDependencyInfo *pDependencyInfos, const RecordObject&) override;
+                                    uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                    const RecordObject&) override;
+    void RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                              const VkDependencyInfo* pDependencyInfos, Func command);
+    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                        const VkDependencyInfoKHR* pDependencyInfos, const RecordObject&) override;
+    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                     const VkDependencyInfo* pDependencyInfos, const RecordObject&) override;
 
     void PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                         uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                         uint32_t bufferMemoryBarrierCount,
-                                         const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                         uint32_t imageMemoryBarrierCount,
-                                         const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject& ) override;
+                                         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                         const RecordObject&) override;
 
-    void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo, const RecordObject& ) override;
-    void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo, const RecordObject& ) override;
+    void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
+                                             const RecordObject&) override;
+    void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
+                                          const RecordObject&) override;
 
     void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE& cb_state);
-    void RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const ImageBarrier &mem_barrier);
+    void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, const ImageBarrier& mem_barrier);
     void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
     void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
                                 VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
-    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(
-        VkDescriptorSet, vvl::DescriptorPool*, const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
-        uint32_t variable_count) final;
+    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
+                                                            const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
+                                                            uint32_t variable_count) final;
 
     void DestroyBuffer(CommandInfo& cmd_info);
-    void DestroyBuffer(AccelerationStructureBuildValidationBufferInfo& buffer_info);
+    void DestroyBuffer(AccelerationStructureBuildValidationInfo& as_validation_info);
 
     bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const override;
@@ -422,27 +391,31 @@ class Validator : public gpu_tracker::Validator {
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const override;
+
   private:
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
     VkPipeline GetValidationPipeline(VkRenderPass render_pass);
+    bool GenerateValidationMessage(const uint32_t* debug_record, const CommandInfo& cmd_info,
+                                   const std::vector<DescSetState>& descriptor_sets, std::string& out_error_msg,
+                                   std::string& out_vuid_msg, bool& out_oob_access) const;
 
     template <typename RangeFactory>
-    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
-                                VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
-                                const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
-                                bool *error) const;
+    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
+                                VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& loc,
+                                const char* mismatch_layout_vuid, bool* error) const;
 
     VkBool32 shaderInt64;
     bool validate_instrumented_shaders;
     std::string instrumented_shader_cache_path;
     AccelerationStructureBuildValidationState acceleration_structure_validation_state;
-    PreDrawValidationState pre_draw_validation_state;
-    PreDispatchValidationState pre_dispatch_validation_state;
+    CommonDrawResources common_draw_resources;
+    CommonDispatchResources common_dispatch_resources;
+    CommonTraceRaysResources common_trace_rays_resources;
     DeviceMemoryBlock app_buffer_device_addresses{};
     size_t app_bda_buffer_size{};
     uint32_t gpuav_bda_buffer_version = 0;
 
-    bool buffer_device_address;
+    bool buffer_device_address_enabled;
 
     std::optional<DescriptorHeap> desc_heap;  // optional only to defer construction
 };
