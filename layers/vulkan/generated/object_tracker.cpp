@@ -3947,8 +3947,9 @@ bool ObjectLifetimes::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice
     // Checked by chassis: device: "VUID-vkGetPipelineExecutablePropertiesKHR-device-parameter"
     if (pPipelineInfo) {
         [[maybe_unused]] const Location pPipelineInfo_loc = error_obj.location.dot(Field::pPipelineInfo);
-        skip |= ValidateObject(pPipelineInfo->pipeline, kVulkanObjectTypePipeline, false,
-                               "VUID-VkPipelineInfoKHR-pipeline-parameter", kVUIDUndefined, pPipelineInfo_loc.dot(Field::pipeline));
+        skip |=
+            ValidateObject(pPipelineInfo->pipeline, kVulkanObjectTypePipeline, false, "VUID-VkPipelineInfoKHR-pipeline-parameter",
+                           "VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271", pPipelineInfo_loc.dot(Field::pipeline));
     }
 
     return skip;
@@ -3963,9 +3964,9 @@ bool ObjectLifetimes::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice
     // Checked by chassis: device: "VUID-vkGetPipelineExecutableStatisticsKHR-device-parameter"
     if (pExecutableInfo) {
         [[maybe_unused]] const Location pExecutableInfo_loc = error_obj.location.dot(Field::pExecutableInfo);
-        skip |= ValidateObject(pExecutableInfo->pipeline, kVulkanObjectTypePipeline, false,
-                               "VUID-VkPipelineExecutableInfoKHR-pipeline-parameter", kVUIDUndefined,
-                               pExecutableInfo_loc.dot(Field::pipeline));
+        skip |= ValidateObject(
+            pExecutableInfo->pipeline, kVulkanObjectTypePipeline, false, "VUID-VkPipelineExecutableInfoKHR-pipeline-parameter",
+            "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273", pExecutableInfo_loc.dot(Field::pipeline));
     }
 
     return skip;
@@ -3978,9 +3979,9 @@ bool ObjectLifetimes::PreCallValidateGetPipelineExecutableInternalRepresentation
     // Checked by chassis: device: "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-device-parameter"
     if (pExecutableInfo) {
         [[maybe_unused]] const Location pExecutableInfo_loc = error_obj.location.dot(Field::pExecutableInfo);
-        skip |= ValidateObject(pExecutableInfo->pipeline, kVulkanObjectTypePipeline, false,
-                               "VUID-VkPipelineExecutableInfoKHR-pipeline-parameter", kVUIDUndefined,
-                               pExecutableInfo_loc.dot(Field::pipeline));
+        skip |= ValidateObject(
+            pExecutableInfo->pipeline, kVulkanObjectTypePipeline, false, "VUID-VkPipelineExecutableInfoKHR-pipeline-parameter",
+            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277", pExecutableInfo_loc.dot(Field::pipeline));
     }
 
     return skip;

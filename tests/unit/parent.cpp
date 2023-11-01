@@ -13,6 +13,7 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/shader_helper.h"
+#include "../framework/pipeline_helper.h"
 
 namespace {
 VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
@@ -593,5 +594,44 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     VkDisplayPlaneCapabilitiesKHR plane_capabilities{};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parent");
     vk::GetDisplayPlaneCapabilitiesKHR(gpu(), display_mode, 0, &plane_capabilities);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, PipelineExecutableInfo) {
+    TEST_DESCRIPTION("Try making calls without pipelineExecutableInfo.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(pipeline_exe_features);
+    RETURN_IF_SKIP(InitState(nullptr, &pipeline_exe_features));
+    InitRenderTarget();
+
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, nullptr, &pipeline_exe_features);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkPipelineExecutableInfoKHR pipeline_exe_info = vku::InitStructHelper();
+    pipeline_exe_info.pipeline = pipe.Handle();
+    pipeline_exe_info.executableIndex = 0;
+
+    VkPipelineInfoKHR pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = pipe.Handle();
+
+    uint32_t count;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
+    vk::GetPipelineExecutableStatisticsKHR(*m_second_device, &pipeline_exe_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277");
+    vk::GetPipelineExecutableInternalRepresentationsKHR(*m_second_device, &pipeline_exe_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetUnexpectedError("VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
+    vk::GetPipelineExecutablePropertiesKHR(*m_second_device, &pipeline_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }
