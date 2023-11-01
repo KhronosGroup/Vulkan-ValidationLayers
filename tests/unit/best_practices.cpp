@@ -2429,3 +2429,57 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkBestPracticesLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
+    TEST_DESCRIPTION(
+        "Test that a warning is produced for a shader consuming an input attachment with a format having a different fundamental "
+        "type");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(x);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    vkt::DescriptorSetLayout dsl(*m_device);
+
+    vkt::PipelineLayout pl(*m_device, {&dsl});
+
+    VkAttachmentDescription desc = {0,
+                                    VK_FORMAT_R8G8B8A8_UNORM,
+                                    VK_SAMPLE_COUNT_1_BIT,
+                                    VK_ATTACHMENT_LOAD_OP_LOAD,
+                                    VK_ATTACHMENT_STORE_OP_STORE,
+                                    VK_ATTACHMENT_LOAD_OP_LOAD,
+                                    VK_ATTACHMENT_STORE_OP_STORE,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference color = {
+        0,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &color, nullptr, nullptr, 0, nullptr};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &desc, 1, &sd, 0, nullptr};
+    vkt::RenderPass render_pass(*m_device, rpci);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-Shader-MissingInputAttachment");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
