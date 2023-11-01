@@ -164,6 +164,28 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     VendorSpecificTag(kBPVendorAMD));
             }
         }
+
+        for (const auto& stage : pipeline.stage_states) {
+            if (stage.GetStage() != VK_SHADER_STAGE_FRAGMENT_BIT) {
+                continue;
+            }
+            const auto& rp_state = pipeline.RenderPassState();
+            if (rp_state && !rp_state->UsesDynamicRendering()) {
+                auto rpci = rp_state->createInfo.ptr();
+                auto subpass = pipeline.Subpass();
+                for (const auto& variable : stage.entrypoint->resource_interface_variables) {
+                    if (!variable.decorations.Has(DecorationSet::input_attachment_bit)) {
+                        continue;
+                    }
+                    auto slot = variable.decorations.input_attachment_index_start;
+                    if (!rpci->pSubpasses[subpass].pInputAttachments || slot >= rpci->pSubpasses[subpass].inputAttachmentCount) {
+                        const LogObjectList objlist(stage.module_state->Handle(), pipeline.PipelineLayoutState()->layout());
+                        skip |= LogWarning(kVUID_BestPractices_Shader_MissingInputAttachment, device, error_obj.location,
+                                           "Shader consumes input attachment index %" PRIu32 " but not provided in subpass", slot);
+                    }
+                }
+            }
+        }
     }
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto prev_pipeline = pipeline_cache_.load();
