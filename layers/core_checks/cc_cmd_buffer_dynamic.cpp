@@ -390,7 +390,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
                                      string_VkSampleCountFlagBits(rasterizationSamples), gridSize.height);
                 }
             }
-            if (frag_spirv_state->static_data_.uses_interpolate_at_sample) {
+            if (frag_spirv_state && frag_spirv_state->static_data_.uses_interpolate_at_sample) {
                 const LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
                 skip |= LogError(vuid.sample_locations_enable_07487, objlist, loc,
                                  "sampleLocationsEnable set with vkCmdSetSampleLocationsEnableEXT() was VK_TRUE, but fragment "
