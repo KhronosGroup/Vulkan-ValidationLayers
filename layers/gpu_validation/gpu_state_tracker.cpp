@@ -587,8 +587,7 @@ void GpuAssistedBase::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, co
 
 void GpuAssistedBase::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                     VkFence fence, const RecordObject &record_obj) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+    PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 
 void GpuAssistedBase::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
