@@ -308,26 +308,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-
-    {
-        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
-        external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&external_image_info);
-        image_info.format = image_create_info.format;
-        image_info.type = image_create_info.imageType;
-        image_info.tiling = image_create_info.tiling;
-        image_info.usage = image_create_info.usage;
-        image_info.flags = image_create_info.flags;
-
-        VkAndroidHardwareBufferUsageANDROID ahb_usage = vku::InitStructHelper();
-        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper(&ahb_usage);
-        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
-
-        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
-            GTEST_SKIP() << "could not create image with external format";
-        }
-    }
-
     image.init_no_mem(*m_device, image_create_info);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
@@ -398,25 +378,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    {
-        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
-        external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&external_image_info);
-        image_info.format = image_create_info.format;
-        image_info.type = image_create_info.imageType;
-        image_info.tiling = image_create_info.tiling;
-        image_info.usage = image_create_info.usage;
-        image_info.flags = image_create_info.flags;
-
-        VkAndroidHardwareBufferUsageANDROID ahb_usage = vku::InitStructHelper();
-        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper(&ahb_usage);
-        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
-
-        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
-            GTEST_SKIP() << "could not create image with external format";
-        }
-    }
-
     image.init_no_mem(*m_device, image_create_info);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
