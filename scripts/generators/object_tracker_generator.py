@@ -210,8 +210,6 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'VkImportFenceFdInfoKHR',
             'VkFenceGetFdInfoKHR',
             'VkPhysicalDeviceSurfaceInfo2KHR',
-            'VkPipelineInfoKHR',
-            'VkPipelineExecutableInfoKHR',
             'VkMemoryMapInfoKHR',
             'VkMemoryUnmapInfoKHR',
             'VkVideoEncodeSessionParametersGetInfoKHR',
@@ -610,6 +608,13 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return "\"VUID-vkCreateImageView-image-09179\""
         if 'vkCmdBeginRenderPass' in commandName and member.name == 'pAttachments':
             return "\"VUID-VkRenderPassBeginInfo-framebuffer-02780\""
+        if 'vkGetPipelineExecutablePropertiesKHR' in commandName and member.name == 'pipeline':
+                return "\"VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271\""
+        if 'VkPipelineExecutableInfoKHR' in structName and member.name == 'pipeline':
+            if commandName == 'vkGetPipelineExecutableStatisticsKHR':
+                return "\"VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273\""
+            elif commandName == 'vkGetPipelineExecutableInternalRepresentationsKHR':
+                return "\"VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277\""
 
         if singleParentVuid:
             return getVUID(self.valid_vuids, f'VUID-{structName}-{member.name}-parent')
