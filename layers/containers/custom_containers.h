@@ -898,12 +898,10 @@ class enumeration {
 template <typename T, typename IndexType = size_t>
 class IndexedIterator {
   public:
-    IndexedIterator(T *data, IndexType index = 0) : data_(data), index_(index) {}
+    IndexedIterator(T *data, IndexType index = 0) : index_(index), data_(data) {}
 
-    IndexedIterator<T, IndexType> &operator*() { return *this /*IndexedIterator<T, IndexType>(data_ + index_, index_)*/; }
-    const IndexedIterator<T, IndexType> &operator*() const {
-        return *this /*IndexedIterator<T, IndexType>(data_ + index_, index_)*/;
-    }
+    IndexedIterator<T, IndexType> &operator*() { return *this; }
+    const IndexedIterator<T, IndexType> &operator*() const { return *this; }
 
     // prefix increment
     IndexedIterator<T, IndexType> &operator++() {
@@ -929,8 +927,8 @@ class IndexedIterator {
     bool operator!=(const IndexedIterator<T, IndexType> &rhs) const { return data_ != rhs.data_; }
 
   public:
-    T *data_;
     IndexType index_ = 0;
+    T *data_;
 };
 
 template <typename T>

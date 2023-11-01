@@ -203,7 +203,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
         }
     }
 
-    for (auto [other_info, other_info_j] : vvl::enumerate(pInfos + info_i, infoCount - info_i)) {
+    for (auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i, infoCount - info_i)) {
         // Validate that scratch buffer's memory does not overlap destination acceleration structure's memory, or source
         // acceleration structure's memory if build mode is update, or other scratch buffers' memory.
         // Here validation is pessimistic: if one buffer associated to pInfos[other_info_j].scratchData.deviceAddress has an
@@ -596,7 +596,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
         return skip;
     }
 
-    for (const auto [info, info_i] : vvl::enumerate(pInfos, infoCount)) {
+    for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
 
         const auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(info->srcAccelerationStructure);
