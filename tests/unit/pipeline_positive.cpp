@@ -1804,3 +1804,17 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositivePipeline, ShaderModuleIdentifierZeroLength) {
+    TEST_DESCRIPTION("Use shader module identifier with zero size and provide a shader module");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineShaderStageModuleIdentifierCreateInfoEXT moduleIdentifier = vku::InitStructHelper();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0].pNext = &moduleIdentifier;
+    pipe.CreateGraphicsPipeline();
+}

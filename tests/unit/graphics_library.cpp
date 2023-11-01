@@ -1513,6 +1513,11 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
+    VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    sm_id_create_info.pIdentifier = get_identifier.identifier;
+
     // shader module id ci and module not VK_NULL_HANDLE
     stage_ci.pNext = &sm_id_create_info;
     stage_ci.module = vs.handle();
@@ -1520,10 +1525,6 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
-    sm_id_create_info.identifierSize = get_identifier.identifierSize;
-    sm_id_create_info.pIdentifier = get_identifier.identifier;
     stage_ci.module = VK_NULL_HANDLE;
     pipe.gp_ci_.flags = 0;
     // shader module id ci and no VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT
