@@ -144,6 +144,8 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_InvalidCommandBufferSimultaneousUse = "UNASSIGNED-BestPractices-DrawState-InvalidCommandBufferSimultaneousUse";
 [[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_NoRendering = "UNASSIGNED-BestPractices-Pipeline-NoRendering";
 [[maybe_unused]] static const char *kVUID_BestPractices_QueryPool_Unavailable = "UNASSIGNED-BestPractices-QueryPool-Unavailable";
+[[maybe_unused]] static const char *kVUID_BestPractices_Shader_MissingInputAttachment =
+    "UNASSIGNED-BestPractices-Shader-MissingInputAttachment";
 
 // Arm-specific best practice
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
