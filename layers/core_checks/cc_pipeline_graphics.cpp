@@ -938,6 +938,30 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE
                              "topology is %s and tessellationShader feature was not enabled.",
                              string_VkPrimitiveTopology(topology));
         }
+
+        if (!phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization &&
+            pipeline.vertex_input_state && pipeline.pre_raster_state &&
+            (pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) == 0 &&
+            IsValueIn(topology,
+                      {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP})) {
+            const auto rasterization_conservative_state_ci =
+                vku::FindStructInPNextChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(
+                    pipeline.RasterizationState()->pNext);
+            if (rasterization_conservative_state_ci &&
+                rasterization_conservative_state_ci->conservativeRasterizationMode !=
+                    VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT &&
+                (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
+                 !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted)) {
+                std::string msg = !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)
+                                      ? "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY is not enabled"
+                                      : "dynamicPrimitiveTopologyUnrestricted is not supported";
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-08892", device, ia_loc,
+                    "topology is %s, %s, but conservativeRasterizationMode is %s.", string_VkPrimitiveTopology(topology),
+                    msg.c_str(),
+                    string_VkConservativeRasterizationModeEXT(rasterization_conservative_state_ci->conservativeRasterizationMode));
+            }
+        }
     }
 
     const bool ignore_topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
@@ -1352,12 +1376,46 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                              rasterization_conservative_state_ci->extraPrimitiveOverestimationSize,
                              phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
         }
+
+        if (!phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization) {
+            if (IsValueIn(pipeline.topology_at_rasterizer,
+                          {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                           VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+                           VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
+                if (rasterization_conservative_state_ci->conservativeRasterizationMode !=
+                    VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
+                    if ((pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) != 0) {
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06760", device,
+                                         raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
+                                                          Field::conservativeRasterizationMode),
+                                         "is %s, but geometry shader output primitive is %s and "
+                                         "VkPhysicalDeviceConservativeRasterizationPropertiesEXT::"
+                                         "conservativePointAndLineRasterization is false.",
+                                         string_VkConservativeRasterizationModeEXT(
+                                             rasterization_conservative_state_ci->conservativeRasterizationMode),
+                                         string_VkPrimitiveTopology(pipeline.topology_at_rasterizer));
+                    }
+                    if ((pipeline.create_info_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) != 0) {
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06761", device,
+                                         raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
+                                                          Field::conservativeRasterizationMode),
+                                         "is %s, but mesh shader output primitive is %s and "
+                                         "VkPhysicalDeviceConservativeRasterizationPropertiesEXT::"
+                                         "conservativePointAndLineRasterization is false.",
+                                         string_VkConservativeRasterizationModeEXT(
+                                             rasterization_conservative_state_ci->conservativeRasterizationMode),
+                                         string_VkPrimitiveTopology(pipeline.topology_at_rasterizer));
+                    }
+                }
+            }
+        }
     }
 
     if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(raster_state->pNext);
         depth_bias_representation != nullptr) {
         ValidateDepthBiasRepresentationInfo(raster_loc, LogObjectList(device), *depth_bias_representation);
     }
+
     return skip;
 }
 
