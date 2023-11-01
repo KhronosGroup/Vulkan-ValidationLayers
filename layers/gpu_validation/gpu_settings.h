@@ -20,6 +20,7 @@ typedef struct {
     bool validate_descriptors;
     bool validate_draw_indirect;
     bool validate_dispatch_indirect;
+    bool validate_trace_rays_indirect;
     bool vma_linear_output;
     bool warn_on_robust_oob;
     bool cache_instrumented_shaders;

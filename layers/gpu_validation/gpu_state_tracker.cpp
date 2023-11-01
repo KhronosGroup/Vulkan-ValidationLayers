@@ -31,20 +31,20 @@ gpu_tracker::DescriptorSetManager::~DescriptorSetManager() {
     desc_pool_map_.clear();
 }
 
-VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout,
-                                                             VkDescriptorSet *desc_set) {
+VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout,
+                                                             VkDescriptorSet *out_desc_sets) {
     std::vector<VkDescriptorSet> desc_sets;
-    VkResult result = GetDescriptorSets(1, desc_pool, ds_layout, &desc_sets);
+    VkResult result = GetDescriptorSets(1, out_desc_pool, ds_layout, &desc_sets);
     assert(result == VK_SUCCESS);
     if (result == VK_SUCCESS) {
-        *desc_set = desc_sets[0];
+        *out_desc_sets = desc_sets[0];
     }
     return result;
 }
 
-VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *pool,
+VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool,
                                                               VkDescriptorSetLayout ds_layout,
-                                                              std::vector<VkDescriptorSet> *desc_sets) {
+                                                              std::vector<VkDescriptorSet> *out_desc_sets) {
     auto guard = Lock();
     const uint32_t default_pool_size = kItemsPerChunk;
     VkResult result = VK_SUCCESS;
@@ -54,8 +54,8 @@ VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSets(uint32_t count, Vk
     if (0 == count) {
         return result;
     }
-    desc_sets->clear();
-    desc_sets->resize(count);
+    out_desc_sets->clear();
+    out_desc_sets->resize(count);
 
     for (auto &pool : desc_pool_map_) {
         if (pool.second.used + count < pool.second.size) {
@@ -90,12 +90,12 @@ VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSets(uint32_t count, Vk
     VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, NULL, pool_to_use, count,
                                               desc_layouts.data()};
 
-    result = DispatchAllocateDescriptorSets(device, &alloc_info, desc_sets->data());
+    result = DispatchAllocateDescriptorSets(device, &alloc_info, out_desc_sets->data());
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
         return result;
     }
-    *pool = pool_to_use;
+    *out_pool = pool_to_use;
     desc_pool_map_[pool_to_use].used += count;
     return result;
 }

@@ -117,6 +117,9 @@ struct GpuVuidsCmdTraceRaysIndirectKHR : gpuav::GpuVuid {
     GpuVuidsCmdTraceRaysIndirectKHR() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdTraceRaysIndirectKHR-None-08612";
         storage_access_oob = "VUID-vkCmdTraceRaysIndirectKHR-None-08613";
+        trace_rays_width_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-width-03638";
+        trace_rays_height_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-height-03639";
+        trace_rays_depth_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-depth-03640";
     }
 };
 

@@ -60,9 +60,9 @@ class DescriptorSetManager {
     DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
     ~DescriptorSetManager();
 
-    VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *desc_sets);
-    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
-                               std::vector<VkDescriptorSet> *desc_sets);
+    VkResult GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *out_desc_sets);
+    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
+                               std::vector<VkDescriptorSet> *out_desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
   private:
@@ -219,7 +219,7 @@ class Validator : public ValidationStateTracker {
                                   const Location &loc) = 0;
 
   public:
-    bool aborted = false;
+    mutable bool aborted = false;
     bool force_buffer_device_address;
     vvl::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;

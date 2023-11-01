@@ -36,12 +36,19 @@ def identifierize(s):
     # translate leading digits
     return re.sub("^[^a-zA-Z_]+", "_", s)
 
-def compile(filename, glslang_validator):
+def compile(filename, glslang_validator, target_env):
     tmpfile = os.path.basename(filename) + '.tmp'
 
     # invoke glslangValidator
     try:
         args = [glslang_validator]
+        
+        if not target_env: 
+            requires_vulkan_1_2 = ['rgen']
+            if filename.split(".")[-1] in requires_vulkan_1_2:
+                target_env = "vulkan1.2"
+        if target_env:        
+            args += ["--target-env", target_env]
         # functions called by the SPIRV-Tools instrumentation require special options
         if tmpfile.startswith("inst_"):
             args += ["--no-link", "--target-env", "vulkan1.0"]
@@ -179,6 +186,7 @@ def main():
     parser.add_argument('--shader', action='store', type=str, help='Input Filename')
     parser.add_argument('--glslang', action='store', type=str, help='Path to glslangValidator to use')
     parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory')
+    parser.add_argument('--targetenv', action='store', type=str, help='Optional --target-env argument passed down to glslangValidator')
     args = parser.parse_args()
 
     generate_shaders = []
@@ -202,7 +210,7 @@ def main():
         sys.exit("Cannot find glslangValidator " + glslang_validator)
 
     for shader in generate_shaders:
-        words = compile(shader, glslang_validator)
+        words = compile(shader, glslang_validator, args.targetenv)
         write(words, shader, args.api, args.outdir)
     write_inst_hash(args.outdir)
 

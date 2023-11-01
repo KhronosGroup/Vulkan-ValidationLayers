@@ -15,9 +15,8 @@
 // limitations under the License.
 
 #version 450
-#define VAL_OUT_RECORD_SZ 10
 #extension GL_GOOGLE_include_directive : enable
-#include "gpu_shaders_constants.h"
+#include "gpu_pre_action.h"
 
 // used when testing count buffer
 #define count_limit push_constant_word_0
@@ -28,12 +27,6 @@
 #define draw_count push_constant_word_1
 #define first_instance_offset push_constant_word_2
 #define draw_stride push_constant_word_3
-
-layout(set = 0, binding = 0) buffer OutputBuffer {
-    uint flags;
-    uint output_buffer_count;
-    uint output_buffer[];
-};
 
 // Input will be only testing one buffer depending on the command
 // Alias to same binding with different names
@@ -47,14 +40,6 @@ layout(push_constant) uniform UniformInfo {
     uint push_constant_word_3;
 } u_info;
 
-void valErrorOut(uint error, uint count) {
-    uint vo_idx = atomicAdd(output_buffer_count, VAL_OUT_RECORD_SZ);
-    if (vo_idx + VAL_OUT_RECORD_SZ > output_buffer.length())
-        return;
-    output_buffer[vo_idx + kInstValidationOutError] = kInstErrorPreDrawValidate;
-    output_buffer[vo_idx + kInstValidationOutError + 1] = error;
-    output_buffer[vo_idx + kInstValidationOutError + 2] = count;
-}
 
 void main() {
     if (gl_VertexIndex == 0) {
@@ -62,17 +47,17 @@ void main() {
             // Validate count buffer
             uint count_in = count_buffer[u_info.count_offset];
             if (count_in > u_info.max_writes) {
-                valErrorOut(pre_draw_count_exceeds_bufsize_error, count_in);
+                gpuavLogError(kInstErrorPreDrawValidate, pre_draw_count_exceeds_bufsize_error, count_in);
             }
             else if (count_in > u_info.count_limit) {
-                valErrorOut(pre_draw_count_exceeds_limit_error, count_in);
+                gpuavLogError(kInstErrorPreDrawValidate, pre_draw_count_exceeds_limit_error, count_in);
             }
         } else {
             // Validate firstInstances
             uint fi_index = u_info.first_instance_offset;
             for (uint i = 0; i < u_info.draw_count; i++) {
                 if (draws_buffer[fi_index] != 0) {
-                    valErrorOut(pre_draw_first_instance_error, i);
+                    gpuavLogError(kInstErrorPreDrawValidate, pre_draw_first_instance_error, i);
                     break;
 				}
                 fi_index += u_info.draw_stride;

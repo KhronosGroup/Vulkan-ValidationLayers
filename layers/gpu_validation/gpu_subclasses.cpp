@@ -135,10 +135,10 @@ void gpuav::CommandBuffer::Reset() {
 void gpuav::CommandBuffer::ResetCBState() {
     auto gpuav = static_cast<Validator *>(dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
-    for (auto &cmd_info : per_draw_buffer_list) {
+    for (auto &cmd_info : per_draw_command_infos) {
         gpuav->DestroyBuffer(cmd_info);
     }
-    per_draw_buffer_list.clear();
+    per_draw_command_infos.clear();
 
     for (auto &buffer_info : di_input_buffer_list) {
         vmaDestroyBuffer(gpuav->vmaAllocator, buffer_info.bindless_state_buffer, buffer_info.bindless_state_buffer_allocation);
@@ -160,7 +160,7 @@ void gpuav::CommandBuffer::Process(VkQueue queue, const Location &loc) {
         uint32_t compute_index = 0;
         uint32_t ray_trace_index = 0;
 
-        for (auto &cmd_info : per_draw_buffer_list) {
+        for (auto &cmd_info : per_draw_command_infos) {
             char *data;
             DescBindingInfo *di_info = nullptr;
             if (cmd_info.desc_binding_index != vvl::kU32Max) {
