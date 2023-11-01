@@ -1139,7 +1139,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, error_obj.handle, error_obj.location);
-    for (const auto [info, info_i] : vvl::enumerate(pInfos, infoCount)) {
+    for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
         if (SafeModulo(info->scratchData.deviceAddress,
                        phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment) != 0) {
@@ -1151,7 +1151,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
         }
         skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", info->mode,
                                    "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
-        for (const auto [other_info, other_info_j] : vvl::enumerate(pInfos, infoCount)) {
+        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos, infoCount)) {
             if (info_i == other_info_j) continue;
             if (info->dstAccelerationStructure == other_info->dstAccelerationStructure) {
                 const LogObjectList objlist(commandBuffer, info->dstAccelerationStructure);
