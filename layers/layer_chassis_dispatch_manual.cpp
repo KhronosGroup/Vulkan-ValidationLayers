@@ -251,6 +251,39 @@ static void UpdateCreateRenderPassState(ValidationObject *layer_data, const T *p
     }
 }
 
+template <>
+void UpdateCreateRenderPassState(ValidationObject *layer_data, const VkRenderPassCreateInfo2 *pCreateInfo, VkRenderPass renderPass) {
+    auto &renderpass_state = layer_data->renderpasses_states[renderPass];
+
+    for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex) {
+        bool uses_color = false;
+        const VkSubpassDescription2& subpass = pCreateInfo->pSubpasses[subpassIndex];
+        for (uint32_t i = 0; i < subpass.colorAttachmentCount && !uses_color; ++i)
+            if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+        // VK_ANDROID_external_format_resolve allows for the only color attachment to be VK_ATTACHMENT_UNUSED
+        // but in this case, it will use the resolve attachment as color attachment. Which means that we do
+        // actually use color attachments
+        if (subpass.pResolveAttachments != nullptr) {
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount && !uses_color; ++i) {
+                uint32_t resolveAttachmentIndex = subpass.pResolveAttachments[i].attachment;
+                const void* resolveAtatchmentPNextChain = pCreateInfo->pAttachments[resolveAttachmentIndex].pNext;
+                if (vku::FindStructInPNextChain<VkExternalFormatANDROID>(resolveAtatchmentPNextChain)) uses_color = true;
+            }
+        }
+#endif
+
+        bool uses_depthstencil = false;
+        if (subpass.pDepthStencilAttachment)
+            if (subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)
+                uses_depthstencil = true;
+
+        if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpassIndex);
+        if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpassIndex);
+    }
+}
+
 VkResult DispatchCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);

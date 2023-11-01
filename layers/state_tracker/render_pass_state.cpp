@@ -315,6 +315,19 @@ bool RENDER_PASS_STATE::UsesColorAttachment(uint32_t subpass_num) const {
                 break;
             }
         }
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+        // VK_ANDROID_external_format_resolve allows for the only color attachment to be VK_ATTACHMENT_UNUSED
+        // but in this case, it will use the resolve attachment as color attachment. Which means that we do
+        // actually use color attachments
+        if (subpass.pResolveAttachments != nullptr) {
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount && !result; ++i) {
+                uint32_t resolveAttachmentIndex = subpass.pResolveAttachments[i].attachment;
+                const void* resolveAtatchmentPNextChain = createInfo.pAttachments[resolveAttachmentIndex].pNext;
+                if (vku::FindStructInPNextChain<VkExternalFormatANDROID>(resolveAtatchmentPNextChain)) result = true;
+            }
+        }
+#endif
     }
     return result;
 }
