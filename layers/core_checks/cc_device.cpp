@@ -188,6 +188,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
     vvl::unordered_map<uint32_t, create_flags> queue_family_map;
     vvl::unordered_map<uint32_t, VkQueueGlobalPriorityKHR> global_priorities;
 
+    std::vector<uint32_t> queue_counts;
     for (uint32_t i = 0; i < info_count; ++i) {
         const Location info_loc = loc.dot(Field::pQueueCreateInfos, i);
         const uint32_t requested_queue_family = infos[i].queueFamilyIndex;
@@ -297,7 +298,20 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                     ") is not less than or equal to available queue count for this pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "].queueFamilyIndex} (%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
                     requested_queue_count, i, requested_queue_family, conditional_ext_cmd, count_note.c_str());
+            } else {
+                if (requested_queue_family >= queue_counts.size()) {
+                    queue_counts.resize(requested_queue_family + 1);
+                }
+                queue_counts[requested_queue_family] += infos[i].queueCount;
             }
+        }
+    }
+    for (uint32_t i = 0; i < static_cast<uint32_t>(queue_counts.size()); ++i) {
+        if (queue_counts[i] > pd_state->queue_family_properties[i].queueCount) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06755", pd_state->Handle(), loc,
+                             "Total queue count requested from queue family index %" PRIu32 " is %" PRIu32
+                             ", which is greater than queue count available in the queue family (%" PRIu32 ").",
+                             i, queue_counts[i], pd_state->queue_family_properties[i].queueCount);
         }
     }
 
