@@ -41,6 +41,7 @@ struct ResourceFirstAccess;
 class SyncEventsContext;
 struct SyncEventState;
 class SyncValidator;
+struct ClearAttachmentInfo;
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 using QueueId = uint32_t;
@@ -139,6 +140,7 @@ struct DynamicRenderingInfo {
     DynamicRenderingInfo &operator=(DynamicRenderingInfo &&) = delete;
 
     DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
+    ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
     safe_VkRenderingInfo info;
     std::vector<Attachment> attachments;  // All attachments (with internal typing)
 };
@@ -155,7 +157,36 @@ struct BeginRenderingCmdState {
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, IMAGE_VIEW_STATE)
 
+struct ClearAttachmentInfo {
+    using ImageViewState = syncval_state::ImageViewState;
 
+    const ImageViewState *view = nullptr;
+    VkImageAspectFlags aspects_to_clear = {};
+    VkImageSubresourceRange subresource_range{};
+    VkOffset3D offset = {};
+    VkExtent3D extent = {};
+    uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
+    uint32_t subpass = 0;
+
+    static VkImageSubresourceRange RestrictSubresourceRange(const VkClearRect &clear_rect, const ImageViewState &view);
+    static VkImageAspectFlags GetAspectsToClear(VkImageAspectFlags clear_aspect_mask, const ImageViewState &view);
+    ClearAttachmentInfo() = default;
+    ClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect, const ImageViewState &view_,
+                        uint32_t attachment_index_ = VK_ATTACHMENT_UNUSED /* renderpass instance only */,
+                        uint32_t subpass_ = 0 /* renderpass instance only */)
+        : view(&view_),
+          aspects_to_clear(GetAspectsToClear(clear_attachment.aspectMask, view_)),
+          subresource_range(RestrictSubresourceRange(rect, view_)),
+          offset(CastTo3D(rect.rect.offset)),
+          extent(CastTo3D(rect.rect.extent)),
+          attachment_index(attachment_index_),
+          subpass(subpass_) {}
+
+    // ClearAttachmentInfo can be invalid for several reasons based on the VkClearAttachment and the rendering
+    // attachment state, including some caught by the constructor.  Consumers *must* check validity before use
+    bool IsValid() const { return view && (aspects_to_clear != 0U) && (subresource_range.layerCount != 0U); }
+    std::string GetSubpassAttachmentText() const;
+};
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
@@ -1494,10 +1525,8 @@ class RenderPassAccessContext {
                                        vvl::Func command) const;
     void RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd_buffer, ResourceUsageTag tag);
 
-    bool ValidateClearAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd_buffer, const Location &loc,
-                                 const VkClearAttachment &clear_attachment, const VkClearRect &rect, uint32_t rect_index) const;
-    void RecordClearAttachment(const CMD_BUFFER_STATE &cmd_buffer, ResourceUsageTag tag, const VkClearAttachment &clear_attachment,
-                               const VkClearRect &rect);
+    uint32_t GetAttachmentIndex(const VkClearAttachment &clear_attachment) const;
+    ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
 
     bool ValidateNextSubpass(const CommandExecutionContext &ex_context, vvl::Func command) const;
     bool ValidateEndRenderPass(const CommandExecutionContext &ex_context, vvl::Func command) const;
@@ -1516,14 +1545,6 @@ class RenderPassAccessContext {
     const RENDER_PASS_STATE *GetRenderPassState() const { return rp_state_; }
     AccessContext *CreateStoreResolveProxy() const;
 
-  private:
-    struct ClearAttachmentInfo {
-        uint32_t attachment_index;
-        VkImageAspectFlags aspects_to_clear;
-        VkImageSubresourceRange subresource_range;
-    };
-    std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment &clear_attachment,
-                                                              const VkClearRect &rect) const;
   private:
     const RENDER_PASS_STATE *rp_state_;
     const VkRect2D render_area_;
@@ -1680,6 +1701,10 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
     void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
+    ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
+    bool ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
+    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment &clear_attachment, const VkClearRect &rect);
+
     ResourceUsageTag RecordNextSubpass(vvl::Func command);
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);
     void RecordDestroyEvent(EVENT_STATE *event_state);
@@ -1737,6 +1762,10 @@ class CommandBufferAccessContext : public CommandExecutionContext {
   private:
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
+
+    bool ValidateClearAttachment(const Location &loc, const ClearAttachmentInfo &info) const;
+    void RecordClearAttachment(ResourceUsageTag tag, const ClearAttachmentInfo &clear_info);
+
     // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
     CMD_BUFFER_STATE *cb_state_;
