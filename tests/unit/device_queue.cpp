@@ -381,3 +381,49 @@ TEST_F(NegativeDeviceQueue, Robustness2WithoutRobustness) {
     vk::CreateDevice(m_device->phy().handle(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, QueuesSameQueueFamily) {
+    TEST_DESCRIPTION("Request more queues than available from queue family");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
+    if (!protected_memory_features.protectedMemory) {
+        GTEST_SKIP() << "protectedMemory not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &protected_memory_features));
+
+    uint32_t qf_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &qf_count, nullptr);
+    std::vector<VkQueueFamilyProperties> qf_props(qf_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &qf_count, qf_props.data());
+
+    uint32_t index = 0;
+    for (uint32_t i = 0; i < qf_count; ++i) {
+        if (qf_props[i].queueFlags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) {
+            index = i;
+            break;
+        }
+    }
+
+    std::vector<float> priorities(qf_props[index].queueCount, 1.0f);
+    VkDeviceQueueCreateInfo device_queue_ci[2];
+    device_queue_ci[0] = vku::InitStructHelper();
+    device_queue_ci[0].queueFamilyIndex = index;
+    device_queue_ci[0].queueCount = qf_props[index].queueCount;
+    device_queue_ci[0].pQueuePriorities = priorities.data();
+    device_queue_ci[1] = vku::InitStructHelper();
+    device_queue_ci[1].flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    device_queue_ci[1].queueFamilyIndex = index;
+    device_queue_ci[1].queueCount = 1u;
+    device_queue_ci[1].pQueuePriorities = priorities.data();
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = 2u;
+    device_ci.pQueueCreateInfos = device_queue_ci;
+
+    VkDevice device;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pQueueCreateInfos-06755");
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
