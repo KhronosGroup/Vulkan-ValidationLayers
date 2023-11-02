@@ -12,7 +12,7 @@
 #include "external_memory_sync.h"
 
 #include <vulkan/utility/vk_struct_helper.hpp>
-#include <vulkan/generated/enum_flag_bits.h>
+#include <generated/enum_flag_bits.h>
 
 #include "utils/vk_layer_utils.h"
 

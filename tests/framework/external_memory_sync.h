@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include <vulkan/generated/vk_function_pointers.h>
+#include <generated/vk_function_pointers.h>
 
 VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type);
