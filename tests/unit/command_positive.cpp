@@ -1366,6 +1366,7 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
 
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState());
+
     auto image_ci =
         VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
@@ -1374,11 +1375,11 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
     VkDeviceSize buff_size = 32 * 32 * 4;
     buffer.init_no_mem(*DeviceObj(),
                        vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
-    const auto buffer_memory_requirements = buffer.memory_requirements();
+    auto buffer_memory_requirements = buffer.memory_requirements();
 
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_ci);
-    const auto image_memory_requirements = image.memory_requirements();
+    auto image_memory_requirements = image.memory_requirements();
 
     vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
@@ -1406,5 +1407,45 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
     m_commandBuffer->begin();
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_commandBuffer->end();
+
+    auto compressed_image2_ci =
+        VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_BC7_UNORM_BLOCK,
+                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_BC7_UNORM_BLOCK, &format_properties);
+    if (((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0) ||
+        ((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0)) {
+        printf("VK_FORMAT_BC7_UNORM_BLOCK with linear tiling not supported - skipping compressed format test.\n");
+        return;
+    }
+    vkt::Buffer buffer2;
+    // 1 byte per texel
+    buff_size = 32 * 32 * 1;
+    buffer2.init_no_mem(*DeviceObj(),
+                        vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+    buffer_memory_requirements = buffer.memory_requirements();
+
+    VkImageObj image2(m_device);
+    image2.init_no_mem(*m_device, compressed_image2_ci);
+    image_memory_requirements = image2.memory_requirements();
+
+    vkt::DeviceMemory mem2;
+    alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = buffer_memory_requirements.size + image_memory_requirements.size;
+    has_memtype = m_device->phy().set_memory_type(
+        buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
+    if (!has_memtype) {
+        GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
+    }
+
+    mem2.init(*DeviceObj(), alloc_info);
+
+    buffer2.bind_memory(mem2, 0);
+    image2.bind_memory(mem2, buffer_memory_requirements.size);
+
+    m_commandBuffer->begin();
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image2.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer2.handle(), 1, &region);
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer2.handle(), image2.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_commandBuffer->end();
 }
