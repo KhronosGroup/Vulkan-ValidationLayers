@@ -225,9 +225,13 @@ void QUEUE_STATE::ThreadFunc() {
         }
         // wake up anyone waiting for this submission to be retired
         {
-            auto guard = Lock();
-            submission->completed.set_value();
-            submissions_.pop_front();
+            std::promise<void> completed;
+            {
+                auto guard = Lock();
+                completed = std::move(submission->completed);
+                submissions_.pop_front();
+            }
+            completed.set_value();
         }
     }
 }
