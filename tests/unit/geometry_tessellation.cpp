@@ -1266,3 +1266,106 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
+    TEST_DESCRIPTION("Use geometry shader with geometryStreams capability, but geometryStreams feature not enabled");
+
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT xfb_features = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(xfb_features);
+    if (!xfb_features.transformFeedback) {
+        GTEST_SKIP() << "transformFeedback not supported";
+    }
+    xfb_features.geometryStreams = VK_FALSE;
+    features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    InitRenderTarget();
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT xfb_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(xfb_props);
+
+    if (xfb_props.maxTransformFeedbackStreams <= 1) {
+        GTEST_SKIP() << "maxTransformFeedbackStreams lower than required";
+    }
+
+    static char const geom_src[] = R"glsl(
+               OpCapability Geometry
+               OpCapability TransformFeedback
+               OpCapability GeometryStreams
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %output1 %_
+               OpExecutionMode %main Xfb
+               OpExecutionMode %main InputPoints
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputPoints
+               OpExecutionMode %main OutputVertices 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %output1 "output1"  ; id %8
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %14
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %16
+
+               ; Annotations
+               OpDecorate %output1 Location 0
+               OpDecorate %output1 Stream 1
+               OpDecorate %output1 XfbBuffer 0
+               OpDecorate %output1 XfbStride 4
+               OpDecorate %output1 Offset 0
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %_ Stream 0
+               OpDecorate %_ XfbBuffer 0
+               OpDecorate %_ XfbStride 4
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float
+    %output1 = OpVariable %_ptr_Output_float Output
+    %float_1 = OpConstant %float 1
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+         %19 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpStore %output1 %float_1
+         %21 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %21 %19
+               OpEmitVertex
+               OpReturn
+               OpFunctionEnd
+    )glsl";
+
+    VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-geometryStreams-02321");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
