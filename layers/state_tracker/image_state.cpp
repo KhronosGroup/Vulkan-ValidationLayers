@@ -52,6 +52,16 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
             }
         }
     }
+    // This is required, otherwise an assert will be hit in RangeGenerator
+    if ((norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && !vkuFormatIsColor(image_create_info.format)) {
+        norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    if ((norm.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0 && !vkuFormatHasDepth(image_create_info.format)) {
+        norm.aspectMask &= ~VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    if ((norm.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0 && !vkuFormatHasStencil(image_create_info.format)) {
+        norm.aspectMask &= ~VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
     return norm;
 }
 
