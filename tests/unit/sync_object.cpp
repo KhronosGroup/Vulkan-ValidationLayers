@@ -381,7 +381,6 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Not having DEPTH or STENCIL set is an error
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier-image-03319");
 
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -397,7 +396,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Having anything other than DEPTH and STENCIL is an error
     conc_test.image_barrier_.subresourceRange.aspectMask =
         VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-    conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    conc_test("");
 
     // Now test depth-only
     VkFormatProperties format_props;
@@ -412,11 +411,11 @@ TEST_F(NegativeSyncObject, Barriers) {
 
         // DEPTH bit must be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-        conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+        conc_test("");
 
         // No bits other than DEPTH may be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-        conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+        conc_test("");
     }
 
     // Now test stencil-only
@@ -432,7 +431,7 @@ TEST_F(NegativeSyncObject, Barriers) {
         // Use of COLOR aspect on depth image is error
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         // must have the VK_IMAGE_ASPECT_STENCIL_BIT set
-        conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+        conc_test("");
     }
 
     // Finally test color
@@ -445,12 +444,10 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     // COLOR bit must be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier-image-09241");
 
     // No bits other than COLOR may be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier-image-09241");
 
     // Test multip-planar image
@@ -522,11 +519,9 @@ TEST_F(NegativeSyncObject, Barriers) {
             conc_test("", "", VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
 
             conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
             conc_test("VUID-VkImageMemoryBarrier-image-01672");
 
             conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
             conc_test("VUID-VkImageMemoryBarrier-image-01672");
 
             vk::FreeMemory(device(), plane_0_memory, NULL);
@@ -901,7 +896,6 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Not having DEPTH or STENCIL set is an error
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     {
         conc_test("VUID-VkImageMemoryBarrier2-image-03320");
 
@@ -913,7 +907,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Having anything other than DEPTH and STENCIL is an error
     conc_test.image_barrier_.subresourceRange.aspectMask =
         VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-    conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    conc_test("");
 
     // Now test depth-only
     VkFormatProperties format_props;
@@ -928,11 +922,11 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
         // DEPTH bit must be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-        conc_test("depth-only image formats must have the VK_IMAGE_ASPECT_DEPTH_BIT set.");
+        conc_test("");
 
         // No bits other than DEPTH may be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-        conc_test("depth-only image formats can have only the VK_IMAGE_ASPECT_DEPTH_BIT set.");
+        conc_test("");
     }
 
     // Now test stencil-only
@@ -947,7 +941,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
         // Use of COLOR aspect on depth image is error
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        conc_test("stencil-only image formats must have the VK_IMAGE_ASPECT_STENCIL_BIT set.");
+        conc_test("");
     }
 
     // Finally test color
@@ -960,12 +954,10 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     // COLOR bit must be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier2-image-09241");
 
     // No bits other than COLOR may be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier2-image-09241");
 
     // A barrier's new and old VkImageLayout must be compatible with an image's VkImageUsageFlags.
@@ -1214,7 +1206,6 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {
 
     // Not having DEPTH or STENCIL set is an error
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier-image-03320");
 
     // Having only one of depth or stencil set for DS image is an error
@@ -1257,7 +1248,6 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
 
     // Not having DEPTH or STENCIL set is an error
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier2-image-03320");
 
     // Having only one of depth or stencil set for DS image is an error

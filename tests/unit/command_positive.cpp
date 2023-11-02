@@ -1408,3 +1408,30 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveCommand, ImageBarrierAspect) {
+    TEST_DESCRIPTION("Use image barrier with additional aspect that the image does not have");
+
+    RETURN_IF_SKIP(Init());
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, FindSupportedDepthOnlyFormat(gpu()), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
+               0);
+
+    VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    imageMemoryBarrier.image = image.handle();
+    imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
+    imageMemoryBarrier.subresourceRange.levelCount = 1u;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
+    imageMemoryBarrier.subresourceRange.layerCount = 1u;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                           0u, 0u, nullptr, 0u, nullptr, 1u, &imageMemoryBarrier);
+    m_commandBuffer->end();
+}
