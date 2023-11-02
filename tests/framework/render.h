@@ -145,6 +145,17 @@ class VkRenderFramework : public VkTestFramework {
         return spv;
     }
 
+    void DeviceWaitIdle() { m_device->wait(); }
+    void QueueWaitIdle() { vk::QueueWaitIdle(m_default_queue); }
+
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg) {
+        m_errorMonitor->SetDesiredFailureMsg(msgFlags, msg);
+    };
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
+        m_errorMonitor->SetDesiredFailureMsg(msgFlags, msgString);
+    };
+    void VerifyFound() { m_errorMonitor->VerifyFound(); }
+
   protected:
     APIVersion m_instance_api_version = 0;
     APIVersion m_target_api_version = 0;
