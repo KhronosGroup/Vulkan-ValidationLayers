@@ -149,9 +149,9 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
             for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                skip |=
-                    ValidateObject(desc->pTexelBufferView[i], kVulkanObjectTypeBufferView, true,
-                                   "VUID-VkWriteDescriptorSet-descriptorType-02994", "VUID-VkWriteDescriptorSet-commonparent", loc);
+                skip |= ValidateObject(desc->pTexelBufferView[i], kVulkanObjectTypeBufferView, true,
+                                       "VUID-VkWriteDescriptorSet-descriptorType-02994",
+                                       "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06236", loc);
                 if (!null_descriptor_enabled && desc->pTexelBufferView[i] == VK_NULL_HANDLE) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02995", desc->dstSet, loc,
                                      "texel buffer view must not be VK_NULL_HANDLE.");
@@ -164,8 +164,8 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
             for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                 skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, true,
-                                       "VUID-VkWriteDescriptorSet-descriptorType-02996", "VUID-VkDescriptorImageInfo-commonparent",
-                                       loc);
+                                       "VUID-VkWriteDescriptorSet-descriptorType-02996",
+                                       "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239", loc);
                 if (!null_descriptor_enabled && desc->pImageInfo[i].imageView == VK_NULL_HANDLE) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02997", desc->dstSet, loc,
                                      "image view must not be VK_NULL_HANDLE.");
@@ -177,8 +177,8 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
             // Input attachments can never be null
             for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                 skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, false,
-                                       "VUID-VkWriteDescriptorSet-descriptorType-07683", "VUID-VkDescriptorImageInfo-commonparent",
-                                       loc);
+                                       "VUID-VkWriteDescriptorSet-descriptorType-07683",
+                                       "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239", loc);
             }
             break;
         }
@@ -188,7 +188,8 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
             for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                 skip |= ValidateObject(desc->pBufferInfo[i].buffer, kVulkanObjectTypeBuffer, true,
-                                       "VUID-VkDescriptorBufferInfo-buffer-parameter", kVUIDUndefined, loc);
+                                       "VUID-VkDescriptorBufferInfo-buffer-parameter",
+                                       "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237", loc);
                 if (!null_descriptor_enabled && desc->pBufferInfo[i].buffer == VK_NULL_HANDLE) {
                     skip |= LogError("VUID-VkDescriptorBufferInfo-buffer-02998", desc->dstSet, loc,
                                      "buffer must not be VK_NULL_HANDLE.");
@@ -198,11 +199,19 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         }
 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
-            const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext);
-            for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                skip |= ValidateObject(acc_info->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureKHR, true,
-                                       "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
-                                       kVUIDUndefined, loc);
+            if (const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext)) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |= ValidateObject(acc_info->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureKHR, true,
+                                           "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
+                                           "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06240", loc);
+                }
+            }
+            if (const auto *acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(desc->pNext)) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |= ValidateObject(acc_info_nv->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureNV, true,
+                                           "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parameter",
+                                           "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06241", loc);
+                }
             }
             break;
         }

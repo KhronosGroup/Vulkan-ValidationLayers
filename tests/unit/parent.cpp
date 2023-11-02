@@ -631,7 +631,50 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
     vk::GetPipelineExecutableInternalRepresentationsKHR(*m_second_device, &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetUnexpectedError("VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
     vk::GetPipelineExecutablePropertiesKHR(*m_second_device, &pipeline_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer(*m_second_device, buffer_ci);
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    ds.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237");
+    ds.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkImageObj image(m_second_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    ds.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239");
+    ds.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
