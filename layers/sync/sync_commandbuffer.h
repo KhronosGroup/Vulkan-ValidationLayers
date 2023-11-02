@@ -337,6 +337,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     bool ValidateClearAttachment(const Location &loc, const ClearAttachmentInfo &info) const;
     void RecordClearAttachment(ResourceUsageTag tag, const ClearAttachmentInfo &clear_info);
 
+    void CheckCommandTagDebugCheckpoint();
+
     // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
     CMD_BUFFER_STATE *cb_state_;

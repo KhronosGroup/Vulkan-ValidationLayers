@@ -470,6 +470,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUt
                                                       [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                       [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
                                                       [[maybe_unused]] void *user_data) {
+    // TODO: Consider to use https://github.com/scottt/debugbreak
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     DebugBreak();
 #else

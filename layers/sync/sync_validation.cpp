@@ -535,6 +535,17 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
             std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id_limit_++);
         queue_sync_states_.emplace(std::make_pair(queue_state->VkHandle(), std::move(queue_sync_state)));
     });
+
+    const auto env_debug_command_number = GetEnvironment("VK_SYNCVAL_DEBUG_COMMAND_NUMBER");
+    if (!env_debug_command_number.empty()) {
+        debug_command_number = static_cast<uint32_t>(std::stoul(env_debug_command_number));
+    }
+    const auto env_debug_reset_count = GetEnvironment("VK_SYNCVAL_DEBUG_RESET_COUNT");
+    if (!env_debug_reset_count.empty()) {
+        debug_reset_count = static_cast<uint32_t>(std::stoul(env_debug_reset_count));
+    }
+    debug_cmdbuf_pattern = GetEnvironment("VK_SYNCVAL_DEBUG_CMDBUF_PATTERN");
+    vvl::ToLower(debug_cmdbuf_pattern);
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,

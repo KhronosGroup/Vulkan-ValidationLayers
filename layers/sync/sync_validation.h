@@ -61,6 +61,10 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using SignaledFence = SignaledFences::value_type;
     SignaledFences waitable_fences_;
 
+    uint32_t debug_command_number = vvl::kU32Max;
+    uint32_t debug_reset_count = 1;
+    std::string debug_cmdbuf_pattern;
+
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
     template <typename BatchOp>

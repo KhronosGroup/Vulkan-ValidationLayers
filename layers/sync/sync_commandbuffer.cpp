@@ -868,6 +868,7 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, N
         access_log_->back().AddHandle(handle);
         command_handles_.emplace_back(std::move(handle));
     }
+    CheckCommandTagDebugCheckpoint();
     return next;
 }
 
@@ -947,6 +948,39 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
         access_context->UpdateAccessState(
             *clear_info.view->GetImageState(), SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
             SyncOrdering::kDepthStencilAttachment, subresource_range, clear_info.offset, clear_info.extent, tag);
+    }
+}
+
+// NOTE: debug location reporting feature works only for reproducible application sessions
+// (it uses command number/reset count from the error message from the previous session).
+// It's considered experimental and can be replaced with a better way to report syncval debug locations.
+//
+// Logs informational message when vulkan command stream reaches a specific location.
+// The message can be intercepted by the reporting routines. For example, the message handler can trigger a breakpoint.
+// The location can be specified through environment variables.
+// VK_SYNCVAL_DEBUG_COMMAND_NUMBER: the command number
+// VK_SYNCVAL_DEBUG_RESET_COUNT: (optional, default value is 1) command buffer reset count
+// VK_SYNCVAL_DEBUG_CMDBUF_PATTERN: (optional, empty string by default) pattern to match command buffer debug name
+void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
+    auto get_cmdbuf_name = [](const debug_report_data &debug_report, uint64_t cmdbuf_handle) {
+        std::unique_lock<std::mutex> lock(debug_report.debug_output_mutex);
+        std::string object_name = debug_report.DebugReportGetUtilsObjectNameNoLock(cmdbuf_handle);
+        if (object_name.empty()) {
+            object_name = debug_report.DebugReportGetMarkerObjectNameNoLock(cmdbuf_handle);
+        }
+        vvl::ToLower(object_name);
+        return object_name;
+    };
+    if (sync_state_->debug_command_number == command_number_ && sync_state_->debug_reset_count == reset_count_) {
+        const auto cmdbuf_name = get_cmdbuf_name(*sync_state_->report_data, cb_state_->Handle().handle);
+        const auto &pattern = sync_state_->debug_cmdbuf_pattern;
+        const bool cmdbuf_match = pattern.empty() || (cmdbuf_name.find(pattern) != std::string::npos);
+        if (cmdbuf_match) {
+            sync_state_->LogInfo("SYNCVAL_DEBUG_COMMAND", LogObjectList(), Location(access_log_->back().command),
+                                 "Command stream has reached command #%" PRIu32 " in command buffer %s with reset count #%" PRIu32,
+                                 sync_state_->debug_command_number, sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
+                                 sync_state_->debug_reset_count);
+        }
     }
 }
 
