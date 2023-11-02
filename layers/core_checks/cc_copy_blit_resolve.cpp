@@ -2438,9 +2438,11 @@ bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const CMD_BUFFER_STATE &cb
                                                       const BUFFER_STATE &buffer_state, const Location &loc, bool image_to_buffer,
                                                       bool is_2) const {
     bool skip = false;
-    auto element_size = vkuFormatElementSize(image_state.createInfo.format);
+
     for (uint32_t i = 0; i < regionCount; ++i) {
         const RegionType &region = pRegions[i];
+        auto texel_size = vkuFormatTexelSizeWithAspect(image_state.createInfo.format,
+                                                       static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
         VkDeviceSize image_offset;
         if (image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
             // Can only know actual offset for linearly tiled images
@@ -2452,16 +2454,19 @@ bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const CMD_BUFFER_STATE &cb
             DispatchGetImageSubresourceLayout(device, image_state.image(), &isr, &srl);
             if (image_state.createInfo.arrayLayers == 1) srl.arrayPitch = 0;
             if (image_state.createInfo.imageType != VK_IMAGE_TYPE_3D) srl.depthPitch = 0;
-            image_offset = (region.imageSubresource.baseArrayLayer * srl.arrayPitch) + (region.imageOffset.x * element_size) +
-                           (region.imageOffset.y * srl.rowPitch) + (region.imageOffset.z * srl.depthPitch) + srl.offset;
+            image_offset = (region.imageSubresource.baseArrayLayer * srl.arrayPitch) +
+                           static_cast<VkDeviceSize>((region.imageOffset.x * texel_size)) + (region.imageOffset.y * srl.rowPitch) +
+                           (region.imageOffset.z * srl.depthPitch) + srl.offset;
         } else {
-            image_offset = region.imageOffset.x * region.imageOffset.y * region.imageOffset.z * element_size;
+            image_offset =
+                static_cast<VkDeviceSize>(region.imageOffset.x * region.imageOffset.y * region.imageOffset.z * texel_size);
         }
-        uint64_t copy_size;
+        VkDeviceSize copy_size;
         if (region.bufferRowLength != 0 && region.bufferImageHeight != 0) {
-            copy_size = ((region.bufferRowLength * region.bufferImageHeight) * element_size);
+            copy_size = static_cast<VkDeviceSize>(((region.bufferRowLength * region.bufferImageHeight) * texel_size));
         } else {
-            copy_size = ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * element_size);
+            copy_size = static_cast<VkDeviceSize>(
+                ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * texel_size));
         }
         auto image_region = sparse_container::range<VkDeviceSize>{image_offset, image_offset + copy_size};
         auto buffer_region = sparse_container::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
