@@ -1781,6 +1781,14 @@ bool CoreChecks::ValidateTransformFeedback(const SPIRV_MODULE_STATE &module_stat
         return skip;  // GeometryStreams are only used in Geomtry Shaders
     }
 
+    if (create_info.pipeline && create_info.pipeline->pre_raster_state &&
+        (create_info.pipeline->create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) != 0 &&
+        module_state.HasCapability(spv::CapabilityGeometryStreams) && !enabled_features.geometryStreams) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-geometryStreams-02321", module_state.handle(), loc,
+                         "SPIR-V uses GeometryStreams capability, but "
+                         "VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams is not enabled.");
+    }
+
     vvl::unordered_set<uint32_t> emitted_streams;
     for (const Instruction *insn : module_state.static_data_.transform_feedback_stream_inst) {
         const uint32_t opcode = insn->Opcode();
