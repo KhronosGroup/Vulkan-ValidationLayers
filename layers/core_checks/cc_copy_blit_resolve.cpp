@@ -2238,8 +2238,7 @@ void CoreChecks::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopy
 
 void CoreChecks::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
                                                const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, record_obj);
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
+    PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
@@ -2615,17 +2614,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                        const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
                                                        const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, record_obj);
-
-    auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage);
-    if (cb_state_ptr && src_image_state) {
-        // Make sure that all image slices record referenced layout
-        for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state, pCopyImageToBufferInfo->pRegions[i].imageSubresource,
-                                                pCopyImageToBufferInfo->srcImageLayout);
-        }
-    }
+    PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
@@ -2779,17 +2768,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                        const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR,
                                                        const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
-
-    auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto dst_image_state = Get<IMAGE_STATE>(pCopyBufferToImageInfo2KHR->dstImage);
-    if (cb_state_ptr && dst_image_state) {
-        // Make sure that all image slices are record referenced layout
-        for (uint32_t i = 0; i < pCopyBufferToImageInfo2KHR->regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, pCopyBufferToImageInfo2KHR->pRegions[i].imageSubresource,
-                                                pCopyBufferToImageInfo2KHR->dstImageLayout);
-        }
-    }
+    PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
@@ -3677,10 +3656,7 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 
 void CoreChecks::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
                                                const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
-    RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
-                       pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter);
+    PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,

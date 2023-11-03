@@ -508,8 +508,6 @@ bool BestPractices::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer comma
 void BestPractices::PostCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                           uint32_t maxDrawCount, uint32_t stride, const RecordObject& record_obj) {
-    StateTracker::PostCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                        stride, record_obj);
     PostCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                        record_obj);
 }

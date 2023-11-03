@@ -2448,8 +2448,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                           const RecordObject &record_obj) override;
     void PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
                                        const RecordObject &record_obj) override;
-    void RecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
-                                const RecordObject &record_obj);
 
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void *pData, const ErrorObject &error_obj) const override;

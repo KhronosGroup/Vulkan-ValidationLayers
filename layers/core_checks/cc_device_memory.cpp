@@ -1643,14 +1643,7 @@ bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bi
 
 void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                    const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
-    StateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        auto image_state = Get<IMAGE_STATE>(pBindInfos[i].image);
-        if (image_state) {
-            image_state->SetInitialLayoutMap();
-        }
-    }
+    PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 }
 
 bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const VkMemoryRequirements &requirements,

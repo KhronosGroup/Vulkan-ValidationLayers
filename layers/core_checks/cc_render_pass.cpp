@@ -555,8 +555,7 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
 
 void CoreChecks::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
-    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
+    PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -808,9 +807,7 @@ void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, c
 
 void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                     const RecordObject &record_obj) {
-    // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
-    RecordCmdEndRenderPassLayouts(commandBuffer);
-    StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, record_obj);
+    PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
 void CoreChecks::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -3984,8 +3981,7 @@ void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkS
 
 void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                   const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
-    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
+    PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,

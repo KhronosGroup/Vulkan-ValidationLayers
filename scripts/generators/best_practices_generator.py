@@ -183,22 +183,29 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 prototype = prototype.replace(')', ', void* state_data)')
             out.append(prototype)
 
-            out.append(f'ValidationStateTracker::PostCallRecord{command.name[2:]}({params});\n')
-            if command.name in self.manual_postcallrecord_list:
-                out.append(f'ManualPostCallRecord{command.name[2:]}({params});\n')
+            if command.alias:
+                # For alias that are promoted, just point to new function, RecordObject will allow us to distinguish the caller
+                paramList = [param.name for param in command.params]
+                paramList.append('record_obj')
+                params = ', '.join(paramList)
+                out.append(f'PostCallRecord{command.alias[2:]}({params});')
+            else:
+                out.append(f'ValidationStateTracker::PostCallRecord{command.name[2:]}({params});\n')
+                if command.name in self.manual_postcallrecord_list:
+                    out.append(f'ManualPostCallRecord{command.name[2:]}({params});\n')
 
-            if hasNonVkSuccess(command.successCodes):
-                out.append('''
-                    if (record_obj.result > VK_SUCCESS) {
-                        LogPositiveSuccessCode(record_obj);
-                        return;
-                    }''')
+                if hasNonVkSuccess(command.successCodes):
+                    out.append('''
+                        if (record_obj.result > VK_SUCCESS) {
+                            LogPositiveSuccessCode(record_obj);
+                            return;
+                        }''')
 
-            if command.errorCodes is not None:
-                out.append('''
-                    if (record_obj.result < VK_SUCCESS) {
-                        LogErrorCode(record_obj);
-                    }''')
+                if command.errorCodes is not None:
+                    out.append('''
+                        if (record_obj.result < VK_SUCCESS) {
+                            LogErrorCode(record_obj);
+                        }''')
 
             out.append('}\n')
         out.extend(guard_helper.add_guard(None, extra_newline=True))

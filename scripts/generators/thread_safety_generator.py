@@ -265,17 +265,28 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             if startThreadSafety is None and finishThreadSafety is None:
                 continue
 
+            # For alias that are promoted, just point to new function, RecordObject will allow us to distinguish the caller
+            paramList = [param.name for param in command.params]
+            paramList.append('record_obj')
+            aliasParams = ', '.join(paramList)
+
             out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'void ThreadSafety::PreCallRecord{prototype[2:]}'
             prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
             out.append(prototype)
-            out.extend([startThreadSafety] if startThreadSafety is not None else [])
+            if command.alias:
+                out.append(f'PreCallRecord{command.alias[2:]}({aliasParams});')
+            else:
+                out.extend([startThreadSafety] if startThreadSafety is not None else [])
             out.append('}\n\n')
 
             prototype = prototype.replace('PreCallRecord', 'PostCallRecord')
             out.append(prototype)
-            out.extend([finishThreadSafety] if finishThreadSafety is not None else [])
+            if command.alias:
+                out.append(f'PostCallRecord{command.alias[2:]}({aliasParams});')
+            else:
+                out.extend([finishThreadSafety] if finishThreadSafety is not None else [])
             out.append('}\n\n')
 
         out.extend(guard_helper.add_guard(None))
