@@ -465,7 +465,6 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                         {pre_call_validate}
                         ''')
                 elif command.alias:
-                # elif command.name == 'vkCmdBeginRenderPass2KHR':
                     # For alias that are promoted, just point to new function, ErrorObject will allow us to distinguish the caller
                     paramList = [param.name for param in command.params]
                     paramList.append('error_obj')
