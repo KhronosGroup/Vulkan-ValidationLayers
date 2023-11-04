@@ -1496,7 +1496,7 @@ class ValidationStateTracker : public ValidationObject {
                                     VkSemaphoreImportFlags flags);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
-    void RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    void RecordGetExternalSemaphoreState(SEMAPHORE_STATE& semaphore_state, VkExternalSemaphoreHandleTypeFlagBits handle_type);
     void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
@@ -1728,7 +1728,8 @@ class ValidationStateTracker : public ValidationObject {
         VkImage dedicated_image;
 
         // External Semaphore
-        VkSemaphoreCreateFlags semaphore_flags;
+        VkSemaphoreCreateFlags semaphore_flags = 0;
+        VkSemaphoreType semaphore_type = VK_SEMAPHORE_TYPE_BINARY;
     };
 
     inline std::optional<ExternalOpaqueInfo> GetOpaqueInfoFromFdHandle(int fd) const {

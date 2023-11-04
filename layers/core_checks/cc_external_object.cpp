@@ -74,6 +74,11 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
                                      "was created with flags 0x%" PRIx32 " but fd (%d) was exported with 0x%" PRIx32 ".",
                                      sem_state->flags, pImportSemaphoreFdInfo->fd, payload_info->semaphore_flags);
                 }
+                if (sem_state->type != payload_info->semaphore_type) {
+                    skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-03264", device, info_loc.dot(Field::semaphore),
+                                     "was created with %s but fd (%d) was exported as %s.", string_VkSemaphoreType(sem_state->type),
+                                     pImportSemaphoreFdInfo->fd, string_VkSemaphoreType(payload_info->semaphore_type));
+                }
             }
         }
     }

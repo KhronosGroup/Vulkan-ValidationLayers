@@ -3260,12 +3260,9 @@ void ValidationStateTracker::PostCallRecordImportSemaphoreFdKHR(VkDevice device,
                                pImportSemaphoreFdInfo->flags);
 }
 
-void ValidationStateTracker::RecordGetExternalSemaphoreState(VkSemaphore semaphore,
+void ValidationStateTracker::RecordGetExternalSemaphoreState(SEMAPHORE_STATE &semaphore_state,
                                                              VkExternalSemaphoreHandleTypeFlagBits handle_type) {
-    auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
-    if (semaphore_state) {
-        semaphore_state->Export(handle_type);
-    }
+    semaphore_state.Export(handle_type);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -3280,7 +3277,10 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice d
                                                                       const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                                       HANDLE *pHandle, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    RecordGetExternalSemaphoreState(pGetWin32HandleInfo->semaphore, pGetWin32HandleInfo->handleType);
+    auto semaphore_state = Get<SEMAPHORE_STATE>(pGetWin32HandleInfo->semaphore);
+    if (semaphore_state) {
+        RecordGetExternalSemaphoreState(*semaphore_state, pGetWin32HandleInfo->handleType);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordImportFenceWin32HandleKHR(
@@ -3301,7 +3301,18 @@ void ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(VkDevice devic
 void ValidationStateTracker::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                              const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    RecordGetExternalSemaphoreState(pGetFdInfo->semaphore, pGetFdInfo->handleType);
+    auto semaphore_state = Get<SEMAPHORE_STATE>(pGetFdInfo->semaphore);
+    if (semaphore_state) {
+        // Record before locking with the WriteLockGuard
+        RecordGetExternalSemaphoreState(*semaphore_state, pGetFdInfo->handleType);
+
+        ExternalOpaqueInfo external_info = {};
+        external_info.semaphore_flags = semaphore_state->flags;
+        external_info.semaphore_type = semaphore_state->type;
+
+        WriteLockGuard guard(fd_handle_map_lock_);
+        fd_handle_map_.insert_or_assign(*pFd, external_info);
+    }
 }
 
 void ValidationStateTracker::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type,
