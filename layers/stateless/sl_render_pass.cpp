@@ -395,13 +395,6 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice devic
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, error_obj);
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                                     const VkAllocationCallbacks *pAllocator,
-                                                                     VkRenderPass *pRenderPass,
-                                                                     const ErrorObject &error_obj) const {
-    return manual_PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
-}
-
 void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     auto &renderpass_state = renderpasses_states[renderPass];

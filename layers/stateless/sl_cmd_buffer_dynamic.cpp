@@ -18,8 +18,9 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::ValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                          const VkViewport *pViewports, const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                                        const VkViewport *pViewports,
+                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (!physical_device_features.multiViewport) {
@@ -49,24 +50,9 @@ bool StatelessValidation::ValidateCmdSetViewportWithCount(VkCommandBuffer comman
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                                           const VkViewport *pViewports,
-                                                                           const ErrorObject &error_obj) const {
-    bool skip = false;
-    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, error_obj);
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                                        const VkViewport *pViewports,
-                                                                        const ErrorObject &error_obj) const {
-    bool skip = false;
-    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, error_obj);
-    return skip;
-}
-
-bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                         const VkRect2D *pScissors, const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                                       const VkRect2D *pScissors,
+                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
     if (!physical_device_features.multiViewport) {
         if (scissorCount != 1) {
@@ -126,22 +112,6 @@ bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer command
         }
     }
 
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                                          const VkRect2D *pScissors,
-                                                                          const ErrorObject &error_obj) const {
-    bool skip = false;
-    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, error_obj);
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                                       const VkRect2D *pScissors,
-                                                                       const ErrorObject &error_obj) const {
-    bool skip = false;
-    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, error_obj);
     return skip;
 }
 

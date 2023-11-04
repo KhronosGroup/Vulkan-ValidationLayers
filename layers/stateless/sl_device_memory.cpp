@@ -115,13 +115,6 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device,
-                                                                                    const VkDeviceImageMemoryRequirements *pInfo,
-                                                                                    VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                    const ErrorObject &error_obj) const {
-    return manual_PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, error_obj);
-}
-
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
@@ -130,13 +123,6 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
     skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, error_obj.location.dot(Field::pInfo));
 
     return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
-    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
-    return manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
-                                                                        pSparseMemoryRequirements, error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,

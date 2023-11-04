@@ -260,15 +260,6 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                         uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                                         const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                                         const VkDeviceSize *pStrides,
-                                                                         const ErrorObject &error_obj) const {
-    return manual_PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
-                                                       pStrides, error_obj);
-}
-
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                                  VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
                                                                  const void *pValues, const ErrorObject &error_obj) const {
@@ -327,13 +318,6 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuff
                                                                    VkSubpassContents, const ErrorObject &error_obj) const {
     bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
     return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
-                                                                       const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                       const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                                       const ErrorObject &error_obj) const {
-    return manual_PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -696,12 +680,6 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
-                                                                     const VkRenderingInfo *pRenderingInfo,
-                                                                     const ErrorObject &error_obj) const {
-    return manual_PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj);
-}
-
 bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                                     uint32_t queryCount, size_t dataSize, void *pData,
                                                                     VkDeviceSize stride, VkQueryResultFlags flags,
@@ -766,12 +744,6 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer co
         }
     }
     return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                                  const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                                  const ErrorObject &error_obj) const {
-    return manual_PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,

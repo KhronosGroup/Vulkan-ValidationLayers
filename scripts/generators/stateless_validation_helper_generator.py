@@ -56,7 +56,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateQueryPool',
             'vkCreateRenderPass',
             'vkCreateRenderPass2',
-            'vkCreateRenderPass2KHR',
             'vkCreateBuffer',
             'vkCreateImage',
             'vkCreatePipelineLayout',
@@ -96,7 +95,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetAccelerationStructureHandleNV',
             'vkGetPhysicalDeviceImageFormatProperties',
             'vkGetPhysicalDeviceImageFormatProperties2',
-            'vkGetPhysicalDeviceImageFormatProperties2KHR',
             'vkCmdBuildAccelerationStructureNV',
             'vkCreateFramebuffer',
             'vkCmdSetLineStippleEXT',
@@ -109,7 +107,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBeginTransformFeedbackEXT',
             'vkCmdEndTransformFeedbackEXT',
             'vkCreateSamplerYcbcrConversion',
-            'vkCreateSamplerYcbcrConversionKHR',
             'vkGetMemoryFdKHR',
             'vkImportSemaphoreFdKHR',
             'vkGetSemaphoreFdKHR',
@@ -133,13 +130,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetRayTracingCaptureReplayShaderGroupHandlesKHR',
             'vkCmdBuildAccelerationStructureIndirectKHR',
             'vkGetDeviceAccelerationStructureCompatibilityKHR',
-            'vkCmdSetViewportWithCountEXT',
             'vkCmdSetViewportWithCount',
-            'vkCmdSetScissorWithCountEXT',
             'vkCmdSetScissorWithCount',
-            'vkCmdBindVertexBuffers2EXT',
             'vkCmdBindVertexBuffers2',
-            'vkCmdCopyBuffer2KHR',
             'vkCmdCopyBuffer2',
             'vkCmdBuildAccelerationStructuresKHR',
             'vkCmdBuildAccelerationStructuresIndirectKHR',
@@ -152,17 +145,13 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkMergePipelineCaches',
             'vkCmdClearColorImage',
             'vkCmdBeginRenderPass',
-            'vkCmdBeginRenderPass2KHR',
             'vkCmdBeginRenderPass2',
             'vkCmdBeginRendering',
-            'vkCmdBeginRenderingKHR',
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',
             'vkGetDeviceImageMemoryRequirements',
-            'vkGetDeviceImageMemoryRequirementsKHR',
             'vkGetDeviceImageSparseMemoryRequirements',
-            'vkGetDeviceImageSparseMemoryRequirementsKHR',
             'vkCreateWin32SurfaceKHR',
             'vkCreateWaylandSurfaceKHR',
             'vkCreateXcbSurfaceKHR',
@@ -435,6 +424,15 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
             ''')
 
+        # Some extensions are alias from EXT->KHR but are not promoted, example
+        #   vkGetImageSubresourceLayout2EXT (VK_EXT_host_image_copy)
+        #   vkGetImageSubresourceLayout2KHR (VK_KHR_maintenance5)
+        alias_but_not_core = []
+        for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist and x.alias and x.alias in self.vk.commands]:
+            aliasCommand = self.vk.commands[command.alias]
+            if aliasCommand.version is None:
+                alias_but_not_core.append(aliasCommand.name)
+
         # Generate the command parameter checking code from the captured data
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
             out.extend(guard_helper.add_guard(command.protect, extra_newline=True))
@@ -462,26 +460,36 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 if len(outExpression) > 1:
                     cExpression = f'({cExpression})'
 
+                if command.name in alias_but_not_core:
+                    cExpression += f' && loc.function == vvl::Func::{command.name}'
                 out.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, "{" || ".join(outExpression)}");\n')
 
-            # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
-            startIndex = 0 if command.name == 'vkCreateInstance' else 1
-            lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
+            if command.alias:
+                # For alias that are promoted, just point to new function, ErrorObject will allow us to distinguish the caller
+                paramList = [param.name for param in command.params]
+                paramList.append('error_obj')
+                params = ', '.join(paramList)
+                out.append(f'skip |= PreCallValidate{command.alias[2:]}({params});')
+            else:
+                # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
+                startIndex = 0 if command.name == 'vkCreateInstance' else 1
+                lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
 
-            if command.instance and command.version:
-                out.append(f'if (CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
+                if command.instance and command.version:
+                    # check function name so KHR version doesn't trigger flase positive
+                    out.append(f'if (loc.function == vvl::Func::{command.name} && CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
 
-            for line in lines:
-                if isinstance(line, list):
-                    for sub in line:
-                        out.append(sub)
-                else:
-                    out.append(line)
-            # Insert call to custom-written function if present
-            if command.name in self.functions_with_manual_checks:
-                # Generate parameter list for manual fcn and down-chain calls
-                params_text = ', '.join([x.name for x in command.params]) + ', error_obj'
-                out.append(f'    if (!skip) skip |= manual_PreCallValidate{command.name[2:]}({params_text});\n')
+                for line in lines:
+                    if isinstance(line, list):
+                        for sub in line:
+                            out.append(sub)
+                    else:
+                        out.append(line)
+                # Insert call to custom-written function if present
+                if command.name in self.functions_with_manual_checks:
+                    # Generate parameter list for manual fcn and down-chain calls
+                    params_text = ', '.join([x.name for x in command.params]) + ', error_obj'
+                    out.append(f'    if (!skip) skip |= manual_PreCallValidate{command.name[2:]}({params_text});\n')
             out.append('return skip;\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None, extra_newline=True))
