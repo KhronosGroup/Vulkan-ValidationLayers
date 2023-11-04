@@ -1114,9 +1114,3 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
 
     return skip;
 }
-
-bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
-    VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkSamplerYcbcrConversion *pYcbcrConversion, const ErrorObject &error_obj) const {
-    return manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
-}

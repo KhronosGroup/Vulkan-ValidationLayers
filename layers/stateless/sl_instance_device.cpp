@@ -828,13 +828,6 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
-    return manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
-                                                                         error_obj);
-}
-
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties, const ErrorObject &error_obj) const {

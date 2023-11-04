@@ -643,10 +643,6 @@ class StatelessValidation : public ValidationObject {
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                  const ErrorObject &error_obj) const;
 
-    bool manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                    const ErrorObject &error_obj) const;
-
     bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                   const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const;
 
@@ -668,10 +664,6 @@ class StatelessValidation : public ValidationObject {
                                                                        const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                        VkImageFormatProperties2 *pImageFormatProperties,
                                                                        const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                          const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                          VkImageFormatProperties2 *pImageFormatProperties,
-                                                                          const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                       VkImageType type, VkImageTiling tiling,
                                                                       VkImageUsageFlags usage, VkImageCreateFlags flags,
@@ -681,9 +673,6 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                              uint32_t regionCount, const VkBufferCopy *pRegions,
                                              const ErrorObject &error_obj) const;
-
-    bool manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                 const ErrorObject &error_obj) const;
 
     bool manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
                                               const ErrorObject &error_obj) const;
@@ -857,11 +846,6 @@ class StatelessValidation : public ValidationObject {
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkSamplerYcbcrConversion *pYcbcrConversion,
                                                             const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
-                                                               const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                               const ErrorObject &error_obj) const;
 
     bool manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                               const ErrorObject &error_obj) const;
@@ -958,23 +942,11 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
         VkDevice device, const VkAccelerationStructureVersionInfoKHR *pVersionInfo,
         VkAccelerationStructureCompatibilityKHR *pCompatibility, const ErrorObject &error_obj) const;
-    bool ValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport *pViewports,
-                                         const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                          const VkViewport *pViewports, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                        const VkViewport *pViewports, const ErrorObject &error_obj) const;
 
-    bool ValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D *pScissors,
-                                        const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                         const VkRect2D *pScissors, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                       const VkRect2D *pScissors, const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                        const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
-                                                        const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
-                                                        const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
@@ -1017,12 +989,8 @@ class StatelessValidation : public ValidationObject {
     bool ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents,
                                                   const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      const VkSubpassBeginInfo *, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    const VkSubpassBeginInfo *, const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                    const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                  const ErrorObject &error_obj) const;
 
@@ -1083,17 +1051,10 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
                                                                 VkMemoryRequirements2 *pMemoryRequirements,
                                                                 const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
-                                                                   VkMemoryRequirements2 *pMemoryRequirements,
-                                                                   const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
                                                                       uint32_t *pSparseMemoryRequirementCount,
                                                                       VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements,
                                                                       const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
-        VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-        VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const;
-
     bool manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                VkFence fence, const ErrorObject &error_obj) const;
 
