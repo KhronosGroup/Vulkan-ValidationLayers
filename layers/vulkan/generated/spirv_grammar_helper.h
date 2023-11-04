@@ -35,8 +35,6 @@ bool GroupOperation(uint32_t opcode);
 bool ImageGatherOperation(uint32_t opcode);
 bool ImageFetchOperation(uint32_t opcode);
 bool ImageSampleOperation(uint32_t opcode);
-uint32_t ImageAccessOperandsPosition(uint32_t opcode);
-uint32_t SampledImageAccessOperandsPosition(uint32_t opcode);
 
 bool OpcodeHasType(uint32_t opcode);
 bool OpcodeHasResult(uint32_t opcode);
@@ -44,6 +42,7 @@ bool OpcodeHasResult(uint32_t opcode);
 uint32_t OpcodeMemoryScopePosition(uint32_t opcode);
 uint32_t OpcodeExecutionScopePosition(uint32_t opcode);
 uint32_t OpcodeImageOperandsPosition(uint32_t opcode);
+uint32_t OpcodeImageAccessPosition(uint32_t opcode);
 
 uint32_t ImageOperandsParamCount(uint32_t opcode);
 
