@@ -589,6 +589,55 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
+TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreType) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
+
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkPhysicalDeviceExternalSemaphoreInfo external_semahpore_info = vku::InitStructHelper();
+    external_semahpore_info.handleType = handle_type;
+
+    VkExternalSemaphoreProperties external_semahpore_props = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_semahpore_info, &external_semahpore_props);
+    if (!(external_semahpore_props.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(external_semahpore_props.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External semaphore does not support importing and exporting";
+    }
+    if (!(external_semahpore_props.compatibleHandleTypes & handle_type)) {
+        GTEST_SKIP() << "External semaphore does not support VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT";
+    }
+
+    VkExportSemaphoreCreateInfo esci = vku::InitStructHelper();
+    esci.handleTypes = handle_type;
+    VkSemaphoreTypeCreateInfo stci = vku::InitStructHelper(&esci);
+    stci.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+    VkSemaphoreCreateInfo sci = vku::InitStructHelper(&stci);
+    vkt::Semaphore binary_sem(*m_device, sci);
+
+    VkSubmitInfo si = vku::InitStructHelper();
+    si.signalSemaphoreCount = 1;
+    si.pSignalSemaphores = &binary_sem.handle();
+
+    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+
+    int fd_handle = -1;
+    binary_sem.export_handle(fd_handle, handle_type);
+
+    stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    vkt::Semaphore import_semaphore(*m_device, sci);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-03264");
+    import_semaphore.import_handle(fd_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_default_queue);
+}
+
 TEST_F(NegativeExternalMemorySync, TemporaryFence) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME;
