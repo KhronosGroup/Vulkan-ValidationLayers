@@ -180,7 +180,7 @@ struct ImageAccess {
     const Instruction *variable_image_insn = nullptr;
     // If there is a OpSampledImage there will also be a sampler variable
     const Instruction *variable_sampler_insn = nullptr;
-    bool no_function_jump = true;  // TODO 5614 - Handle function jumps
+    bool valid_access = true;  // TODO 5614 - Handle function jumps
 
     bool is_dref = false;
     bool is_sampler_implicitLod_dref_proj = false;

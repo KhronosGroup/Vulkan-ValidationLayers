@@ -664,6 +664,60 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
 
+TEST_F(NegativeShaderStorageImage, WriteLessComponentCopyObject) {
+    TEST_DESCRIPTION("Test writing to image with less components, but use OpCopyObject.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init())
+
+    // not valid GLSL, but would look like:
+    // layout(set = 0, binding = 0, Rgba8ui) uniform uimage2D storageImage;
+    // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
+    //
+    // Rgba8ui == 4-component but only writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint 2D 0 0 0 2 Rgba8ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+      %v2int = OpTypeVector %int 2
+      %int_1 = OpConstant %int 1
+      %coord = OpConstantComposite %v2int %int_1 %int_1
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+    %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+   %var_copy = OpCopyObject %ptr %var
+  %var_copy2 = OpCopyObject %ptr %var_copy
+       %load = OpLoad %image %var_copy
+  %load_copy = OpCopyObject %image %load
+ %load_copy2 = OpCopyObject %image %load_copy
+               OpImageWrite %load_copy2 %coord %texelU3
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    if (!FormatFeaturesAreSupported(gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support storage image";
+    }
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
+}
+
 TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
 

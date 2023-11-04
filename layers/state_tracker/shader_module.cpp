@@ -589,98 +589,76 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
         }
     }
 
-    // First find the OpLoad for the Image (and optional Sampler)
-    const Instruction* image_load = nullptr;
-    const Instruction* sampler_load = nullptr;
-    // sampled image instructions are 2 OpLoad and can be separate image and sampler
-    const uint32_t sampled_image_operand = SampledImageAccessOperandsPosition(image_opcode);
-    if (sampled_image_operand != 0) {
-        const uint32_t sampled_image_id = image_insn.Word(sampled_image_operand);
-        const Instruction* id = module_state.FindDef(sampled_image_id);  // <id> Sampled Image
-        if (id->Opcode() == spv::OpFunctionParameter) {
-            no_function_jump = false;
-            return;  // TODO 5614 - Handle function jumps
-        }
+    const Instruction* sampler_insn = nullptr;
+    auto walk_to_variable = [this, &module_state, &sampler_insn](const Instruction* insn, bool sampler) {
+        // Protect from loops
+        std::unordered_set<uint32_t> visited;
 
-        sampler_load = (id->Opcode() == spv::OpSampledImage) ? module_state.FindDef(id->Word(4)) : nullptr;
-        const uint32_t image_operand = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : sampled_image_id;
-
-        image_load = module_state.FindDef(image_operand);
-    } else {
-        const uint32_t image_operand = ImageAccessOperandsPosition(image_opcode);
-        assert(image_operand != 0);
-
-        const uint32_t image_id = image_insn.Word(image_operand);
-        image_load = module_state.FindDef(image_id);
-
-        // OpImageFetch grabs OpImage before OpLoad
-        if (image_load->Opcode() == spv::OpImage) {
-            image_load = module_state.FindDef(image_load->Word(3));
-        }
-    }
-
-    // With the OpLoad find the OpVariable for the Image
-    if (!image_load || image_load->Opcode() != spv::OpLoad) {
-        // TODO - This can be OpUndef, need to get spec clarification how this is handled
-        no_function_jump = false;
-        return;  // TODO 5614 - Handle function jumps
-    }
-
-    const Instruction* image_load_pointer = module_state.FindDef(image_load->Word(3));
-    if (!image_load_pointer) {
-        no_function_jump = false;
-        return;  // TODO 5614 - Figure out why some SPIR-V is hitting a null FindDef from OpLoad
-    }
-
-    if (image_load_pointer->Opcode() == spv::OpVariable) {
-        variable_image_insn = image_load_pointer;
-    } else if (image_load_pointer->Opcode() == spv::OpAccessChain || image_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
-        // If Image is an array (but not descriptor indexing), then need to get the index
-        // Currently just need to care about the first image_loads because the above loop will have combos to
-        // image-to-samplers for us
-        const Instruction* const_def = module_state.GetConstantDef(image_load_pointer->Word(4));
-        if (const_def) {
-            image_access_chain_index = const_def->GetConstantValue();
-        }
-        variable_image_insn = module_state.FindDef(image_load_pointer->Word(3));
-    } else if (image_load_pointer->Opcode() == spv::OpFunctionParameter) {
-        no_function_jump = false;
-        return;  // TODO 5614 - Handle function jumps
-    } else {
-        no_function_jump = false;
-        return;  // TODO 5614 - Handle other calls like OpCopyObject
-    }
-
-    // If there is a OpSampledImage, take the other OpLoad and find the OpVariable for the Sampler
-    if (sampler_load) {
-        if (sampler_load->Opcode() != spv::OpLoad) {
-            no_function_jump = false;
-            return;  // TODO 5614 - Handle function jumps
-        }
-
-        const Instruction* sampler_load_pointer = module_state.FindDef(sampler_load->Word(3));
-        if (!sampler_load_pointer) {
-            no_function_jump = false;
-            return;  // TODO 5614 - Figure out why some SPIR-V is hitting a null FindDef from OpLoad
-        }
-
-        if (sampler_load_pointer->Opcode() == spv::OpVariable) {
-            variable_sampler_insn = sampler_load_pointer;
-        } else if (sampler_load_pointer->Opcode() == spv::OpAccessChain ||
-                   sampler_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
-            // Can have descriptor indexing of samplers
-            const Instruction* const_def = module_state.GetConstantDef(sampler_load_pointer->Word(4));
-            if (const_def) {
-                sampler_access_chain_index = const_def->GetConstantValue();
+        // Keep walking down until get to variables
+        while (true) {
+            uint32_t current_id = insn->ResultId();
+            auto visited_iter = visited.find(current_id);
+            if (visited_iter != visited.end()) {
+                valid_access = false;  // Caught in a loop
+                return;
             }
-            variable_sampler_insn = module_state.FindDef(sampler_load_pointer->Word(3));
-        } else if (sampler_load_pointer->Opcode() == spv::OpFunctionParameter) {
-            no_function_jump = false;
-            return;  // TODO 5614 - Handle function jumps
-        } else {
-            no_function_jump = false;
-            return;  // TODO 5614 - Handle other calls like OpCopyObject
+            visited.insert(current_id);
+
+            switch (insn->Opcode()) {
+                case spv::OpSampledImage:
+                    // If there is a OpSampledImage we will need to split off and walk down to get the sampler variable
+                    sampler_insn = module_state.FindDef(insn->Word(4));
+                    insn = module_state.FindDef(insn->Word(3));
+                    break;
+                case spv::OpImage:
+                    // OpImageFetch grabs OpImage before OpLoad
+                    insn = module_state.FindDef(insn->Word(3));
+                    break;
+                case spv::Op::OpLoad:
+                    // Follow the pointer being loaded
+                    insn = module_state.FindDef(insn->Word(3));
+                    break;
+                case spv::Op::OpCopyObject:
+                    // Follow the object being copied.
+                    insn = module_state.FindDef(insn->Word(3));
+                    break;
+                case spv::OpAccessChain:
+                case spv::OpInBoundsAccessChain:
+                case spv::OpPtrAccessChain:
+                case spv::OpInBoundsPtrAccessChain: {
+                    // If Image is an array (but not descriptor indexing), then need to get the index.
+                    const Instruction* const_def = module_state.GetConstantDef(insn->Word(4));
+                    if (const_def) {
+                        image_access_chain_index = const_def->GetConstantValue();
+                    }
+                    insn = module_state.FindDef(insn->Word(3));
+                    break;
+                }
+                case spv::Op::OpFunctionParameter:
+                    valid_access = false;
+                    return;  // TODO 5614 - Handle function jumps
+                case spv::Op::OpVariable: {
+                    if (sampler) {
+                        variable_sampler_insn = insn;
+                    } else {
+                        variable_image_insn = insn;
+                    }
+                    return;  // found successfully
+                }
+                default:
+                    // Hit invalid (or unsupported) opcode
+                    valid_access = false;
+                    return;
+            }
         }
+    };
+
+    const uint32_t image_operand = OpcodeImageAccessPosition(image_opcode);
+    assert(image_operand != 0);
+    const Instruction* insn = module_state.FindDef(image_insn.Word(image_operand));
+    walk_to_variable(insn, false);
+    if (sampler_insn) {
+        walk_to_variable(sampler_insn, true);
     }
 }
 
@@ -1017,7 +995,7 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
 
     for (const auto& insn : image_instructions) {
         auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
-        if (new_access->variable_image_insn && new_access->no_function_jump) {
+        if (new_access->variable_image_insn && new_access->valid_access) {
             image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
         }
     }
