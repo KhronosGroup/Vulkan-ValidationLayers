@@ -171,6 +171,11 @@ def buildKvuidDict(unassigned_vuid_files):
                     if eq_pos >= 0:
                         kvuid = line[kvuid_pos:eq_pos].strip(' \t\n;"')
                         unassigned_str = line[eq_pos+1:].strip(' \t\n;"')
+                        # Handle the case when the value of the constant is on a new line due to formatting
+                        if unassigned_str == '':
+                            line = f.readline()
+                            pos = line.find('"')
+                            unassigned_str = line[pos+1:].strip(' \t\n;"')
                         kvuid_dict[kvuid] = unassigned_str
     return kvuid_dict
 
