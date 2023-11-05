@@ -181,6 +181,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateShadersEXT',
             'vkGetShaderBinaryDataEXT',
             'vkSetDeviceMemoryPriorityEXT',
+            'vkGetDeviceImageSubresourceLayoutKHR',
             'vkQueueBindSparse'
             ]
 

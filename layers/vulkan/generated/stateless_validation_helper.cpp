@@ -20390,6 +20390,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDe
                                     "VUID-VkSubresourceLayout2KHR-pNext-pNext", "VUID-VkSubresourceLayout2KHR-sType-unique", false,
                                     false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout, error_obj);
     return skip;
 }
 

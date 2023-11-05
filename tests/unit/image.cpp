@@ -2603,6 +2603,75 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
     }
 }
 
+TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
+    TEST_DESCRIPTION("Test VkDeviceImageSubresourceInfoKHR which just like vkGetImageSubresourceLayout");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+
+    VkImageSubresource2KHR subresource = vku::InitStructHelper();
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    VkDeviceImageSubresourceInfoKHR image_sub_info = vku::InitStructHelper();
+    image_sub_info.pCreateInfo = &image_ci;
+    image_sub_info.pSubresource = &subresource;
+
+    VkSubresourceLayout2KHR out_layout = vku::InitStructHelper();
+
+    {
+        subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-aspectMask-00997");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-format-08886");
+        vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresource.imageSubresource.mipLevel = 1;
+        subresource.imageSubresource.arrayLayer = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-mipLevel-01716");
+        vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresource.imageSubresource.mipLevel = 0;
+        subresource.imageSubresource.arrayLayer = 1;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-arrayLayer-01717");
+        vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        subresource.imageSubresource.mipLevel = 0;
+        subresource.imageSubresource.arrayLayer = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-format-08886");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-format-04464");
+        vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+        subresource.imageSubresource.mipLevel = 0;
+        subresource.imageSubresource.arrayLayer = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-format-08886");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageSubresourceInfoKHR-format-04464");
+        vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeImage, UndefinedFormat) {
     TEST_DESCRIPTION("Create image with undefined format");
 

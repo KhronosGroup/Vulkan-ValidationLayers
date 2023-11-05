@@ -581,6 +581,10 @@ class StatelessValidation : public ValidationObject {
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                const ErrorObject &error_obj) const;
 
+    bool manual_PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR *pInfo,
+                                                                  VkSubresourceLayout2KHR *pLayout,
+                                                                  const ErrorObject &error_obj) const;
+
     bool ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const;
 
     bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
