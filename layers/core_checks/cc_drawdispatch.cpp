@@ -2916,6 +2916,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07485";
         sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07486";
         sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07487";
+        xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksNV-None-07074";
+        pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksNV-None-07075";
     }
 };
 
@@ -3197,6 +3199,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07485";
         sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07486";
         sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07487";
+        xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07074";
+        pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07075";
     }
 };
 
@@ -3481,6 +3485,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07485";
         sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07486";
         sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07487";
+        xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07074";
+        pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07075";
     }
 };
 
@@ -3759,6 +3765,8 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07485";
         sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07486";
         sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07487";
+        xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksEXT-None-07074";
+        pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksEXT-None-07075";
     }
 };
 
@@ -4040,6 +4048,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07485";
         sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07486";
         sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07487";
+        xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07074";
+        pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07075";
     }
 };
 
@@ -4324,6 +4334,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07485";
         sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07486";
         sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07487";
+        xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07074";
+        pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07075";
     }
 };
 
@@ -4771,6 +4783,17 @@ bool CoreChecks::ValidateMeshShaderStage(const CMD_BUFFER_STATE &cb_state, const
                          "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT or VK_SHADER_STAGE_GEOMETRY_BIT. Active shader stages on the "
                          "bound pipeline are %s.",
                          string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+    }
+    for (const auto &query : cb_state.activeQueries) {
+        const auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
+        if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+            skip |= LogError(vuid.xfb_queries_07074, cb_state.commandBuffer(), loc, "Query with type %s is active.",
+                             string_VkQueryType(query_pool_state->createInfo.queryType));
+        }
+        if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            skip |= LogError(vuid.pg_queries_07075, cb_state.commandBuffer(), loc, "Query with type %s is active.",
+                             string_VkQueryType(query_pool_state->createInfo.queryType));
+        }
     }
     return skip;
 }
