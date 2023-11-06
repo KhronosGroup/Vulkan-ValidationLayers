@@ -261,7 +261,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             skip |= ValidateStructType(create_info_loc.dot(Field::pRasterizationState),
                                        "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
                                        create_info.pRasterizationState, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-                                       false, kVUIDUndefined, "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
+                                       false, "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-09040",
+                                       "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
         }
 
         if ((flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0 &&
