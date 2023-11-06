@@ -137,6 +137,7 @@ elseif(MSVC)
 
     # Enforce stricter ISO C++
     add_compile_options(/permissive-)
+    add_compile_options(/utf-8)
 
     # PDBs aren't generated on Release builds by default.
     add_compile_options("$<$<CONFIG:Release>:/Zi>")
