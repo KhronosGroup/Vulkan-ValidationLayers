@@ -266,8 +266,11 @@ target_sources(vvl PRIVATE
     stateless/sl_utils.cpp
     stateless/sl_wsi.cpp
     stateless/stateless_validation.h
+    sync/sync_common.h
     sync/sync_validation.cpp
     sync/sync_validation.h
+    sync/sync_model.cpp
+    sync/sync_model.h
     sync/sync_utils.cpp
     sync/sync_utils.h
     sync/sync_vuid_maps.cpp

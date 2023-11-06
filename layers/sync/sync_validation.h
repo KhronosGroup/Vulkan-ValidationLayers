@@ -22,10 +22,11 @@
 #include <set>
 #include <vulkan/vulkan.h>
 
-#include "generated/sync_validation_types.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
+
+#include "sync/sync_model.h"
 
 class AccessContext;
 class CommandBufferAccessContext;
@@ -44,29 +45,6 @@ class SyncValidator;
 struct ClearAttachmentInfo;
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
-using QueueId = uint32_t;
-
-enum SyncHazard {
-    NONE = 0,
-    READ_AFTER_WRITE,
-    WRITE_AFTER_READ,
-    WRITE_AFTER_WRITE,
-    READ_RACING_WRITE,
-    WRITE_RACING_WRITE,
-    WRITE_RACING_READ,
-    WRITE_AFTER_PRESENT,  // Once presented, an image may not be used until acquired
-    READ_AFTER_PRESENT,
-    PRESENT_AFTER_READ,  // Must be unreferenced and visible to present
-    PRESENT_AFTER_WRITE,
-};
-
-enum class SyncOrdering : uint8_t {
-    kNonAttachment = 0,
-    kColorAttachment = 1,
-    kDepthStencilAttachment = 2,
-    kRaster = 3,
-    kNumOrderings = 4,
-};
 
 namespace syncval_state {
 class CommandBuffer;
@@ -188,31 +166,6 @@ struct ClearAttachmentInfo {
     std::string GetSubpassAttachmentText() const;
 };
 
-// Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
-struct SyncStageAccess {
-    static inline const SyncStageAccessInfoType &UsageInfo(SyncStageAccessIndex stage_access_index) {
-        return syncStageAccessInfoByStageAccessIndex()[stage_access_index];
-    }
-    static inline SyncStageAccessFlags FlagBit(SyncStageAccessIndex stage_access) {
-        return syncStageAccessInfoByStageAccessIndex()[stage_access].stage_access_bit;
-    }
-
-    static bool IsRead(SyncStageAccessIndex stage_access_index) { return syncStageAccessReadMask[stage_access_index]; }
-    static bool IsRead(const SyncStageAccessInfoType &info) { return IsRead(info.stage_access_index); }
-    static bool IsWrite(SyncStageAccessIndex stage_access_index) { return syncStageAccessWriteMask[stage_access_index]; }
-    static bool IsWrite(const SyncStageAccessInfoType &info) { return IsWrite(info.stage_access_index); }
-
-    static VkPipelineStageFlags2KHR PipelineStageBit(SyncStageAccessIndex stage_access_index) {
-        return syncStageAccessInfoByStageAccessIndex()[stage_access_index].stage_mask;
-    }
-    static SyncStageAccessFlags AccessScopeByStage(VkPipelineStageFlags2KHR stages);
-    static SyncStageAccessFlags AccessScopeByAccess(VkAccessFlags2KHR access);
-    static SyncStageAccessFlags AccessScope(VkPipelineStageFlags2KHR stages, VkAccessFlags2KHR access);
-    static SyncStageAccessFlags AccessScope(const SyncStageAccessFlags &stage_scope, VkAccessFlags2KHR accesses) {
-        return stage_scope & AccessScopeByAccess(accesses);
-    }
-};
-
 class AlternateResourceUsage {
   public:
     struct RecordBase;
@@ -298,7 +251,7 @@ struct NamedHandle {
 };
 
 struct ResourceCmdUsageRecord {
-    using TagIndex = size_t;
+    using TagIndex = ResourceUsageTag;
     using Count = uint32_t;
     constexpr static TagIndex kMaxIndex = std::numeric_limits<TagIndex>::max();
 
@@ -355,145 +308,6 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     ResourceUsageRecord(const AlternateResourceUsage &other) : ResourceCmdUsageRecord(), alt_usage(other) {}
     ResourceUsageRecord(const ResourceUsageRecord &other) : ResourceCmdUsageRecord(other), alt_usage(other.alt_usage) {}
     ResourceUsageRecord &operator=(const ResourceUsageRecord &other) = default;
-};
-
-// The resource tag index is relative to the command buffer or queue in which it's found
-using ResourceUsageTag = ResourceUsageRecord::TagIndex;
-
-// Notes:
-//  * Key must be integral.
-//  * We aren't interested as of this implementation in caching lookups, only inserts
-//  * using a raw C-style array instead of std::array intentionally for size/performance reasons
-//
-// The following were shown to not improve hit rate for current usage (tag set gathering).  For general use YMMV.
-//  * More complicated index construction (at >> LogSize ^ at)
-//  * Multi-way LRU eviction caching (equivalent hit rate to 1-way direct replacement of same total cache slots) but with
-//    higher complexity.
-template <typename IntegralKey, size_t LogSize = 4U, IntegralKey kInvalidKey = IntegralKey(0)>
-class CachedInsertSet : public std::set<IntegralKey> {
-  public:
-    using Base = std::set<IntegralKey>;
-    using key_type = typename Base::key_type;
-    using Index = unsigned;
-    static constexpr Index kSize = 1 << LogSize;
-    static constexpr key_type kMask = static_cast<key_type>(kSize) - 1;
-
-    void CachedInsert(const key_type key) {
-        // 1-way direct replacement
-        const Index index = static_cast<Index>(key & kMask);  // Simplest
-
-        if (entries_[index] != key) {
-            entries_[index] = key;
-            Base::insert(key);
-        }
-    }
-
-    CachedInsertSet() { std::fill(entries_, entries_ + kSize, kInvalidKey); }
-
-  private:
-    key_type entries_[kSize];
-};
-
-using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
-using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
-
-class HazardResult {
-  public:
-    struct HazardState {
-        std::unique_ptr<const ResourceAccessState> access_state;
-        std::unique_ptr<const ResourceFirstAccess> recorded_access;
-        SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
-        SyncStageAccessFlags prior_access;
-        ResourceUsageTag tag = ResourceUsageTag();
-        SyncHazard hazard = NONE;
-        HazardState(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
-                    const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
-    };
-
-    void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
-             const ResourceAccessWriteState &prior_write);
-    void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
-             const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
-    void AddRecordedAccess(const ResourceFirstAccess &first_access);
-
-    bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
-    bool IsWAWHazard() const;
-    ResourceUsageTag Tag() const {
-        assert(state_);
-        return state_->tag;
-    }
-    SyncHazard Hazard() const {
-        assert(state_);
-        return state_->hazard;
-    }
-    const std::unique_ptr<const ResourceFirstAccess> &RecordedAccess() const {
-        assert(state_);
-        return state_->recorded_access;
-    }
-    const HazardState &State() const {
-        assert(state_);
-        return state_.value();
-    }
-
-  private:
-    std::optional<HazardState> state_;
-};
-
-struct SyncExecScope {
-    VkPipelineStageFlags2KHR mask_param;  // the xxxStageMask parameter passed by the caller
-    VkPipelineStageFlags2KHR
-        expanded_mask;                    // all stage bits covered by any 'catch all bits' in the parameter (eg. ALL_GRAPHICS_BIT).
-    VkPipelineStageFlags2KHR exec_scope;  // all earlier or later stages that would be affected by a barrier using this scope.
-    SyncStageAccessFlags valid_accesses;  // all valid accesses that can be used with this scope.
-
-    SyncExecScope() : mask_param(0), expanded_mask(0), exec_scope(0), valid_accesses(0) {}
-    SyncExecScope(VkPipelineStageFlags2KHR mask_param_, VkPipelineStageFlags2KHR expanded_mask_,
-                  VkPipelineStageFlags2KHR exec_scope_, const SyncStageAccessFlags &valid_accesses_)
-        : mask_param(mask_param_), expanded_mask(expanded_mask_), exec_scope(exec_scope_), valid_accesses(valid_accesses_) {}
-
-    static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR src_stage_mask,
-                                 const VkPipelineStageFlags2KHR disabled_feature_mask = 0);
-    static SyncExecScope MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR src_stage_mask);
-};
-
-struct SyncBarrier {
-    struct AllAccess {};
-    SyncExecScope src_exec_scope;
-    SyncStageAccessFlags src_access_scope;
-    SyncExecScope dst_exec_scope;
-    SyncStageAccessFlags dst_access_scope;
-    SyncBarrier() = default;
-    SyncBarrier(const SyncBarrier &other) = default;
-    SyncBarrier &operator=(const SyncBarrier &) = default;
-
-    SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst);
-    SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const AllAccess &);
-    SyncBarrier(const SyncExecScope &src_exec, const SyncStageAccessFlags &src_access, const SyncExecScope &dst_exec,
-                const SyncStageAccessFlags &dst_access)
-        : src_exec_scope(src_exec), src_access_scope(src_access), dst_exec_scope(dst_exec), dst_access_scope(dst_access) {}
-
-    template <typename Barrier>
-    SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst);
-
-    SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &barrier);
-    // template constructor for sync2 barriers
-    template <typename Barrier>
-    SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier);
-
-    void Merge(const SyncBarrier &other) {
-        // Note that after merge, only the exec_scope and access_scope fields are fully valid
-        // TODO: Do we need to update any of the other fields?  Merging has limited application.
-        src_exec_scope.exec_scope |= other.src_exec_scope.exec_scope;
-        src_access_scope |= other.src_access_scope;
-        dst_exec_scope.exec_scope |= other.dst_exec_scope.exec_scope;
-        dst_access_scope |= other.dst_access_scope;
-    }
-};
-
-struct SemaphoreScope : SyncExecScope {
-    SemaphoreScope(QueueId qid, const SyncExecScope &exec_scope) : SyncExecScope(exec_scope), queue(qid) {}
-    SemaphoreScope() = default;
-    QueueId queue;
 };
 
 struct AcquiredImage {
@@ -561,353 +375,6 @@ class SignaledSemaphores {
     vvl::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
     const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
 };
-
-struct ResourceFirstAccess {
-    ResourceUsageTag tag;
-    const SyncStageAccessInfoType *usage_info;
-    SyncOrdering ordering_rule;
-    ResourceFirstAccess(ResourceUsageTag tag_, const SyncStageAccessInfoType &usage_info_, SyncOrdering ordering_rule_)
-        : tag(tag_), usage_info(&usage_info_), ordering_rule(ordering_rule_){};
-    ResourceFirstAccess(const ResourceFirstAccess &other) = default;
-    ResourceFirstAccess(ResourceFirstAccess &&other) = default;
-    ResourceFirstAccess &operator=(const ResourceFirstAccess &rhs) = default;
-    ResourceFirstAccess &operator=(ResourceFirstAccess &&rhs) = default;
-    bool operator==(const ResourceFirstAccess &rhs) const {
-        return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule);
-    }
-};
-
-using QueueId = uint32_t;
-struct OrderingBarrier {
-    VkPipelineStageFlags2KHR exec_scope;
-    SyncStageAccessFlags access_scope;
-    OrderingBarrier() = default;
-    OrderingBarrier(const OrderingBarrier &) = default;
-    OrderingBarrier(VkPipelineStageFlags2KHR es, SyncStageAccessFlags as) : exec_scope(es), access_scope(as) {}
-    OrderingBarrier &operator=(const OrderingBarrier &) = default;
-    OrderingBarrier &operator|=(const OrderingBarrier &rhs) {
-        exec_scope |= rhs.exec_scope;
-        access_scope |= rhs.access_scope;
-        return *this;
-    }
-    bool operator==(const OrderingBarrier &rhs) const {
-        return (exec_scope == rhs.exec_scope) && (access_scope == rhs.access_scope);
-    }
-};
-
-class ResourceAccessWriteState {
-  public:
-    bool operator==(const ResourceAccessWriteState &rhs) const {
-        return (access_ == rhs.access_) && (barriers_ == rhs.barriers_) && (tag_ == rhs.tag_) && (queue_ == rhs.queue_) &&
-               (dependency_chain_ == rhs.dependency_chain_);
-    }
-    bool WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const;
-    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
-    bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
-                                        const SyncStageAccessFlags &src_access_scope) const;
-
-    bool WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
-                           QueueId scope_queue, ResourceUsageTag scope_tag) const;
-
-    ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
-    ResourceAccessWriteState() = default;
-
-    SyncStageAccessIndex Index() const { return access_->stage_access_index; }
-    bool IsIndex(SyncStageAccessIndex usage_index) const { return Index() == usage_index; }
-    bool IsQueue(QueueId other_queue) const { return queue_ == other_queue; }
-    const SyncStageAccessInfoType &Access() const { return *access_; }
-    const SyncStageAccessFlags &Barriers() const { return barriers_; }
-    ResourceUsageTag Tag() const { return tag_; }
-    bool IsWriteHazard(const SyncStageAccessInfoType &usage_info) const;
-    bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
-
-    bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
-                              const SyncStageAccessFlags &src_access_scope) const;
-
-
-    void SetQueueId(QueueId id);
-    void Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
-    void MergeBarriers(const ResourceAccessWriteState &other);
-    void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
-
-    bool HasPendingState() const { return pending_barriers_.any() || (0 != pending_dep_chain_); }
-    void ClearPending();
-    void UpdatePendingBarriers(const SyncBarrier &barrier);
-    void ApplyPendingBarriers();
-    void UpdatePendingLayoutOrdering(const SyncBarrier &barrier);
-    const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
-
-  private:
-    const SyncStageAccessInfoType *access_;
-    SyncStageAccessFlags barriers_;  // union of applicable barrier masks since last write
-    ResourceUsageTag tag_;
-    QueueId queue_;
-    // intially zero, but accumulating the dstStages of barriers if they chain.
-    VkPipelineStageFlags2KHR dependency_chain_;
-
-    // Write specific layout state
-    OrderingBarrier pending_layout_ordering_;
-    VkPipelineStageFlags2KHR pending_dep_chain_;
-    SyncStageAccessFlags pending_barriers_;
-
-    friend ResourceAccessState;
-};
-
-class ResourceAccessState : public SyncStageAccess {
-  protected:
-    using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
-    using FirstAccesses = small_vector<ResourceFirstAccess, 3>;
-
-  public:
-    // Mutliple read operations can be simlutaneously (and independently) synchronized,
-    // given the only the second execution scope creates a dependency chain, we have to track each,
-    // but only up to one per pipeline stage (as another read from the *same* stage become more recent,
-    // and applicable one for hazard detection
-    struct ReadState {
-        VkPipelineStageFlags2KHR stage;        // The stage of this read
-        SyncStageAccessFlags access;           // TODO: Change to FlagBits when we have a None bit enum
-                                               // TODO: Revisit whether this needs to support multiple reads per stage
-        VkPipelineStageFlags2KHR barriers;     // all applicable barriered stages
-        VkPipelineStageFlags2KHR sync_stages;  // reads known to have happened after this
-        ResourceUsageTag tag;
-        QueueId queue;
-        VkPipelineStageFlags2KHR pending_dep_chain;  // Should be zero except during barrier application
-                                                     // Excluded from comparison
-        ReadState() = default;
-        ReadState(VkPipelineStageFlags2KHR stage_, SyncStageAccessFlags access_, VkPipelineStageFlags2KHR barriers_,
-                  ResourceUsageTag tag_);
-        bool operator==(const ReadState &rhs) const {
-            return (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) &&
-                   (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
-                   (pending_dep_chain == rhs.pending_dep_chain);
-        }
-        void Normalize() { pending_dep_chain = VK_PIPELINE_STAGE_2_NONE; }
-        bool IsReadBarrierHazard(VkPipelineStageFlags2KHR src_exec_scope) const {
-            // If the read stage is not in the src sync scope
-            // *AND* not execution chained with an existing sync barrier (that's the or)
-            // then the barrier access is unsafe (R/W after R)
-            return (src_exec_scope & (stage | barriers)) == 0;
-        }
-        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2KHR src_exec_scope) const {
-            // If the read stage is not in the src sync scope
-            // *AND* not execution chained with an existing sync barrier (that's the or)
-            // then the barrier access is unsafe (R/W after R)
-            VkPipelineStageFlags2 queue_ordered_stage = (queue == barrier_queue) ? stage : VK_PIPELINE_STAGE_2_NONE;
-            return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
-        }
-
-        bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
-        void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
-                 ResourceUsageTag tag_);
-        bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
-        bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
-        bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, QueueId scope_queue, ResourceUsageTag scope_tag) const {
-            // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
-            // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
-            // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
-            // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
-            // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
-            // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
-            return (tag < scope_tag) && ReadInQueueScopeOrChain(scope_queue, exec_scope);
-        }
-        void ApplyReadBarrier(VkPipelineStageFlags2KHR dst_scope) { pending_dep_chain |= dst_scope; }
-        VkPipelineStageFlags2 ApplyPendingBarriers();
-    };
-
-    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info) const;
-    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, QueueId queue_id) const;
-    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info, const OrderingBarrier &ordering, QueueId queue_id) const;
-    HazardResult DetectHazard(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range) const;
-
-    HazardResult DetectAsyncHazard(const SyncStageAccessInfoType &usage_info, ResourceUsageTag start_tag) const;
-    HazardResult DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
-                                   ResourceUsageTag start_tag) const;
-
-    HazardResult DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, QueueId queue_id,
-                                     VkPipelineStageFlags2KHR source_exec_scope,
-                                     const SyncStageAccessFlags &source_access_scope) const;
-    HazardResult DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, const ResourceAccessState &scope_state,
-                                     VkPipelineStageFlags2KHR source_exec_scope, const SyncStageAccessFlags &source_access_scope,
-                                     QueueId event_queue, ResourceUsageTag event_tag) const;
-
-    void Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, ResourceUsageTag tag);
-    void SetWrite(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
-    void ClearWrite();
-    void ClearRead();
-    void ClearPending();
-    void ClearFirstUse();
-    void Resolve(const ResourceAccessState &other);
-    void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
-    void ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers);
-    template <typename ScopeOps>
-    void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition);
-    void ApplyPendingBarriers(ResourceUsageTag tag);
-    void ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope wait);
-
-    struct WaitQueueTagPredicate {
-        QueueId queue;
-        ResourceUsageTag tag;
-        bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const ResourceAccessState &access) const;  // Write access predicate
-    };
-    friend WaitQueueTagPredicate;
-
-    struct WaitTagPredicate {
-        ResourceUsageTag tag;
-        bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const ResourceAccessState &access) const;  // Write access predicate
-    };
-    friend WaitTagPredicate;
-
-    struct WaitAcquirePredicate {
-        ResourceUsageTag present_tag;
-        ResourceUsageTag acquire_tag;
-        bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const ResourceAccessState &access) const;  // Write access predicate
-    };
-    friend WaitAcquirePredicate;
-
-    template <typename Predicate>
-    bool ApplyPredicatedWait(Predicate &predicate);
-
-    bool FirstAccessInTagRange(const ResourceUsageRange &tag_range) const;
-
-    void OffsetTag(ResourceUsageTag offset);
-    ResourceAccessState();
-
-    bool HasPendingState() const { return (0 != pending_layout_transition) || (last_write && last_write->HasPendingState()); }
-    bool HasWriteOp() const { return last_write.has_value(); }
-    SyncStageAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
-    bool IsLastWriteOp(SyncStageAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
-    ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->Tag() : ResourceUsageTag(0); }
-    bool operator==(const ResourceAccessState &rhs) const {
-        const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
-                                (input_attachment_read == rhs.input_attachment_read) && (last_write == rhs.last_write);
-
-        const bool read_write_same = write_same && (last_read_stages == rhs.last_read_stages) && (last_reads == rhs.last_reads);
-
-        const bool same = read_write_same && (first_accesses_ == rhs.first_accesses_) &&
-                          (first_read_stages_ == rhs.first_read_stages_) &&
-                          (first_write_layout_ordering_ == rhs.first_write_layout_ordering_);
-
-        return same;
-    }
-    bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
-    VkPipelineStageFlags2KHR GetReadBarriers(const SyncStageAccessFlags &usage) const;
-    SyncStageAccessFlags GetWriteBarriers() const {
-        return last_write.has_value() ? last_write->Barriers() : SyncStageAccessFlags();
-    }
-    void SetQueueId(QueueId id);
-
-    bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
-                              const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
-    bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
-                                        const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
-                           QueueId scope_queue, ResourceUsageTag scope_tag) const;
-
-    struct UntaggedScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-        }
-        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInScopeOrChain(barrier.src_exec_scope.exec_scope);
-        }
-    };
-
-    struct QueueScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInQueueSourceScopeOrChain(queue, barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-        }
-        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInQueueScopeOrChain(queue, barrier.src_exec_scope.exec_scope);
-        }
-        QueueScopeOps(QueueId scope_queue) : queue(scope_queue) {}
-        QueueId queue;
-    };
-
-    struct EventScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInEventScope(barrier.src_exec_scope.exec_scope, barrier.src_access_scope, scope_queue, scope_tag);
-        }
-        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInEventScope(barrier.src_exec_scope.exec_scope, scope_queue, scope_tag);
-        }
-        EventScopeOps(QueueId qid, ResourceUsageTag event_tag) : scope_queue(qid), scope_tag(event_tag) {}
-        QueueId scope_queue;
-        ResourceUsageTag scope_tag;
-    };
-
-    void Normalize();
-    void GatherReferencedTags(ResourceUsageTagSet &used) const;
-
-  private:
-    static constexpr VkPipelineStageFlags2KHR kInvalidAttachmentStage = ~VkPipelineStageFlags2KHR(0);
-    bool IsRAWHazard(const SyncStageAccessInfoType &usage_info) const;
-
-    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
-    // Apply ordering scope to write hazard detection
-
-    bool ReadInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope) const {
-        return (0 != (src_exec_scope & (last_read_stages | read_execution_barriers)));
-    }
-
-    static bool IsReadHazard(VkPipelineStageFlags2KHR stage_mask, const VkPipelineStageFlags2KHR barriers) {
-        return stage_mask != (stage_mask & barriers);
-    }
-
-    bool IsReadHazard(VkPipelineStageFlags2KHR stage_mask, const ReadState &read_access) const {
-        return IsReadHazard(stage_mask, read_access.barriers);
-    }
-    VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering) const;
-
-    void UpdateFirst(ResourceUsageTag tag, const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule);
-    void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
-    void MergePending(const ResourceAccessState &other);
-    void MergeReads(const ResourceAccessState &other);
-
-    static const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) {
-        return kOrderingRules[static_cast<size_t>(ordering_enum)];
-    }
-
-    // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for input_attachment_read and last_write
-
-    // With reads, each must be "safe" relative to it's prior write, so we need only
-    // save the most recent write operation (as anything *transitively* unsafe would arleady
-    // be included
-    // SyncStageAccessFlags write_barriers;              // union of applicable barrier masks since last write
-    // VkPipelineStageFlags2KHR write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they
-    // chain. ResourceUsageTag write_tag; QueueId write_queue;
-    std::optional<ResourceAccessWriteState> last_write;  // only the most recent write
-
-    VkPipelineStageFlags2KHR last_read_stages;
-    VkPipelineStageFlags2KHR read_execution_barriers;
-    using ReadStates = small_vector<ReadState, 3, uint32_t>;
-    ReadStates last_reads;
-
-    // TODO Input Attachment cleanup for multiple reads in a given stage
-    // Tracks whether the fragment shader read is input attachment read
-    bool input_attachment_read;
-
-    // Not part of the write state, logically.  Can exist when !last_write
-    // Pending execution state to support independent parallel barriers
-    bool pending_layout_transition;
-
-    FirstAccesses first_accesses_;
-    VkPipelineStageFlags2KHR first_read_stages_;
-    OrderingBarrier first_write_layout_ordering_;
-    bool first_access_closed_;
-
-    static OrderingBarriers kOrderingRules;
-};
-using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
-
-using ResourceAddress = VkDeviceSize;
-using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
-using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
-using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
 
 struct FenceSyncState {
     std::shared_ptr<const vvl::Fence> fence;
@@ -2089,9 +1556,6 @@ class QueueBatchContext : public CommandExecutionContext {
 
 class QueueSyncState {
   public:
-    constexpr static QueueId kQueueIdBase = QueueId(0);
-    constexpr static QueueId kQueueIdInvalid = ~kQueueIdBase;
-    constexpr static QueueId kQueueAny = kQueueIdInvalid - 1;
     QueueSyncState(const std::shared_ptr<vvl::Queue> &queue_state, VkQueueFlags queue_flags, QueueId id)
         : submit_index_(0), queue_state_(queue_state), last_batch_(), queue_flags_(queue_flags), id_(id) {}
 
@@ -2162,7 +1626,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
 
     vvl::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
-    QueueId queue_id_limit_ = QueueSyncState::kQueueIdBase;
+    QueueId queue_id_limit_ = kQueueIdBase;
     SignaledSemaphores signaled_semaphores_;
 
     using SignaledFences = vvl::unordered_map<VkFence, FenceSyncState>;
