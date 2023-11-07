@@ -170,7 +170,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 continue;
             }
             const auto& rp_state = pipeline.RenderPassState();
-            if (rp_state && !rp_state->UsesDynamicRendering()) {
+            if (rp_state && !rp_state->UsesDynamicRendering() && stage.entrypoint) {
                 auto rpci = rp_state->createInfo.ptr();
                 auto subpass = pipeline.Subpass();
                 for (const auto& variable : stage.entrypoint->resource_interface_variables) {
