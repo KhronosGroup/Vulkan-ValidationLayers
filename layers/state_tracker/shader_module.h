@@ -472,10 +472,7 @@ struct SPIRV_MODULE_STATE {
         vvl::unordered_map<uint32_t, ExecutionModeSet> execution_modes;
         ExecutionModeSet empty_execution_mode;  // all zero values, allows use to return a reference and not a copy each time
 
-        // <Specialization constant ID -> target ID> mapping
-        vvl::unordered_map<uint32_t, uint32_t> spec_const_map;
-        // <target ID - > Specialization constant ID> mapping
-        // TODO - Remove having a second copy for the map in reverse
+        // [OpSpecConstant Result ID -> OpDecorate SpecID value] mapping
         vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
         std::vector<const Instruction *> decoration_inst;

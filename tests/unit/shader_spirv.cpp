@@ -2462,3 +2462,89 @@ TEST_F(NegativeShaderSpirv, DISABLED_ImageFormatTypeMismatchWithZeroExtend) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+// TODO - https://github.com/KhronosGroup/SPIRV-Tools/issues/5468
+TEST_F(NegativeShaderSpirv, DISABLED_SpecConstantTextureIndex) {
+    TEST_DESCRIPTION("Apply spec constant to lower array size and detect array being oob");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *fragment_source = R"glsl(
+        #version 400
+        #extension GL_ARB_separate_shader_objects : enable
+        #extension GL_ARB_shading_language_420pack : enable
+
+        layout (location = 0) out vec4 out_color;
+
+        layout (constant_id = 0) const int num_textures = 3;
+        layout (binding = 0) uniform sampler2D textures[num_textures];
+
+        void main() {
+            out_color = texture(textures[2], vec2(0.0));
+        }
+    )glsl";
+
+    uint32_t data = 2;  // will make textures[2] OOB
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    CreatePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL_GRAPHICS, nullptr}};
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, DescriptorCountConstant) {
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) uniform sampler2D tex[3];
+        layout (location = 0) out vec4 out_color;
+        void main() {
+            out_color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
+        }
+    )glsl";
+
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07991");
+}
+
+// This is not working because of a bug in the Spec Constant logic
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout (constant_id = 0) const int index = 2;
+        layout (set = 0, binding = 0) uniform sampler2D tex[index];
+        layout (location = 0) out vec4 out_color;
+        void main() {
+            out_color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
+        }
+    )glsl";
+
+    uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07991");
+}

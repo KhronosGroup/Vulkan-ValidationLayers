@@ -16,6 +16,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
@@ -213,4 +214,32 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
         vk::CmdEndRenderPass(*m_commandBuffer);
         m_commandBuffer->end();
     }
+}
+
+// This is not working because of a bug in the Spec Constant logic
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout (constant_id = 0) const int index = 4; // over VkDescriptorSetLayoutBinding::descriptorCount
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(xs[0]);
+        }
+    )glsl";
+
+    uint32_t data = 2;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }

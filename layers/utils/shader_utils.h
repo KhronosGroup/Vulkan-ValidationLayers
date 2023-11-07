@@ -99,6 +99,7 @@ struct SPIRV_MODULE_STATE;
 struct safe_VkPipelineShaderStageCreateInfo;
 struct safe_VkShaderCreateInfoEXT;
 struct safe_VkSpecializationInfo;
+class Instruction;
 
 struct PipelineStageState {
     // We use this over a SPIRV_MODULE_STATE because there are times we need to create empty objects
@@ -118,6 +119,7 @@ struct PipelineStageState {
     VkShaderStageFlagBits GetStage() const;
     safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void *GetPNext() const;
+    bool GetInt32ConstantValue(const Instruction &insn, uint32_t *value) const;
 };
 
 using StageStateVec = std::vector<PipelineStageState>;
