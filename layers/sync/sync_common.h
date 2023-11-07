@@ -19,6 +19,9 @@
 #include "containers/range_vector.h"
 #include "generated/sync_validation_types.h"
 
+class HazardResult;
+class SyncValidator;
+
 // The resource tag index is relative to the command buffer or queue in which it's found
 using QueueId = uint32_t;
 constexpr static QueueId kQueueIdBase = QueueId(0);
@@ -30,6 +33,20 @@ constexpr static ResourceUsageTag kMaxIndex = std::numeric_limits<ResourceUsageT
 constexpr static ResourceUsageTag kInvalidTag = kMaxIndex;
 
 using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
+
+class SyncValidationInfo {
+  public:
+    SyncValidationInfo(const SyncValidator* sync_validator) : sync_state_(sync_validator) {}
+    const SyncValidator& GetSyncState() const {
+        assert(sync_state_);
+        return *sync_state_;
+    }
+    std::string FormatHazard(const HazardResult& hazard) const;
+    virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
+
+  protected:
+    const SyncValidator* sync_state_;
+};
 
 enum SyncHazard {
     NONE = 0,
@@ -46,7 +63,8 @@ enum SyncHazard {
 };
 
 enum class SyncOrdering : uint8_t {
-    kNonAttachment = 0,
+    kOrderingNone = 0,
+    kNonAttachment = kOrderingNone,
     kColorAttachment = 1,
     kDepthStencilAttachment = 2,
     kRaster = 3,
