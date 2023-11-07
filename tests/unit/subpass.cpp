@@ -1086,6 +1086,34 @@ TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
+// This is not working because of a bug in the Spec Constant logic
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+TEST_F(NegativeSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout (constant_id = 0) const int index = 2;
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(xs[0]);
+        }
+    )glsl";
+
+    uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07991");
+}
+
 TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
     TEST_DESCRIPTION("Make sure if 2 loads use same variable, both are tracked");
 
@@ -1127,7 +1155,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
     // Make sure we are not just taking the first load and checking all loads on a variable
-    const char *fs_source = R"(
+    const char *fs_source = R"glsl(
         #version 460
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[2];
         layout(location=0) out vec4 color;
@@ -1135,7 +1163,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
             color = subpassLoad(xs[1]); // valid
             color = subpassLoad(xs[0]); // invalid
         }
-    )";
+    )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {

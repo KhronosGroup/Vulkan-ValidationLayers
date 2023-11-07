@@ -803,7 +803,6 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
                     builtin_decoration_inst.push_back(&insn);
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
-                    spec_const_map[insn.Word(3)] = target_id;
                     id_to_spec_id[target_id] = insn.Word(3);
                 }
             } break;

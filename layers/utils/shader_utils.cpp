@@ -23,6 +23,7 @@
 #include "generated/state_tracker_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/shader_module.h"
+#include "state_tracker/shader_instruction.h"
 
 spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
     if (api_version >= VK_API_VERSION_1_3) {
@@ -123,6 +124,30 @@ safe_VkSpecializationInfo *PipelineStageState::GetSpecializationInfo() const {
 
 const void *PipelineStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
+}
+
+bool PipelineStageState::GetInt32ConstantValue(const Instruction &insn, uint32_t *value) const {
+    const Instruction *type_id = spirv_state->FindDef(insn.Word(1));
+    if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
+        return false;
+    }
+
+    if (insn.Opcode() == spv::OpConstant) {
+        *value = insn.Word(3);
+        return true;
+    } else if (insn.Opcode() == spv::OpSpecConstant) {
+        *value = insn.Word(3);  // default value
+        const auto *spec_info = GetSpecializationInfo();
+        const uint32_t spec_id = spirv_state->static_data_.id_to_spec_id.at(insn.Word(2));
+        if (spec_info && spec_id < spec_info->mapEntryCount) {
+            memcpy(value, (uint8_t *)spec_info->pData + spec_info->pMapEntries[spec_id].offset,
+                   spec_info->pMapEntries[spec_id].size);
+        }
+        return true;
+    }
+
+    // This means the value is not known until runtime and will need to be checked in GPU-AV
+    return false;
 }
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,

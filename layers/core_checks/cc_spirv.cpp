@@ -423,34 +423,6 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SPIRV_MODULE_S
     return skip;
 }
 
-// copy the specialization constant value into buf, if it is present
-void GetSpecConstantValue(const safe_VkSpecializationInfo *spec, uint32_t spec_id, void *buf) {
-    if (spec && spec_id < spec->mapEntryCount) {
-        memcpy(buf, (uint8_t *)spec->pData + spec->pMapEntries[spec_id].offset, spec->pMapEntries[spec_id].size);
-    }
-}
-
-// Fill in value with the constant or specialization constant value, if available.
-// Returns true if the value has been accurately filled out.
-static bool GetIntConstantValue(const Instruction *insn, const SPIRV_MODULE_STATE &module_state,
-                                const safe_VkSpecializationInfo *spec, uint32_t *value) {
-    const Instruction *type_id = module_state.FindDef(insn->Word(1));
-    if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
-        return false;
-    }
-    switch (insn->Opcode()) {
-        case spv::OpSpecConstant:
-            *value = insn->Word(3);
-            GetSpecConstantValue(spec, module_state.static_data_.id_to_spec_id.at(insn->Word(2)), value);
-            return true;
-        case spv::OpConstant:
-            *value = insn->Word(3);
-            return true;
-        default:
-            return false;
-    }
-}
-
 // Map SPIR-V type to VK_COMPONENT_TYPE enum
 VkComponentTypeKHR GetComponentType(const Instruction *insn) {
     switch (insn->Opcode()) {
@@ -490,8 +462,6 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
                                            const Location &loc) const {
     bool skip = false;
 
-    const safe_VkSpecializationInfo *spec = stage_state.GetSpecializationInfo();
-
     struct CoopMatType {
         VkScopeKHR scope;
         uint32_t rows;
@@ -500,7 +470,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
         bool all_constant;
         bool is_signed_int;
 
-        CoopMatType(uint32_t id, const SPIRV_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec) {
+        CoopMatType(uint32_t id, const SPIRV_MODULE_STATE &module_state, const PipelineStageState &stage_state) {
             const Instruction *insn = module_state.FindDef(id);
             const Instruction *component_type_insn = module_state.FindDef(insn->Word(2));
             const Instruction *scope_insn = module_state.FindDef(insn->Word(3));
@@ -509,14 +479,14 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
 
             all_constant = true;
             uint32_t tmp_scope = 0;  // TODO - Remove GetIntConstantValue
-            if (!GetIntConstantValue(scope_insn, module_state, spec, &tmp_scope)) {
+            if (!stage_state.GetInt32ConstantValue(*scope_insn, &tmp_scope)) {
                 all_constant = false;
             }
             scope = VkScopeKHR(tmp_scope);
-            if (!GetIntConstantValue(rows_insn, module_state, spec, &rows)) {
+            if (!stage_state.GetInt32ConstantValue(*rows_insn, &rows)) {
                 all_constant = false;
             }
-            if (!GetIntConstantValue(cols_insn, module_state, spec, &cols)) {
+            if (!stage_state.GetInt32ConstantValue(*cols_insn, &cols)) {
                 all_constant = false;
             }
             component_type = GetComponentType(component_type_insn);
@@ -569,7 +539,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
         const Instruction &insn = *cooperative_matrix_inst;
         switch (insn.Opcode()) {
             case spv::OpTypeCooperativeMatrixKHR: {
-                CoopMatType m(insn.Word(1), module_state, spec);
+                CoopMatType m(insn.Word(1), module_state, stage_state);
 
                 if (m.all_constant) {
                     // Validate that the type parameters are all supported for one of the
@@ -615,10 +585,10 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
                 break;
             }
             case spv::OpCooperativeMatrixMulAddKHR: {
-                CoopMatType r(id_to_type_id[insn.Word(2)], module_state, spec);
-                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, spec);
-                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, spec);
-                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, spec);
+                CoopMatType r(id_to_type_id[insn.Word(2)], module_state, stage_state);
+                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, stage_state);
+                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, stage_state);
+                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, stage_state);
                 const uint32_t flags = insn.Length() > 6 ? insn.Word(6) : 0u;
                 if (a.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) == 0)) {
                     skip |= LogError(
@@ -734,7 +704,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
                 break;
             }
             case spv::OpTypeCooperativeMatrixNV: {
-                CoopMatType m(insn.Word(1), module_state, spec);
+                CoopMatType m(insn.Word(1), module_state, stage_state);
 
                 if (m.all_constant) {
                     // Validate that the type parameters are all supported for one of the
@@ -776,10 +746,10 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
                 break;
             }
             case spv::OpCooperativeMatrixMulAddNV: {
-                CoopMatType d(id_to_type_id[insn.Word(2)], module_state, spec);
-                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, spec);
-                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, spec);
-                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, spec);
+                CoopMatType d(id_to_type_id[insn.Word(2)], module_state, stage_state);
+                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, stage_state);
+                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, stage_state);
+                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, stage_state);
 
                 if (a.all_constant && b.all_constant && c.all_constant && d.all_constant) {
                     // Validate that the type parameters are all supported for the same
@@ -2118,46 +2088,57 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
             auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
             std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
             id_value_map.reserve(specialization_info->mapEntryCount);
-            for (uint32_t i = 0; i < specialization_info->mapEntryCount; ++i) {
-                auto const &map_entry = specialization_info->pMapEntries[i];
-                const auto itr = module_state.static_data_.spec_const_map.find(map_entry.constantID);
+
+            // spirv-val makes sure every OpSpecConstant has a OpDecoration.
+            for (const auto &itr : module_state.static_data_.id_to_spec_id) {
+                const uint32_t spec_id = itr.second;
+                VkSpecializationMapEntry map_entry = {kInvalidSpirvValue, 0, 0};
+                for (uint32_t i = 0; i < specialization_info->mapEntryCount; i++) {
+                    if (specialization_info->pMapEntries[i].constantID == spec_id) {
+                        map_entry = specialization_info->pMapEntries[i];
+                        break;
+                    }
+                }
+
                 // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the
                 // behavior of the pipeline."
-                if (itr != module_state.static_data_.spec_const_map.cend()) {
-                    // Make sure map_entry.size matches the spec constant's size
-                    uint32_t spec_const_size = kInvalidSpirvValue;
-                    const Instruction *def_insn = module_state.FindDef(itr->second);
-                    const Instruction *type_insn = module_state.FindDef(def_insn->Word(1));
-                    // Specialization constants can only be of type bool, scalar integer, or scalar floating point
-                    switch (type_insn->Opcode()) {
-                        case spv::OpTypeBool:
-                            // "If the specialization constant is of type boolean, size must be the byte size of VkBool32"
-                            spec_const_size = sizeof(VkBool32);
-                            break;
-                        case spv::OpTypeInt:
-                        case spv::OpTypeFloat:
-                            spec_const_size = type_insn->Word(2) / 8;
-                            break;
-                        default:
-                            // spirv-val should catch if SpecId is not used on a
-                            // OpSpecConstantTrue/OpSpecConstantFalse/OpSpecConstant and OpSpecConstant is validated to be a
-                            // OpTypeInt or OpTypeFloat
-                            break;
-                    }
+                if (map_entry.constantID == kInvalidSpirvValue) {
+                    continue;
+                }
 
-                    if (map_entry.size != spec_const_size) {
-                        std::stringstream name;
-                        if (module_state.handle()) {
-                            name << "shader module " << module_state.handle();
-                        } else {
-                            name << "shader object";
-                        }
-                        skip |= LogError("VUID-VkSpecializationMapEntry-constantID-00776", device, loc,
-                                         "specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
-                                         ") has invalid size %zu in %s. Expected size is %" PRIu32 " from shader definition.",
-                                         map_entry.constantID, i, map_entry.size, FormatHandle(module_state.handle()).c_str(),
-                                         spec_const_size);
+                uint32_t spec_const_size = kInvalidSpirvValue;
+                const Instruction *def_insn = module_state.FindDef(itr.first);
+                const Instruction *type_insn = module_state.FindDef(def_insn->Word(1));
+
+                // Specialization constants can only be of type bool, scalar integer, or scalar floating point
+                switch (type_insn->Opcode()) {
+                    case spv::OpTypeBool:
+                        // "If the specialization constant is of type boolean, size must be the byte size of VkBool32"
+                        spec_const_size = sizeof(VkBool32);
+                        break;
+                    case spv::OpTypeInt:
+                    case spv::OpTypeFloat:
+                        spec_const_size = type_insn->Word(2) / 8;
+                        break;
+                    default:
+                        // spirv-val should catch if SpecId is not used on a
+                        // OpSpecConstantTrue/OpSpecConstantFalse/OpSpecConstant and OpSpecConstant is validated to be a
+                        // OpTypeInt or OpTypeFloat
+                        break;
+                }
+
+                if (map_entry.size != spec_const_size) {
+                    std::stringstream name;
+                    if (module_state.handle()) {
+                        name << "shader module " << module_state.handle();
+                    } else {
+                        name << "shader object";
                     }
+                    skip |= LogError("VUID-VkSpecializationMapEntry-constantID-00776", device, loc,
+                                     "specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
+                                     ") has invalid size %zu in %s. Expected size is %" PRIu32 " from shader definition.",
+                                     map_entry.constantID, spec_id, map_entry.size, FormatHandle(module_state.handle()).c_str(),
+                                     spec_const_size);
                 }
 
                 if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
@@ -2729,14 +2710,12 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE &module_stat
                                            const PipelineStageState &stage_state, const Location &loc) const {
     bool skip = false;
 
-    const safe_VkSpecializationInfo *spec = stage_state.GetSpecializationInfo();
-
     for (const Instruction &insn : module_state.static_data_.instructions) {
         if (insn.Opcode() == spv::OpEmitMeshTasksEXT) {
             uint32_t x, y, z;
-            bool found_x = GetIntConstantValue(module_state.FindDef(insn.Word(1)), module_state, spec, &x);
-            bool found_y = GetIntConstantValue(module_state.FindDef(insn.Word(2)), module_state, spec, &y);
-            bool found_z = GetIntConstantValue(module_state.FindDef(insn.Word(3)), module_state, spec, &z);
+            bool found_x = stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(1)), &x);
+            bool found_y = stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(2)), &y);
+            bool found_z = stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(3)), &z);
             if (found_x && x > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0]) {
                 skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07299", module_state.handle(), loc,
                                  "SPIR-V (%s) is emitting %" PRIu32
