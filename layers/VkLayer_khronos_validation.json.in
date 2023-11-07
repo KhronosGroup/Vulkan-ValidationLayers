@@ -970,7 +970,7 @@
                                             }
                                         },
                                         {
-                                            "key": "max_buffer_device_addresses",
+                                            "key": "gpuav_max_buffer_device_addresses",
                                             "label": "Specify the maximum number of buffer device addresses in use at one time",
                                             "description": "Specify maximum number of buffer device addresses",
                                             "type": "INT",

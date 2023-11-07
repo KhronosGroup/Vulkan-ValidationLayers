@@ -1614,7 +1614,7 @@ void GpuAssisted::UpdateBDABuffer(gpuav_state::DeviceMemoryBlock device_address_
     if (address_ranges_num_addresses > gpuav_settings.gpuav_max_buffer_device_addresses) {
         std::ostringstream problem_string;
         problem_string << "Number of buffer device addresses in use (" << address_ranges_num_addresses
-                       << ") is greapter than khronos_validation.max_buffer_device_addresses ("
+                       << ") is greapter than khronos_validation.gpuav_max_buffer_device_addresses ("
                        << gpuav_settings.gpuav_max_buffer_device_addresses
                        << "). Truncating BDA table which could result in invalid validation";
         ReportSetupProblem(device, problem_string.str().c_str());
