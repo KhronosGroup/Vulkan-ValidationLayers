@@ -248,7 +248,7 @@ class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
 class VkGpuAssistedLayerTest : public virtual VkLayerTest {
   public:
-    void InitGpuAvFramework();
+    void InitGpuAvFramework(void *p_next = nullptr);
 
     VkValidationFeaturesEXT GetValidationFeatures();
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,

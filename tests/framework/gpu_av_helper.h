@@ -32,9 +32,10 @@ bool CanEnableGpuAV(Test &test) {
     return true;
 }
 
-static std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-static std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
-                                     VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                                          VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
+static const std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
+                                           VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
 // All VkGpuAssistedLayerTest should use this for setup as a single access point to more easily toggle which validation features are
 // enabled/disabled

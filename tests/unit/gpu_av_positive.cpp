@@ -680,12 +680,7 @@ TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
-    validation_features.pNext = &layer_settings_create_info;
-    RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV(*this)) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
     if (!features2.features.robustBufferAccess) {
