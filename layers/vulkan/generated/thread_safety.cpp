@@ -3592,20 +3592,6 @@ void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer co
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
-                                                  const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-    StartWriteObject(swapchain, record_obj.location);
-    // Host access to swapchain must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
-                                                   const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-    FinishWriteObject(swapchain, record_obj.location);
-    // Host access to swapchain must be externally synchronized
-}
-
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                           const RecordObject& record_obj) {
     PreCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);

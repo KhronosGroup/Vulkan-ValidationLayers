@@ -67,6 +67,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             'vkRegisterDisplayEventEXT',
             'vkCreateRayTracingPipelinesKHR',
             'vkQueuePresentKHR',
+            'vkWaitForPresentKHR',
         ]
 
         self.blacklist = [
