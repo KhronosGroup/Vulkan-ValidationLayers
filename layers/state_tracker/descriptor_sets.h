@@ -911,14 +911,6 @@ class DescriptorSet : public BASE_NODE {
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state, vvl::Func command, const PIPELINE_STATE *,
                          const BindingVariableMap &);
 
-    // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
-    // are present
-    typedef vvl::unordered_set<uint32_t> TrackedBindings;
-    static void FilterOneBindingReq(const BindingVariableMap::value_type &binding_req_pair, BindingVariableMap *out_req,
-                                    const TrackedBindings &set, uint32_t limit);
-    void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *, const BindingVariableMap &in_req,
-                           BindingVariableMap *out_req) const;
-
     // For a particular binding, get the global index
     const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
         if (actual_length && binding == layout_->GetMaxBinding() && GetBinding(binding)->IsVariableCount()) {
@@ -981,19 +973,6 @@ class DescriptorSet : public BASE_NODE {
 
     void Destroy() override;
 
-    // Cached binding and validation support:
-    //
-    // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
-    // expensive validation operation (typically per-draw)
-    // Track the validation caching of bindings vs. the command buffer and draw state
-    typedef vvl::unordered_map<uint32_t, uint64_t> VersionedBindings;
-    // this structure is stored in a map in CMD_BUFFER_STATE, with an entry for every descriptor set.
-    struct CachedValidation {
-        TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
-        TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
-        TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
-        vvl::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
-    };
     const DescriptorSetLayout &Layout() const { return *layout_; }
 
     template <typename Iter>
@@ -1125,15 +1104,4 @@ class DescriptorSet : public BASE_NODE {
     std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
 };
 
-// For the "bindless" style resource usage with many descriptors, need to optimize binding and validation
-class PrefilterBindRequestMap {
-  public:
-    std::unique_ptr<BindingVariableMap> filtered_map_;
-    const BindingVariableMap &orig_map_;
-    const DescriptorSet &descriptor_set_;
-
-    PrefilterBindRequestMap(const DescriptorSet &ds, const BindingVariableMap &in_map)
-        : filtered_map_(), orig_map_(in_map), descriptor_set_(ds) {}
-    const BindingVariableMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *);
-};
 }  // namespace cvdescriptorset

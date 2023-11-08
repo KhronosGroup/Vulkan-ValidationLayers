@@ -430,8 +430,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
-    vvl::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
-        descriptorset_cache;
     IndexBufferBinding index_buffer_binding;
     bool performance_lock_acquired = false;
     bool performance_lock_released = false;

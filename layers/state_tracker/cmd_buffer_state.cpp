@@ -162,7 +162,6 @@ void CMD_BUFFER_STATE::ResetCBState() {
     startedQueries.clear();
     image_layout_map.clear();
     aliased_image_layout_map.clear();
-    descriptorset_cache.clear();
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
     vertex_buffer_used = false;
     primaryCommandBuffer = VK_NULL_HANDLE;
@@ -836,8 +835,6 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         Reset();
     }
 
-    descriptorset_cache.clear();
-
     // Set updated state here in case implicit reset occurs above
     state = CbState::Recording;
     beginInfo = *pBeginInfo;
@@ -904,8 +901,6 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 }
 
 void CMD_BUFFER_STATE::End(VkResult result) {
-    // Cached validation is specific to a specific recording of a specific command buffer.
-    descriptorset_cache.clear();
     if (VK_SUCCESS == result) {
         state = CbState::Recorded;
     }
@@ -1073,31 +1068,20 @@ void CMD_BUFFER_STATE::UpdatePipelineState(Func command, const VkPipelineBindPoi
 
             // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
-            // TODO: If recreating the reduced_map here shows up in profilinging, need to find a way of sharing with the
-            // Validate pass.  Though in the case of "many" descriptors, typically the descriptor count >> binding count
-            cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
-            const auto &binding_req_map = reduced_map.FilteredMap(*this, pipe);
-
             // We can skip updating the state if "nothing" has changed since the last validation.
             // See CoreChecks::ValidateActionState for more details.
-            const bool descriptor_set_changed = // Update if descriptor set (or contents) has changed
-                                                set_info.validated_set != descriptor_set.get() ||
-                                                set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                                                (!dev_data->disabled[image_layout_validation] &&
-                                                 set_info.validated_set_image_layout_change_count != image_layout_change_count);
-            const bool need_update =
-                descriptor_set_changed ||
-                // Update if previous bindingReqMap doesn't include new bindingReqMap
-                !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),
-                               binding_req_map.begin(), binding_req_map.end());
-
+            const bool need_update = // Update if descriptor set (or contents) has changed
+                                     set_info.validated_set != descriptor_set.get() ||
+                                     set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                                     (!dev_data->disabled[image_layout_validation] &&
+                                     set_info.validated_set_image_layout_change_count != image_layout_change_count);
             if (need_update) {
                 if (!dev_data->disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
                     AddChild(descriptor_set);
                 }
 
                 // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->UpdateDrawState(dev_data, this, command, pipe, binding_req_map);
+                descriptor_set->UpdateDrawState(dev_data, this, command, pipe, set_binding_pair.second);
 
                 set_info.validated_set = descriptor_set.get();
                 set_info.validated_set_change_count = descriptor_set->GetChangeCount();

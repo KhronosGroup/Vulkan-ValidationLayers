@@ -707,8 +707,6 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const Bi
         }
 
         if (descriptor_set.SkipBinding(*binding)) {
-            // Can't validate the descriptor because it may not have been updated,
-            // or the view could have been destroyed
             continue;
         }
         result |= desc_val.ValidateBinding(binding_pair, *binding);
