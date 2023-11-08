@@ -131,11 +131,6 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         bool IsSignal() const { return op_type == kSignal; }
         bool IsAcquire() const { return op_type == kBinaryAcquire; }
 
-        // NOTE: Present semaphores are waited on by the implementation, not queue operations. We do not yet
-        // have a good way to figure out when this wait completes, so we must assume they are safe to re-use
-        bool CanBeSignaled() const { return op_type == kNone || op_type == kWait; }
-        bool CanBeWaited() const { return op_type == kSignal || op_type == kBinaryAcquire; }
-
         void Notify() const;
     };
 
@@ -266,6 +261,16 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     mutable std::shared_mutex lock_;
     ValidationStateTracker &dev_data_;
 };
+
+// NOTE: Present semaphores are waited on by the implementation, not queue operations.
+// We do not yet have a good way to figure out when this wait completes,
+// so we must assume they are safe to re-use.
+static inline bool CanSignalBinarySemaphoreAfterOperation(SEMAPHORE_STATE::OpType op_type) {
+    return op_type == SEMAPHORE_STATE::kNone || op_type == SEMAPHORE_STATE::kWait;
+}
+static inline bool CanWaitBinarySemaphoreAfterOperation(SEMAPHORE_STATE::OpType op_type) {
+    return op_type == SEMAPHORE_STATE::kSignal || op_type == SEMAPHORE_STATE::kBinaryAcquire;
+}
 
 struct CB_SUBMISSION {
     struct SemaphoreInfo {

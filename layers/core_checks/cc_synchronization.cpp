@@ -156,7 +156,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
             if ((semaphore_state->Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
                 vvl::Func other_command = vvl::Func::Empty;
-                if (CannotSignal(*semaphore_state, other_queue, other_command)) {
+                if (CannotSignalBinarySemaphore(*semaphore_state, other_queue, other_command)) {
                     std::stringstream initiator;
                     if (other_command != vvl::Func::Empty) {
                         initiator << String(other_command);
