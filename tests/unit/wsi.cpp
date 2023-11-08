@@ -2915,8 +2915,8 @@ TEST_F(NegativeWsi, CreatingX11Surface) {
 #endif
 }
 
-TEST_F(NegativeWsi, UseSwapchainImageBeforeWait) {
-    TEST_DESCRIPTION("Test using a swapchain image that was acquired but not waited on.");
+TEST_F(NegativeWsi, PresentImageWithWrongLayout) {
+    TEST_DESCRIPTION("Present swapchain image without transitioning it to presentable layout.");
 
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init())
@@ -2924,22 +2924,21 @@ TEST_F(NegativeWsi, UseSwapchainImageBeforeWait) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pImageIndices-01430");
-
-    vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;  // Invalid, acquire_semaphore should be waited on
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &acquire_semaphore.handle();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    vk::QueuePresentKHR(m_default_queue, &present);
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pImageIndices-01430");
+    vk::QueuePresentKHR(m_default_queue, &present);
     m_errorMonitor->VerifyFound();
 }
 
