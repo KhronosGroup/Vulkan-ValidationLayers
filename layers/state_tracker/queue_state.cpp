@@ -401,7 +401,7 @@ bool SEMAPHORE_STATE::CanBeSignaled() const {
     }
     auto guard = ReadLock();
     if (timeline_.empty()) {
-        return completed_.CanBeSignaled();
+        return CanSignalBinarySemaphoreAfterOperation(completed_.op_type);
     }
     return timeline_.rbegin()->second.HasWaiters();
 }
@@ -412,7 +412,7 @@ bool SEMAPHORE_STATE::CanBeWaited() const {
     }
     auto guard = ReadLock();
     if (timeline_.empty()) {
-        return completed_.CanBeWaited();
+        return CanWaitBinarySemaphoreAfterOperation(completed_.op_type);
     }
     return !timeline_.rbegin()->second.HasWaiters();
 }
@@ -565,7 +565,12 @@ void SEMAPHORE_STATE::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) 
     } else {
         // Exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's
         // payload as executing a semaphore wait operation
-        auto filter = [](const SEMAPHORE_STATE::SemOp &op, bool is_pending) { return is_pending && op.CanBeWaited(); };
+        //
+        // TODO: rename CanBeWaited > CanWaitBinarySemaphoreAfterOperation discovered a _potential_ bug.
+        // We probably want here to check for all semaphores not only binary ones.
+        auto filter = [](const SEMAPHORE_STATE::SemOp &op, bool is_pending) {
+            return is_pending && CanWaitBinarySemaphoreAfterOperation(op.op_type);
+        };
         auto last_op = LastOp(filter);
         if (last_op) {
             EnqueueWait(last_op->queue, last_op->seq, last_op->payload);

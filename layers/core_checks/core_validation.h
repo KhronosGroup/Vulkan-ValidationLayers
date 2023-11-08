@@ -434,7 +434,8 @@ struct SemaphoreSubmitState {
         // last operation isn't a wait. Prior waits will have been removed by prior signals by the time
         // this wait executes.
         auto last_op = semaphore_state.LastOp();
-        if (last_op && !last_op->CanBeWaited() && last_op->queue && last_op->queue->Queue() != queue) {
+        if (last_op && !CanWaitBinarySemaphoreAfterOperation(last_op->op_type) && last_op->queue &&
+            last_op->queue->Queue() != queue) {
             return last_op->queue->Queue();
         }
         return VK_NULL_HANDLE;
@@ -444,7 +445,8 @@ struct SemaphoreSubmitState {
     bool ValidateWaitSemaphore(const Location& wait_semaphore_loc, VkSemaphore semaphore, uint64_t value);
     bool ValidateSignalSemaphore(const Location& signal_semaphore_loc, VkSemaphore semaphore, uint64_t value);
 
-    bool CannotSignal(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
+    bool CannotSignalBinarySemaphore(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
+        assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
         const auto semaphore = semaphore_state.semaphore();
         if (signaled_semaphores.count(semaphore)) {
             other_queue = queue;
@@ -453,7 +455,7 @@ struct SemaphoreSubmitState {
         }
         if (!unsignaled_semaphores.count(semaphore)) {
             const auto last_op = semaphore_state.LastOp();
-            if (last_op && !last_op->CanBeSignaled()) {
+            if (last_op && !CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
                 other_queue = last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
                 other_command = last_op->command;
                 return true;
