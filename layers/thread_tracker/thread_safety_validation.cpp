@@ -783,3 +783,24 @@ void ThreadSafety::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentI
         }
     }
 }
+
+void ThreadSafety::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
+                                                  const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+
+    // Do not track swapchain parameter for vkWaitForPresentKHR.
+    // vkWaitForPresentKHR has exception to external synchronization rules that swapchain
+    // passed to it can be used by the functions (except vkDestroySwapchainKHR) in other threads.
+
+    // NOTE: when we add support for tracking opposite side of the thread conflict (planned functionality),
+    // then it would be possible to account for vkWaitForPresentKHR + vkDestroySwapchainKHR combination.
+    // In that case we still need to consider if that's something that's worth to do.
+    // Code for checking that combination will interact with main thread safety detection code,
+    // so it should be simple and robust addition in order not to break main thread safety detection code
+    // in a subtle way (threading!). Ratio risk/value looks too high now.
+}
+
+void ThreadSafety::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
+                                                   const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
