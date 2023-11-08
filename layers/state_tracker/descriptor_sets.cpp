@@ -611,67 +611,6 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     }
 }
 
-void cvdescriptorset::DescriptorSet::FilterOneBindingReq(const BindingVariableMap::value_type &binding_req_pair,
-                                                         BindingVariableMap *out_req, const TrackedBindings &bindings,
-                                                         uint32_t limit) {
-    if (bindings.size() < limit) {
-        const auto it = bindings.find(binding_req_pair.first);
-        if (it == bindings.cend()) out_req->emplace(binding_req_pair);
-    }
-}
-
-void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *pipeline,
-                                                       const BindingVariableMap &in_req, BindingVariableMap *out_req) const {
-    // For const cleanliness we have to find in the maps...
-    const auto validated_it = cb_state.descriptorset_cache.find(this);
-    if (validated_it == cb_state.descriptorset_cache.end()) {
-        // We have nothing validated, copy in to out
-        for (const auto &binding_req_pair : in_req) {
-            out_req->emplace(binding_req_pair);
-        }
-        return;
-    }
-    const auto &validated = validated_it->second;
-
-    const auto image_sample_version_it = validated.image_samplers.find(pipeline);
-    const VersionedBindings *image_sample_version = nullptr;
-    if (image_sample_version_it != validated.image_samplers.cend()) {
-        image_sample_version = &(image_sample_version_it->second);
-    }
-    const auto &dynamic_buffers = validated.dynamic_buffers;
-    const auto &non_dynamic_buffers = validated.non_dynamic_buffers;
-    const auto &stats = layout_->GetBindingTypeStats();
-    for (const auto &binding_req_pair : in_req) {
-        const auto *binding = GetBinding(binding_req_pair.first);
-        if (!binding || SkipBinding(*binding)) {
-            continue;
-        }
-
-        // Caching criteria differs per type.
-        // If image_layout have changed , the image descriptors need to be validated against them.
-        if (IsBufferDescriptor(binding->type)) {
-            if (IsDynamicDescriptor(binding->type)) {
-                FilterOneBindingReq(binding_req_pair, out_req, dynamic_buffers, stats.dynamic_buffer_count);
-            } else {
-                FilterOneBindingReq(binding_req_pair, out_req, non_dynamic_buffers, stats.non_dynamic_buffer_count);
-            }
-        } else {
-            // This is rather crude, as the changed layouts may not impact the bound descriptors,
-            // but the simple "versioning" is a simple "dirt" test.
-            bool stale = true;
-            if (image_sample_version) {
-                const auto version_it = image_sample_version->find(binding->binding);
-                if (version_it != image_sample_version->cend() && (version_it->second == cb_state.image_layout_change_count)) {
-                    stale = false;
-                }
-            }
-            if (stale) {
-                out_req->emplace(binding_req_pair);
-            }
-        }
-    }
-}
-
 // Helper template to change shared pointer members of a Descriptor, while
 // correctly managing links to the parent DescriptorSet.
 // src and dst are shared pointers.
@@ -1131,11 +1070,4 @@ bool cvdescriptorset::MutableDescriptor::Invalid() const {
         default:
             return false;
     }
-}
-
-const BindingVariableMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
-                                                                                const PIPELINE_STATE *pipeline) {
-    filtered_map_.reset(new BindingVariableMap);
-    descriptor_set_.FilterBindingReqs(cb_state, pipeline, orig_map_, filtered_map_.get());
-    return *filtered_map_;
 }
