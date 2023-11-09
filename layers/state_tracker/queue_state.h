@@ -278,12 +278,13 @@ struct CB_SUBMISSION {
         std::shared_ptr<SEMAPHORE_STATE> semaphore;
         uint64_t payload{0};
     };
-    CB_SUBMISSION() : completed(), waiter(completed.get_future()) {}
+    CB_SUBMISSION(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
     std::vector<std::shared_ptr<CMD_BUFFER_STATE>> cbs;
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<FENCE_STATE> fence;
+    vvl::LocationCapture loc;
     uint64_t seq{0};
     uint32_t perf_submit_pass{0};
     std::promise<void> completed;
@@ -320,7 +321,7 @@ class QUEUE_STATE : public BASE_NODE {
 
     VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 
-    uint64_t Submit(CB_SUBMISSION &&submission, const Location &loc);
+    uint64_t Submit(CB_SUBMISSION &&submission);
 
     // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
     uint64_t Notify(uint64_t until_seq = vvl::kU64Max);
