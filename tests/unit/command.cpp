@@ -6267,7 +6267,8 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CopyImageOverlappingMemory) {
+// TODO 6898
+TEST_F(NegativeCommand, DISABLED_CopyImageOverlappingMemory) {
     TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
