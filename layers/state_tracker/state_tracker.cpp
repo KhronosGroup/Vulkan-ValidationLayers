@@ -1067,14 +1067,15 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
     uint64_t early_retire_seq = 0;
 
     if (submitCount == 0) {
-        CB_SUBMISSION submission;
+        CB_SUBMISSION submission(record_obj.location);
         submission.AddFence(Get<FENCE_STATE>(fence));
-        early_retire_seq = queue_state->Submit(std::move(submission), record_obj.location);
+        early_retire_seq = queue_state->Submit(std::move(submission));
     }
 
     // Now process each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        CB_SUBMISSION submission;
+        Location submit_loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        CB_SUBMISSION submission(submit_loc);
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         auto *timeline_semaphore_submit = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
@@ -1107,7 +1108,7 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
         if (submit_idx == (submitCount - 1) && fence != VK_NULL_HANDLE) {
             submission.AddFence(Get<FENCE_STATE>(fence));
         }
-        auto submit_seq = queue_state->Submit(std::move(submission), record_obj.location);
+        auto submit_seq = queue_state->Submit(std::move(submission));
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
 
@@ -1126,13 +1127,14 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
     auto queue_state = Get<QUEUE_STATE>(queue);
     uint64_t early_retire_seq = 0;
     if (submitCount == 0) {
-        CB_SUBMISSION submission;
+        CB_SUBMISSION submission(record_obj.location);
         submission.AddFence(Get<FENCE_STATE>(fence));
-        early_retire_seq = queue_state->Submit(std::move(submission), record_obj.location);
+        early_retire_seq = queue_state->Submit(std::move(submission));
     }
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        CB_SUBMISSION submission;
+        Location submit_loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        CB_SUBMISSION submission(submit_loc);
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pWaitSemaphoreInfos[i];
@@ -1151,7 +1153,7 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
         if (submit_idx == (submitCount - 1)) {
             submission.AddFence(Get<FENCE_STATE>(fence));
         }
-        auto submit_seq = queue_state->Submit(std::move(submission), record_obj.location);
+        auto submit_seq = queue_state->Submit(std::move(submission));
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
     if (early_retire_seq) {
@@ -1266,7 +1268,8 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
             }
         }
         auto timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
-        CB_SUBMISSION submission;
+        Location submit_loc = record_obj.location.dot(vvl::Field::pBindInfo, bind_idx);
+        CB_SUBMISSION submission(submit_loc);
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
             uint64_t payload = 0;
             if (timeline_info && i < timeline_info->waitSemaphoreValueCount) {
@@ -1284,7 +1287,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
         if (bind_idx == (bindInfoCount - 1)) {
             submission.AddFence(Get<FENCE_STATE>(fence));
         }
-        auto submit_seq = queue_state->Submit(std::move(submission), record_obj.location);
+        auto submit_seq = queue_state->Submit(std::move(submission));
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
 
@@ -3472,7 +3475,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         return;
     }
     auto queue_state = Get<QUEUE_STATE>(queue);
-    CB_SUBMISSION submission;
+    Location submit_loc = record_obj.location.dot(vvl::Field::pPresentInfo);
+    CB_SUBMISSION submission(submit_loc);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {
@@ -3494,7 +3498,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         }
     }
 
-    auto early_retire_seq = queue_state->Submit(std::move(submission), record_obj.location);
+    auto early_retire_seq = queue_state->Submit(std::move(submission));
     if (early_retire_seq) {
         queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
     }

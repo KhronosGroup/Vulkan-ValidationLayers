@@ -58,7 +58,7 @@ void CB_SUBMISSION::EndUse() {
     }
 }
 
-uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission, const Location &loc) {
+uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     for (auto &cb_state : submission.cbs) {
         auto cb_guard = cb_state->WriteLock();
         for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
@@ -66,7 +66,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission, const Location &loc) {
             secondary_cmd_buffer->IncrementResources();
         }
         cb_state->IncrementResources();
-        cb_state->Submit(Queue(), submission.perf_submit_pass, loc);
+        cb_state->Submit(Queue(), submission.perf_submit_pass, submission.loc.Get());
     }
     // seq_ is atomic so we don't need a lock until updating the deque below.
     // Note that this relies on the external synchonization requirements for the
@@ -195,9 +195,6 @@ void QUEUE_STATE::ThreadFunc() {
         return false;
     };
 
-    // TODO - Pass Location in correctly
-    const Location loc(vvl::Func::vkQueueSubmit);
-
     // Roll this queue forward, one submission at a time.
     while (true) {
         submission = NextSubmission();
@@ -207,7 +204,7 @@ void QUEUE_STATE::ThreadFunc() {
 
         submission->EndUse();
         for (auto &wait : submission->wait_semaphores) {
-            wait.semaphore->Retire(this, loc, wait.payload);
+            wait.semaphore->Retire(this, submission->loc.Get(), wait.payload);
         }
         for (auto &cb_state : submission->cbs) {
             auto cb_guard = cb_state->WriteLock();
@@ -218,7 +215,7 @@ void QUEUE_STATE::ThreadFunc() {
             cb_state->Retire(submission->perf_submit_pass, is_query_updated_after);
         }
         for (auto &signal : submission->signal_semaphores) {
-            signal.semaphore->Retire(this, loc, signal.payload);
+            signal.semaphore->Retire(this, submission->loc.Get(), signal.payload);
         }
         if (submission->fence) {
             submission->fence->Retire();
