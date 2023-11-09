@@ -173,6 +173,8 @@ This is handled by having the `Resource Interface` variable track if it has a `O
     - This means the the `ValidateDescriptor` logic needs to know every `OpTypeSampler` variable accessed together with a `OpTypeImage` variable
     - There is no case where only a `OpTypeSampler` variable can be used by itself, so no need to track it the other way
 
+If the Image Access is in a function, it might point to multiple `OpVariable`
+
 ### Atomics
 
 There are 2 types of atomic accesses: "Image" and "Non-Image"

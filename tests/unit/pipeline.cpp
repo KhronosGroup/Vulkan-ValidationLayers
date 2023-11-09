@@ -2027,8 +2027,12 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         layout (set=0, binding=0) uniform texture2D textureColor;
         layout (set=0, binding=1) uniform sampler samplers;
         layout(location=0) out vec4 color;
+        // test can be detected from function
+        vec4 foo(texture2D _texture, sampler _sampler) {
+            return texture(sampler2D(_texture, _sampler), gl_FragCoord.xy);
+        }
         void main() {
-           color = texture(sampler2D(textureColor, samplers), gl_FragCoord.xy);
+           color = foo(textureColor, samplers);
         }
     )glsl";
     VkShaderObj fs_seperate(this, fs_source_seperate, VK_SHADER_STAGE_FRAGMENT_BIT);
