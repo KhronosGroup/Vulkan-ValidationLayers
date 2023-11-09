@@ -507,7 +507,9 @@ class ShaderInterfaceTest : public VkLayerTest {};
 class NegativeShaderInterface : public ShaderInterfaceTest {};
 class PositiveShaderInterface : public ShaderInterfaceTest {};
 
-class PositiveShaderImageAccess : public VkLayerTest {};
+class ShaderImageAccessTest : public VkLayerTest {};
+class PositiveShaderImageAccess : public ShaderImageAccessTest {};
+class NegativeShaderImageAccess : public ShaderImageAccessTest {};
 
 class ShaderLimitsTest : public VkLayerTest {};
 class NegativeShaderLimits : public ShaderLimitsTest {};

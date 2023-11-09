@@ -17,6 +17,7 @@
 
 #include <sstream>
 #include <string>
+#include <queue>
 
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
@@ -552,7 +553,7 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
             is_read_from = true;
             break;
 
-        // case spv::OpImageTexelPointer: TODO - Atomics not supported in here yet
+        case spv::OpImageTexelPointer:
         case spv::OpImageFetch:
         case spv::OpImageSparseFetch:
         case spv::OpImageGather:
@@ -596,15 +597,28 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
         }
     }
 
-    const Instruction* sampler_insn = nullptr;
-    auto walk_to_variable = [this, &module_state, &sampler_insn](const Instruction* insn, bool sampler) {
+    // Do sampler searching as seperate walk to not have the "visited" loop protection be falsly triggered
+    std::vector<const Instruction*> sampler_insn_to_search;
+
+    auto walk_to_variables = [this, &module_state, &sampler_insn_to_search](const Instruction* insn, bool sampler) {
         // Protect from loops
         std::unordered_set<uint32_t> visited;
 
+        // stack of function call sites to search through
+        std::queue<const Instruction*> insn_to_search;
+        insn_to_search.push(insn);
+        bool new_func = false;
+
         // Keep walking down until get to variables
-        while (true) {
-            uint32_t current_id = insn->ResultId();
-            auto visited_iter = visited.find(current_id);
+        while (!insn_to_search.empty()) {
+            // for debugging, easier if only search one function at a time
+            if (new_func) {
+                new_func = false;
+                insn = insn_to_search.front();
+            }
+
+            const uint32_t current_id = insn->ResultId();
+            const auto visited_iter = visited.find(current_id);
             if (visited_iter != visited.end()) {
                 valid_access = false;  // Caught in a loop
                 return;
@@ -614,7 +628,7 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
             switch (insn->Opcode()) {
                 case spv::OpSampledImage:
                     // If there is a OpSampledImage we will need to split off and walk down to get the sampler variable
-                    sampler_insn = module_state.FindDef(insn->Word(4));
+                    sampler_insn_to_search.push_back(module_state.FindDef(insn->Word(4)));
                     insn = module_state.FindDef(insn->Word(3));
                     break;
                 case spv::OpImage:
@@ -641,16 +655,27 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
                     insn = module_state.FindDef(insn->Word(3));
                     break;
                 }
-                case spv::Op::OpFunctionParameter:
-                    valid_access = false;
-                    return;  // TODO 5614 - Handle function jumps
+                case spv::Op::OpFunctionParameter: {
+                    // might be dead-end, but end searching in this Function block
+                    insn_to_search.pop();
+                    new_func = true;
+
+                    auto it = module_state.static_data_.func_parameter_map.find(insn->ResultId());
+                    if (it != module_state.static_data_.func_parameter_map.end()) {
+                        for (uint32_t arg : it->second) {
+                            insn_to_search.push(module_state.FindDef(arg));
+                        }
+                    }
+                    break;
+                }
                 case spv::Op::OpVariable: {
                     if (sampler) {
-                        variable_sampler_insn = insn;
+                        variable_sampler_insn.push_back(insn);
                     } else {
-                        variable_image_insn = insn;
+                        variable_image_insn.push_back(insn);
                     }
-                    return;  // found successfully
+                    insn_to_search.pop();
+                    break;
                 }
                 default:
                     // Hit invalid (or unsupported) opcode
@@ -663,9 +688,9 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
     const uint32_t image_operand = OpcodeImageAccessPosition(image_opcode);
     assert(image_operand != 0);
     const Instruction* insn = module_state.FindDef(image_insn.Word(image_operand));
-    walk_to_variable(insn, false);
-    if (sampler_insn) {
-        walk_to_variable(sampler_insn, true);
+    walk_to_variables(insn, false);
+    for (const auto* sampler_insn : sampler_insn_to_search) {
+        walk_to_variables(sampler_insn, true);
     }
 }
 
@@ -782,6 +807,11 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
     std::vector<const Instruction*> entry_point_instructions;
     std::vector<const Instruction*> type_struct_instructions;
     std::vector<const Instruction*> image_instructions;
+    std::vector<const Instruction*> func_call_instructions;
+
+    uint32_t last_func_id = 0;
+    // < Function ID, OpFunctionParameter Ids >
+    std::unordered_map<uint32_t, std::vector<uint32_t>> func_parameter_list;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -936,6 +966,10 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
             case spv::OpImageTexelPointer: {
                 // 2: ImageTexelPointer id, 3: object id
                 image_texel_pointer_members.emplace(insn.Word(2), insn.Word(3));
+
+                // All Image atomics go through here.
+                // Currrently only interested if used/accessed
+                image_instructions.push_back(&insn);
                 break;
             }
             case spv::OpTypeStruct: {
@@ -960,6 +994,18 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
                 break;
             }
 
+            // Build up Function mappings
+            case spv::OpFunction:
+                last_func_id = insn.ResultId();
+                func_parameter_list[last_func_id];  // create empty vector list
+                break;
+            case spv::OpFunctionParameter:
+                func_parameter_list[last_func_id].push_back(insn.ResultId());
+                break;
+            case spv::OpFunctionCall:
+                func_call_instructions.push_back(&insn);
+                break;
+
             default:
                 if (AtomicOperation(insn.Opcode())) {
                     atomic_inst.push_back(&insn);
@@ -975,6 +1021,23 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
                 }
                 // We don't care about any other defs for now.
                 break;
+        }
+    }
+
+    const uint32_t first_arg_word = 4;
+    for (const auto& func_def : func_parameter_list) {
+        const uint32_t func_id = func_def.first;
+        for (const Instruction* func_call : func_call_instructions) {
+            if (func_call->Word(3) != func_id) {
+                continue;
+            }
+            // guaranteed number of args/params is same
+            const uint32_t arg_count = (func_call->Length() - first_arg_word);
+            for (uint32_t i = 0; i < arg_count; i++) {
+                const uint32_t arg = func_call->Word(first_arg_word + i);
+                const uint32_t param = func_def.second[i];
+                func_parameter_map[param].push_back(arg);
+            }
         }
     }
 
@@ -1001,8 +1064,10 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
 
     for (const auto& insn : image_instructions) {
         auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
-        if (new_access->variable_image_insn && new_access->valid_access) {
-            image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
+        if (!new_access->variable_image_insn.empty() && new_access->valid_access) {
+            for (const Instruction* image_insn : new_access->variable_image_insn) {
+                image_access_map[image_insn->ResultId()].push_back(new_access);
+            }
         }
     }
 
@@ -1826,6 +1891,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
             if (access_it == image_access_map.end()) {
                 break;
             }
+
+            info.is_image_accessed = true;
             for (const auto& image_access_ptr : access_it->second) {
                 const auto& image_access = *image_access_ptr;
 
@@ -1867,7 +1934,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 }
 
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
-                if (image_access.variable_sampler_insn && !is_sampled_image) {
+                if (!image_access.variable_sampler_insn.empty() && !is_sampled_image) {
                     // if no AccessChain, it is same conceptually as being zero
                     const uint32_t image_index =
                         image_access.image_access_chain_index != kInvalidSpirvValue ? image_access.image_access_chain_index : 0;
@@ -1878,9 +1945,11 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                         samplers_used_by_image.resize(image_index + 1);
                     }
 
-                    const auto& decoration_set = module_state.GetDecorationSet(image_access.variable_sampler_insn->ResultId());
-                    samplers_used_by_image[image_index].emplace(
-                        SamplerUsedByImage{DescriptorSlot{decoration_set.set, decoration_set.binding}, sampler_index});
+                    for (const Instruction* sampler_insn : image_access.variable_sampler_insn) {
+                        const auto& decoration_set = module_state.GetDecorationSet(sampler_insn->ResultId());
+                        samplers_used_by_image[image_index].emplace(
+                            SamplerUsedByImage{DescriptorSlot{decoration_set.set, decoration_set.binding}, sampler_index});
+                    }
                 }
             }
             break;

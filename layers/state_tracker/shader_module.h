@@ -177,10 +177,11 @@ struct TypeStructInfo {
 // This is created in the SPIRV_MODULE_STATE but then used with VariableBase objects
 struct ImageAccess {
     const Instruction &image_insn;  // OpImage*
-    const Instruction *variable_image_insn = nullptr;
+    std::vector<const Instruction *> variable_image_insn;
     // If there is a OpSampledImage there will also be a sampler variable
-    const Instruction *variable_sampler_insn = nullptr;
-    bool valid_access = true;  // TODO 5614 - Handle function jumps
+    std::vector<const Instruction *> variable_sampler_insn;
+    // incase uncaught set of SPIR-V instruction is found, skips validating instead of crashing
+    bool valid_access = true;
 
     bool is_dref = false;
     bool is_sampler_implicitLod_dref_proj = false;
@@ -350,6 +351,11 @@ struct ResourceInterfaceVariable : public VariableBase {
         // Only need to check if one access has explicit signedness, mixing should be caught in spirv-val
         bool is_sign_extended{false};  // if at least one access has SignExtended
         bool is_zero_extended{false};  // if at least one access has ZeroExtended
+
+        // If a variable is used as a function arguement, but never actually used, it will be found in EntryPoint::accessible_ids so
+        // we need to have a dedicated mark if it was accessed
+        // TODO - merge with is_read_from and is_written_to
+        bool is_image_accessed{false};
     } info;
     uint64_t descriptor_hash = 0;
     bool IsImage() const { return info.image_format_type != NumericTypeUnknown; }
@@ -406,6 +412,7 @@ struct EntryPoint {
     bool emit_vertex_geometry;
 
     // All ids that can be accessed from the entry point
+    // being accessed doesn't guarantee it is statically used
     const vvl::unordered_set<uint32_t> accessible_ids;
 
     // only one Push Constant block is allowed per entry point
@@ -530,6 +537,15 @@ struct SPIRV_MODULE_STATE {
         vvl::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
         vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
         vvl::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
+
+        // Track all paths from %param to %arg so can walk back functions
+        //
+        // %arg   = OpVariable
+        // %call  = OpFunctionCall %result %func %arg
+        // %param = OpFunctionParameter
+        //
+        // < %param, vector<%arg> >
+        vvl::unordered_map<uint32_t, std::vector<uint32_t>> func_parameter_map;
     };
 
     // This is the SPIR-V module data content

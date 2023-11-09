@@ -197,6 +197,9 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         return false;
     }
     const auto &variable = *binding_info.second.variable;
+    if (!variable.info.is_image_accessed) {
+        return false;
+    }
     const auto &image_view_ci = image_view_state->create_info;
 
     const spv::Dim dim = variable.info.image_dim;
@@ -831,6 +834,10 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         return false;
     }
     const auto &variable = *binding_info.second.variable;
+    if (!variable.info.is_image_accessed) {
+        return false;
+    }
+
     auto buffer = buffer_view_state->create_info.buffer;
     const auto *buffer_state = buffer_view_state->buffer_state.get();
     const VkFormat buffer_view_format = buffer_view_state->create_info.format;

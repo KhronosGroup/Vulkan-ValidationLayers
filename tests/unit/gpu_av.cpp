@@ -3117,6 +3117,7 @@ TEST_F(VkGpuAssistedLayerTest, ImageArrayDynamicIndexing) {
 }
 
 // TODO the SPIRV-Tools instrumentation doesn't work for this shader
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
 TEST_F(VkGpuAssistedLayerTest, DISABLED_InvalidAtomicStorageOperation) {
     TEST_DESCRIPTION(
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
@@ -3242,6 +3243,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_InvalidAtomicStorageOperation) {
 }
 
 // TODO: The SPIRV-Tools instrumentation doesn't work correctly for this shader
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
 TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpInBoundsAccessChain");
 
@@ -3369,6 +3371,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
 }
 
 // TODO: The SPIRV-Tools instrumentation doesn't work correctly for this shader
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
 TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesCopyObject) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpCopyObject");
 
