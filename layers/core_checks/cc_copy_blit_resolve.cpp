@@ -2573,9 +2573,11 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
                                              region.imageSubresource.layerCount, subresource_loc, vuid);
     }
 
-    if (!skip && !dst_buffer_state->sparse && !src_image_state->sparse) {
-        skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *src_image_state, *dst_buffer_state, loc, true, is_2);
-    }
+    // TODO 6898 - ValidateImageBufferCopyMemoryOverlap logic has issues
+    // if (!skip && !dst_buffer_state->sparse && !src_image_state->sparse) {
+    //     skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *src_image_state, *dst_buffer_state,
+    //     loc, true, is_2);
+    // }
     return skip;
 }
 
@@ -2726,9 +2728,11 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         }
     }
 
-    if (!skip && !src_buffer_state->sparse && !dst_image_state->sparse){
-        skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *dst_image_state, *src_buffer_state, loc, false, is_2);
-    }
+    // TODO 6898 - ValidateImageBufferCopyMemoryOverlap logic has issues
+    // if (!skip && !src_buffer_state->sparse && !dst_image_state->sparse){
+    //     skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *dst_image_state, *src_buffer_state,
+    //     loc, false, is_2);
+    // }
 
     return skip;
 }
