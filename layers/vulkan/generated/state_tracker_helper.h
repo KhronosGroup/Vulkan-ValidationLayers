@@ -641,6 +641,8 @@ struct DeviceFeatures {
     bool rayTraversalPrimitiveCulling;
     // VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR
     bool rayTracingPositionFetch;
+    // VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG
+    bool relaxedLineRasterization;
     // VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV
     bool representativeFragmentTest;
     // VkPhysicalDeviceRobustness2FeaturesEXT

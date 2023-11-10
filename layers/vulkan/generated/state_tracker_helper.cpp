@@ -602,6 +602,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->depthClipEnable |= enabled->depthClipEnable == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG: {
+                const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *>(pNext);
+                features->relaxedLineRasterization |= enabled->relaxedLineRasterization == VK_TRUE;
+                break;
+            }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX: {
                 const VkPhysicalDeviceShaderEnqueueFeaturesAMDX *enabled =

@@ -520,6 +520,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_conservative_rasterization{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_enable{kNotEnabled};
     ExtEnabled vk_ext_hdr_metadata{kNotEnabled};
+    ExtEnabled vk_img_relaxed_line_rasterization{kNotEnabled};
     ExtEnabled vk_ext_external_memory_dma_buf{kNotEnabled};
     ExtEnabled vk_ext_queue_family_foreign{kNotEnabled};
     ExtEnabled vk_android_external_memory_android_hardware_buffer{kNotEnabled};
@@ -1089,6 +1090,10 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_HDR_METADATA_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_hdr_metadata,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
+            {VK_IMG_RELAXED_LINE_RASTERIZATION_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_img_relaxed_line_rasterization,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_external_memory_dma_buf,
                         {{{&DeviceExtensions::vk_khr_external_memory_fd, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME}}})},
@@ -1681,7 +1686,10 @@ struct DeviceExtensions : public InstanceExtensions {
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
-            {VK_NV_LOW_LATENCY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_low_latency2, {})},
+            {VK_NV_LOW_LATENCY_2_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_nv_low_latency2,
+                        {{{&DeviceExtensions::vk_feature_version_1_2, "VK_VERSION_1_2"},
+                          {&DeviceExtensions::vk_khr_timeline_semaphore, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME}}})},
             {VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_render_areas, {})},
             {VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME,
@@ -2035,6 +2043,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
     VK_EXT_HDR_METADATA_EXTENSION_NAME,
+    VK_IMG_RELAXED_LINE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
     VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
