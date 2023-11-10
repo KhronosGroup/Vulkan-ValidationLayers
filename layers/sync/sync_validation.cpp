@@ -193,7 +193,7 @@ struct SyncNodeFormatter {
         : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
     SyncNodeFormatter(const SyncValidator &sync_state, const IMAGE_STATE *image)
         : report_data(sync_state.report_data), node(image), label("image") {}
-    SyncNodeFormatter(const SyncValidator &sync_state, const QUEUE_STATE *q_state)
+    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
         : report_data(sync_state.report_data), node(q_state), label("queue") {}
     SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_ = nullptr)
         : report_data(sync_state.report_data), node(base_node), label(label_) {}
@@ -4448,17 +4448,17 @@ void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
 }
 
 void SyncValidator::UpdateFenceWaitInfo(VkFence fence, QueueId queue_id, ResourceUsageTag tag) {
-    std::shared_ptr<const FENCE_STATE> fence_state = Get<FENCE_STATE>(fence);
+    std::shared_ptr<const vvl::Fence> fence_state = Get<vvl::Fence>(fence);
     UpdateFenceWaitInfo(fence_state, FenceSyncState(fence_state, queue_id, tag));
 }
 void SyncValidator::UpdateFenceWaitInfo(VkFence fence, const PresentedImage &image, ResourceUsageTag tag) {
-    std::shared_ptr<const FENCE_STATE> fence_state = Get<FENCE_STATE>(fence);
+    std::shared_ptr<const vvl::Fence> fence_state = Get<vvl::Fence>(fence);
     UpdateFenceWaitInfo(fence_state, FenceSyncState(fence_state, image, tag));
 }
 
-void SyncValidator::UpdateFenceWaitInfo(std::shared_ptr<const FENCE_STATE> &fence_state, FenceSyncState &&wait_info) {
+void SyncValidator::UpdateFenceWaitInfo(std::shared_ptr<const vvl::Fence> &fence_state, FenceSyncState &&wait_info) {
     if (BASE_NODE::Invalid(fence_state)) return;
-    waitable_fences_[fence_state->fence()] = std::move(wait_info);
+    waitable_fences_[fence_state->VkHandle()] = std::move(wait_info);
 }
 
 void SyncValidator::WaitForFence(VkFence fence) {
@@ -4577,7 +4577,7 @@ bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, Q
     return skip;
 }
 
-bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state,
+bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state,
                                          const std::shared_ptr<QueueBatchContext> &batch,
                                          const VkSemaphoreSubmitInfo &signal_info) {
     assert(batch);
@@ -4587,13 +4587,13 @@ bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_S
     return Insert(sem_state, std::move(signal));
 }
 
-bool SignaledSemaphores::Insert(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, std::shared_ptr<Signal> &&signal) {
-    const VkSemaphore sem = sem_state->semaphore();
+bool SignaledSemaphores::Insert(const std::shared_ptr<const vvl::Semaphore> &sem_state, std::shared_ptr<Signal> &&signal) {
+    const VkSemaphore sem = sem_state->VkHandle();
     auto signal_it = signaled_.find(sem);
     std::shared_ptr<Signal> insert_signal;
     if (signal_it == signaled_.end()) {
         if (prev_) {
-            auto prev_sig = GetMapped(prev_->signaled_, sem_state->semaphore(), []() { return std::shared_ptr<Signal>(); });
+            auto prev_sig = GetMapped(prev_->signaled_, sem, []() { return std::shared_ptr<Signal>(); });
             if (prev_sig) {
                 // The is an invalid signal, as this semaphore is already signaled... copy the prev state (as prev_ is const)
                 insert_signal = std::make_shared<Signal>(*prev_sig);
@@ -4612,7 +4612,7 @@ bool SignaledSemaphores::Insert(const std::shared_ptr<const SEMAPHORE_STATE> &se
     return success;
 }
 
-bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const PresentedImage &presented,
+bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state, const PresentedImage &presented,
                                          ResourceUsageTag acq_tag) {
     // Ignore any signal we haven't waited... CoreChecks should have reported this
     std::shared_ptr<Signal> signal = std::make_shared<Signal>(sem_state, presented, acq_tag);
@@ -4670,7 +4670,7 @@ void SignaledSemaphores::Resolve(SignaledSemaphores &parent, std::shared_ptr<Que
 void SignaledSemaphores::Import(VkSemaphore sem, std::shared_ptr<Signal> &&from) {
     // Overwrite the s  tate with the last state from this
     if (from) {
-        assert(sem == from->sem_state->semaphore());
+        assert(sem == from->sem_state->VkHandle());
         signaled_[sem] = std::move(from);
     } else {
         signaled_.erase(sem);
@@ -5120,11 +5120,11 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // The state tracker sets up the device state
     StateTracker::CreateDevice(pCreateInfo);
 
-    ForEachShared<QUEUE_STATE>([this](const std::shared_ptr<QUEUE_STATE> &queue_state) {
+    ForEachShared<vvl::Queue>([this](const std::shared_ptr<vvl::Queue> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
         std::shared_ptr<QueueSyncState> queue_sync_state =
             std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id_limit_++);
-        queue_sync_states_.emplace(std::make_pair(queue_state->Queue(), std::move(queue_sync_state)));
+        queue_sync_states_.emplace(std::make_pair(queue_state->VkHandle(), std::move(queue_sync_state)));
     });
 }
 
@@ -8230,7 +8230,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
     presented.batch = std::move(batch);
 
     if (semaphore != VK_NULL_HANDLE) {
-        std::shared_ptr<const SEMAPHORE_STATE> sem_state = Get<SEMAPHORE_STATE>(semaphore);
+        std::shared_ptr<const vvl::Semaphore> sem_state = Get<vvl::Semaphore>(semaphore);
 
         if (bool(sem_state)) {
             signaled_semaphores_.SignalSemaphore(sem_state, presented, acquire_tag);
@@ -8284,7 +8284,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
         for (uint32_t sem_idx = 0; sem_idx < submit.signalSemaphoreInfoCount; ++sem_idx) {
             const VkSemaphoreSubmitInfo &semaphore_info = submit.pSignalSemaphoreInfos[sem_idx];
             // Make a copy of the state, signal the copy and pend it...
-            auto sem_state = Get<SEMAPHORE_STATE>(semaphore_info.semaphore);
+            auto sem_state = Get<vvl::Semaphore>(semaphore_info.semaphore);
             if (!sem_state) continue;
             cmd_state->signaled.SignalSemaphore(sem_state, batch, semaphore_info);
         }
@@ -8657,7 +8657,7 @@ class ApplyAcquireNextSemaphoreAction {
 std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(VkSemaphore sem,
                                                                               const PresentedImages &presented_images,
                                                                               SignaledSemaphores &signaled) {
-    auto sem_state = sync_state_->Get<SEMAPHORE_STATE>(sem);
+    auto sem_state = sync_state_->Get<vvl::Semaphore>(sem);
     if (!sem_state) return nullptr;  // Semaphore validity is handled by CoreChecks
 
     // When signal_state goes out of scope, the signal information will be dropped, as Unsignal has released ownership.
@@ -8705,7 +8705,7 @@ std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(Vk
 
 std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
                                                                               SignaledSemaphores &signaled) {
-    auto sem_state = sync_state_->Get<SEMAPHORE_STATE>(sem);
+    auto sem_state = sync_state_->Get<vvl::Semaphore>(sem);
     if (!sem_state) return nullptr;  // Semaphore validity is handled by CoreChecks
 
     // When signal state goes out of scope, the signal information will be dropped, as Unsignal has released ownership.
@@ -8998,7 +8998,7 @@ std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::GetPrev(Vk
     return prev_state;
 }
 
-SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_,
+SignaledSemaphores::Signal::Signal(const std::shared_ptr<const vvl::Semaphore> &sem_state_,
                                    const std::shared_ptr<QueueBatchContext> &batch_, const SyncExecScope &exec_scope_)
     : sem_state(sem_state_), batch(batch_), first_scope({batch->GetQueueId(), exec_scope_}) {
     // Illegal to create a signal from no batch or an invalid semaphore... caller must assure validity
@@ -9006,7 +9006,7 @@ SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> 
     assert(sem_state);
 }
 
-SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_, const PresentedImage &presented,
+SignaledSemaphores::Signal::Signal(const std::shared_ptr<const vvl::Semaphore> &sem_state_, const PresentedImage &presented,
                                    ResourceUsageTag acq_tag)
     : sem_state(sem_state_), batch(presented.batch), first_scope(), acquired(presented, acq_tag) {
     // Illegal to create a signal from no batch or an invalid semaphore... caller must assure validity
@@ -9267,9 +9267,9 @@ AcquiredImage::AcquiredImage(const PresentedImage &presented, ResourceUsageTag a
       present_tag(presented.tag),
       acquire_tag(acq_tag) {}
 
-FenceSyncState::FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_, QueueId queue_id_, ResourceUsageTag tag_)
+FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, QueueId queue_id_, ResourceUsageTag tag_)
     : fence(fence_), tag(tag_), queue_id(queue_id_) {}
-FenceSyncState::FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_, const PresentedImage &image, ResourceUsageTag tag_)
+FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, const PresentedImage &image, ResourceUsageTag tag_)
     : fence(fence_), tag(tag_), queue_id(QueueSyncState::kQueueIdInvalid), acquired(image, tag) {}
 
 // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest

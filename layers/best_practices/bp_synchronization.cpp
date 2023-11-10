@@ -395,7 +395,7 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
         barrier.dstQueueFamilyIndex == cb->command_pool->queueFamilyIndex) {
         auto image = Get<bp_state::Image>(barrier.image);
         auto subresource_range = barrier.subresourceRange;
-        cb->queue_submit_functions.push_back([image, subresource_range](const ValidationStateTracker& vst, const QUEUE_STATE& qs,
+        cb->queue_submit_functions.push_back([image, subresource_range](const ValidationStateTracker& vst, const vvl::Queue& qs,
                                                                         const CMD_BUFFER_STATE& cbs) -> bool {
             ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
                 // Update queue family index without changing usage, signifying a correct queue family transfer
@@ -445,7 +445,7 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (Count<SEMAPHORE_STATE>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
+        if (Count<vvl::Semaphore>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning(kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores, device, error_obj.location,
                                           "%s %s Performance warning: High number of vkSemaphore objects created. "
                                           "Minimize the amount of queue synchronization that is used. "
@@ -462,7 +462,7 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
                                                const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (Count<FENCE_STATE>() > kMaxRecommendedFenceObjectsSizeAMD) {
+        if (Count<vvl::Fence>() > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning(kVUID_BestPractices_SyncObjects_HighNumberOfFences, device, error_obj.location,
                                           "%s %s Performance warning: High number of VkFence objects created."
                                           "Minimize the amount of CPU-GPU synchronization that is used. "

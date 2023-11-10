@@ -23,7 +23,7 @@ namespace gpu_tracker {
 
 class Validator;
 
-class Queue : public QUEUE_STATE {
+class Queue : public vvl::Queue {
   public:
     Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties);
@@ -45,8 +45,8 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     virtual void Process(VkQueue queue, const Location &loc) = 0;
 };
 }  // namespace gpu_tracker
-
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_tracker::Queue, QUEUE_STATE)
+ 
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_tracker::Queue, vvl::Queue)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, CMD_BUFFER_STATE)
 
 namespace gpu_tracker {
@@ -199,9 +199,9 @@ class Validator : public ValidationStateTracker {
         }
     }
 
-    std::shared_ptr<QUEUE_STATE> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-                                             const VkQueueFamilyProperties &queueFamilyProperties) override {
-        return std::static_pointer_cast<QUEUE_STATE>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
+    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+                                            const VkQueueFamilyProperties &queueFamilyProperties) override {
+        return std::static_pointer_cast<vvl::Queue>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
     }
 
     template <typename CreateInfo, typename SafeCreateInfo, typename GPUAVState>

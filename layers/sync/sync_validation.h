@@ -516,11 +516,11 @@ class SignaledSemaphores {
         Signal(Signal &&other) = default;
         Signal &operator=(const Signal &other) = default;
         Signal &operator=(Signal &&other) = default;
-        Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_, const std::shared_ptr<QueueBatchContext> &batch_,
+        Signal(const std::shared_ptr<const vvl::Semaphore> &sem_state_, const std::shared_ptr<QueueBatchContext> &batch_,
                const SyncExecScope &exec_scope_);
-        Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_, const PresentedImage &presented, ResourceUsageTag acq_tag);
+        Signal(const std::shared_ptr<const vvl::Semaphore> &sem_state_, const PresentedImage &presented, ResourceUsageTag acq_tag);
 
-        std::shared_ptr<const SEMAPHORE_STATE> sem_state;
+        std::shared_ptr<const vvl::Semaphore> sem_state;
         std::shared_ptr<QueueBatchContext> batch;
         // Use the SyncExecScope::valid_accesses for first access scope
         SemaphoreScope first_scope;
@@ -544,10 +544,10 @@ class SignaledSemaphores {
     iterator end() { return signaled_.end(); }
     const_iterator end() const { return signaled_.end(); }
 
-    bool SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
+    bool SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
                          const VkSemaphoreSubmitInfo &signal_info);
-    bool Insert(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, std::shared_ptr<Signal> &&signal);
-    bool SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const PresentedImage &presented,
+    bool Insert(const std::shared_ptr<const vvl::Semaphore> &sem_state, std::shared_ptr<Signal> &&signal);
+    bool SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state, const PresentedImage &presented,
                          ResourceUsageTag acq_tag);
     std::shared_ptr<const Signal> Unsignal(VkSemaphore);
     void Resolve(SignaledSemaphores &parent, std::shared_ptr<QueueBatchContext> &last_batch);
@@ -910,7 +910,7 @@ using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
 
 struct FenceSyncState {
-    std::shared_ptr<const FENCE_STATE> fence;
+    std::shared_ptr<const vvl::Fence> fence;
     ResourceUsageTag tag;
     QueueId queue_id;
     AcquiredImage acquired;  // Iff queue == invalid and acquired.image valid.
@@ -920,8 +920,8 @@ struct FenceSyncState {
     FenceSyncState &operator=(const FenceSyncState &other) = default;
     FenceSyncState &operator=(FenceSyncState &&other) = default;
 
-    FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_, QueueId queue_id_, ResourceUsageTag tag_);
-    FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_, const PresentedImage &image, ResourceUsageTag tag_);
+    FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, QueueId queue_id_, ResourceUsageTag tag_);
+    FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, const PresentedImage &image, ResourceUsageTag tag_);
 };
 
 class AttachmentViewGen {
@@ -2092,7 +2092,7 @@ class QueueSyncState {
     constexpr static QueueId kQueueIdBase = QueueId(0);
     constexpr static QueueId kQueueIdInvalid = ~kQueueIdBase;
     constexpr static QueueId kQueueAny = kQueueIdInvalid - 1;
-    QueueSyncState(const std::shared_ptr<QUEUE_STATE> &queue_state, VkQueueFlags queue_flags, QueueId id)
+    QueueSyncState(const std::shared_ptr<vvl::Queue> &queue_state, VkQueueFlags queue_flags, QueueId id)
         : submit_index_(0), queue_state_(queue_state), last_batch_(), queue_flags_(queue_flags), id_(id) {}
 
     VulkanTypedHandle Handle() const {
@@ -2104,7 +2104,7 @@ class QueueSyncState {
     std::shared_ptr<const QueueBatchContext> LastBatch() const { return last_batch_; }
     std::shared_ptr<QueueBatchContext> LastBatch() { return last_batch_; }
     void UpdateLastBatch(std::shared_ptr<QueueBatchContext> &&last);
-    const QUEUE_STATE *GetQueueState() const { return queue_state_.get(); }
+    const vvl::Queue *GetQueueState() const { return queue_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
     QueueId GetQueueId() const { return id_; }
 
@@ -2112,7 +2112,7 @@ class QueueSyncState {
 
   private:
     mutable std::atomic<uint64_t> submit_index_;
-    std::shared_ptr<QUEUE_STATE> queue_state_;
+    std::shared_ptr<vvl::Queue> queue_state_;
     std::shared_ptr<QueueBatchContext> last_batch_;
     const VkQueueFlags queue_flags_;
     QueueId id_;
@@ -2176,7 +2176,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     void UpdateFenceWaitInfo(VkFence fence, QueueId queue_id, ResourceUsageTag tag);
     void UpdateFenceWaitInfo(VkFence fence, const PresentedImage &image, ResourceUsageTag tag);
-    void UpdateFenceWaitInfo(std::shared_ptr<const FENCE_STATE> &fence, FenceSyncState &&wait_info);
+    void UpdateFenceWaitInfo(std::shared_ptr<const vvl::Fence> &fence, FenceSyncState &&wait_info);
 
     void WaitForFence(VkFence fence);
 

@@ -27,7 +27,7 @@
 
 struct CommandBufferSubmitState {
     const CoreChecks *core;
-    const QUEUE_STATE *queue_state;
+    const vvl::Queue *queue_state;
     QFOTransferCBScoreboards<QFOImageTransferBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
     std::vector<VkCommandBuffer> current_cmds;
@@ -40,7 +40,7 @@ struct CommandBufferSubmitState {
     EventToStageMap local_event_signal_info;
     vvl::unordered_map<VkVideoSessionKHR, VideoSessionDeviceState> local_video_session_state{};
 
-    CommandBufferSubmitState(const CoreChecks *c, const QUEUE_STATE *q) : core(c), queue_state(q) {}
+    CommandBufferSubmitState(const CoreChecks *c, const vvl::Queue *q) : core(c), queue_state(q) {}
 
     bool Validate(const Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t perf_pass) {
         bool skip = false;
@@ -50,7 +50,7 @@ struct CommandBufferSubmitState {
         skip |= core->ValidatePrimaryCommandBufferState(
             loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)), &qfo_image_scoreboards,
             &qfo_buffer_scoreboards);
-        skip |= core->ValidateQueueFamilyIndices(loc, cb_state, queue_state->Queue());
+        skip |= core->ValidateQueueFamilyIndices(loc, cb_state, queue_state->VkHandle());
 
         // Potential early exit here as bad object state may crash in delayed function calls
         if (skip) {
@@ -63,7 +63,7 @@ struct CommandBufferSubmitState {
         }
         for (auto &function : cb_state.eventUpdates) {
             skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, local_event_signal_info,
-                             queue_state->Queue(), loc);
+                             queue_state->VkHandle(), loc);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
         for (auto &function : cb_state.queryUpdates) {
@@ -89,7 +89,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                             const ErrorObject &error_obj) const {
     bool skip = false;
     {
-        auto fence_state = Get<FENCE_STATE>(fence);
+        auto fence_state = Get<vvl::Fence>(fence);
         const LogObjectList objlist(queue, fence);
         skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063",
                                       objlist, error_obj.location);
@@ -98,7 +98,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         return true;
     }
 
-    auto queue_state = Get<QUEUE_STATE>(queue);
+    auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(this, queue_state.get());
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
@@ -216,7 +216,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                                       const ErrorObject &error_obj) const {
     bool skip = false;
     {
-        auto fence_state = Get<FENCE_STATE>(fence);
+        auto fence_state = Get<vvl::Fence>(fence);
         const LogObjectList objlist(queue, fence);
         skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
                                       objlist, error_obj.location);
@@ -230,7 +230,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                          "synchronization2 feature is not enabled");
     }
 
-    auto queue_state = Get<QUEUE_STATE>(queue);
+    auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(this, queue_state.get());
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
@@ -399,7 +399,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
     using sync_vuid_maps::SubmitError;
     bool skip = false;
     auto pool = cb_state.command_pool;
-    auto queue_state = Get<QUEUE_STATE>(queue);
+    auto queue_state = Get<vvl::Queue>(queue);
 
     if (pool && queue_state) {
         if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
@@ -555,7 +555,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                                                 VkFence fence, const ErrorObject &error_obj) const {
     bool skip = false;
     {
-        auto fence_state = Get<FENCE_STATE>(fence);
+        auto fence_state = Get<vvl::Fence>(fence);
         const LogObjectList objlist(queue, fence);
         skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114", "VUID-vkQueueBindSparse-fence-01113",
                                       objlist, error_obj.location);
@@ -564,7 +564,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         return true;
     }
 
-    auto queue_data = Get<QUEUE_STATE>(queue);
+    auto queue_data = Get<vvl::Queue>(queue);
     const auto queue_flags = physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
     if (!(queue_flags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, error_obj.location,

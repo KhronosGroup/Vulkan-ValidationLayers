@@ -522,7 +522,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, command, state, usage, array_layer, mip_level](const ValidationStateTracker& vst, const QUEUE_STATE& qs,
+    funcs.push_back([this, command, state, usage, array_layer, mip_level](const ValidationStateTracker& vst, const vvl::Queue& qs,
                                                                           const CMD_BUFFER_STATE& cbs) -> bool {
         ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
         return false;
@@ -602,7 +602,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
     }
 }
 
-void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, Func command, bp_state::Image& state,
+void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const CMD_BUFFER_STATE& cbs, Func command, bp_state::Image& state,
                                          IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     auto queue_family = qs.queueFamilyIndex;
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);

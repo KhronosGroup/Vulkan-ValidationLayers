@@ -354,7 +354,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
                                              const RecordObject& record_obj) {
     ValidationStateTracker::PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
 
-    auto queue_state = Get<QUEUE_STATE>(queue);
+    auto queue_state = Get<vvl::Queue>(queue);
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
@@ -491,7 +491,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto queue_state = Get<QUEUE_STATE>(queue);
+        auto queue_state = Get<vvl::Queue>(queue);
         if (queue_state && queue_state->queueFamilyProperties.queueFlags != (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT)) {
             skip |= LogPerformanceWarning(kVUID_BestPractices_QueueBindSparse_NotAsync, queue, error_obj.location,
                                           "vkQueueBindSparse() issued on queue %s. All binds should happen on an asynchronous copy "

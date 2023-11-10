@@ -28,38 +28,38 @@
 #include "utils/vk_layer_utils.h"
 
 class CMD_BUFFER_STATE;
-class QUEUE_STATE;
 class ValidationStateTracker;
 
-enum SyncScope {
-    kSyncScopeInternal,
-    kSyncScopeExternalTemporary,
-    kSyncScopeExternalPermanent,
-};
+namespace vvl {
+class Queue;
 
-enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
-
-class FENCE_STATE : public REFCOUNTED_NODE {
+class Fence : public REFCOUNTED_NODE {
   public:
+    enum State { kUnsignaled, kInflight, kRetired };
+    enum Scope {
+        kInternal,
+        kExternalTemporary,
+        kExternalPermanent,
+    };
     // Default constructor
-    FENCE_STATE(ValidationStateTracker &dev, VkFence f, const VkFenceCreateInfo *pCreateInfo)
+    Fence(ValidationStateTracker &dev, VkFence f, const VkFenceCreateInfo *pCreateInfo)
         : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
+          state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),
           completed_(),
           waiter_(completed_.get_future()),
           dev_data_(dev) {}
 
-    VkFence fence() const { return handle_.Cast<VkFence>(); }
+    VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
 
-    bool EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq);
+    bool EnqueueSignal(Queue *queue_state, uint64_t next_seq);
 
     // Notify the queue that the fence has signalled and then wait for the queue
     // to update state.
     void NotifyAndWait(const Location &loc);
 
-    // Update state of the completed fence. This should only be called by QUEUE_STATE.
+    // Update state of the completed fence. This should only be called by Queue.
     void Retire();
 
     void Reset();
@@ -71,8 +71,8 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     const VkFenceCreateFlags flags;
     const VkExternalFenceHandleTypeFlags exportHandleTypes;
 
-    SyncScope Scope() const { return scope_; }
-    FENCE_STATUS State() const { return state_; }
+    enum Scope Scope() const { return scope_; }
+    enum State State() const { return state_; }
 
   private:
     static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
@@ -82,17 +82,17 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    QUEUE_STATE *queue_{nullptr};
+    Queue *queue_{nullptr};
     uint64_t seq_{0};
-    FENCE_STATUS state_;
-    SyncScope scope_{kSyncScopeInternal};
+    enum State state_;
+    enum Scope scope_{kInternal};
     mutable std::shared_mutex lock_;
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
     ValidationStateTracker &dev_data_;
 };
 
-class SEMAPHORE_STATE : public REFCOUNTED_NODE {
+class Semaphore : public REFCOUNTED_NODE {
   public:
     // possible payload values for binary semaphore
     enum OpType {
@@ -101,6 +101,12 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         kSignal,
         kBinaryAcquire,
     };
+    enum Scope {
+        kInternal,
+        kExternalTemporary,
+        kExternalPermanent,
+    };
+
     static inline const char *OpTypeName(OpType t) {
         switch (t) {
             case kWait:
@@ -116,12 +122,12 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     }
 
     struct SemOp {
-        SemOp(OpType ot, QUEUE_STATE *q, uint64_t queue_seq, uint64_t timeline_payload, vvl::Func command = vvl::Func::Empty)
+        SemOp(OpType ot, Queue *q, uint64_t queue_seq, uint64_t timeline_payload, Func command = Func::Empty)
             : op_type(ot), command(command), queue(q), seq(queue_seq), payload(timeline_payload) {}
 
         OpType op_type;
-        vvl::Func command;
-        QUEUE_STATE *queue;
+        Func command;
+        Queue *queue;
         uint64_t seq;
         uint64_t payload;
 
@@ -176,10 +182,10 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         return export_info ? export_info->handleTypes : 0;
     }
 
-    SEMAPHORE_STATE(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreCreateInfo *pCreateInfo)
-        : SEMAPHORE_STATE(dev, sem, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
+    Semaphore(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreCreateInfo *pCreateInfo)
+        : Semaphore(dev, sem, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
-    SEMAPHORE_STATE(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info,
+    Semaphore(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info,
                     const VkSemaphoreCreateInfo *pCreateInfo)
         : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -194,8 +200,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
           dev_data_(dev) {
     }
 
-    VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
-    SyncScope Scope() const {
+    VkSemaphore VkHandle() const { return handle_.Cast<VkSemaphore>(); }
+    Scope Scope() const {
         auto guard = ReadLock();
         return scope_;
     }
@@ -208,11 +214,11 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
-    void EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload);
-    void EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload);
+    void EnqueueSignal(Queue *queue, uint64_t queue_seq, uint64_t &payload);
+    void EnqueueWait(Queue *queue, uint64_t queue_seq, uint64_t &payload);
 
     // Binary only special cases enqueue functions
-    void EnqueueAcquire(vvl::Func command);
+    void EnqueueAcquire(Func command);
 
     // Signal queue(s) that need to retire because a wait on this payload has finished
     void Notify(uint64_t payload);
@@ -222,8 +228,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
     void NotifyAndWait(const Location &loc, uint64_t payload);
 
-    // Remove completed operations and signal any waiters. This should only be called by QUEUE_STATE
-    void Retire(QUEUE_STATE *current_queue, const Location &loc, uint64_t payload);
+    // Remove completed operations and signal any waiters. This should only be called by Queue
+    void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
@@ -248,7 +254,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    SyncScope scope_{kSyncScopeInternal};
+    enum Scope scope_{kInternal};
     // the most recently completed operation
     SemOp completed_;
     // next payload value for binary semaphore operations
@@ -265,26 +271,26 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 // NOTE: Present semaphores are waited on by the implementation, not queue operations.
 // We do not yet have a good way to figure out when this wait completes,
 // so we must assume they are safe to re-use.
-static inline bool CanSignalBinarySemaphoreAfterOperation(SEMAPHORE_STATE::OpType op_type) {
-    return op_type == SEMAPHORE_STATE::kNone || op_type == SEMAPHORE_STATE::kWait;
+static inline bool CanSignalBinarySemaphoreAfterOperation(Semaphore::OpType op_type) {
+    return op_type == Semaphore::kNone || op_type == Semaphore::kWait;
 }
-static inline bool CanWaitBinarySemaphoreAfterOperation(SEMAPHORE_STATE::OpType op_type) {
-    return op_type == SEMAPHORE_STATE::kSignal || op_type == SEMAPHORE_STATE::kBinaryAcquire;
+static inline bool CanWaitBinarySemaphoreAfterOperation(Semaphore::OpType op_type) {
+    return op_type == Semaphore::kSignal || op_type == Semaphore::kBinaryAcquire;
 }
 
-struct CB_SUBMISSION {
+struct QueueSubmission {
     struct SemaphoreInfo {
-        SemaphoreInfo(std::shared_ptr<SEMAPHORE_STATE> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
-        std::shared_ptr<SEMAPHORE_STATE> semaphore;
+        SemaphoreInfo(std::shared_ptr<Semaphore> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
+        std::shared_ptr<Semaphore> semaphore;
         uint64_t payload{0};
     };
-    CB_SUBMISSION(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
+    QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
     std::vector<std::shared_ptr<CMD_BUFFER_STATE>> cbs;
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
-    std::shared_ptr<FENCE_STATE> fence;
-    vvl::LocationCapture loc;
+    std::shared_ptr<Fence> fence;
+    LocationCapture loc;
     uint64_t seq{0};
     uint32_t perf_submit_pass{0};
     std::promise<void> completed;
@@ -292,23 +298,23 @@ struct CB_SUBMISSION {
 
     void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_state) { cbs.emplace_back(std::move(cb_state)); }
 
-    void AddSignalSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
+    void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
         signal_semaphores.emplace_back(std::move(semaphore_state), value);
     }
 
-    void AddWaitSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
+    void AddWaitSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
         wait_semaphores.emplace_back(std::move(semaphore_state), value);
     }
 
-    void AddFence(std::shared_ptr<FENCE_STATE> &&fence_state) { fence = std::move(fence_state); }
+    void AddFence(std::shared_ptr<Fence> &&fence_state) { fence = std::move(fence_state); }
 
     void EndUse();
     void BeginUse();
 };
 
-class QUEUE_STATE : public BASE_NODE {
+class Queue: public BASE_NODE {
   public:
-    QUEUE_STATE(ValidationStateTracker &dev_data, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+    Queue(ValidationStateTracker &dev_data, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                 const VkQueueFamilyProperties &queueFamilyProperties)
         : BASE_NODE(q, kVulkanObjectTypeQueue),
           queueFamilyIndex(index),
@@ -316,20 +322,20 @@ class QUEUE_STATE : public BASE_NODE {
           queueFamilyProperties(queueFamilyProperties),
           dev_data_(dev_data) {}
 
-    ~QUEUE_STATE() { Destroy(); }
+    ~Queue() { Destroy(); }
     void Destroy() override;
 
-    VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
+    VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
 
-    uint64_t Submit(CB_SUBMISSION &&submission);
+    uint64_t Submit(QueueSubmission &&submission);
 
     // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
-    uint64_t Notify(uint64_t until_seq = vvl::kU64Max);
+    uint64_t Notify(uint64_t until_seq = kU64Max);
 
     // Tell the queue and then wait for it to finish updating its state.
     // UINT64_MAX means to finish all submissions.
-    void NotifyAndWait(const Location &loc, uint64_t until_seq = vvl::kU64Max);
-    std::shared_future<void> Wait(uint64_t until_seq = vvl::kU64Max);
+    void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
+    std::shared_future<void> Wait(uint64_t until_seq = kU64Max);
 
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
@@ -338,7 +344,7 @@ class QUEUE_STATE : public BASE_NODE {
   private:
     using LockGuard = std::unique_lock<std::mutex>;
     void ThreadFunc();
-    CB_SUBMISSION *NextSubmission();
+    QueueSubmission *NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
     ValidationStateTracker &dev_data_;
@@ -346,7 +352,7 @@ class QUEUE_STATE : public BASE_NODE {
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held
     std::unique_ptr<std::thread> thread_;
-    std::deque<CB_SUBMISSION> submissions_;
+    std::deque<QueueSubmission> submissions_;
     std::atomic<uint64_t> seq_{0};
     uint64_t request_seq_{0};
     bool exit_thread_{false};
@@ -354,3 +360,4 @@ class QUEUE_STATE : public BASE_NODE {
     // condition to wake up the queue's thread
     std::condition_variable cond_;
 };
+} // namespace vvl

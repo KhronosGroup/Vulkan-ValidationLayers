@@ -41,10 +41,13 @@
 
 namespace vvl {
 struct AllocateDescriptorSetsData;
+class Fence;
 class DescriptorPool;
 class DescriptorSet;
 class DescriptorSetLayout;
 class DescriptorUpdateTemplate;
+class Queue;
+class Semaphore;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -53,7 +56,6 @@ class PIPELINE_CACHE_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
 class PIPELINE_LAYOUT_STATE;
-class QUEUE_STATE;
 class BUFFER_STATE;
 class BUFFER_VIEW_STATE;
 class IMAGE_STATE;
@@ -282,7 +284,7 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
     return buffer_size;
 }
 
-VALSTATETRACK_STATE_OBJECT(VkQueue, QUEUE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkQueue, vvl::Queue)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, RENDER_PASS_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
@@ -304,9 +306,9 @@ VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkCommandPool, COMMAND_POOL_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPipelineLayout, PIPELINE_LAYOUT_STATE)
-VALSTATETRACK_STATE_OBJECT(VkFence, FENCE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkFence, vvl::Fence)
 VALSTATETRACK_STATE_OBJECT(VkQueryPool, QUERY_POOL_STATE)
-VALSTATETRACK_STATE_OBJECT(VkSemaphore, SEMAPHORE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkSemaphore, vvl::Semaphore)
 VALSTATETRACK_STATE_OBJECT(VkEvent, EVENT_STATE)
 VALSTATETRACK_STATE_OBJECT(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE)
 VALSTATETRACK_STATE_OBJECT(VkVideoSessionKHR, VIDEO_SESSION_STATE)
@@ -538,7 +540,7 @@ class ValidationStateTracker : public ValidationObject {
                                                             VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
                                                             const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<QUEUE_STATE> CreateQueue(VkQueue queue, uint32_t queue_family_index, VkDeviceQueueCreateFlags flags,
+    virtual std::shared_ptr<vvl::Queue> CreateQueue(VkQueue queue, uint32_t queue_family_index, VkDeviceQueueCreateFlags flags,
                                                      const VkQueueFamilyProperties& queueFamilyProperties);
 
     void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
@@ -1496,7 +1498,7 @@ class ValidationStateTracker : public ValidationObject {
                                     VkSemaphoreImportFlags flags);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
-    void RecordGetExternalSemaphoreState(SEMAPHORE_STATE& semaphore_state, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    void RecordGetExternalSemaphoreState(vvl::Semaphore& semaphore_state, VkExternalSemaphoreHandleTypeFlagBits handle_type);
     void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
@@ -1894,7 +1896,7 @@ class ValidationStateTracker : public ValidationObject {
 #endif
 
   private:
-    VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkQueue, vvl::Queue, queue_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV, acceleration_structure_nv_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, render_pass_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, vvl::DescriptorSetLayout, descriptor_set_layout_map_)
@@ -1916,9 +1918,9 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, command_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, PIPELINE_LAYOUT_STATE, pipeline_layout_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkFence, FENCE_STATE, fence_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkFence, vvl::Fence, fence_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, query_pool_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphore_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, vvl::Semaphore, semaphore_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkEvent, EVENT_STATE, event_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, sampler_ycbcr_conversion_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionKHR, VIDEO_SESSION_STATE, video_session_map_)
