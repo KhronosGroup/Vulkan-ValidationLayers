@@ -3158,15 +3158,18 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                              FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
         }
 
-        const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
-        const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
-        if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), cb_state.activeRenderPass->renderPass());
-            skip |= LogError(vuid.dynamic_rendering_color_count_06179, objlist, loc,
-                             "Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
-                             ") must be equal to VkRenderingInfo::colorAttachmentCount (%" PRIu32 ")",
-                             FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
-                             rendering_color_attachment_count);
+        if (!enabled_features.dynamicRenderingUnusedAttachments) {
+            const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
+            const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
+            if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
+                                            cb_state.activeRenderPass->renderPass());
+                skip |= LogError(vuid.dynamic_rendering_color_count_06179, objlist, loc,
+                                 "Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
+                                 ") must be equal to VkRenderingInfo::colorAttachmentCount (%" PRIu32 ")",
+                                 FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
+                                 rendering_color_attachment_count);
+            }
         }
 
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
