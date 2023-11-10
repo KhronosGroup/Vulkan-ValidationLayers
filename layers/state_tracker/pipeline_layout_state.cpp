@@ -122,7 +122,7 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTrack
     PIPELINE_LAYOUT_STATE::SetLayoutVector set_layouts(pCreateInfo->setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        set_layouts[i] = dev_data->Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = dev_data->Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
     }
     return set_layouts;
 }
@@ -164,7 +164,7 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const vvl::span<cons
 }
 
 std::vector<PipelineLayoutCompatId> GetCompatForSet(
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts,
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
     const PushConstantRangesId &push_constant_ranges) {
     PipelineLayoutSetLayoutsDef set_layout_ids(set_layouts.size());
     for (size_t i = 0; i < set_layouts.size(); i++) {

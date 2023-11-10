@@ -189,7 +189,7 @@ The following objects have already been updated to meet the above construction r
 * VkBufferView / BUFFER_VIEW_STATE
 * VkImageView / IMAGE_VIEW_STATE
 * VkPipelineLayout / PIPELINE_LAYOUT_STATE
-* VkDescriptorSetLayout / cvdescriptorset::DescriptorSetLayout
+* VkDescriptorSetLayout / vvl::DescriptorSetLayout
 * VkQueryPool / QUERY_POOL_STATE
 * VkShaderModule / SPIRV_MODULE_STATE
 * VkPipeline / Pipeline state
@@ -402,7 +402,7 @@ The only dynamic data in `COMMAND_POOL_STATE` is a set of all the command buffer
 ```
 
 
-This state is only changed in Vulkan functions that require external synchronization of the `VkCommandPool` handle. TODO: currently this object is not lock guarded but it could be converted to work like `DESCRIPTOR_POOL_STATE`, which is.
+This state is only changed in Vulkan functions that require external synchronization of the `VkCommandPool` handle. TODO: currently this object is not lock guarded but it could be converted to work like `vvl::DescriptorPool`, which is.
 
 
 ### VkCommandBuffer / CMD_BUFFER_STATE
@@ -740,7 +740,7 @@ Also, surfaces are instance level objects but they hold a reference on the curre
 
 ###### PRs:
 
-[layers: Make SURFACE_STATE, DESCRIPTOR_POOL_STATE, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
+[layers: Make SURFACE_STATE, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
 
 [layers: Don't pre-query surface attributes during creation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3452)
 
@@ -750,16 +750,16 @@ Also, surfaces are instance level objects but they hold a reference on the curre
 ## Descriptor sets
 
 
-### VkDescriptorPool / DESCRIPTOR_POOL_STATE
+### VkDescriptorPool / vvl::DescriptorPool
 
-All of the dynamic data in `DESCRIPTOR_POOL_STATE` is associated with tracking the currently allocated descriptor sets and the remaining resources available for allocating new ones:
+All of the dynamic data in `vvl::DescriptorPool` is associated with tracking the currently allocated descriptor sets and the remaining resources available for allocating new ones:
 
 
 
 
 ```
    // Collection of all sets in this pool`
-    vvl::unordered_set<cvdescriptorset::DescriptorSet *> sets;
+    vvl::unordered_set<vvl::DescriptorSet *> sets;
     // Available descriptor sets in this pool
     uint32_t availableSets;
     // Available # of descriptors of each type in this pool
@@ -770,10 +770,10 @@ This data is fully encapsulated by accessor methods that manage the locking.
 
 ###### PRs:
 
-[layers: Make SURFACE_STATE, DESCRIPTOR_POOL_STATE, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
+[layers: Make SURFACE_STATE, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
 
 
-### VkDescriptorSet / cvdescriptorset::DescriptorSet
+### VkDescriptorSet / vvl::DescriptorSet
 
 Descriptor set validation, especially of image descriptors, is currently the most CPU intensive part of validation. The state for descriptor sets consists mostly of an efficient way to store descriptors of various types in a single vector:
 
@@ -816,7 +816,7 @@ This data is fully encapsulated by accessor methods that manage the locking.
 
 [layers: remove global queryToStateMap](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3586)
 
-[layers: Make SURFACE_STATE, DESCRIPTOR_POOL_STATE, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
+[layers: Make SURFACE_STATE, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
 
 
 

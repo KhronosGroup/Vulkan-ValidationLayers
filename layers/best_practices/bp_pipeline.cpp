@@ -549,7 +549,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         // Push constants cost 1 DWORD per 4 bytes in the Push constant range.
         uint32_t pipeline_size = pCreateInfo->setLayoutCount;  // in DWORDS
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
-            auto descriptor_set_layout_state = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+            auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             pipeline_size += descriptor_set_layout_state->GetDynamicDescriptorCount() * descriptor_size;
         }
 
@@ -574,7 +574,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         size_t fast_space_usage = 0;
 
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-            auto descriptor_set_layout_state = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+            auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             for (const auto& binding : descriptor_set_layout_state->GetBindings()) {
                 if (binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
                     has_separate_sampler = true;

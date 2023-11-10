@@ -1632,13 +1632,13 @@ void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSamp
 void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      const RecordObject &record_obj) {
-    Destroy<cvdescriptorset::DescriptorSetLayout>(descriptorSetLayout);
+    Destroy<vvl::DescriptorSetLayout>(descriptorSetLayout);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 const RecordObject &record_obj) {
-    Destroy<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    Destroy<vvl::DescriptorPool>(descriptorPool);
 }
 
 void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
@@ -1967,13 +1967,13 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(VkDevice de
                                                                      VkDescriptorSetLayout *pSetLayout,
                                                                      const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(std::make_shared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo, *pSetLayout));
+    Add(std::make_shared<vvl::DescriptorSetLayout>(pCreateInfo, *pSetLayout));
 }
 
 void ValidationStateTracker::PostCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                                          VkDeviceSize *pLayoutSizeInBytes,
                                                                          const RecordObject &record_obj) {
-    auto descriptor_set_layout = Get<cvdescriptorset::DescriptorSetLayout>(layout);
+    auto descriptor_set_layout = Get<vvl::DescriptorSetLayout>(layout);
 
     descriptor_set_layout->SetLayoutSizeInBytes(pLayoutSizeInBytes);
 }
@@ -1985,15 +1985,15 @@ void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device,
     Add(std::make_shared<PIPELINE_LAYOUT_STATE>(this, *pPipelineLayout, pCreateInfo));
 }
 
-std::shared_ptr<DESCRIPTOR_POOL_STATE> ValidationStateTracker::CreateDescriptorPoolState(
+std::shared_ptr<vvl::DescriptorPool> ValidationStateTracker::CreateDescriptorPoolState(
     VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo) {
-    return std::make_shared<DESCRIPTOR_POOL_STATE>(this, pool, pCreateInfo);
+    return std::make_shared<vvl::DescriptorPool>(this, pool, pCreateInfo);
 }
 
-std::shared_ptr<cvdescriptorset::DescriptorSet> ValidationStateTracker::CreateDescriptorSet(
-    VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> &layout,
+std::shared_ptr<vvl::DescriptorSet> ValidationStateTracker::CreateDescriptorSet(
+    VkDescriptorSet set, vvl::DescriptorPool *pool, const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
     uint32_t variable_count) {
-    return std::make_shared<cvdescriptorset::DescriptorSet>(set, pool, layout, variable_count, this);
+    return std::make_shared<vvl::DescriptorSet>(set, pool, layout, variable_count, this);
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
@@ -2006,7 +2006,7 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device,
 void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                                VkDescriptorPoolResetFlags flags, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    auto pool = Get<vvl::DescriptorPool>(descriptorPool);
     if (pool) {
         pool->Reset();
     }
@@ -2017,8 +2017,8 @@ bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice devi
                                                                    VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
                                                                    void *ads_state_data) const {
     // Always update common data
-    cvdescriptorset::AllocateDescriptorSetsData *ads_state =
-        reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
+    vvl::AllocateDescriptorSetsData *ads_state =
+        reinterpret_cast<vvl::AllocateDescriptorSetsData *>(ads_state_data);
     UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
 
     return false;
@@ -2029,10 +2029,10 @@ void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice devic
                                                                   VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
                                                                   void *ads_state_data) {
     if (VK_SUCCESS != record_obj.result) return;
-    // All the updates are contained in a single cvdescriptorset function
-    cvdescriptorset::AllocateDescriptorSetsData *ads_state =
-        reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    auto pool_state = Get<DESCRIPTOR_POOL_STATE>(pAllocateInfo->descriptorPool);
+    // All the updates are contained in a single vvl function
+    vvl::AllocateDescriptorSetsData *ads_state =
+        reinterpret_cast<vvl::AllocateDescriptorSetsData *>(ads_state_data);
+    auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
     if (pool_state) {
         pool_state->Allocate(pAllocateInfo, pDescriptorSets, ads_state);
     }
@@ -2041,7 +2041,7 @@ void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice devic
 void ValidationStateTracker::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                                              const VkDescriptorSet *pDescriptorSets,
                                                              const RecordObject &record_obj) {
-    auto pool_state = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    auto pool_state = Get<vvl::DescriptorPool>(descriptorPool);
     if (pool_state) {
         pool_state->Free(count, pDescriptorSets);
     }
@@ -2053,7 +2053,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSets(uint32_t write_count, c
     uint32_t i = 0;
     for (i = 0; i < write_count; ++i) {
         auto dest_set = p_wds[i].dstSet;
-        auto set_node = Get<cvdescriptorset::DescriptorSet>(dest_set);
+        auto set_node = Get<vvl::DescriptorSet>(dest_set);
         if (set_node) {
             set_node->PerformWriteUpdate(p_wds[i]);
         }
@@ -2062,8 +2062,8 @@ void ValidationStateTracker::PerformUpdateDescriptorSets(uint32_t write_count, c
     for (i = 0; i < copy_count; ++i) {
         auto dst_set = p_cds[i].dstSet;
         auto src_set = p_cds[i].srcSet;
-        auto src_node = Get<cvdescriptorset::DescriptorSet>(src_set);
-        auto dst_node = Get<cvdescriptorset::DescriptorSet>(dst_set);
+        auto src_node = Get<vvl::DescriptorSet>(src_set);
+        auto dst_node = Get<vvl::DescriptorSet>(dst_set);
         if (src_node && dst_node) {
             dst_node->PerformCopyUpdate(p_cds[i], *src_node);
         }
@@ -2593,7 +2593,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
     }
     cb_state->RecordCmd(record_obj.location.function);
 
-    std::shared_ptr<cvdescriptorset::DescriptorSet> no_push_desc;
+    std::shared_ptr<vvl::DescriptorSet> no_push_desc;
 
     cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, *pipeline_layout, firstSet, setCount, pDescriptorSets, no_push_desc,
                                             dynamicOffsetCount, pDynamicOffsets);
@@ -3949,7 +3949,7 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevi
                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                           const VkAllocationCallbacks *pAllocator,
                                                                           const RecordObject &record_obj) {
-    Destroy<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    Destroy<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device,
@@ -3965,7 +3965,7 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(VkDevi
                                                                           VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
                                                                           const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(std::make_shared<UPDATE_TEMPLATE_STATE>(*pDescriptorUpdateTemplate, pCreateInfo));
+    Add(std::make_shared<vvl::DescriptorUpdateTemplate>(*pDescriptorUpdateTemplate, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplateKHR(
@@ -3977,7 +3977,7 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplateKHR(
 void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                           const void *pData, const RecordObject &record_obj) {
-    auto const template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    auto const template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     assert(template_state);
     if (template_state) {
         // TODO: Record template push descriptor updates
@@ -3998,7 +3998,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
                                                                               VkPipelineLayout layout, uint32_t set,
                                                                               const void *pData, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     auto layout_data = Get<PIPELINE_LAYOUT_STATE>(layout);
     if (!cb_state || !template_state || !layout_data) {
         return;
@@ -4008,8 +4008,8 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
     auto dsl = layout_data->GetDsl(set);
     const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
-    cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
-                                                            dsl->GetDescriptorSetLayout());
+    vvl::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
+                                                            dsl->VkHandle());
     cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *layout_data, set,
                                      static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                      decoded_template.desc_writes.data());
@@ -4144,21 +4144,21 @@ void ValidationStateTracker::PostCallRecordResetQueryPool(VkDevice device, VkQue
 }
 
 void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
-                                                                        const UPDATE_TEMPLATE_STATE *template_state,
+                                                                        const vvl::DescriptorUpdateTemplate *template_state,
                                                                         const void *pData) {
     // Translate the templated update into a normal update for validation...
-    cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
+    vvl::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
     PerformUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(), 0,
                                 NULL);
 }
 
 // Update the common AllocateDescriptorSetsData
 void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                                              cvdescriptorset::AllocateDescriptorSetsData *ds_data) const {
+                                                              vvl::AllocateDescriptorSetsData *ds_data) const {
     const auto *count_allocate_info =
         vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = Get<cvdescriptorset::DescriptorSetLayout>(p_alloc_info->pSetLayouts[i]);
+        auto layout = Get<vvl::DescriptorSetLayout>(p_alloc_info->pSetLayouts[i]);
         if (layout) {
             ds_data->layout_nodes[i] = layout;
             // Count total descriptors required per type

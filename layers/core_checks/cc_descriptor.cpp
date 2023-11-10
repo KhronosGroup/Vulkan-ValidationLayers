@@ -25,10 +25,10 @@
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/descriptor_validator.h"
 
-using DescriptorSet = cvdescriptorset::DescriptorSet;
-using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;
-using DescriptorSetLayoutDef = cvdescriptorset::DescriptorSetLayoutDef;
-using DescriptorSetLayoutId = cvdescriptorset::DescriptorSetLayoutId;
+using DescriptorSet = vvl::DescriptorSet;
+using DescriptorSetLayout = vvl::DescriptorSetLayout;
+using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
+using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 
 template <typename DSLayoutBindingA, typename DSLayoutBindingB>
 bool ImmutableSamplersAreEqual(const DSLayoutBindingA &b1, const DSLayoutBindingB &b2) {
@@ -62,8 +62,8 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
 
     // Do a detailed compatibility check of this lhs def (referenced by layout_dsl), vs. the rhs (layout and def)
     // Should only be run if trivial accept has failed, and in that context should return false.
-    VkDescriptorSetLayout layout_dsl_handle = layout_dsl.GetDescriptorSetLayout();
-    VkDescriptorSetLayout bound_dsl_handle = bound_dsl.GetDescriptorSetLayout();
+    VkDescriptorSetLayout layout_dsl_handle = layout_dsl.VkHandle();
+    VkDescriptorSetLayout bound_dsl_handle = bound_dsl.VkHandle();
     DescriptorSetLayoutDef const *layout_ds_layout_def = layout_dsl.GetLayoutDef();
     DescriptorSetLayoutDef const *bound_ds_layout_def = bound_dsl.GetLayoutDef();
 
@@ -136,11 +136,11 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
     return compatible;
 }
 
-// For given cvdescriptorset::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
+// For given vvl::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
 // pipelineLayout[layoutIndex]
 bool CoreChecks::VerifySetLayoutCompatibility(
-    const cvdescriptorset::DescriptorSet &descriptor_set,
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, const VulkanTypedHandle &handle,
+    const vvl::DescriptorSet &descriptor_set,
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts, const VulkanTypedHandle &handle,
     const uint32_t layoutIndex, std::string &errorMsg) const {
     auto num_sets = set_layouts.size();
     if (layoutIndex >= num_sets) {
@@ -191,7 +191,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
     for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
         const Location set_loc = error_obj.location.dot(Field::pDescriptorSets, set_idx);
-        auto descriptor_set = Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[set_idx]);
+        auto descriptor_set = Get<vvl::DescriptorSet>(pDescriptorSets[set_idx]);
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             if (!VerifySetLayoutCompatibility(*descriptor_set, pipeline_layout->set_layouts,
@@ -232,7 +232,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     for (uint32_t i = 0; i < binding_count; i++) {
                         const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(i);
                         // skip checking binding if not needed
-                        if (cvdescriptorset::IsDynamicDescriptor(binding->descriptorType) == false) {
+                        if (vvl::IsDynamicDescriptor(binding->descriptorType) == false) {
                             continue;
                         }
 
@@ -274,8 +274,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                             auto *descriptor = descriptor_set->GetDescriptorFromDynamicOffsetIndex(set_dyn_offset);
                             assert(descriptor != nullptr);
                             // Currently only GeneralBuffer are dynamic and need to be checked
-                            if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
-                                const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
+                            if (descriptor->GetClass() == vvl::DescriptorClass::GeneralBuffer) {
+                                const auto *buffer_descriptor = static_cast<const vvl::BufferDescriptor *>(descriptor);
                                 const VkDeviceSize bound_range = buffer_descriptor->GetRange();
                                 const VkDeviceSize bound_offset = buffer_descriptor->GetOffset();
                                 // NOTE: null / invalid buffers may show up here, errors are raised elsewhere for this.
@@ -694,7 +694,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const Bi
     for (const auto &binding_pair : bindings) {
         const auto *binding = descriptor_set.GetBinding(binding_pair.first);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
-            auto set = descriptor_set.GetSet();
+            auto set = descriptor_set.Handle();
             result |= LogError(vuids.descriptor_buffer_bit_set_08114, set, loc, "%s binding #%" PRIu32 " is invalid.",
                                FormatHandle(set).c_str(), binding_pair.first);
             return result;
@@ -786,39 +786,39 @@ bool CoreChecks::VerifyUpdateConsistency(const DescriptorSet &set, uint32_t bind
 // Validate Copy update
 bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Location& copy_loc) const {
     bool skip = false;
-    const auto &src_set = *Get<cvdescriptorset::DescriptorSet>(update.srcSet);
-    const auto &dst_set = *Get<cvdescriptorset::DescriptorSet>(update.dstSet);
+    const auto &src_set = *Get<vvl::DescriptorSet>(update.srcSet);
+    const auto &dst_set = *Get<vvl::DescriptorSet>(update.dstSet);
     const auto *dst_layout = dst_set.GetLayout().get();
     const auto *src_layout = src_set.GetLayout().get();
 
     if (dst_layout->Destroyed()) {
-        const LogObjectList objlist(update.dstSet, dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.dstSet, dst_layout->Handle());
         return LogError("VUID-VkCopyDescriptorSet-dstSet-parameter", objlist, copy_loc.dot(Field::dstSet),
-                        "(%s) has been destroyed.", FormatHandle(dst_layout->GetDescriptorSetLayout()).c_str());
+                        "(%s) has been destroyed.", FormatHandle(dst_layout->Handle()).c_str());
     }
 
     if (src_layout->Destroyed()) {
-        const LogObjectList objlist(update.srcSet, src_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, src_layout->Handle());
         return LogError("VUID-VkCopyDescriptorSet-srcSet-parameter", objlist, copy_loc.dot(Field::srcSet),
-                        "(%s) has been destroyed.", FormatHandle(src_layout->GetDescriptorSetLayout()).c_str());
+                        "(%s) has been destroyed.", FormatHandle(src_layout->Handle()).c_str());
     }
 
     if (!dst_layout->HasBinding(update.dstBinding)) {
-        const LogObjectList objlist(update.dstSet, dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.dstSet, dst_layout->Handle());
         return LogError("VUID-VkCopyDescriptorSet-dstBinding-00347", objlist, copy_loc.dot(Field::dstBinding),
-                        "(%" PRIu32 ") does not exist in %s.", update.dstBinding, FormatHandle(dst_set.GetSet()).c_str());
+                        "(%" PRIu32 ") does not exist in %s.", update.dstBinding, FormatHandle(dst_set.Handle()).c_str());
     }
     if (!src_set.HasBinding(update.srcBinding)) {
-        const LogObjectList objlist(update.srcSet, src_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, src_layout->Handle());
         return LogError("VUID-VkCopyDescriptorSet-srcBinding-00345", objlist, copy_loc.dot(Field::srcBinding),
-                        "(%" PRIu32 ") does not exist in %s.", update.srcBinding, FormatHandle(src_set.GetSet()).c_str());
+                        "(%" PRIu32 ") does not exist in %s.", update.srcBinding, FormatHandle(src_set.Handle()).c_str());
     }
 
     // src & dst set bindings are valid
     // Check bounds of src & dst
     auto src_start_idx = src_set.GetGlobalIndexRangeFromBinding(update.srcBinding).start + update.srcArrayElement;
     if ((src_start_idx + update.descriptorCount) > src_set.GetTotalDescriptorCount()) {
-        const LogObjectList objlist(update.srcSet, src_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, src_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-srcArrayElement-00346", objlist, copy_loc.dot(Field::srcArrayElement),
                          "(%" PRIu32 ") plus descriptorCount (%" PRIu32 ") (plus offset index of %" PRIu32
                          ") is larger than the total descriptors count (%" PRIu32 ") for the binding at srcBinding (%" PRIu32 ").",
@@ -828,7 +828,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     }
     auto dst_start_idx = dst_layout->GetGlobalIndexRangeFromBinding(update.dstBinding).start + update.dstArrayElement;
     if ((dst_start_idx + update.descriptorCount) > dst_layout->GetTotalDescriptorCount()) {
-        const LogObjectList objlist(update.dstSet, dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.dstSet, dst_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-dstArrayElement-00348", objlist, copy_loc.dot(Field::dstArrayElement),
                          "(%" PRIu32 ") plus descriptorCount (%" PRIu32 ") (plus offset index of %" PRIu32
                          ") is larger than the total descriptors count (%" PRIu32 ") for the binding at srcBinding (%" PRIu32 ").",
@@ -840,12 +840,11 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     VkDescriptorType src_type = src_layout->GetTypeFromBinding(update.srcBinding);
     VkDescriptorType dst_type = dst_layout->GetTypeFromBinding(update.dstBinding);
     if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT && dst_type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT && src_type != dst_type) {
-        const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                    dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-dstBinding-02632", objlist, copy_loc.dot(Field::dstBinding),
                          "(%" PRIu32 ") (from %s) is %s, but srcBinding (%" PRIu32 ") (from %s) is %s.", update.dstBinding,
-                         FormatHandle(dst_set.GetSet()).c_str(), string_VkDescriptorType(dst_type), update.srcBinding,
-                         FormatHandle(src_set.GetSet()).c_str(), string_VkDescriptorType(src_type));
+                         FormatHandle(dst_set.Handle()).c_str(), string_VkDescriptorType(dst_type), update.srcBinding,
+                         FormatHandle(src_set.Handle()).c_str(), string_VkDescriptorType(src_type));
     }
 
     if (skip) {
@@ -859,8 +858,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
 
     if ((src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
         !(dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
-        const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                    dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-srcSet-01918", objlist, copy_loc.dot(Field::srcSet),
                          "layout was created with %s, but dstSet layout was created with %s.",
                          string_VkDescriptorSetLayoutCreateFlags(src_layout->GetCreateFlags()).c_str(),
@@ -870,8 +868,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     if (!(src_layout->GetCreateFlags() &
           (VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT)) &&
         (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
-        const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                    dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-srcSet-04885", objlist, copy_loc.dot(Field::srcSet),
                          "layout was created with %s, but dstSet layout was created with %s.",
                          string_VkDescriptorSetLayoutCreateFlags(src_layout->GetCreateFlags()).c_str(),
@@ -900,21 +897,20 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     }
 
     if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT && ((update.srcArrayElement % 4) != 0)) {
-        const LogObjectList objlist(update.srcSet, src_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.srcSet, src_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-srcBinding-02223", objlist, copy_loc.dot(Field::srcArrayElement),
                          "is %" PRIu32 ", but srcBinding (%" PRIu32 ") type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.",
                          update.srcArrayElement, update.srcBinding);
     }
     if (dst_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT && ((update.dstArrayElement % 4) != 0)) {
-        const LogObjectList objlist(update.dstSet, dst_layout->GetDescriptorSetLayout());
+        const LogObjectList objlist(update.dstSet, dst_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-dstBinding-02224", objlist, copy_loc.dot(Field::dstArrayElement),
                          "is %" PRIu32 ", but dstBinding (%" PRIu32 ") type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.",
                          update.dstArrayElement, update.dstBinding);
     }
     if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT || dst_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
         if ((update.descriptorCount % 4) != 0) {
-            const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                        dst_layout->GetDescriptorSetLayout());
+            const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
             skip |= LogError("VUID-VkCopyDescriptorSet-srcBinding-02225", objlist, copy_loc.dot(Field::descriptorCount),
                              "is %" PRIu32 ", but srcBinding (%" PRIu32 ") type is %s and dstBinding (%" PRIu32 ") type is %s.",
                              update.descriptorCount, update.srcBinding, string_VkDescriptorType(src_type), update.dstBinding,
@@ -925,8 +921,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
             if (!dst_layout->IsTypeMutable(src_type, update.dstBinding)) {
-                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                            dst_layout->GetDescriptorSetLayout());
+                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
                 skip |= LogError("VUID-VkCopyDescriptorSet-dstSet-04612", objlist, copy_loc.dot(Field::dstBinding),
                                  "(%" PRIu32
                                  ") descriptor type  is VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new active descriptor type %s is "
@@ -937,10 +932,9 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
         for (uint32_t i = 0; i < update.descriptorCount; i++, ++src_iter) {
-            const auto &mutable_src = static_cast<const cvdescriptorset::MutableDescriptor &>(*src_iter);
+            const auto &mutable_src = static_cast<const vvl::MutableDescriptor &>(*src_iter);
             if (mutable_src.ActiveType() != dst_type) {
-                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                            dst_layout->GetDescriptorSetLayout());
+                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
                 skip |= LogError("VUID-VkCopyDescriptorSet-srcSet-04613", objlist, copy_loc.dot(Field::srcBinding),
                                  "(%" PRIu32
                                  ") descriptor type  is VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the active descriptor type %sdoes not "
@@ -966,8 +960,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
                 }
             }
             if (!complete_match) {
-                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->GetDescriptorSetLayout(),
-                                            dst_layout->GetDescriptorSetLayout());
+                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout->Handle(), dst_layout->Handle());
                 skip |=
                     LogError("VUID-VkCopyDescriptorSet-dstSet-04614", objlist, copy_loc,
                              "Attempting copy update with dstBinding and new active descriptor type being "
@@ -978,12 +971,12 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
 
     // Update mutable types
     if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-        src_type = static_cast<const cvdescriptorset::MutableDescriptor *>(
+        src_type = static_cast<const vvl::MutableDescriptor *>(
                        src_set.GetDescriptorFromBinding(update.srcBinding, update.srcArrayElement))
                        ->ActiveType();
     }
     if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-        dst_type = static_cast<const cvdescriptorset::MutableDescriptor *>(
+        dst_type = static_cast<const vvl::MutableDescriptor *>(
                        dst_set.GetDescriptorFromBinding(update.dstBinding, update.dstArrayElement))
                        ->ActiveType();
     }
@@ -1258,7 +1251,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
     for (uint32_t i = 0; i < descriptorWriteCount; i++) {
         const Location write_loc = loc.dot(Field::pDescriptorWrites, i);
         auto dst_set = pDescriptorWrites[i].dstSet;
-        const auto &set_node = *Get<cvdescriptorset::DescriptorSet>(dst_set);
+        const auto &set_node = *Get<vvl::DescriptorSet>(dst_set);
         skip |= ValidateWriteUpdate(set_node, pDescriptorWrites[i], write_loc, false);
 
         const auto *acceleration_structure_khr = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
@@ -1299,10 +1292,10 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
     return skip;
 }
 
-cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *device_data,
+vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *device_data,
                                                               VkDescriptorSet descriptorSet,
-                                                              const UPDATE_TEMPLATE_STATE *template_state, const void *pData,
-                                                              VkDescriptorSetLayout push_layout) {
+                                                              const vvl::DescriptorUpdateTemplate *template_state,
+                                                              const void *pData, VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     inline_infos_khr.resize(create_info.descriptorUpdateEntryCount);
@@ -1311,7 +1304,7 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
                                               ? create_info.descriptorSetLayout
                                               : push_layout;
-    auto layout_obj = device_data->Get<cvdescriptorset::DescriptorSetLayout>(effective_dsl);
+    auto layout_obj = device_data->Get<vvl::DescriptorSetLayout>(effective_dsl);
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
@@ -1400,13 +1393,13 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
     }
 }
 
-std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
-    auto layout_handle = layout_->GetDescriptorSetLayout();
+std::string vvl::DescriptorSet::StringifySetAndLayout() const {
+    auto layout_handle = layout_->Handle();
     std::ostringstream str;
     if (IsPushDescriptor()) {
         str << "Push Descriptors defined with " << state_data_->FormatHandle(layout_handle);
     } else {
-        str << state_data_->FormatHandle(GetSet()) << " allocated with " << state_data_->FormatHandle(layout_handle);
+        str << state_data_->FormatHandle(Handle()) << " allocated with " << state_data_->FormatHandle(layout_handle);
     }
     return str.str();
 }
@@ -1527,12 +1520,12 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                                           VkDescriptorType dst_type, uint32_t dst_index, const Location &copy_loc) const {
     // Note : Repurposing some Write update error codes here as specific details aren't called out for copy updates like they are
     // for write updates
-    using DescriptorClass = cvdescriptorset::DescriptorClass;
-    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
-    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
-    using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
-    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+    using DescriptorClass = vvl::DescriptorClass;
+    using BufferDescriptor = vvl::BufferDescriptor;
+    using ImageDescriptor = vvl::ImageDescriptor;
+    using ImageSamplerDescriptor = vvl::ImageSamplerDescriptor;
+    using SamplerDescriptor = vvl::SamplerDescriptor;
+    using TexelDescriptor = vvl::TexelDescriptor;
     bool skip = false;
 
     auto device_data = this;
@@ -1654,7 +1647,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
     bool skip = false;
     const auto *dst_layout = dst_set.GetLayout().get();
     // Even if PushDescriptor, the error logging will remove the null Set handle
-    const LogObjectList objlist(update.dstSet, dst_layout->GetDescriptorSetLayout());
+    const LogObjectList objlist(update.dstSet, dst_layout->Handle());
 
     // Verify dst layout still valid (ObjectLifetimes only checks if null, we check if valid dstSet here)
     if (dst_layout->Destroyed()) {
@@ -1664,14 +1657,14 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
 
     const Location dst_binding_loc = write_loc.dot(Field::dstBinding);
     if (update.dstBinding > dst_layout->GetMaxBinding()) {
-        return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", objlist, dst_binding_loc, "(%" PRIu32 ") is larger than %s binding count (%" PRIu32 ").", update.dstBinding, FormatHandle(dst_layout->GetDescriptorSetLayout()).c_str(), dst_layout->GetBindingCount());
+        return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", objlist, dst_binding_loc, "(%" PRIu32 ") is larger than %s binding count (%" PRIu32 ").", update.dstBinding, FormatHandle(dst_layout->Handle()).c_str(), dst_layout->GetBindingCount());
     }
 
     const auto &dest = *dst_set.GetBinding(update.dstBinding);
     if (0 == dest.count) {
         skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", objlist, dst_binding_loc,
                          "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.dstBinding,
-                         FormatHandle(dst_layout->GetDescriptorSetLayout()).c_str());
+                         FormatHandle(dst_layout->Handle()).c_str());
     }
 
     const auto *used_handle = dst_set.InUse();
@@ -1804,7 +1797,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const VkWriteDescriptorSet &update, const uint32_t index,
                                            const Location &write_loc, bool push) const {
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
+    using ImageSamplerDescriptor = vvl::ImageSamplerDescriptor;
     bool skip = false;
 
     switch (update.descriptorType) {
@@ -2012,11 +2005,11 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
 
         const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
         if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
-            const LogObjectList objlist(commandBuffer, set_layout->GetDescriptorSetLayout(), pipeline_layout->layout());
+            const LogObjectList objlist(commandBuffer, set_layout->Handle(), pipeline_layout->layout());
             skip |= LogError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006", objlist, error_obj.location,
                              "Descriptor set layout (%s) for set %" PRIu32
                              " was created without VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT flag set.",
-                             FormatHandle(set_layout->GetDescriptorSetLayout()).c_str(), firstSet + i);
+                             FormatHandle(set_layout->Handle()).c_str(), firstSet + i);
         }
 
         if (bufferIndex < cb_state->descriptor_buffer_binding_info.size()) {
@@ -2033,7 +2026,7 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
 
                     if (pSetLayoutSize == nullptr) {
                         const auto pool = cb_state->command_pool;
-                        DispatchGetDescriptorSetLayoutSizeEXT(pool->dev_data->device, set_layout->GetDescriptorSetLayout(),
+                        DispatchGetDescriptorSetLayoutSizeEXT(pool->dev_data->device, set_layout->VkHandle(),
                                                               &setLayoutSize);
                     } else {
                         setLayoutSize = *pSetLayoutSize;
@@ -2051,7 +2044,7 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                                 const auto pool = cb_state->command_pool;
                                 uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(j)->binding;
                                 DispatchGetDescriptorSetLayoutBindingOffsetEXT(
-                                    pool->dev_data->device, set_layout->GetDescriptorSetLayout(), binding, &setLayoutSize);
+                                    pool->dev_data->device, set_layout->VkHandle(), binding, &setLayoutSize);
 
                                 // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the
                                 // offset may be 0. In this case, treat the descriptor set layout as size 1,
@@ -2343,7 +2336,7 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, V
                          "descriptorBuffer feature was not enabled.");
     }
 
-    auto setlayout = Get<cvdescriptorset::DescriptorSetLayout>(layout);
+    auto setlayout = Get<vvl::DescriptorSetLayout>(layout);
 
     const auto create_flags = setlayout->GetCreateFlags();
     if (!(create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
@@ -2364,7 +2357,7 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice 
                          "descriptorBuffer feature was not enabled.");
     }
 
-    auto setlayout = Get<cvdescriptorset::DescriptorSetLayout>(layout);
+    auto setlayout = Get<vvl::DescriptorSetLayout>(layout);
 
     const auto create_flags = setlayout->GetCreateFlags();
     if (!(setlayout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
@@ -2975,7 +2968,7 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     // Make sure sets being destroyed are not currently in-use
     if (disabled[object_in_use]) return false;
     bool skip = false;
-    auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    auto pool = Get<vvl::DescriptorPool>(descriptorPool);
     if (!pool) {
         return false;
     }
@@ -2990,7 +2983,7 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
 
 bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                       const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
-    auto desc_pool_state = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    auto desc_pool_state = Get<vvl::DescriptorPool>(descriptorPool);
     bool skip = false;
     if (desc_pool_state) {
         skip |=
@@ -3007,16 +3000,16 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                                                        void *ads_state_data) const {
     StateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ads_state_data);
 
-    cvdescriptorset::AllocateDescriptorSetsData *ds_data =
-        reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
+    vvl::AllocateDescriptorSetsData *ds_data =
+        reinterpret_cast<vvl::AllocateDescriptorSetsData *>(ads_state_data);
 
     bool skip = false;
-    auto pool_state = Get<DESCRIPTOR_POOL_STATE>(pAllocateInfo->descriptorPool);
+    auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
 
     for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
         const Location set_layout_loc = allocate_info_loc.dot(Field::pSetLayouts, i);
-        auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
+        auto layout = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
         if (!layout) {
             // nullptr layout indicates no valid layout handle for this device, validated/logged in object_tracker
             continue;
@@ -3085,7 +3078,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
         }
         if (count_allocate_info->descriptorSetCount == pAllocateInfo->descriptorSetCount) {
             for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-                auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
+                auto layout = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
                 if (count_allocate_info->pDescriptorCounts[i] > layout->GetDescriptorCountFromBinding(layout->GetMaxBinding())) {
                     skip |= LogError("VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pSetLayouts-03046", device,
                                      allocate_info_loc.pNext(Struct::VkDescriptorSetVariableDescriptorCountAllocateInfo,
@@ -3111,12 +3104,12 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
     // that this deserves to be a Core Validation check
     if (record_obj.result == VK_ERROR_OUT_OF_POOL_MEMORY && pAllocateInfo) {
         // result type added in VK_KHR_maintenance1
-        auto pool_state = Get<DESCRIPTOR_POOL_STATE>(pAllocateInfo->descriptorPool);
+        auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
         if (!pool_state) {
             return;
         }
         for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-            auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
+            auto layout = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
             if (!layout) {
                 continue;
             }
@@ -3147,7 +3140,7 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
 bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const Location &loc) const {
     if (disabled[object_in_use]) return false;
     bool skip = false;
-    auto set_node = Get<cvdescriptorset::DescriptorSet>(set);
+    auto set_node = Get<vvl::DescriptorSet>(set);
     if (!set_node) {
         return false;
     }
@@ -3170,7 +3163,7 @@ bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptor
             skip |= ValidateIdleDescriptorSet(pDescriptorSets[i], error_obj.location.dot(Field::pDescriptorSets, i));
         }
     }
-    auto pool_state = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    auto pool_state = Get<vvl::DescriptorPool>(descriptorPool);
     if (pool_state && !(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT & pool_state->createInfo.flags)) {
         // Can't Free from a NON_FREE pool
         skip |= LogError("VUID-vkFreeDescriptorSets-descriptorPool-00312", descriptorPool,
@@ -3222,7 +3215,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
                     // the state tracker. The proxy here could get away with const.
-                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+                    vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
                     skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, error_obj.location);
                 }
             }
@@ -3243,7 +3236,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
                                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->descriptorSetLayout);
+    auto layout = Get<vvl::DescriptorSetLayout>(pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
         skip |= LogError("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350", pCreateInfo->descriptorSetLayout,
                          create_info_loc.dot(Field::descriptorSetLayout), "(%s) is invalid.",
@@ -3319,7 +3312,7 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
                                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                 const void *pData, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
     // but retaining the assert as template support is new enough to want to investigate these in debug builds.
     assert(template_state);
@@ -3327,7 +3320,7 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
     if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
         // decode the templatized data and leverage the non-template UpdateDescriptor helper functions.
         // Translate the templated update into a normal update for validation...
-        cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state.get(), pData);
+        vvl::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state.get(), pData);
         return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(),
                                             0, nullptr, error_obj.location);
     }
@@ -3364,7 +3357,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                         static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
-    auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     if (template_state) {
         const auto &template_ci = template_state->create_info;
 
@@ -3397,7 +3390,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     }
 
     if (dsl && template_state) {
-        if (!Get<cvdescriptorset::DescriptorSetLayout>(dsl->GetDescriptorSetLayout())) {
+        if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
             skip |=
                 LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686", objlist, error_obj.location.dot(Field::pData),
@@ -3405,10 +3398,10 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                          "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
         } else {
             // Create an empty proxy in order to use the existing descriptor set update validation
-            cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+            vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
             // Decode the template into a set of write updates
-            cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
-                                                                    dsl->GetDescriptorSetLayout());
+            vvl::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
+                                                                    dsl->VkHandle());
             // Validate the decoded update against the proxy_ds
             skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                                   decoded_template.desc_writes.data(), error_obj.location);
@@ -3435,7 +3428,7 @@ enum DSL_DESCRIPTOR_GROUPS {
 // Returns an array of size DSL_NUM_DESCRIPTOR_GROUPS of the maximum number of descriptors used in any single pipeline stage
 std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     const DeviceFeatures *enabled_features,
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     // Identify active pipeline stages
     std::vector<VkShaderStageFlags> stage_flags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                    VK_SHADER_STAGE_COMPUTE_BIT};
@@ -3540,7 +3533,7 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 // Returns a map indexed by VK_DESCRIPTOR_TYPE_* enum of the summed descriptors by type.
 // Note: descriptors only count against the limit once even if used by multiple stages.
 std::map<uint32_t, uint32_t> GetDescriptorSum(
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     std::map<uint32_t, uint32_t> sum_by_type;
     for (const auto &dsl : set_layouts) {
         if (!dsl) {
@@ -3562,7 +3555,7 @@ std::map<uint32_t, uint32_t> GetDescriptorSum(
 }
 
 uint32_t GetInlineUniformBlockBindingCount(
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     uint32_t sum = 0;
     for (const auto &dsl : set_layouts) {
         if (!dsl) {
@@ -3589,12 +3582,12 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     bool skip = false;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts(pCreateInfo->setLayoutCount, nullptr);
+    std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> set_layouts(pCreateInfo->setLayoutCount, nullptr);
     uint32_t descriptor_buffer_set_count = 0;
     uint32_t valid_set_count = 0;
     uint32_t push_descriptor_set_found = pCreateInfo->setLayoutCount;
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        set_layouts[i] = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
         if (!set_layouts[i]) {
             continue;
         }

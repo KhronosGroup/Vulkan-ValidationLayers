@@ -548,7 +548,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE &pipeline_layout,
                                        uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
-                                       std::shared_ptr<cvdescriptorset::DescriptorSet> &push_descriptor_set,
+                                       std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
                                        uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets);
 
     void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE &pipeline_layout,

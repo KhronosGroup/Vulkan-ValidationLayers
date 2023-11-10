@@ -46,7 +46,7 @@ struct SHADER_OBJECT_STATE : public BASE_NODE {
     const ActiveSlotMap active_slots;
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
-    using SetLayoutVector = std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>>;
+    using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
     const SetLayoutVector set_layouts;
     const PushConstantRangesId push_constant_ranges;
     const std::vector<PipelineLayoutCompatId> set_compat_ids;

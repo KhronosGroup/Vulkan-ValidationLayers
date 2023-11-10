@@ -19,7 +19,7 @@
 #include "gpu_validation/gpu_validation.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
 
-using cvdescriptorset::DescriptorClass;
+using vvl::DescriptorClass;
 
 namespace gpuav_glsl {
 
@@ -30,7 +30,7 @@ struct BindingLayout {
 
 struct DescriptorState {
     DescriptorState() : id(0), extra_data(0) {}
-    DescriptorState(cvdescriptorset::DescriptorClass dc, uint32_t id_, uint32_t extra_data_ = 1)
+    DescriptorState(vvl::DescriptorClass dc, uint32_t id_, uint32_t extra_data_ = 1)
         : id(ClassToShaderBits(dc) | id_), extra_data(extra_data_) {}
     uint32_t id;
     uint32_t extra_data;
@@ -67,10 +67,10 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
     return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1))/kBitsPerWord) * sizeof(uint32_t);
 }
 
-gpuav_state::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool,
-                                          const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> &layout,
+gpuav_state::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
+                                          const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
                                           uint32_t variable_count, ValidationStateTracker *state_data)
-    : cvdescriptorset::DescriptorSet(set, pool, layout, variable_count, state_data) {}
+    : vvl::DescriptorSet(set, pool, layout, variable_count, state_data) {}
 
 gpuav_state::DescriptorSet::~DescriptorSet() {
     Destroy();
@@ -155,7 +155,7 @@ VkDeviceAddress gpuav_state::DescriptorSet::GetLayoutState() {
     return layout_.device_addr;
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::BufferDescriptor &desc) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
     auto buffer_state = static_cast<const gpuav_state::Buffer *>(desc.GetBufferState());
     if (!buffer_state) {
         return gpuav_glsl::DescriptorState(DescriptorClass::GeneralBuffer, gpuav_glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
@@ -163,7 +163,7 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::BufferDescri
     return gpuav_glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id, static_cast<uint32_t>(buffer_state->createInfo.size));
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::TexelDescriptor &desc) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
     auto buffer_view_state = static_cast<const gpuav_state::BufferView *>(desc.GetBufferViewState());
     if (!buffer_view_state) {
         return gpuav_glsl::DescriptorState(DescriptorClass::TexelBuffer, gpuav_glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
@@ -173,18 +173,18 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::TexelDescrip
     return gpuav_glsl::DescriptorState(DescriptorClass::TexelBuffer, buffer_view_state->id, res_size);
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::ImageDescriptor &desc) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::ImageDescriptor &desc) {
     auto image_state = static_cast<const gpuav_state::ImageView *>(desc.GetImageViewState());
     return gpuav_glsl::DescriptorState(DescriptorClass::Image,
                                        image_state ? image_state->id : gpuav_glsl::kDebugInputBindlessSkipId);
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::SamplerDescriptor &desc) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::SamplerDescriptor &desc) {
     auto sampler_state = static_cast<const gpuav_state::Sampler *>(desc.GetSamplerState());
     return gpuav_glsl::DescriptorState(DescriptorClass::PlainSampler, sampler_state->id);
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::ImageSamplerDescriptor &desc) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::ImageSamplerDescriptor &desc) {
     auto image_state = static_cast<const gpuav_state::ImageView *>(desc.GetImageViewState());
     auto sampler_state = static_cast<const gpuav_state::Sampler *>(desc.GetSamplerState());
     return gpuav_glsl::DescriptorState(DescriptorClass::ImageSampler,
@@ -192,7 +192,7 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::ImageSampler
                                        sampler_state ? sampler_state->id : 0);
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::AccelerationStructureDescriptor &ac) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::AccelerationStructureDescriptor &ac) {
     uint32_t id;
     if (ac.is_khr()) {
         auto ac_state = static_cast<const gpuav_state::AccelerationStructureKHR *>(ac.GetAccelerationStructureStateKHR());
@@ -204,7 +204,7 @@ static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::Acceleration
     return gpuav_glsl::DescriptorState(DescriptorClass::AccelerationStructure, id);
 }
 
-static gpuav_glsl::DescriptorState GetInData(const cvdescriptorset::MutableDescriptor &desc) {
+static gpuav_glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
 
     auto desc_class = desc.ActiveClass();
     switch (desc_class) {
@@ -270,12 +270,12 @@ void FillBindingInData(const Binding &binding, gpuav_glsl::DescriptorState *data
 
 // Inline Uniforms are currently treated as a single descriptor. Writes to any offsets cause the whole range to be valid.
 template <>
-void FillBindingInData(const cvdescriptorset::InlineUniformBinding &binding, gpuav_glsl::DescriptorState *data, uint32_t &index) {
+void FillBindingInData(const vvl::InlineUniformBinding &binding, gpuav_glsl::DescriptorState *data, uint32_t &index) {
     data[index++] = gpuav_glsl::DescriptorState(DescriptorClass::InlineUniform, gpuav_glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
 }
 
 std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::GetCurrentState() {
-    using namespace cvdescriptorset;
+    using namespace vvl;
     auto guard = Lock();
     GpuAssisted *gv_dev = static_cast<GpuAssisted *>(state_data_);
     uint32_t cur_version = current_version_.load();
@@ -283,7 +283,7 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
         return last_used_state_;
     }
     auto next_state = std::make_shared<State>();
-    next_state->set = GetSet();
+    next_state->set = VkHandle();
     next_state->version = cur_version;
     next_state->allocator = gv_dev->vmaAllocator;
 
@@ -329,7 +329,7 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
                 FillBindingInData(static_cast<const InlineUniformBinding &>(binding), data, index);
                 break;
             case DescriptorClass::GeneralBuffer:
-                FillBindingInData(static_cast<const cvdescriptorset::BufferBinding &>(binding), data, index);
+                FillBindingInData(static_cast<const vvl::BufferBinding &>(binding), data, index);
                 break;
             case DescriptorClass::TexelBuffer:
                 FillBindingInData(static_cast<const TexelBinding &>(binding), data, index);
@@ -383,7 +383,7 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
         return output_state_;
     }
     auto next_state = std::make_shared<State>();
-    next_state->set = GetSet();
+    next_state->set = VkHandle();
     next_state->version = cur_version;
     next_state->allocator = gv_dev->vmaAllocator;
 
@@ -477,18 +477,18 @@ std::map<uint32_t, std::vector<uint32_t>> gpuav_state::DescriptorSet::State::Use
 gpuav_state::DescriptorSet::State::~State() { vmaDestroyBuffer(allocator, buffer, allocation); }
 
 void gpuav_state::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {
-    cvdescriptorset::DescriptorSet::PerformPushDescriptorsUpdate(write_count, write_descs);
+    vvl::DescriptorSet::PerformPushDescriptorsUpdate(write_count, write_descs);
     current_version_++;
 }
 
 void gpuav_state::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &write_desc) {
-    cvdescriptorset::DescriptorSet::PerformWriteUpdate(write_desc);
+    vvl::DescriptorSet::PerformWriteUpdate(write_desc);
     current_version_++;
 }
 
 void gpuav_state::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &copy_desc,
-                                                   const cvdescriptorset::DescriptorSet &src_set) {
-    cvdescriptorset::DescriptorSet::PerformCopyUpdate(copy_desc, src_set);
+                                                   const vvl::DescriptorSet &src_set) {
+    vvl::DescriptorSet::PerformCopyUpdate(copy_desc, src_set);
     current_version_++;
 }
 

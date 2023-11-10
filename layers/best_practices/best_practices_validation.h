@@ -337,10 +337,10 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     void UnbindResources() { push_constant_data_set.clear(); }
 };
 
-class DescriptorPool : public DESCRIPTOR_POOL_STATE {
+class DescriptorPool : public vvl::DescriptorPool {
   public:
     DescriptorPool(ValidationStateTracker* dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo* pCreateInfo)
-        : DESCRIPTOR_POOL_STATE(dev, pool, pCreateInfo) {}
+        : vvl::DescriptorPool(dev, pool, pCreateInfo) {}
 
     uint32_t freed_count{0};
 };
@@ -359,7 +359,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkPhysicalDevice, bp_state::PhysicalDevice, P
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, bp_state::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, bp_state::Swapchain, SWAPCHAIN_NODE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, IMAGE_STATE)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, DESCRIPTOR_POOL_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, PIPELINE_STATE)
 
 class BestPractices : public ValidationStateTracker {
@@ -1014,9 +1014,9 @@ class BestPractices : public ValidationStateTracker {
         return std::make_shared<bp_state::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
     }
 
-    std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
+    std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool pool,
                                                                      const VkDescriptorPoolCreateInfo* pCreateInfo) final {
-        return std::static_pointer_cast<DESCRIPTOR_POOL_STATE>(std::make_shared<bp_state::DescriptorPool>(this, pool, pCreateInfo));
+        return std::static_pointer_cast<vvl::DescriptorPool>(std::make_shared<bp_state::DescriptorPool>(this, pool, pCreateInfo));
     }
 
     std::shared_ptr<DEVICE_MEMORY_STATE> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,

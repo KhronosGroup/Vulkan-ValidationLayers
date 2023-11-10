@@ -596,22 +596,22 @@ class CoreChecks : public ValidationStateTracker {
     VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
                                                 void* pData) override;
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-    bool ValidateDrawState(const cvdescriptorset::DescriptorSet& descriptor_set, const BindingVariableMap& bindings,
+    bool ValidateDrawState(const vvl::DescriptorSet& descriptor_set, const BindingVariableMap& bindings,
                            const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE& cb_state, const Location& loc,
                            const vvl::DrawDispatchVuid& vuids) const;
 
-    bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSetLayout& layout_dsl,
-                                      const cvdescriptorset::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
+    bool VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout& layout_dsl,
+                                      const vvl::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
 
-    bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet& descriptor_set,
-                                      const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>>& set_layouts,
+    bool VerifySetLayoutCompatibility(const vvl::DescriptorSet& descriptor_set,
+                                      const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>& set_layouts,
                                       const VulkanTypedHandle& handle, const uint32_t layoutIndex, std::string& errorMsg) const;
 
     bool VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE& layout_a, const PIPELINE_LAYOUT_STATE& layout_b,
                                       std::string& errorMsg) const;
 
     // Validate contents of a CopyUpdate
-    using DescriptorSet = cvdescriptorset::DescriptorSet;
+    using DescriptorSet = vvl::DescriptorSet;
     bool ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Location& copy_loc) const;
     bool VerifyCopyUpdateContents(const VkCopyDescriptorSet& update, const DescriptorSet& src_set, VkDescriptorType src_type,
                                   uint32_t src_index, const DescriptorSet& dst_set, VkDescriptorType dst_type, uint32_t dst_index,

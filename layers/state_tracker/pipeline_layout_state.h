@@ -27,15 +27,15 @@
 #include "state_tracker/state_tracker.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
-namespace cvdescriptorset {
+namespace vvl {
 class DescriptorSetLayout;
 class DescriptorSetLayoutDef;
-}  // namespace cvdescriptorset
+}  // namespace vvl
 
 class ValidationStateTracker;
 
 // Canonical dictionary for the pipeline layout's layout of descriptorsetlayouts
-using DescriptorSetLayoutDef = cvdescriptorset::DescriptorSetLayoutDef;
+using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = std::shared_ptr<const DescriptorSetLayoutDef>;
 using PipelineLayoutSetLayoutsDef = std::vector<DescriptorSetLayoutId>;
 using PipelineLayoutSetLayoutsDict =
@@ -69,7 +69,7 @@ PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPus
 // Store layouts and pushconstants for PipelineLayout
 class PIPELINE_LAYOUT_STATE : public BASE_NODE {
   public:
-    using SetLayoutVector = std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>>;
+    using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
     const SetLayoutVector set_layouts;
     // canonical form IDs for the "compatible for set" contents
     const PushConstantRangesId push_constant_ranges;
@@ -86,8 +86,8 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
 
     VkPipelineLayout layout() const { return handle_.Cast<VkPipelineLayout>(); }
 
-    std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDsl(uint32_t set) const {
-        std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
+    std::shared_ptr<vvl::DescriptorSetLayout const> GetDsl(uint32_t set) const {
+        std::shared_ptr<vvl::DescriptorSetLayout const> dsl = nullptr;
         if (set < set_layouts.size()) {
             dsl = set_layouts[set];
         }
@@ -98,5 +98,5 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
 };
 
 std::vector<PipelineLayoutCompatId> GetCompatForSet(
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts,
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
     const PushConstantRangesId &push_constant_ranges);

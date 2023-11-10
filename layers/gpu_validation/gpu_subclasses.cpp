@@ -198,10 +198,10 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue, const Location &loc) {
             Location draw_loc(vvl::Func::vkCmdDraw);
             // For each descriptor set ...
             for (auto &set : di_info.descriptor_set_buffers) {
-                if (validated_desc_sets.count(set.state->GetSet()) > 0) {
+                if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                     continue;
                 }
-                validated_desc_sets.emplace(set.state->GetSet());
+                validated_desc_sets.emplace(set.state->VkHandle());
                 assert(set.output_state);
 
                 vvl::DescriptorValidator context(*device_state, *this, *set.state, VK_NULL_HANDLE /*framebuffer*/, draw_loc);

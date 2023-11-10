@@ -43,18 +43,19 @@ class UPDATE_TEMPLATE_STATE;
 struct DeviceExtensions;
 class SAMPLER_STATE;
 
-namespace cvdescriptorset {
+namespace vvl {
 class DescriptorSet;
 struct AllocateDescriptorSetsData;
-}  // namespace cvdescriptorset
 
-class DESCRIPTOR_POOL_STATE : public BASE_NODE {
+class DescriptorPool : public BASE_NODE {
   public:
-    DESCRIPTOR_POOL_STATE(ValidationStateTracker *dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo);
-    ~DESCRIPTOR_POOL_STATE() { Destroy(); }
+    DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo);
+    ~DescriptorPool() { Destroy(); }
+
+    VkDescriptorPool VkHandle() const { return handle_.Cast<VkDescriptorPool>(); };
 
     void Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
-                  const cvdescriptorset::AllocateDescriptorSetsData *ds_data);
+                  const vvl::AllocateDescriptorSetsData *ds_data);
     void Free(uint32_t count, const VkDescriptorSet *descriptor_sets);
     void Reset();
     void Destroy() override;
@@ -88,21 +89,20 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
     uint32_t available_sets_;        // Available descriptor sets in this pool
     TypeCountMap available_counts_;  // Available # of descriptors of each type in this pool
-    vvl::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets_;  // Collection of all sets in this pool
+    vvl::unordered_map<VkDescriptorSet, vvl::DescriptorSet *> sets_;  // Collection of all sets in this pool
     ValidationStateTracker *dev_data_;
     mutable std::shared_mutex lock_;
 };
 
-class UPDATE_TEMPLATE_STATE : public BASE_NODE {
+class DescriptorUpdateTemplate : public BASE_NODE {
   public:
     const safe_VkDescriptorUpdateTemplateCreateInfo create_info;
 
-    UPDATE_TEMPLATE_STATE(VkDescriptorUpdateTemplate update_template, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
+    DescriptorUpdateTemplate(VkDescriptorUpdateTemplate update_template, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
         : BASE_NODE(update_template, kVulkanObjectTypeDescriptorUpdateTemplate), create_info(pCreateInfo) {}
-};
 
-// Descriptor Data structures
-namespace cvdescriptorset {
+    VkDescriptorUpdateTemplate VkHandle() const { return handle_.Cast<VkDescriptorUpdateTemplate>(); };
+};
 
 // Utility structs/classes/types
 // Index range for global indices below, end is exclusive, i.e. [start,end)
@@ -195,7 +195,7 @@ class DescriptorSetLayoutDef {
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t) const;
-    const cvdescriptorset::IndexRange &GetGlobalIndexRangeFromIndex(uint32_t index) const;
+    const vvl::IndexRange &GetGlobalIndexRangeFromIndex(uint32_t index) const;
 
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t) const;
@@ -250,7 +250,7 @@ class DescriptorSetLayout : public BASE_NODE {
     // Return true if this layout is compatible with passed in layout
     bool IsCompatible(DescriptorSetLayout const *rh_ds_layout) const;
     // Straightforward Get functions
-    VkDescriptorSetLayout GetDescriptorSetLayout() const { return handle_.Cast<VkDescriptorSetLayout>(); };
+    VkDescriptorSetLayout VkHandle() const { return handle_.Cast<VkDescriptorSetLayout>(); };
     const DescriptorSetLayoutDef *GetLayoutDef() const { return layout_id_.get(); }
     DescriptorSetLayoutId GetLayoutId() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
@@ -644,24 +644,24 @@ class MutableDescriptor : public Descriptor {
     }
     void SetDescriptorType(VkDescriptorType src_type, const Descriptor *src) {
         active_descriptor_type_ = src_type;
-        if (src->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
-            auto buffer = static_cast<const cvdescriptorset::BufferDescriptor *>(src)->GetBuffer();
+        if (src->GetClass() == vvl::DescriptorClass::GeneralBuffer) {
+            auto buffer = static_cast<const vvl::BufferDescriptor *>(src)->GetBuffer();
             if (buffer == VK_NULL_HANDLE) {
                 buffer_size_ = vvl::kU32Max;
             } else {
-                auto buffer_state = static_cast<const cvdescriptorset::BufferDescriptor *>(src)->GetBufferState();
+                auto buffer_state = static_cast<const vvl::BufferDescriptor *>(src)->GetBufferState();
                 buffer_size_ = static_cast<uint32_t>(buffer_state->createInfo.size);
             }
-        } else if (src->GetClass() == cvdescriptorset::DescriptorClass::TexelBuffer) {
-            auto buffer_view = static_cast<const cvdescriptorset::TexelDescriptor *>(src)->GetBufferView();
+        } else if (src->GetClass() == vvl::DescriptorClass::TexelBuffer) {
+            auto buffer_view = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferView();
             if (buffer_view == VK_NULL_HANDLE) {
                 buffer_size_ = vvl::kU32Max;
             } else {
-                auto buffer_view_state = static_cast<const cvdescriptorset::TexelDescriptor *>(src)->GetBufferViewState();
+                auto buffer_view_state = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferViewState();
                 buffer_size_ = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
             }
-        } else if (src->GetClass() == cvdescriptorset::DescriptorClass::Mutable) {
-            auto descriptor = static_cast<const cvdescriptorset::MutableDescriptor *>(src);
+        } else if (src->GetClass() == vvl::DescriptorClass::Mutable) {
+            auto descriptor = static_cast<const vvl::MutableDescriptor *>(src);
             buffer_size_ = descriptor->GetBufferSize();
         } else {
             buffer_size_ = 0;
@@ -843,7 +843,7 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
     std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
     DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
-                          const UPDATE_TEMPLATE_STATE *template_state, const void *pData,
+                          const DescriptorUpdateTemplate *template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 
@@ -878,7 +878,7 @@ class DescriptorSet : public BASE_NODE {
     using ConstBindingIterator = BindingVector::const_iterator;
     using StateTracker = ValidationStateTracker;
 
-    DescriptorSet(const VkDescriptorSet, DESCRIPTOR_POOL_STATE *, const std::shared_ptr<DescriptorSetLayout const> &,
+    DescriptorSet(const VkDescriptorSet, vvl::DescriptorPool *, const std::shared_ptr<DescriptorSetLayout const> &,
                   uint32_t variable_count, StateTracker *state_data);
     void LinkChildNodes() override;
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override;
@@ -904,8 +904,8 @@ class DescriptorSet : public BASE_NODE {
     virtual void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
 
     const std::shared_ptr<DescriptorSetLayout const> &GetLayout() const { return layout_; };
-    VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_->GetDescriptorSetLayout(); }
-    VkDescriptorSet GetSet() const { return handle_.Cast<VkDescriptorSet>(); };
+    VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_->VkHandle(); }
+    VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state, vvl::Func command, const PIPELINE_STATE *,
@@ -926,7 +926,7 @@ class DescriptorSet : public BASE_NODE {
         return (layout_->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0;
     }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
-    DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
+    vvl::DescriptorPool *GetPoolState() const { return pool_state_; }
 
     ConstBindingIterator begin() const { return bindings_.begin(); }
     ConstBindingIterator end() const { return bindings_.end(); }
@@ -1086,7 +1086,7 @@ class DescriptorSet : public BASE_NODE {
     }
 
     std::atomic<bool> some_update_;  // has any part of the set ever been updated?
-    DESCRIPTOR_POOL_STATE *pool_state_;
+    vvl::DescriptorPool *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> layout_;
     // NOTE: the the backing store for the bindings must be declared *before* it so it will be destructed *after* it
     // "Destructors for nonstatic member objects are called in the reverse order in which they appear in the class declaration."
@@ -1104,4 +1104,4 @@ class DescriptorSet : public BASE_NODE {
     std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
 };
 
-}  // namespace cvdescriptorset
+}  // namespace vvl

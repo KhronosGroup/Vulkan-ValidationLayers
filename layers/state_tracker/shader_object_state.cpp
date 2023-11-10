@@ -22,7 +22,7 @@ static SHADER_OBJECT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTracker
     SHADER_OBJECT_STATE::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
-        set_layouts[i] = dev_data->Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
+        set_layouts[i] = dev_data->Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
     }
     return set_layouts;
 }
