@@ -899,12 +899,13 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
         // Now advance pos as needed to match range
         if (pos->first.strictly_less(range)) {
             ++pos;
+            if (pos == end) break;
             if (pos->first.strictly_less(range)) {
                 pos = map.lower_bound(range);
                 if (pos == end) break;
             }
+            assert(pos == map.lower_bound(range));
         }
-        assert(pos == map.lower_bound(range));
 
         // If the range intersects pos->first, consider Action performed for that map entry, and
         // make sure not to call Action for this pos for any subsequent ranges
