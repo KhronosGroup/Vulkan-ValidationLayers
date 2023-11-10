@@ -29,13 +29,13 @@
 #include "utils/shader_utils.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
-namespace cvdescriptorset {
+namespace vvl {
 class DescriptorSetLayoutDef;
 class DescriptorSetLayout;
 class DescriptorSet;
 class Descriptor;
 
-}  // namespace cvdescriptorset
+}  // namespace vvl
 
 class ValidationStateTracker;
 class CMD_BUFFER_STATE;
@@ -704,7 +704,7 @@ struct LAST_BOUND_STATE {
     bool shader_object_bound[SHADER_OBJECT_STAGE_COUNT]{false};
     SHADER_OBJECT_STATE *shader_object_states[SHADER_OBJECT_STAGE_COUNT]{nullptr};
     VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
-    std::shared_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
+    std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
 
     struct DescriptorBufferBinding {
         uint32_t index{0};
@@ -712,7 +712,7 @@ struct LAST_BOUND_STATE {
     };
     // Ordered bound set tracking where index is set# that given set is bound to
     struct PER_SET {
-        std::shared_ptr<cvdescriptorset::DescriptorSet> bound_descriptor_set;
+        std::shared_ptr<vvl::DescriptorSet> bound_descriptor_set;
         std::optional<DescriptorBufferBinding> bound_descriptor_buffer;
 
         // one dynamic offset per dynamic descriptor bound to this CB
@@ -720,7 +720,7 @@ struct LAST_BOUND_STATE {
         PipelineLayoutCompatId compat_id_for_set{0};
 
         // Cache most recently validated descriptor state for ValidateActionState/UpdateDrawState
-        const cvdescriptorset::DescriptorSet *validated_set{nullptr};
+        const vvl::DescriptorSet *validated_set{nullptr};
         uint64_t validated_set_change_count{~0ULL};
         uint64_t validated_set_image_layout_change_count{~0ULL};
         BindingVariableMap validated_set_binding_req_map;
@@ -736,7 +736,7 @@ struct LAST_BOUND_STATE {
 
     void Reset();
 
-    void UnbindAndResetPushDescriptorSet(std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds);
+    void UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorSet> &&ds);
 
     inline bool IsUsing() const { return pipeline_state != nullptr; }
 

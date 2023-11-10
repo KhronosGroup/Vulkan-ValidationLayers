@@ -26,10 +26,10 @@ class GpuAssisted;
 
 namespace gpuav_state {
 
-class DescriptorSet : public cvdescriptorset::DescriptorSet {
+class DescriptorSet : public vvl::DescriptorSet {
   public:
-    DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool,
-                  const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> &layout, uint32_t variable_count,
+    DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
+                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                   ValidationStateTracker *state_data);
     virtual ~DescriptorSet();
     void Destroy() override { last_used_state_.reset(); };
@@ -47,14 +47,14 @@ class DescriptorSet : public cvdescriptorset::DescriptorSet {
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
-    void PerformCopyUpdate(const VkCopyDescriptorSet &, const cvdescriptorset::DescriptorSet &) override;
+    void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
 
     VkDeviceAddress GetLayoutState();
     std::shared_ptr<State> GetCurrentState();
     std::shared_ptr<State> GetOutputState();
 
   protected:
-    bool SkipBinding(const cvdescriptorset::DescriptorBinding &binding) const override { return true; }
+    bool SkipBinding(const vvl::DescriptorBinding &binding) const override { return true; }
   private:
     struct Layout {
         VmaAllocation allocation{nullptr};

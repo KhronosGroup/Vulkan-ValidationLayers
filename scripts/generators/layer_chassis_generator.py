@@ -1642,7 +1642,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool skip = false;
                 ErrorObject error_obj(vvl::Func::vkAllocateDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-                cvdescriptorset::AllocateDescriptorSetsData ads_state[LayerObjectTypeMaxEnum];
+                vvl::AllocateDescriptorSetsData ads_state[LayerObjectTypeMaxEnum];
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     ads_state[intercept->container_type].Init(pAllocateInfo->descriptorSetCount);

@@ -2218,10 +2218,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         return skip;
     }
 
-    using DescriptorClass = cvdescriptorset::DescriptorClass;
-    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
-    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+    using DescriptorClass = vvl::DescriptorClass;
+    using BufferDescriptor = vvl::BufferDescriptor;
+    using ImageDescriptor = vvl::ImageDescriptor;
+    using TexelDescriptor = vvl::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_states) {
         const auto raster_state = pipe->RasterizationState();
@@ -2294,7 +2294,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(img_view_state->image_view()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
-                                sync_state_->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
                                 variable.decorations.binding, index, FormatHazard(hazard).c_str());
                         }
@@ -2317,7 +2317,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->FormatHandle(buf_view_state->buffer_view()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
-                                sync_state_->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
                         }
@@ -2339,7 +2339,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_state->buffer()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
-                                sync_state_->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
                         }
@@ -2364,10 +2364,10 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         return;
     }
 
-    using DescriptorClass = cvdescriptorset::DescriptorClass;
-    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
-    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+    using DescriptorClass = vvl::DescriptorClass;
+    using BufferDescriptor = vvl::BufferDescriptor;
+    using ImageDescriptor = vvl::ImageDescriptor;
+    using TexelDescriptor = vvl::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_states) {
         const auto raster_state = pipe->RasterizationState();

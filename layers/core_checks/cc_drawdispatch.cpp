@@ -1531,7 +1531,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, pipeline_layout->set_layouts,
                                                              pipeline_layout->Handle(), set_index, error_string)) {
                         // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-                        VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
+                        VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
                         LogObjectList objlist = cb_state.GetObjectList(bind_point);
                         objlist.add(set_handle);
                         objlist.add(pipeline_layout->layout());
@@ -1601,7 +1601,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, shader_state->set_layouts,
                                                              shader_state->Handle(), set_index, error_string)) {
                         // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-                        VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
+                        VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
                         const LogObjectList objlist(cb_state.commandBuffer(), set_handle, shader_state->shader());
                         skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
                                          "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",

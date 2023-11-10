@@ -637,15 +637,15 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
                     continue;
                 }
                 switch (descriptor->GetClass()) {
-                    case cvdescriptorset::DescriptorClass::Image: {
-                        if (const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor*>(descriptor)) {
+                    case vvl::DescriptorClass::Image: {
+                        if (const auto image_descriptor = static_cast<const vvl::ImageDescriptor*>(descriptor)) {
                             image_view = image_descriptor->GetImageView();
                         }
                         break;
                     }
-                    case cvdescriptorset::DescriptorClass::ImageSampler: {
+                    case vvl::DescriptorClass::ImageSampler: {
                         if (const auto image_sampler_descriptor =
-                                static_cast<const cvdescriptorset::ImageSamplerDescriptor*>(descriptor)) {
+                                static_cast<const vvl::ImageSamplerDescriptor*>(descriptor)) {
                             image_view = image_sampler_descriptor->GetImageView();
                         }
                         break;

@@ -1112,7 +1112,7 @@ static bool PushDescriptorCleanup(LAST_BOUND_STATE &last_bound, uint32_t set_idx
 void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
                                                      const PIPELINE_LAYOUT_STATE &pipeline_layout, uint32_t first_set,
                                                      uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
-                                                     std::shared_ptr<cvdescriptorset::DescriptorSet> &push_descriptor_set,
+                                                     std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
                                                      uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     assert((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
@@ -1167,7 +1167,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
         auto &set_info = last_bound.per_set[set_idx];
         auto descriptor_set =
-            push_descriptor_set ? push_descriptor_set : dev_data->Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[input_idx]);
+            push_descriptor_set ? push_descriptor_set : dev_data->Get<vvl::DescriptorSet>(pDescriptorSets[input_idx]);
 
         set_info.Reset();
         // Record binding (or push)

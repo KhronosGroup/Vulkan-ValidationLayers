@@ -727,7 +727,7 @@ struct RestorablePipelineState {
             for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
                 const auto &bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
                 if (bound_descriptor_set) {
-                    descriptor_sets.push_back(std::make_pair(bound_descriptor_set->GetSet(), static_cast<uint32_t>(i)));
+                    descriptor_sets.push_back(std::make_pair(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(i)));
                     if (bound_descriptor_set->IsPushDescriptor()) {
                         push_descriptor_set_index = static_cast<uint32_t>(i);
                     }
@@ -1301,13 +1301,13 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
             }
             oob_access = true;
             auto desc_class = binding_state->descriptor_class;
-            if (desc_class == cvdescriptorset::DescriptorClass::Mutable) {
+            if (desc_class == vvl::DescriptorClass::Mutable) {
                 desc_class =
-                    static_cast<const cvdescriptorset::MutableBinding *>(binding_state)->descriptors[desc_index].ActiveClass();
+                    static_cast<const vvl::MutableBinding *>(binding_state)->descriptors[desc_index].ActiveClass();
             }
 
             switch (desc_class) {
-                case cvdescriptorset::DescriptorClass::GeneralBuffer:
+                case vvl::DescriptorClass::GeneralBuffer:
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
                          << " access out of bounds. Descriptor size is " << size << " and highest byte accessed was " << offset;
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
@@ -1317,7 +1317,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                         vuid_msg = vuid.storage_access_oob;
                     }
                     break;
-                case cvdescriptorset::DescriptorClass::TexelBuffer:
+                case vvl::DescriptorClass::TexelBuffer:
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
                          << " access out of bounds. Descriptor size is " << size << " texels and highest texel accessed was "
                          << offset;
@@ -2578,10 +2578,10 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     // push the command id
 }
 
-std::shared_ptr<cvdescriptorset::DescriptorSet> GpuAssisted::CreateDescriptorSet(
-    VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> &layout,
+std::shared_ptr<vvl::DescriptorSet> GpuAssisted::CreateDescriptorSet(
+    VkDescriptorSet set, vvl::DescriptorPool *pool, const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
     uint32_t variable_count) {
-    return std::static_pointer_cast<cvdescriptorset::DescriptorSet>(
+    return std::static_pointer_cast<vvl::DescriptorSet>(
         std::make_shared<gpuav_state::DescriptorSet>(set, pool, layout, variable_count, this));
 }
 

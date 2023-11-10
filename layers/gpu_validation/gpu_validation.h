@@ -97,7 +97,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureNV, gpuav_state::Accel
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav_state::Buffer, BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav_state::BufferView, BUFFER_VIEW_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, CMD_BUFFER_STATE)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav_state::DescriptorSet, cvdescriptorset::DescriptorSet)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav_state::DescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav_state::ImageView, IMAGE_VIEW_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav_state::Sampler, SAMPLER_STATE)
 
@@ -404,8 +404,8 @@ class GpuAssisted : public GpuAssistedBase {
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
-    std::shared_ptr<cvdescriptorset::DescriptorSet> CreateDescriptorSet(
-        VkDescriptorSet, DESCRIPTOR_POOL_STATE*, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>& layout,
+    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(
+        VkDescriptorSet, vvl::DescriptorPool*, const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
         uint32_t variable_count) final;
 
     void DestroyBuffer(gpuav_state::CommandInfo& cmd_info);

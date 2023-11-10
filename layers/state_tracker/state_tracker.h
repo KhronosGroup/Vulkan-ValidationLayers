@@ -39,14 +39,15 @@
 #include <memory>
 #include <vector>
 
-namespace cvdescriptorset {
+namespace vvl {
+struct AllocateDescriptorSetsData;
+class DescriptorPool;
 class DescriptorSet;
 class DescriptorSetLayout;
-struct AllocateDescriptorSetsData;
-}  // namespace cvdescriptorset
+class DescriptorUpdateTemplate;
+}  // namespace vvl
 
 class CMD_BUFFER_STATE;
-class DESCRIPTOR_POOL_STATE;
 class FRAMEBUFFER_STATE;
 class PIPELINE_CACHE_STATE;
 class PIPELINE_STATE;
@@ -65,7 +66,6 @@ class SAMPLER_YCBCR_CONVERSION_STATE;
 class EVENT_STATE;
 class SWAPCHAIN_NODE;
 class SURFACE_STATE;
-class UPDATE_TEMPLATE_STATE;
 struct SHADER_MODULE_STATE;
 struct SHADER_OBJECT_STATE;
 struct SPIRV_MODULE_STATE;
@@ -285,7 +285,7 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
 VALSTATETRACK_STATE_OBJECT(VkQueue, QUEUE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, RENDER_PASS_STATE)
-VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout)
+VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, SAMPLER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImageView, IMAGE_VIEW_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
@@ -297,10 +297,10 @@ VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, DEVICE_MEMORY_STATE)
 VALSTATETRACK_STATE_OBJECT(VkFramebuffer, FRAMEBUFFER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkShaderModule, SHADER_MODULE_STATE)
-VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, UPDATE_TEMPLATE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate)
 VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, SWAPCHAIN_NODE)
-VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, DESCRIPTOR_POOL_STATE)
-VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, cvdescriptorset::DescriptorSet)
+VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, vvl::DescriptorPool)
+VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkCommandPool, COMMAND_POOL_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPipelineLayout, PIPELINE_LAYOUT_STATE)
@@ -740,10 +740,10 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
+    virtual std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool pool,
                                                                              const VkDescriptorPoolCreateInfo* pCreateInfo);
-    virtual std::shared_ptr<cvdescriptorset::DescriptorSet> CreateDescriptorSet(
-        VkDescriptorSet, DESCRIPTOR_POOL_STATE*, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>& layout,
+    virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(
+        VkDescriptorSet, vvl::DescriptorPool*, const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
         uint32_t variable_count);
 
     void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
@@ -1478,8 +1478,8 @@ class ValidationStateTracker : public ValidationObject {
                                                                             const FRAMEBUFFER_STATE& fb_state) const;
 
     VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const;
-    void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const UPDATE_TEMPLATE_STATE* template_state,
-                                                    const void* pData);
+    void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
+                                                    const vvl::DescriptorUpdateTemplate* template_state, const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex, vvl::Func command);
     virtual std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
@@ -1502,7 +1502,7 @@ class ValidationStateTracker : public ValidationObject {
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
-    void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
+    void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, vvl::AllocateDescriptorSetsData*) const;
 
     void PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     const VkCopyAccelerationStructureInfoKHR* pInfo,
@@ -1897,7 +1897,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV, acceleration_structure_nv_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, render_pass_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout, descriptor_set_layout_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, vvl::DescriptorSetLayout, descriptor_set_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, sampler_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
@@ -1909,10 +1909,10 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, FRAMEBUFFER_STATE, frame_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, UPDATE_TEMPLATE_STATE, desc_template_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate, desc_template_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchain_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, DESCRIPTOR_POOL_STATE, descriptor_pool_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, cvdescriptorset::DescriptorSet, descriptor_set_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, vvl::DescriptorPool, descriptor_pool_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, vvl::DescriptorSet, descriptor_set_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, command_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, PIPELINE_LAYOUT_STATE, pipeline_layout_map_)
