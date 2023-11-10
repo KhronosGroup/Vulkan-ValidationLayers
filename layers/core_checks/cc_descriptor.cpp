@@ -1007,12 +1007,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     //  and validate that image usage bits are correct for given usage
     VkImageAspectFlags aspect_mask = iv_state->normalized_subresource_range.aspectMask;
     VkImage image = iv_state->create_info.image;
-    VkFormat format = VK_FORMAT_MAX_ENUM;
     VkImageUsageFlags usage = 0;
     auto *image_node = iv_state->image_state.get();
     assert(image_node);
 
-    format = image_node->createInfo.format;
     const auto image_view_usage_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(iv_state->create_info.pNext);
     const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
     if (image_view_usage_info) {
@@ -1073,55 +1071,35 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         }
     }
 
-    const bool ds = vkuFormatIsDepthOrStencil(format);
-    switch (image_layout) {
-        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
-                skip |= LogError(kVUID_Core_DrawState_InvalidImageView, objlist, image_info_loc.dot(Field::imageView),
-                                 "uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but does not have VK_IMAGE_ASPECT_COLOR_BIT "
-                                 "set (aspectMask = %s).",
-                                 string_VkImageAspectFlags(aspect_mask).c_str());
+    if (image_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        if (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+            skip |= LogError("VUID-VkDescriptorImageInfo-imageLayout-09425", objlist, image_info_loc.dot(Field::imageView),
+                             "uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but aspectMask (%s) include depth/stencil bit.",
+                             string_VkImageAspectFlags(aspect_mask).c_str());
+        }
+    }
+
+    if (IsValueIn(
+            image_layout,
+            {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+             VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+             VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL})) {
+        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            skip |= LogError("VUID-VkDescriptorImageInfo-imageLayout-09426", objlist, image_info_loc.dot(Field::imageView),
+                             "uses layout %s but aspectMask (%s) includes color bit.", string_VkImageLayout(image_layout),
+                             string_VkImageAspectFlags(aspect_mask).c_str());
+        }
+    }
+
+    if (vkuFormatIsDepthOrStencil(image_node->createInfo.format)) {
+        if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+            if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                skip |= LogError("VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
+                                 "use layout %s and the image format (%s), but it has both STENCIL and DEPTH aspects set",
+                                 string_VkImageLayout(image_layout), string_VkFormat(image_node->createInfo.format));
             }
-            if (ds) {
-                skip |= LogError(
-                    kVUID_Core_DrawState_InvalidImageView, objlist, image_info_loc.dot(Field::imageView),
-                    "uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but the image format (%s) is not a color format.",
-                    string_VkFormat(format));
-            }
-            break;
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-            // Depth or stencil bit must be set, but both must NOT be set
-            if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                    skip |= LogError(kVUID_Core_DrawState_InvalidImageView, objlist, image_info_loc.dot(Field::imageView),
-                                     "use layout %s, but the aspectMask (%s) has both STENCIL and DEPTH aspects set.",
-                                     string_VkImageLayout(image_layout), string_VkImageAspectFlags(aspect_mask).c_str());
-                }
-            } else if (!(aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                skip |= LogError(kVUID_Core_DrawState_InvalidImageView, objlist, image_info_loc.dot(Field::imageView),
-                                 "use layout %s, but the aspectMask (%s) does not have STENCIL or DEPTH aspects set.",
-                                 string_VkImageLayout(image_layout), string_VkImageAspectFlags(aspect_mask).c_str());
-            }
-            if (!ds) {
-                skip |= LogError(kVUID_Core_DrawState_InvalidImageView, objlist, image_info_loc.dot(Field::imageView),
-                                 "use layout %s, but the image format (%s) is not a depth/stencil format.",
-                                 string_VkImageLayout(image_layout), string_VkFormat(format));
-            }
-            break;
-        default:
-            // For other layouts if the source is depth/stencil image, both aspect bits must not be set
-            if (ds) {
-                if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                    if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                        skip |=
-                            LogError("VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
-                                     "use layout %s and the image format (%s), but it has both STENCIL and DEPTH aspects set",
-                                     string_VkImageLayout(image_layout), string_VkFormat(format));
-                    }
-                }
-            }
-            break;
+        }
     }
 
     switch (type) {
