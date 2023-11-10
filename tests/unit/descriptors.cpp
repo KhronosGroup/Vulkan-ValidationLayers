@@ -2734,6 +2734,41 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(inline_uniform_block_features);
+    if (!inline_uniform_block_features.inlineUniformBlock) {
+        GTEST_SKIP() << "inlineUniformBlock not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &inline_uniform_block_features))
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    ds_type_count.descriptorCount = 16;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.flags = 0;
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool ds_pool = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    m_errorMonitor->VerifyFound();
+
+    // have struct, but with value of zero
+    VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
+    pool_inline_info.maxInlineUniformBlockBindings = 0;
+    ds_pool_ci.pNext = &pool_inline_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, DstArrayElement) {
     RETURN_IF_SKIP(Init())
 

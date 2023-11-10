@@ -34,7 +34,8 @@ struct OneOffDescriptorSet {
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
     OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
-                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
+                        void *layout_pnext = nullptr, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = nullptr,
+                        void *create_pool_pnext = nullptr);
     ~OneOffDescriptorSet();
     bool Initialized();
     void Clear();

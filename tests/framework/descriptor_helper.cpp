@@ -14,14 +14,14 @@
 
 OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
-                                         VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext)
+                                         VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext, void *create_pool_pnext)
     : device_{device}, pool_{}, layout_(*device, bindings, layout_flags, layout_pnext), set_(VK_NULL_HANDLE) {
     VkResult err;
     std::vector<VkDescriptorPoolSize> sizes;
     for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
 
     VkDescriptorPoolCreateInfo dspci = {
-        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, create_pool_pnext, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
     err = vk::CreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
     if (err != VK_SUCCESS) return;
 

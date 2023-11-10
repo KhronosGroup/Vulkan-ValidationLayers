@@ -915,8 +915,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
 
     const auto *mutable_descriptor_type_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
-    bool mutable_descriptor_type_enabled =
+    const bool mutable_descriptor_type_enabled =
         mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
+
+    const auto *inline_uniform_info = vku::FindStructInPNextChain<VkDescriptorPoolInlineUniformBlockCreateInfo>(pCreateInfo->pNext);
+    const bool non_zero_inline_uniform_count = inline_uniform_info && inline_uniform_info->maxInlineUniformBlockBindings != 0;
 
     if (pCreateInfo->pPoolSizes) {
         for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
@@ -925,11 +928,18 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                 skip |= LogError("VUID-VkDescriptorPoolSize-descriptorCount-00302", device, pool_loc.dot(Field::descriptorCount),
                                  "is zero.");
             }
-            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
-                (pCreateInfo->pPoolSizes[i].descriptorCount % 4) != 0) {
-                skip |= LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
+            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+                if (SafeModulo(pCreateInfo->pPoolSizes[i].descriptorCount, 4) != 0) {
+                    skip |=
+                        LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
                                  "is %" PRIu32 " (not a multiple of 4), but type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.",
                                  pCreateInfo->pPoolSizes[i].descriptorCount);
+                }
+                if (!non_zero_inline_uniform_count) {
+                    skip |=
+                        LogError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424", device, pool_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK but no maxInlineUniformBlockBindings was provided.");
+                }
             }
             if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && !mutable_descriptor_type_enabled) {
                 skip |= LogError("VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608", device, pool_loc.dot(Field::type),
