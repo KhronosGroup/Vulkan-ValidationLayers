@@ -1120,6 +1120,7 @@ const vvl::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_AMD_shader_info", "devtools"},
     {"VK_EXT_validation_flags", "debugging"},
     {"VK_EXT_depth_clip_enable", "d3demulation"},
+    {"VK_IMG_relaxed_line_rasterization", "glemulation"},
     {"VK_EXT_debug_utils", "debugging"},
     {"VK_AMD_buffer_marker", "devtools"},
     {"VK_EXT_pipeline_creation_feedback", "devtools"},

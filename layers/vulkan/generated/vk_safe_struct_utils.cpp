@@ -803,6 +803,9 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT:
                 safe_pNext = new safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT(reinterpret_cast<const VkPipelineRasterizationDepthClipStateCreateInfoEXT *>(pNext), copy_state, false);
                 break;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG:
+                safe_pNext = new safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG(reinterpret_cast<const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *>(pNext), copy_state, false);
+                break;
             case VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT:
                 safe_pNext = new safe_VkDebugUtilsObjectNameInfoEXT(reinterpret_cast<const VkDebugUtilsObjectNameInfoEXT *>(pNext), copy_state, false);
                 break;
@@ -2497,6 +2500,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *>(header);
             break;
         case VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT:
             delete reinterpret_cast<const safe_VkDebugUtilsObjectNameInfoEXT *>(header);

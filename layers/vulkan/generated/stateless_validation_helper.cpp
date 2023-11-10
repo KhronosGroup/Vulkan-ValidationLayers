@@ -3885,6 +3885,17 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG: {  // Covers
+                                                                                           // VUID-VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG);
+                VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG* structure =
+                    (VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::relaxedLineRasterization), structure->relaxedLineRasterization);
+            }
+        } break;
+
         // Validation code for VkDebugUtilsObjectNameInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT: {  // Covers VUID-VkDebugUtilsObjectNameInfoEXT-sType-sType
             if (is_const_param) {
@@ -7506,6 +7517,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,

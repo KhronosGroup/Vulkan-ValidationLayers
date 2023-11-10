@@ -1841,6 +1841,59 @@ void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const safe_VkPi
         memcpy((void*)pViewportSwizzles, (void*)copy_src->pViewportSwizzles, sizeof(VkViewportSwizzleNV) * copy_src->viewportCount);
     }
 }
+
+safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG(
+    const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
+    bool copy_pnext)
+    : sType(in_struct->sType), relaxedLineRasterization(in_struct->relaxedLineRasterization) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG),
+      pNext(nullptr),
+      relaxedLineRasterization() {}
+
+safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG(
+    const safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG& copy_src) {
+    sType = copy_src.sType;
+    relaxedLineRasterization = copy_src.relaxedLineRasterization;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG& safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::operator=(
+    const safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    relaxedLineRasterization = copy_src.relaxedLineRasterization;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::~safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::initialize(
+    const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    relaxedLineRasterization = in_struct->relaxedLineRasterization;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::initialize(
+    const safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    relaxedLineRasterization = copy_src->relaxedLineRasterization;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID(
