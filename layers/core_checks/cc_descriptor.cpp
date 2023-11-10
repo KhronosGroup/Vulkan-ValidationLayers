@@ -321,12 +321,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 skip |= LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616", objlist, set_loc,
                                  "was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
             }
-            if (descriptor_set->GetLayout()->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                const LogObjectList objlist(pDescriptorSets[set_idx], descriptor_set->GetLayout()->Handle());
-                skip |= LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-08010", objlist, set_loc,
-                                 "was allocated with a VkDescriptorSetLayout created with the flag "
-                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT set.");
-            }
         } else if (!enabled_features.graphicsPipelineLibrary) {
             skip |= LogError("VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754", pDescriptorSets[set_idx], set_loc,
                              "(%s) that does not exist, and the layout was not created "
