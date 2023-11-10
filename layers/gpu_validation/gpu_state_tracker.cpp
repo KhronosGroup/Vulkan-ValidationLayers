@@ -441,7 +441,7 @@ void gpu_tracker::Validator::PreCallRecordDestroyDevice(VkDevice device, const V
 
 gpu_tracker::Queue::Queue(gpu_tracker::Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                           const VkQueueFamilyProperties &queueFamilyProperties)
-    : QUEUE_STATE(state, q, index, flags, queueFamilyProperties), state_(state) {}
+    : vvl::Queue(state, q, index, flags, queueFamilyProperties), state_(state) {}
 
 gpu_tracker::Queue::~Queue() {
     if (barrier_command_buffer_) {
@@ -501,7 +501,7 @@ void gpu_tracker::Queue::SubmitBarrier() {
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &barrier_command_buffer_;
-        DispatchQueueSubmit(QUEUE_STATE::Queue(), 1, &submit_info, VK_NULL_HANDLE);
+        DispatchQueueSubmit(vvl::Queue::VkHandle(), 1, &submit_info, VK_NULL_HANDLE);
     }
 }
 

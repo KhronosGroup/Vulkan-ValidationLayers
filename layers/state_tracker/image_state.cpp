@@ -548,8 +548,8 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
     }
 }
 
-void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index, const std::shared_ptr<SEMAPHORE_STATE> &semaphore_state,
-                                  const std::shared_ptr<FENCE_STATE> &fence_state) {
+void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
+                                  const std::shared_ptr<vvl::Fence> &fence_state) {
     if (image_index >= images.size()) return;
 
     assert(acquired_images < std::numeric_limits<uint32_t>::max());

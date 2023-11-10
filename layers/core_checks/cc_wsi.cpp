@@ -300,7 +300,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     // application to have established support on any other platform.
     if (!instance_extensions.vk_khr_android_surface) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
-        const bool is_supported = AnyOf<QUEUE_STATE>([this, surface_state](const QUEUE_STATE &queue_state) {
+        const bool is_supported = AnyOf<vvl::Queue>([this, surface_state](const vvl::Queue &queue_state) {
             return surface_state->GetQueueSupport(physical_device, queue_state.queueFamilyIndex);
         });
 
@@ -784,8 +784,8 @@ bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image
         return skip;
     }
 
-    const bool is_external_semaphore = semaphore && semaphore->Scope() != SyncScope::kSyncScopeInternal;
-    const bool is_external_fence = fence && fence->Scope() != SyncScope::kSyncScopeInternal;
+    const bool is_external_semaphore = semaphore && semaphore->Scope() != vvl::Semaphore::kInternal;
+    const bool is_external_fence = fence && fence->Scope() != vvl::Fence::kInternal;
     // Skip validation if external sync object is used.
     // Validation error according to regular vulkan rules could be a false-positive,
     // because synchronization could be established via external means.
@@ -796,7 +796,7 @@ bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image
     bool semaphore_was_waited = false;
     if (semaphore) {
         const auto wait_list = vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount);
-        const bool in_wait_list = IsValueIn(semaphore->semaphore(), wait_list);
+        const bool in_wait_list = IsValueIn(semaphore->VkHandle(), wait_list);
         // The acquire semaphore has been waited on if either of the following is true:
         // - pWaitSemaphores list contains the acquire semaphore
         // - the acquire semaphore has been waited on previously, in which case CanBinaryBeWaited() reports false
@@ -804,7 +804,7 @@ bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image
     }
     bool fence_was_waited = false;
     if (fence) {
-        fence_was_waited = fence->State() != FENCE_INFLIGHT;
+        fence_was_waited = fence->State() != vvl::Fence::kInflight;
     }
 
     // Either semaphore or fence should be waited on (or both)
@@ -814,21 +814,21 @@ bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image
 
         const Location image_index_loc = present_info_loc.dot(Field::pImageIndices, image_index);
         if (semaphore && fence) {
-            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->semaphore(), fence->fence());
+            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->Handle(), fence->Handle());
             skip |= LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
                              "was acquired with a semaphore %s and fence %s and neither of them have since been waited on",
-                             FormatHandle(semaphore->semaphore()).c_str(), FormatHandle(fence->fence()).c_str());
+                             FormatHandle(semaphore->Handle()).c_str(), FormatHandle(fence->Handle()).c_str());
         } else if (semaphore) {
-            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->semaphore());
+            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->Handle());
             skip |= LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
                              "was acquired with a semaphore %s that has not since been waited on",
-                             FormatHandle(semaphore->semaphore()).c_str());
+                             FormatHandle(semaphore->Handle()).c_str());
         } else {
             assert(fence != nullptr);  // if both fence and semaphore are not provided we have an early exit
-            const LogObjectList objlist(swapchain_image.image_state->image(), fence->fence());
+            const LogObjectList objlist(swapchain_image.image_state->image(), fence->Handle());
             skip |=
                 LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
-                         "was acquired with a fence %s that has not since been waited on", FormatHandle(fence->fence()).c_str());
+                         "was acquired with a fence %s that has not since been waited on", FormatHandle(fence->Handle()).c_str());
         }
     }
     return skip;
@@ -837,14 +837,14 @@ bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
-    auto queue_state = Get<QUEUE_STATE>(queue);
+    auto queue_state = Get<vvl::Queue>(queue);
 
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
 
     const Location present_info_loc = error_obj.location.dot(Struct::VkPresentInfoKHR, Field::pPresentInfo);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
+        auto semaphore_state = Get<vvl::Semaphore>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError("VUID-vkQueuePresentKHR-pWaitSemaphores-03267", pPresentInfo->pWaitSemaphores[i],
                              present_info_loc.dot(Field::pWaitSemaphores, i), "(%s) is not a VK_SEMAPHORE_TYPE_BINARY",
@@ -1020,7 +1020,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
             for (uint32_t i = 0; i < swapchain_present_fence_info->swapchainCount; i++) {
                 if (swapchain_present_fence_info->pFences[i]) {
-                    const auto fence_state = Get<FENCE_STATE>(swapchain_present_fence_info->pFences[i]);
+                    const auto fence_state = Get<vvl::Fence>(swapchain_present_fence_info->pFences[i]);
                     const LogObjectList objlist(queue, swapchain_present_fence_info->pFences[i]);
                     skip |=
                         ValidateFenceForSubmit(fence_state.get(), "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
@@ -1120,12 +1120,12 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
                                           const char *semaphore_type_vuid) const {
     bool skip = false;
     const bool version_2 = loc.function != Func::vkAcquireNextImageKHR;
-    auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+    auto semaphore_state = Get<vvl::Semaphore>(semaphore);
     if (semaphore_state) {
         if (semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError(semaphore_type_vuid, semaphore, loc, "%s is not a VK_SEMAPHORE_TYPE_BINARY.",
                              FormatHandle(semaphore).c_str());
-        } else if (semaphore_state->Scope() == kSyncScopeInternal) {
+        } else if (semaphore_state->Scope() == vvl::Semaphore::kInternal) {
             // TODO: VUIDs 01779 and 01781 cover the case where there are pending wait or signal operations on the
             // semaphore. But we don't currently have a good enough way to track when acquire & present operations
             // are completed. So it is possible to get in a condition where the semaphore is doing
@@ -1139,7 +1139,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         }
     }
 
-    auto fence_state = Get<FENCE_STATE>(fence);
+    auto fence_state = Get<vvl::Fence>(fence);
     if (fence_state) {
         const LogObjectList objlist(device, fence);
         skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkAcquireNextImageKHR-fence-01287",

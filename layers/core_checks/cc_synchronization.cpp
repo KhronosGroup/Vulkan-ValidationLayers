@@ -58,20 +58,20 @@ bool CoreChecks::ValidateStageMaskHost(const Location &stage_mask_loc, VkPipelin
     return skip;
 }
 
-bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *fence_state, const char *inflight_vuid, const char *retired_vuid,
+bool CoreChecks::ValidateFenceForSubmit(const vvl::Fence *fence_state, const char *inflight_vuid, const char *retired_vuid,
                                         const LogObjectList &objlist, const Location &loc) const {
     bool skip = false;
 
-    if (fence_state && fence_state->Scope() == kSyncScopeInternal) {
+    if (fence_state && fence_state->Scope() == vvl::Fence::kInternal) {
         switch (fence_state->State()) {
-            case FENCE_INFLIGHT:
+            case vvl::Fence::kInflight:
                 skip |= LogError(inflight_vuid, objlist, loc, "(%s) is already in use by another submission.",
-                                 FormatHandle(fence_state->fence()).c_str());
+                                 FormatHandle(fence_state->Handle()).c_str());
                 break;
-            case FENCE_RETIRED:
+            case vvl::Fence::kRetired:
                 skip |= LogError(retired_vuid, objlist, loc,
                                  "(%s) submitted in SIGNALED state. Fences must be reset before being submitted",
-                                 FormatHandle(fence_state->fence()).c_str());
+                                 FormatHandle(fence_state->Handle()).c_str());
                 break;
             default:
                 break;
@@ -81,13 +81,13 @@ bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *fence_state, const ch
     return skip;
 }
 
-bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue, const SEMAPHORE_STATE &semaphore_state) {
+bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state) {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
 
     bool skip = false;
-    auto semaphore = semaphore_state.semaphore();
-    if ((semaphore_state.Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
+    auto semaphore = semaphore_state.VkHandle();
+    if ((semaphore_state.Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(semaphore))) {
         VkQueue other_queue = AnotherQueueWaits(semaphore_state);
         if (other_queue) {
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kOtherQueueWaiting);
@@ -102,7 +102,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
         } else {
             binary_signaling_state[semaphore] = false;
         }
-    } else if (semaphore_state.Scope() == kSyncScopeExternalTemporary) {
+    } else if (semaphore_state.Scope() == vvl::Semaphore::kExternalTemporary) {
         internal_semaphores.insert(semaphore);
     }
     return skip;
@@ -113,7 +113,7 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_
     using sync_vuid_maps::SubmitError;
     bool skip = false;
 
-    auto semaphore_state = core->Get<SEMAPHORE_STATE>(semaphore);
+    auto semaphore_state = core->Get<vvl::Semaphore>(semaphore);
     if (!semaphore_state) {
         return skip;
     }
@@ -146,13 +146,13 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
     bool skip = false;
     LogObjectList objlist(semaphore, queue);
 
-    auto semaphore_state = core->Get<SEMAPHORE_STATE>(semaphore);
+    auto semaphore_state = core->Get<vvl::Semaphore>(semaphore);
     if (!semaphore_state) {
         return skip;
     }
     switch (semaphore_state->type) {
         case VK_SEMAPHORE_TYPE_BINARY: {
-            if ((semaphore_state->Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
+            if ((semaphore_state->Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(semaphore))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
                 vvl::Func other_command = vvl::Func::Empty;
                 if (CannotSignalBinary(*semaphore_state, other_queue, other_command)) {
@@ -181,7 +181,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
         case VK_SEMAPHORE_TYPE_TIMELINE: {
             uint64_t bad_value = 0;
             std::string where;
-            auto must_be_greater = [value](const SEMAPHORE_STATE::SemOp &op, bool is_pending) {
+            auto must_be_greater = [value](const vvl::Semaphore::SemOp &op, bool is_pending) {
                 if (!op.IsSignal()) {
                     return false;
                 }
@@ -249,7 +249,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             skip |= ValidatePipelineStage(objlist, stage_mask_loc, state.queue_flags, submit.pWaitDstStageMask[i]);
             skip |= ValidateStageMaskHost(stage_mask_loc, submit.pWaitDstStageMask[i]);
         }
-        auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+        auto semaphore_state = Get<vvl::Semaphore>(semaphore);
         if (!semaphore_state) {
             continue;
         }
@@ -280,7 +280,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     for (uint32_t i = 0; i < submit.signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
-        auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+        auto semaphore_state = Get<vvl::Semaphore>(semaphore);
         if (!semaphore_state) {
             continue;
         }
@@ -322,7 +322,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         skip |= ValidateStageMaskHost(wait_info_loc.dot(Field::stageMask), wait_info.stageMask);
         skip |= state.ValidateWaitSemaphore(wait_info_loc.dot(Field::semaphore), wait_info.semaphore, wait_info.value);
 
-        auto semaphore_state = Get<SEMAPHORE_STATE>(wait_info.semaphore);
+        auto semaphore_state = Get<vvl::Semaphore>(wait_info.semaphore);
         if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             for (uint32_t sig_index = 0; sig_index < submit.signalSemaphoreInfoCount; sig_index++) {
                 const auto &sig_info = submit.pSignalSemaphoreInfos[sig_index];
@@ -357,7 +357,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
 
         const LogObjectList objlist(semaphore, state.queue);
         // NOTE: there are no stage masks in bind sparse submissions
-        auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+        auto semaphore_state = Get<vvl::Semaphore>(semaphore);
         if (!semaphore_state) {
             continue;
         }
@@ -388,7 +388,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     for (uint32_t i = 0; i < submit.signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
-        auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+        auto semaphore_state = Get<vvl::Semaphore>(semaphore);
         if (!semaphore_state) {
             continue;
         }
@@ -518,7 +518,7 @@ bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphor
     bool skip = false;
 
     for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
-        auto semaphore_state = Get<SEMAPHORE_STATE>(pWaitInfo->pSemaphores[i]);
+        auto semaphore_state = Get<vvl::Semaphore>(pWaitInfo->pSemaphores[i]);
         if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError("VUID-VkSemaphoreWaitInfo-pSemaphores-03256", pWaitInfo->pSemaphores[i],
                              error_obj.location.dot(Field::pWaitInfo).dot(Field::pSemaphores, i), "%s was created with %s",
@@ -531,10 +531,10 @@ bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphor
 
 bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator,
                                              const ErrorObject &error_obj) const {
-    auto fence_node = Get<FENCE_STATE>(fence);
+    auto fence_node = Get<vvl::Fence>(fence);
     bool skip = false;
     if (fence_node) {
-        if (fence_node->Scope() == kSyncScopeInternal && fence_node->State() == FENCE_INFLIGHT) {
+        if (fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
             skip |= LogError("VUID-vkDestroyFence-fence-01120", fence, error_obj.location.dot(Field::fence), "(%s) is in use.",
                              FormatHandle(fence).c_str());
         }
@@ -546,8 +546,8 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
                                             const ErrorObject &error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
-        auto fence_state = Get<FENCE_STATE>(pFences[i]);
-        if (fence_state && fence_state->Scope() == kSyncScopeInternal && fence_state->State() == FENCE_INFLIGHT) {
+        auto fence_state = Get<vvl::Fence>(pFences[i]);
+        if (fence_state && fence_state->Scope() == vvl::Fence::kInternal && fence_state->State() == vvl::Fence::kInflight) {
             skip |= LogError("VUID-vkResetFences-pFences-01123", pFences[i], error_obj.location.dot(Field::pFences, i),
                              "(%s) is in use.", FormatHandle(pFences[i]).c_str());
         }
@@ -557,7 +557,7 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
                                                  const ErrorObject &error_obj) const {
-    auto sema_node = Get<SEMAPHORE_STATE>(semaphore);
+    auto sema_node = Get<vvl::Semaphore>(semaphore);
     bool skip = false;
     if (sema_node) {
         skip |= ValidateObjectNotInUse(sema_node.get(), error_obj.location.dot(Field::semaphore),
@@ -1328,7 +1328,7 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     const Location signal_loc = error_obj.location.dot(Field::pSignalInfo);
-    auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
+    auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
     if (!semaphore_state) {
         return skip;
     }
@@ -1346,7 +1346,7 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
                          FormatHandle(pSignalInfo->semaphore).c_str(), completed.payload);
         return skip;
     }
-    auto exceeds_pending = [pSignalInfo](const SEMAPHORE_STATE::SemOp &op, bool is_pending) {
+    auto exceeds_pending = [pSignalInfo](const vvl::Semaphore::SemOp &op, bool is_pending) {
         return is_pending && op.IsSignal() && pSignalInfo->value >= op.payload;
     };
     auto last_op = semaphore_state->LastOp(exceeds_pending);
@@ -1387,7 +1387,7 @@ bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSema
 bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
-    auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+    auto semaphore_state = Get<vvl::Semaphore>(semaphore);
     if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
         skip |= LogError("VUID-vkGetSemaphoreCounterValue-semaphore-03255", semaphore, error_obj.location.dot(Field::semaphore),
                          "%s was created with %s.", FormatHandle(semaphore).c_str(), string_VkSemaphoreType(semaphore_state->type));
@@ -1767,7 +1767,7 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
             vvl::LocationCapture loc_capture(loc);
             cb_state->queue_submit_functions.emplace_back(
                 [loc_capture, typed_handle, src_queue_family, dst_queue_family](
-                    const ValidationStateTracker &device_data, const QUEUE_STATE &queue_state, const CMD_BUFFER_STATE &cb_state) {
+                    const ValidationStateTracker &device_data, const vvl::Queue &queue_state, const CMD_BUFFER_STATE &cb_state) {
                     return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
                                                              src_queue_family, dst_queue_family);
                 });
@@ -1998,7 +1998,7 @@ class ValidatorState {
     // This abstract Vu can only be tested at submit time, thus we need a callback from the closure containing the needed
     // data. Note that the mem_barrier is copied to the closure as the lambda lifespan exceed the guarantees of validity for
     // application input.
-    static bool ValidateAtQueueSubmit(const QUEUE_STATE *queue_state, const ValidationStateTracker *device_data,
+    static bool ValidateAtQueueSubmit(const vvl::Queue *queue_state, const ValidationStateTracker *device_data,
                                       uint32_t src_family, uint32_t dst_family, const ValidatorState &val) {
         uint32_t queue_family = queue_state->queueFamilyIndex;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
@@ -2135,7 +2135,7 @@ static bool ValidateHostStage(const ValidationObject *validation_obj, const LogO
 }  // namespace barrier_queue_families
 
 bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker &state_data,
-                                                   const QUEUE_STATE &queue_state, const CMD_BUFFER_STATE &cb_state,
+                                                   const vvl::Queue &queue_state, const CMD_BUFFER_STATE &cb_state,
                                                    const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
                                                    uint32_t dst_queue_family) {
     using barrier_queue_families::ValidatorState;

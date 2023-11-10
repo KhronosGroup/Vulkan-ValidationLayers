@@ -96,7 +96,7 @@ struct TimelineMaxDiffCheck {
     // compute the differents between 2 timeline values, without rollover if the difference is greater than INT64_MAX
     uint64_t AbsDiff(uint64_t a, uint64_t b) { return a > b ? a - b : b - a; }
 
-    bool operator()(const SEMAPHORE_STATE::SemOp& op, bool is_pending) { return AbsDiff(value, op.payload) > max_diff; }
+    bool operator()(const vvl::Semaphore::SemOp& op, bool is_pending) { return AbsDiff(value, op.payload) > max_diff; }
 
     uint64_t value;
     uint64_t max_diff;
@@ -121,9 +121,9 @@ struct SemaphoreSubmitState {
     SemaphoreSubmitState(const CoreChecks* core_, VkQueue q_, VkQueueFlags queue_flags_)
         : core(core_), queue(q_), queue_flags(queue_flags_) {}
 
-    bool CannotWaitBinary(const SEMAPHORE_STATE& semaphore_state) const {
+    bool CannotWaitBinary(const vvl::Semaphore& semaphore_state) const {
         assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-        const auto semaphore = semaphore_state.semaphore();
+        const auto semaphore = semaphore_state.VkHandle();
 
         // Check if this submission has signaled or unsignaled the semaphore
         if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
@@ -136,7 +136,7 @@ struct SemaphoreSubmitState {
         return !semaphore_state.CanBinaryBeWaited();
     }
 
-    VkQueue AnotherQueueWaits(const SEMAPHORE_STATE& semaphore_state) const {
+    VkQueue AnotherQueueWaits(const vvl::Semaphore& semaphore_state) const {
         // spec (for 003871 but all submit functions have a similar VUID):
         // "When a semaphore wait operation for a binary semaphore is **executed**,
         // as defined by the semaphore member of any element of the pWaitSemaphoreInfos
@@ -147,19 +147,19 @@ struct SemaphoreSubmitState {
         // this wait executes.
         auto last_op = semaphore_state.LastOp();
         if (last_op && !CanWaitBinarySemaphoreAfterOperation(last_op->op_type) && last_op->queue &&
-            last_op->queue->Queue() != queue) {
-            return last_op->queue->Queue();
+            last_op->queue->VkHandle() != queue) {
+            return last_op->queue->VkHandle();
         }
         return VK_NULL_HANDLE;
     }
 
-    bool ValidateBinaryWait(const Location& loc, VkQueue queue, const SEMAPHORE_STATE& semaphore_state);
+    bool ValidateBinaryWait(const Location& loc, VkQueue queue, const vvl::Semaphore& semaphore_state);
     bool ValidateWaitSemaphore(const Location& wait_semaphore_loc, VkSemaphore semaphore, uint64_t value);
     bool ValidateSignalSemaphore(const Location& signal_semaphore_loc, VkSemaphore semaphore, uint64_t value);
 
-    bool CannotSignalBinary(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
+    bool CannotSignalBinary(const vvl::Semaphore& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
         assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-        const auto semaphore = semaphore_state.semaphore();
+        const auto semaphore = semaphore_state.VkHandle();
 
         // Check if this submission has signaled or unsignaled the semaphore
         if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
@@ -178,26 +178,26 @@ struct SemaphoreSubmitState {
         if (!last_op || CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
             return false;
         }
-        other_queue = last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
+        other_queue = last_op->queue ? last_op->queue->VkHandle() : VK_NULL_HANDLE;
         other_command = last_op->command;
         return true;
     }
 
-    bool CheckSemaphoreValue(const SEMAPHORE_STATE& semaphore_state, std::string& where, uint64_t& bad_value,
-                             std::function<bool(const SEMAPHORE_STATE::SemOp&, bool is_pending)> compare_func) {
-        auto current_signal = timeline_signals.find(semaphore_state.semaphore());
+    bool CheckSemaphoreValue(const vvl::Semaphore& semaphore_state, std::string& where, uint64_t& bad_value,
+                             std::function<bool(const vvl::Semaphore::SemOp&, bool is_pending)> compare_func) {
+        auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
         // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
         if (current_signal != timeline_signals.end()) {
-            SEMAPHORE_STATE::SemOp sig_op(SEMAPHORE_STATE::kSignal, nullptr, 0, current_signal->second);
+            vvl::Semaphore::SemOp sig_op(vvl::Semaphore::kSignal, nullptr, 0, current_signal->second);
             if (compare_func(sig_op, false)) {
                 where = "current submit's signal";
                 bad_value = sig_op.payload;
                 return true;
             }
         }
-        auto current_wait = timeline_waits.find(semaphore_state.semaphore());
+        auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
         if (current_wait != timeline_waits.end()) {
-            SEMAPHORE_STATE::SemOp wait_op(SEMAPHORE_STATE::kWait, nullptr, 0, current_wait->second);
+            vvl::Semaphore::SemOp wait_op(vvl::Semaphore::kWait, nullptr, 0, current_wait->second);
             if (compare_func(wait_op, false)) {
                 where = "current submit's wait";
                 bad_value = wait_op.payload;
@@ -251,7 +251,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipeline(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices, const Location& loc) const;
-    bool ValidateFenceForSubmit(const FENCE_STATE* pFence, const char* inflight_vuid, const char* retired_vuid,
+    bool ValidateFenceForSubmit(const vvl::Fence* pFence, const char* inflight_vuid, const char* retired_vuid,
                                 const LogObjectList& objlist, const Location& loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo& submit,
                                      const Location& submit_loc) const;
@@ -321,7 +321,7 @@ class CoreChecks : public ValidationStateTracker {
                                         const ImageBarrier& img_barrier, const CMD_BUFFER_STATE* primary_cb_state = nullptr) const;
 
     static bool ValidateConcurrentBarrierAtSubmit(const Location& loc, const ValidationStateTracker& state_data,
-                                                  const QUEUE_STATE& queue_data, const CMD_BUFFER_STATE& cb_state,
+                                                  const vvl::Queue& queue_data, const CMD_BUFFER_STATE& cb_state,
                                                   const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
                                                   uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,

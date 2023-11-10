@@ -45,7 +45,7 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(pImportSemaphoreFdInfo->semaphore);
+    auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreFdInfo->semaphore);
     if (sem_state) {
         const Location info_loc = error_obj.location.dot(Field::pImportSemaphoreFdInfo);
         skip |=
@@ -88,7 +88,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
 bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(pGetFdInfo->semaphore);
+    auto sem_state = Get<vvl::Semaphore>(pGetFdInfo->semaphore);
     if (sem_state) {
         const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
         if ((pGetFdInfo->handleType & sem_state->exportHandleTypes) == 0) {
@@ -114,9 +114,9 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
 }
 
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const Location &loc) const {
-    auto fence_node = Get<FENCE_STATE>(fence);
+    auto fence_node = Get<vvl::Fence>(fence);
     bool skip = false;
-    if (fence_node && fence_node->Scope() == kSyncScopeInternal && fence_node->State() == FENCE_INFLIGHT) {
+    if (fence_node && fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
         skip |= LogError(vuid, fence, loc.dot(Field::fence), "(%s) is currently in use.", FormatHandle(fence).c_str());
     }
     return skip;
@@ -131,7 +131,7 @@ bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImport
 bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
                                               const ErrorObject &error_obj) const {
     bool skip = false;
-    auto fence_state = Get<FENCE_STATE>(pGetFdInfo->fence);
+    auto fence_state = Get<vvl::Fence>(pGetFdInfo->fence);
     if (fence_state) {
         const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
         if ((pGetFdInfo->handleType & fence_state->exportHandleTypes) == 0) {
@@ -140,7 +140,7 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
                              string_VkExternalFenceHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
-        if (pGetFdInfo->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == FENCE_UNSIGNALED) {
+        if (pGetFdInfo->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == vvl::Fence::kUnsignaled) {
             skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01454", fence_state->Handle(), info_loc.dot(Field::handleType),
                              "is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT which cannot be exported unless the fence has a pending "
                              "signal operation or is already signaled.");
@@ -154,7 +154,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo,
     const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(pImportSemaphoreWin32HandleInfo->semaphore);
+    auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreWin32HandleInfo->semaphore);
     if (sem_state) {
         // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507
         skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location, kVUIDUndefined);
@@ -173,7 +173,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                                                            const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                            HANDLE *pHandle, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(pGetWin32HandleInfo->semaphore);
+    auto sem_state = Get<vvl::Semaphore>(pGetWin32HandleInfo->semaphore);
     if (sem_state) {
         if ((pGetWin32HandleInfo->handleType & sem_state->exportHandleTypes) == 0) {
             skip |= LogError("VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126", sem_state->Handle(),
@@ -196,7 +196,7 @@ bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
 bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                        HANDLE *pHandle, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto fence_state = Get<FENCE_STATE>(pGetWin32HandleInfo->fence);
+    auto fence_state = Get<vvl::Fence>(pGetWin32HandleInfo->fence);
     if (fence_state) {
         if ((pGetWin32HandleInfo->handleType & fence_state->exportHandleTypes) == 0) {
             skip |= LogError("VUID-VkFenceGetWin32HandleInfoKHR-handleType-01448", fence_state->Handle(),
@@ -215,7 +215,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo,
     const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_state = Get<SEMAPHORE_STATE>(pImportSemaphoreZirconHandleInfo->semaphore);
+    auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreZirconHandleInfo->semaphore);
     if (sem_state) {
         skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location,
                                        "VUID-vkImportSemaphoreZirconHandleFUCHSIA-semaphore-04764");
@@ -448,7 +448,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                 }
 
                 if (metal_shared_event_ptr->semaphore) {
-                    auto semaphore_info = Get<SEMAPHORE_STATE>(metal_shared_event_ptr->semaphore);
+                    auto semaphore_info = Get<vvl::Semaphore>(metal_shared_event_ptr->semaphore);
                     if (semaphore_info && !(semaphore_info->metal_semaphore_export)) {
                         skip |= LogError(
                             "VUID-VkExportMetalObjectsInfoEXT-pNext-06805", device, error_obj.location,
