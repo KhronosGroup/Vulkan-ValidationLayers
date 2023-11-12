@@ -512,7 +512,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
             if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
                 sub_cb_state.beginInfo.pInheritanceInfo) {
                 VkQueryPipelineStatisticFlags cmd_buf_statistics = sub_cb_state.beginInfo.pInheritanceInfo->pipelineStatistics;
-                if ((cmd_buf_statistics & query_pool_state->createInfo.pipelineStatistics) != cmd_buf_statistics) {
+                if ((cmd_buf_statistics & query_pool_state->createInfo.pipelineStatistics) !=
+                    query_pool_state->createInfo.pipelineStatistics) {
                     const LogObjectList objlist(cb_state.commandBuffer(), sub_cb_state.commandBuffer(), query_object.pool);
                     skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00104", objlist, cb_loc,
                                      "was created with pInheritanceInfo::pipelineStatistics %s but the active query pool (%s) was "
