@@ -2731,3 +2731,44 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
+    TEST_DESCRIPTION("Use a pipeline statistics query in secondary command buffer");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    if (m_device->phy().features().inheritedQueries == VK_FALSE) {
+        GTEST_SKIP() << "inheritedQueries feature is not supported";
+    }
+    if (m_device->phy().features().pipelineStatisticsQuery == VK_FALSE) {
+        GTEST_SKIP() << "pipelineStatisticsQuery feature is not supported";
+    }
+    InitRenderTarget();
+
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
+    query_pool_create_info.queryCount = 1;
+    query_pool_create_info.pipelineStatistics =
+        VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT | VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT;
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
+    cbii.renderPass = m_renderPass;
+    cbii.framebuffer = m_framebuffer;
+    cbii.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.pInheritanceInfo = &cbii;
+
+    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.begin(&cbbi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0u, 0u);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-00104");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0u);
+    m_commandBuffer->end();
+}
