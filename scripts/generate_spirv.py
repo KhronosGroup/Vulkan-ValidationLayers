@@ -24,10 +24,7 @@ import subprocess
 import struct
 import re
 import argparse
-
-# helper to define paths relative to the repo root
-def repo_relative(path):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
+import common_ci
 
 SPIRV_MAGIC = 0x07230203
 COLUMNS = 10
@@ -51,7 +48,7 @@ def compile(filename, glslang_validator):
         else:
             args += ["-V"]
         args += ["-o", tmpfile, filename]
-        output = subprocess.check_output(args, universal_newlines=True)
+        subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         raise Exception(e.output)
 
@@ -115,19 +112,19 @@ static const uint32_t %s[%d] = {
     if outdir:
       out_file = os.path.join(outdir, f'layers/{apiname}/generated')
     else:
-      out_file = repo_relative(f'layers/{apiname}/generated')
+      out_file = common_ci.RepoRelative(f'layers/{apiname}/generated')
     out_file = os.path.join(out_file, name + '.h')
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
         print(header, end="", file=f)
 
 def write_inst_hash(outdir=None):
-    shader_file = repo_relative(f'layers/gpu_shaders/inst_functions.comp')
+    shader_file = common_ci.RepoRelative('layers/gpu_shaders/inst_functions.comp')
     result = subprocess.run(["git", "hash-object", shader_file], capture_output=True, text=True)
     git_hash = result.stdout.rstrip('\n')
 
     try:
-        str_as_int = int(git_hash, 16)
+        int(git_hash, 16)
     except ValueError:
         raise ValueError(f'value for INST_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
     if len(git_hash) != 40:
@@ -163,11 +160,11 @@ def write_inst_hash(outdir=None):
 ''')
 
     out.append(f'#define INST_SHADER_GIT_HASH "{git_hash}"\n')
-    
+
     if outdir:
-      out_file = os.path.join(outdir, f'layers/vulkan/generated')
+      out_file = os.path.join(outdir, 'layers/vulkan/generated')
     else:
-      out_file = repo_relative(f'layers/vulkan/generated')
+      out_file = common_ci.RepoRelative('layers/vulkan/generated')
     os.makedirs(out_file, exist_ok=True)
     out_file = os.path.join(out_file, "gpu_inst_shader_hash.h")
     with open(out_file, 'w') as outfile:
@@ -192,13 +189,13 @@ def main():
     else:
         # Get all shaders in gpu_shaders folder
         shader_type = ['vert', 'tesc', 'tese', 'geom', 'frag', 'comp', 'mesh', 'task', 'rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
-        gpu_shaders = repo_relative('layers/gpu_shaders')
+        gpu_shaders = common_ci.RepoRelative('layers/gpu_shaders')
         for filename in os.listdir(gpu_shaders):
             if (filename.split(".")[-1] in shader_type):
                 generate_shaders.append(os.path.join(gpu_shaders, filename))
 
     # default glslangValidator path
-    glslang_validator =  repo_relative('external/glslang/build/install/bin/glslangValidator')
+    glslang_validator =  common_ci.RepoRelative('external/glslang/build/install/bin/glslangValidator')
     if args.glslang:
         glslang_validator = args.glslang
     if not os.path.isfile(glslang_validator):

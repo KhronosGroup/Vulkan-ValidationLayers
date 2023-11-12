@@ -24,10 +24,8 @@ Currently these are
   - Some checks require the runtime spec constant values
 - Flatten OpGroupDecorations
   - Detects if group decorations were used; however, group decorations were [deprecated](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpGroupDecorate) early on in the development of the SPIR-v specification.
-- Debug Printf
-  - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md).
-- GPU-VA
-  - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md).
+- GPU-AV and Debug Printf
+  - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md) and [GPU-AV Shader Instrumentation](gpu_av_shader_instrumentation.md).
 
 ## Different sections
 

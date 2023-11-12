@@ -3273,12 +3273,11 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     const char *fsSource = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
-               OpCapability Linkage
                OpExtension "SPV_KHR_storage_buffer_storage_class"
                OpExtension "SPV_KHR_physical_storage_buffer"
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel PhysicalStorageBuffer64 GLSL450
-               OpEntryPoint Fragment %main "main" %color %tex
+               OpEntryPoint Fragment %main "main" %color
                OpExecutionMode %main OriginUpperLeft
                OpSource GLSL 450
                OpName %main "main"
