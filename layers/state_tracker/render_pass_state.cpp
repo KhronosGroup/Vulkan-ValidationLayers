@@ -375,6 +375,14 @@ uint32_t RENDER_PASS_STATE::GetViewMaskBits(uint32_t subpass) const {
     return 0;
 }
 
+const VkMultisampledRenderToSingleSampledInfoEXT *RENDER_PASS_STATE::GetMSRTSSInfo(uint32_t subpass) const {
+    if (UsesDynamicRendering()) {
+        return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
+            dynamic_rendering_begin_rendering_info.pNext);
+    }
+    return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(createInfo.pSubpasses[subpass].pNext);
+}
+
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),

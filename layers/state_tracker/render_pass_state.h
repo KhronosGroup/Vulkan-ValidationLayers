@@ -116,6 +116,7 @@ class RENDER_PASS_STATE : public BASE_NODE {
     uint32_t GetDynamicRenderingColorAttachmentCount() const;
     uint32_t GetDynamicRenderingViewMask() const;
     uint32_t GetViewMaskBits(uint32_t subpass) const;
+    const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {

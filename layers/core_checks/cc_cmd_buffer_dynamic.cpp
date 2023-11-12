@@ -400,6 +400,23 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
         }
     }
 
+    if ((!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) &&
+        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info =
+            cb_state.activeRenderPass->GetMSRTSSInfo(cb_state.GetActiveSubpass());
+        if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
+            if (msrtss_info->rasterizationSamples != cb_state.dynamic_state_value.rasterization_samples) {
+                LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
+                skip |= LogError(vuid.rasterization_samples_09211, objlist, loc,
+                                 "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE "
+                                 "and VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples are %s, but rasterization "
+                                 "samples set with vkCmdSetRasterizationSamplesEXT() were %s.",
+                                 string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -876,7 +893,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
 
-    if (cb_state.activeRenderPass->UsesDynamicRendering()) {
+    if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && cb_state.activeRenderPass->UsesDynamicRendering()) {
         const auto msrtss_info = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
             cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
