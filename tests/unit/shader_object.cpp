@@ -7082,6 +7082,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
                OpEntryPoint TessellationEvaluation %main "main" %_
                OpExecutionMode %main Triangles
                OpExecutionMode %main SpacingFractionalOdd
+               OpExecutionMode %main VertexOrderCw
 
                ; Debug Information
                OpSource GLSL 460
@@ -7545,6 +7546,301 @@ TEST_F(NegativeShaderObject, InvalidViewportSwizzleCount) {
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
+    TEST_DESCRIPTION("Create tessellation evaluation shader with missing subdivision.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-codeType-08872");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const char* tese_src = R"(
+			   OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_
+               OpExecutionMode %main SpacingFractionalOdd
+               OpExecutionMode %main VertexOrderCw
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %19 %17
+               OpReturn
+               OpFunctionEnd)";
+
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingTessellationEvaluationOrientation) {
+    TEST_DESCRIPTION("Create tessellation evaluation shader with missing orientation.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-codeType-08873");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const char* tese_src = R"(
+			   OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main SpacingFractionalOdd
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %19 %17
+               OpReturn
+               OpFunctionEnd)";
+
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
+    TEST_DESCRIPTION("Create tessellation evaluation shader with missing spacing.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-codeType-08874");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const char* tese_src = R"(
+			   OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main VertexOrderCw
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %19 %17
+               OpReturn
+               OpFunctionEnd)";
+
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingTessellationEvaluationPatchSize) {
+    TEST_DESCRIPTION("Create tessellation evaluation shader with missing patch size.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-codeType-08875");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const char* tesc_src = R"(
+			   OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
+               OpExecutionMode %main Quads
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %11
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %24
+
+               ; Annotations
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %float_1 = OpConstant %float 1
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_2
+               OpStore %18 %float_1
+         %19 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_1
+               OpStore %19 %float_1
+         %20 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_0
+               OpStore %20 %float_1
+         %25 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %int_0
+               OpStore %25 %float_1
+               OpReturn
+               OpFunctionEnd)";
+
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, spv);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
