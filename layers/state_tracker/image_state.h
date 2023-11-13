@@ -30,6 +30,8 @@
 
 class ValidationStateTracker;
 class VideoProfileDesc;
+class FENCE_STATE;
+class SEMAPHORE_STATE;
 class SURFACE_STATE;
 class SWAPCHAIN_NODE;
 
@@ -318,6 +320,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;
     bool acquired = false;
+    std::shared_ptr<SEMAPHORE_STATE> acquire_semaphore;
+    std::shared_ptr<FENCE_STATE> acquire_fence;
 };
 
 // State for VkSwapchainKHR objects.
@@ -352,7 +356,8 @@ class SWAPCHAIN_NODE : public BASE_NODE {
 
     void PresentImage(uint32_t image_index, uint64_t present_id);
 
-    void AcquireImage(uint32_t image_index);
+    void AcquireImage(uint32_t image_index, const std::shared_ptr<SEMAPHORE_STATE> &semaphore_state,
+                      const std::shared_ptr<FENCE_STATE> &fence_state);
 
     void Destroy() override;
 
