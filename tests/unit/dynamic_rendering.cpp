@@ -3598,7 +3598,6 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     VkImageView image_view2 = image2.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
                                                 VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
     rendering_fragment_density.imageView = image_view2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06109");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -3680,8 +3679,8 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
                                     VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
     }
-    if (!multiview_features.multiview) {
-        GTEST_SKIP() << "Test requires (unsupported) multiview";
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
     InitRenderTarget();
@@ -3713,6 +3712,7 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
 
