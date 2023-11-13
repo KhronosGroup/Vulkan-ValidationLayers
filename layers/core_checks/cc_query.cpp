@@ -311,6 +311,23 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             }
             break;
         }
+        case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR: {
+            auto video_profile_info = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext);
+            if (!video_profile_info || video_profile_info->videoCodecOperation == VK_VIDEO_CODEC_OPERATION_NONE_KHR) {
+                skip |=
+                    LogError("VUID-VkQueryPoolCreateInfo-queryType-07133", device, create_info_loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR but pNext chain does not include a VkVideoProfileInfoKHR "
+                             "structure with videoCodecOperation not equal to VK_VIDEO_CODEC_OPERATION_NONE_KHR.");
+            }
+            auto video_encode_feedback =
+                vku::FindStructInPNextChain<VkQueryPoolVideoEncodeFeedbackCreateInfoKHR>(pCreateInfo->pNext);
+            if (!video_encode_feedback) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-07906", device, create_info_loc.dot(Field::queryType),
+                                 "is VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR but pNext chain does not include "
+                                 "VkQueryPoolVideoEncodeFeedbackCreateInfoKHR.");
+            }
+            break;
+        }
         default:
             break;
     }
