@@ -2731,3 +2731,35 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeQuery, VideoQueryMissingPNext) {
+    TEST_DESCRIPTION("Create video query pool with missing structures in pNext");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
+    query_pool_ci.queryType = VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR;
+    query_pool_ci.queryCount = 1u;
+
+    VkQueryPoolVideoEncodeFeedbackCreateInfoKHR video_encode_feedback_ci = vku::InitStructHelper();
+    video_encode_feedback_ci.encodeFeedbackFlags = VK_VIDEO_ENCODE_USAGE_TRANSCODING_BIT_KHR;
+    query_pool_ci.pNext = &video_encode_feedback_ci;
+
+    VkQueryPool query_pool;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolCreateInfo-queryType-07133");
+    vk::CreateQueryPool(*m_device, &query_pool_ci, nullptr, &query_pool);
+    m_errorMonitor->VerifyFound();
+
+    VkVideoProfileInfoKHR video_profile_info = vku::InitStructHelper();
+    video_profile_info.videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR;
+    video_profile_info.chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
+    video_profile_info.lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    video_profile_info.chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    query_pool_ci.pNext = &video_profile_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolCreateInfo-queryType-07906");
+    vk::CreateQueryPool(*m_device, &query_pool_ci, nullptr, &query_pool);
+    m_errorMonitor->VerifyFound();
+}
