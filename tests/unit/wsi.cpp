@@ -2443,24 +2443,10 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
+    const VkImageMemoryBarrier present_transition = vkt::Image::transition_to_present(swapchain_images[image_index]);
     m_commandBuffer->begin();
-
-    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
-    img_barrier.srcAccessMask = 0;
-    img_barrier.dstAccessMask = 0;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    img_barrier.image = swapchain_images[image_index];
-    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
-
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+                           0, nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
 
     VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;

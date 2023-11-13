@@ -769,6 +769,52 @@ VkImageAspectFlags Image::aspect_mask(VkFormat format) {
     return image_aspect;
 }
 
+VkImageMemoryBarrier Image::transition_to_present(VkImage swapchain_image, VkImageLayout old_layout,
+                                                  VkAccessFlags src_access_mask) {
+    VkImageMemoryBarrier transition = vku::InitStructHelper();
+    transition.srcAccessMask = src_access_mask;
+
+    // No need to make writes visible. Available writes are automatically become visible to the presentation engine
+    transition.dstAccessMask = 0;
+
+    transition.oldLayout = old_layout;
+    transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    transition.image = swapchain_image;
+    transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    transition.subresourceRange.baseMipLevel = 0;
+    transition.subresourceRange.levelCount = 1;
+    transition.subresourceRange.baseArrayLayer = 0;
+    transition.subresourceRange.layerCount = 1;
+    return transition;
+}
+
+VkImageMemoryBarrier2 Image::transition_to_present_2(VkImage swapchain_image, VkImageLayout old_layout,
+                                                     VkPipelineStageFlags2 src_stage_mask, VkAccessFlags2 src_access_mask) {
+    VkImageMemoryBarrier2 transition = vku::InitStructHelper();
+    transition.srcStageMask = src_stage_mask;
+    transition.srcAccessMask = src_access_mask;
+
+    // Spec advice: when transitioning to "present" there is no need to delay subsequent processing
+    transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+
+    // No need to make writes visible. Available writes are automatically become visible to the presentation engine
+    transition.dstAccessMask = 0;
+
+    transition.oldLayout = old_layout;
+    transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    transition.image = swapchain_image;
+    transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    transition.subresourceRange.baseMipLevel = 0;
+    transition.subresourceRange.levelCount = 1;
+    transition.subresourceRange.baseArrayLayer = 0;
+    transition.subresourceRange.layerCount = 1;
+    return transition;
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(ImageView, vk::DestroyImageView)
 
 void ImageView::init(const Device &dev, const VkImageViewCreateInfo &info) {

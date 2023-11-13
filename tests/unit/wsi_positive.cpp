@@ -398,37 +398,23 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     TEST_DESCRIPTION("Test acquiring swapchain image and then presenting it.");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
+
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
-    ASSERT_EQ(VK_SUCCESS,
-        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
-    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
-    img_barrier.srcAccessMask = 0;
-    img_barrier.dstAccessMask = 0;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    img_barrier.image = swapchain_images[image_index];
-    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
-
+    const VkImageMemoryBarrier present_transition = vkt::Image::transition_to_present(swapchain_images[image_index]);
     m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
 
     constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -441,7 +427,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     submit_info.pWaitDstStageMask = &stage_mask;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -449,60 +435,34 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
+    vk::QueuePresentKHR(m_default_queue, &present);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     TEST_DESCRIPTION("Test waiting on swapchain image with a fence.");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    const vkt::Fence fence(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
 
+    const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
-    ASSERT_EQ(VK_SUCCESS, vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index));
-    ASSERT_EQ(VK_SUCCESS, vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout));
-
-    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
-    img_barrier.srcAccessMask = 0;
-    img_barrier.dstAccessMask = 0;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    img_barrier.image = swapchain_images[image_index];
-    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
-
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
-    m_commandBuffer->end();
-
-    constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    submit_info.pWaitDstStageMask = &stage_mask;
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE));
-    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
+    vk::QueuePresentKHR(m_default_queue, &present);
+    vk::QueueWaitIdle(m_default_queue);
 }
 
 TEST_F(PositiveWsi, SwapchainImageLayout) {
@@ -569,21 +529,10 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     m_commandBuffer->EndRenderPass();
 
-    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
-    img_barrier.srcAccessMask = 0;
-    img_barrier.dstAccessMask = 0;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    img_barrier.image = swapchainImages[image_index];
-    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    const VkImageMemoryBarrier present_transition =
+        vkt::Image::transition_to_present(swapchainImages[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+                           0, nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 0;
