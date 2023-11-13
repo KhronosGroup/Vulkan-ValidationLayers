@@ -3126,6 +3126,11 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     }
 
     const Location rendering_info = error_obj.location.dot(Field::pRenderingInfo);
+    if ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_INLINE_BIT_EXT) != 0 && !enabled_features.nestedCommandBuffer) {
+        skip |= LogError("VUID-VkRenderingInfo-flags-09381", commandBuffer, rendering_info.dot(Field::flags),
+                         "are %s, but nestedCommandBuffer feature is not enabled.",
+                         string_VkRenderingFlags(pRenderingInfo->flags).c_str());
+    }
     if (pRenderingInfo->layerCount > phys_dev_props.limits.maxFramebufferLayers) {
         skip |= LogError("VUID-VkRenderingInfo-layerCount-07817", commandBuffer, rendering_info.dot(Field::layerCount),
                          "(%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", pRenderingInfo->layerCount,
