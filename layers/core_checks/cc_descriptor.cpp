@@ -2734,7 +2734,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     std::string_view vuid_memory_bound = "";
     using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
     BufferAddressValidation<1> buffer_address_validator = {
-        {{{"VUID-VkDescriptorDataEXT-type", LogObjectList(device),
+        // TODO - The Descriptor Buffer logic could be simplified as it takes this VUID but also captures a VUID and not easy to
+        // distinguish which VUID maps where
+        {{{kVUIDUndefined, LogObjectList(device),
            [this, device, &vuid_memory_bound, descriptor_info_loc](const BUFFER_STATE_PTR &buffer_state,
                                                                    std::string *out_error_msg) {
                if (!out_error_msg) {

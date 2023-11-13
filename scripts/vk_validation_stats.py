@@ -322,11 +322,12 @@ class ValidationTests:
                             continue
                         testgroup = line.split(',')[0][line.index('(') + 1:]
                         testname = testgroup + '.' + testname
-                        #self.test_to_vuids[testname] = []
                     if grab_next_line: # test name on its own line
                         grab_next_line = False
                         testname = testname.strip().strip(' {)')
-                        #self.test_to_vuids[testname] = []
+                    # Don't count anything in disabled tests
+                    if 'DISABLED_' in testname:
+                        continue
                     if any(prefix in line for prefix in vuid_prefixes):
                         line_list = re.split('[\s{}[\]()"]+',line)
                         for sub_str in line_list:
@@ -334,7 +335,6 @@ class ValidationTests:
                                 vuid_str = sub_str.strip(',);:"*')
                                 if vuid_str.startswith('kVUID_'): vuid_str = kvuid_dict[vuid_str]
                                 self.vuid_to_tests[vuid_str].add(testname)
-                                #self.test_to_vuids[testname].append(vuid_str)
                                 if (vuid_str.startswith('VUID-')):
                                     vuid_number = vuid_str[-5:]
                                     if (vuid_number.isdecimal()):
@@ -775,7 +775,6 @@ def main(argv):
         'layers/error_message/unimplementable_validation.h',
         'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
         'layers/state_tracker/descriptor_sets.cpp',
-        'layers/state_tracker/shader_module.cpp',
         'layers/gpu_validation/gpu_vuids.h',
         'layers/stateless/stateless_validation.h',
         f'layers/{args.api}/generated/stateless_validation_helper.cpp',
@@ -788,6 +787,8 @@ def main(argv):
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/stateless/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/sync/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/object_tracker/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/drawdispatch/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu_validation/'), '*.cpp')))
 
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
