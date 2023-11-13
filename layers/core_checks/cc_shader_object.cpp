@@ -285,19 +285,41 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             const PipelineStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
             skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc);
 
-            if (pCreateInfos[i].flags == VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) {
+            if (stage_state.entrypoint) {
                 if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                    tesc_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
-                    tesc_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
-                    tesc_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
-                    tesc_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
-                    tesc_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
+                    if (stage_state.entrypoint->execution_mode.output_vertices == 0) {
+                        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08875", device, create_info_loc.dot(Field::stage),
+                                         "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but patch size is not specified.");
+                    }
                 } else if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                    tese_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
-                    tese_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
-                    tese_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
-                    tese_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
-                    tese_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
+                    if (stage_state.entrypoint->execution_mode.tessellation_subdivision == 0) {
+                        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08872", device, create_info_loc.dot(Field::stage),
+                                         "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but subdivision is not specified.");
+                    }
+                    if (stage_state.entrypoint->execution_mode.tessellation_orientation == 0) {
+                        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08873", device, create_info_loc.dot(Field::stage),
+                                         "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but orientation is not specified.");
+                    }
+                    if (stage_state.entrypoint->execution_mode.tessellation_spacing == 0) {
+                        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08874", device, create_info_loc.dot(Field::stage),
+                                         "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but spacing is not specified.");
+                    }
+                }
+
+                if ((pCreateInfos[i].flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0u) {
+                    if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+                        tesc_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
+                        tesc_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
+                        tesc_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
+                        tesc_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
+                        tesc_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
+                    } else if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                        tese_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
+                        tese_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
+                        tese_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
+                        tese_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
+                        tese_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
+                    }
                 }
             }
         }
