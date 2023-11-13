@@ -1321,7 +1321,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
                          "Descriptor size is 8 and highest byte accessed was 19");
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4983
+TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
