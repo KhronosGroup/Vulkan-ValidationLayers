@@ -6660,3 +6660,20 @@ TEST_F(NegativeDynamicRendering, MissingImageCreateSubsampled) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingInlineContents) {
+    TEST_DESCRIPTION("Use dynamic rendering with VK_RENDERING_CONTENTS_INLINE_BIT_EXT");
+
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_CONTENTS_INLINE_BIT_EXT;
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-flags-09381");
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
