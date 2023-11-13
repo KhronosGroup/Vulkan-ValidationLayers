@@ -19,32 +19,35 @@
 
 #include "gpu_validation/gpu_state_tracker.h"
 #include "gpu_validation/gpu_error_message.h"
-class DebugPrintf;
 
-struct DPFDeviceMemoryBlock {
+namespace debug_printf {
+
+class Validator;
+
+struct DeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
 };
 
-struct DPFBufferInfo {
-    DPFDeviceMemoryBlock output_mem_block;
+struct BufferInfo {
+    DeviceMemoryBlock output_mem_block;
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
-    DPFBufferInfo(DPFDeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
-                  VkPipelineBindPoint pipeline_bind_point)
+    BufferInfo(DeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
+               VkPipelineBindPoint pipeline_bind_point)
         : output_mem_block(output_mem_block), desc_set(desc_set), desc_pool(desc_pool), pipeline_bind_point(pipeline_bind_point){};
 };
 
 enum vartype { varsigned, varunsigned, varfloat };
-struct DPFSubstring {
+struct Substring {
     std::string string;
     bool needs_value;
     vartype type;
     uint64_t longval = 0;
 };
 
-struct DPFOutputRecord {
+struct OutputRecord {
     uint32_t size;
     uint32_t shader_id;
     uint32_t instruction_position;
@@ -56,12 +59,11 @@ struct DPFOutputRecord {
     uint32_t values;
 };
 
-namespace debug_printf_state {
-class CommandBuffer : public gpu_utils_state::CommandBuffer {
+class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
-    std::vector<DPFBufferInfo> buffer_infos;
+    std::vector<BufferInfo> buffer_infos;
 
-    CommandBuffer(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+    CommandBuffer(Validator* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                   const COMMAND_POOL_STATE* pool);
     ~CommandBuffer();
 
@@ -74,13 +76,15 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
   private:
     void ResetCBState();
 };
-}  // namespace debug_printf_state
+}  // namespace debug_printf
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf_state::CommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf::CommandBuffer, CMD_BUFFER_STATE)
 
-class DebugPrintf : public GpuAssistedBase {
+namespace debug_printf {
+class Validator : public gpu_tracker::Validator {
   public:
-    DebugPrintf() {
+    using BaseClass = gpu_tracker::Validator;
+    Validator() {
         setup_vuid = "UNASSIGNED-DEBUG-PRINTF";
         container_type = LayerObjectTypeDebugPrintf;
         desired_features.vertexPipelineStoresAndAtomics = true;
@@ -96,9 +100,9 @@ class DebugPrintf : public GpuAssistedBase {
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, void* csm_state_data) override;
-    std::vector<DPFSubstring> ParseFormatString(const std::string& format_string);
+    std::vector<Substring> ParseFormatString(const std::string& format_string);
     std::string FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id);
-    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo& buffer_info,
+    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance, const RecordObject& record_obj) override;
@@ -181,9 +185,10 @@ class DebugPrintf : public GpuAssistedBase {
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
 
-    void DestroyBuffer(DPFBufferInfo& buffer_info);
+    void DestroyBuffer(BufferInfo& buffer_info);
 
   private:
     bool verbose = false;
     bool use_stdout = false;
 };
+}  // namespace debug_printf

@@ -159,7 +159,7 @@ void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFe
             enable_data[best_practices] = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
-            enable_data[debug_printf] = true;
+            enable_data[debug_printf_validation] = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT:
             enable_data[sync_validation] = true;
@@ -462,7 +462,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             std::string setting_value;
             vkuGetLayerSettingValue(layer_setting_set, SETTING_VALIDATE_GPU_BASED, setting_value);
             settings_data->enables[gpu_validation] = setting_value == "GPU_BASED_GPU_ASSISTED";
-            settings_data->enables[debug_printf] = setting_value == "GPU_BASED_DEBUG_PRINTF";
+            settings_data->enables[debug_printf_validation] = setting_value == "GPU_BASED_DEBUG_PRINTF";
         }
 
         SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,

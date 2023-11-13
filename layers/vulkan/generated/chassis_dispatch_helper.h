@@ -1685,8 +1685,8 @@ void ValidationObject::InitObjectDispatchVectors() {
                                 typeid(&ObjectLifetimes::name), \
                                 typeid(&CoreChecks::name), \
                                 typeid(&BestPractices::name), \
-                                typeid(&GpuAssisted::name), \
-                                typeid(&DebugPrintf::name), \
+                                typeid(&gpuav::Validator::name), \
+                                typeid(&debug_printf::Validator::name), \
                                 typeid(&SyncValidator::name));
 
     auto init_object_dispatch_vector = [this](InterceptId id,

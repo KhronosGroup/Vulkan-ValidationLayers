@@ -20,7 +20,8 @@
 #define GPU_SHADERS_CONSTANTS_H
 
 #ifdef __cplusplus
-namespace gpuav_glsl {
+namespace gpuav {
+namespace glsl {
 using uint = unsigned int;
 
 // Upper bound for maxUpdateAfterBindDescriptorsInAllPools. This value needs to
@@ -231,6 +232,7 @@ const int pre_dispatch_count_exceeds_limit_y_error = 2;
 const int pre_dispatch_count_exceeds_limit_z_error = 3;
 
 #ifdef __cplusplus
-} // namespace gpuav_glsl
+}  // namespace glsl
+}  // namespace gpuav
 #endif
 #endif

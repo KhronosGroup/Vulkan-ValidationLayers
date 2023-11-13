@@ -20,121 +20,120 @@
 #include "gpu_vuids.h"
 #include "drawdispatch/descriptor_validator.h"
 
-gpuav_state::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
-                            DescriptorHeap &desc_heap_)
+gpuav::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
+                      DescriptorHeap &desc_heap_)
     : BUFFER_STATE(dev_data, buff, pCreateInfo),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(buff, kVulkanObjectTypeBuffer))) {}
 
-void gpuav_state::Buffer::Destroy() {
+void gpuav::Buffer::Destroy() {
     desc_heap.DeleteId(id);
     BUFFER_STATE::Destroy();
 }
 
-void gpuav_state::Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     BUFFER_STATE::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav_state::BufferView::BufferView(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                                    VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_)
+gpuav::BufferView::BufferView(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+                              VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_)
     : BUFFER_VIEW_STATE(bf, bv, ci, buf_ff),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(bv, kVulkanObjectTypeBufferView))) {}
 
-void gpuav_state::BufferView::Destroy() {
+void gpuav::BufferView::Destroy() {
     desc_heap.DeleteId(id);
     BUFFER_VIEW_STATE::Destroy();
 }
 
-void gpuav_state::BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     BUFFER_VIEW_STATE::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav_state::ImageView::ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                                  VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props,
-                                  DescriptorHeap &desc_heap_)
+gpuav::ImageView::ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+                            VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props,
+                            DescriptorHeap &desc_heap_)
     : IMAGE_VIEW_STATE(image_state, iv, ci, ff, cubic_props),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(iv, kVulkanObjectTypeImageView))) {}
 
-void gpuav_state::ImageView::Destroy() {
+void gpuav::ImageView::Destroy() {
     desc_heap.DeleteId(id);
     IMAGE_VIEW_STATE::Destroy();
 }
 
-void gpuav_state::ImageView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::ImageView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     IMAGE_VIEW_STATE::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav_state::Sampler::Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_)
+gpuav::Sampler::Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_)
     : SAMPLER_STATE(s, pci), desc_heap(desc_heap_), id(desc_heap.NextId(VulkanTypedHandle(s, kVulkanObjectTypeSampler))) {}
 
-void gpuav_state::Sampler::Destroy() {
+void gpuav::Sampler::Destroy() {
     desc_heap.DeleteId(id);
     SAMPLER_STATE::Destroy();
 }
 
-void gpuav_state::Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     SAMPLER_STATE::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav_state::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as,
-                                                                const VkAccelerationStructureCreateInfoKHR *ci,
-                                                                std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address,
-                                                                DescriptorHeap &desc_heap_)
+gpuav::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as,
+                                                          const VkAccelerationStructureCreateInfoKHR *ci,
+                                                          std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address,
+                                                          DescriptorHeap &desc_heap_)
     : ACCELERATION_STRUCTURE_STATE_KHR(as, ci, std::move(buf_state), address),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureKHR))) {}
 
-void gpuav_state::AccelerationStructureKHR::Destroy() {
+void gpuav::AccelerationStructureKHR::Destroy() {
     desc_heap.DeleteId(id);
     ACCELERATION_STRUCTURE_STATE_KHR::Destroy();
 }
 
-void gpuav_state::AccelerationStructureKHR::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::AccelerationStructureKHR::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     ACCELERATION_STRUCTURE_STATE_KHR::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav_state::AccelerationStructureNV::AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as,
-                                                              const VkAccelerationStructureCreateInfoNV *ci,
-                                                              DescriptorHeap &desc_heap_)
+gpuav::AccelerationStructureNV::AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as,
+                                                        const VkAccelerationStructureCreateInfoNV *ci, DescriptorHeap &desc_heap_)
     : ACCELERATION_STRUCTURE_STATE_NV(device, as, ci),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV))) {}
 
-void gpuav_state::AccelerationStructureNV::Destroy() {
+void gpuav::AccelerationStructureNV::Destroy() {
     desc_heap.DeleteId(id);
     ACCELERATION_STRUCTURE_STATE_NV::Destroy();
 }
 
-void gpuav_state::AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
     ACCELERATION_STRUCTURE_STATE_NV::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav_state::CommandBuffer::CommandBuffer(GpuAssisted *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                          const COMMAND_POOL_STATE *pool)
-    : gpu_utils_state::CommandBuffer(ga, cb, pCreateInfo, pool) {}
+gpuav::CommandBuffer::CommandBuffer(gpuav::Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                    const COMMAND_POOL_STATE *pool)
+    : gpu_tracker::CommandBuffer(ga, cb, pCreateInfo, pool) {}
 
-gpuav_state::CommandBuffer::~CommandBuffer() { Destroy(); }
+gpuav::CommandBuffer::~CommandBuffer() { Destroy(); }
 
-void gpuav_state::CommandBuffer::Destroy() {
+void gpuav::CommandBuffer::Destroy() {
     ResetCBState();
     CMD_BUFFER_STATE::Destroy();
 }
 
-void gpuav_state::CommandBuffer::Reset() {
+void gpuav::CommandBuffer::Reset() {
     CMD_BUFFER_STATE::Reset();
     ResetCBState();
 }
 
-void gpuav_state::CommandBuffer::ResetCBState() {
-    auto gpuav = static_cast<GpuAssisted *>(dev_data);
+void gpuav::CommandBuffer::ResetCBState() {
+    auto gpuav = static_cast<Validator *>(dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &cmd_info : per_draw_buffer_list) {
         gpuav->DestroyBuffer(cmd_info);
@@ -154,8 +153,8 @@ void gpuav_state::CommandBuffer::ResetCBState() {
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void gpuav_state::CommandBuffer::Process(VkQueue queue, const Location &loc) {
-    auto *device_state = static_cast<GpuAssisted *>(dev_data);
+void gpuav::CommandBuffer::Process(VkQueue queue, const Location &loc) {
+    auto *device_state = static_cast<Validator *>(dev_data);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
         uint32_t draw_index = 0;
         uint32_t compute_index = 0;
@@ -163,11 +162,11 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue, const Location &loc) {
 
         for (auto &cmd_info : per_draw_buffer_list) {
             char *data;
-            gpuav_state::DescBindingInfo *di_info = nullptr;
+            DescBindingInfo *di_info = nullptr;
             if (cmd_info.desc_binding_index != vvl::kU32Max) {
                 di_info = &di_input_buffer_list[cmd_info.desc_binding_index];
             }
-            std::vector<gpuav_state::DescSetState> empty;
+            std::vector<DescSetState> empty;
 
             uint32_t operation_index = 0;
             if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -209,7 +208,8 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue, const Location &loc) {
                 // For each used binding ...
                 for (const auto &u : used_descs) {
                     auto iter = set.binding_req.find(u.first);
-                    vvl::DescriptorBindingInfo binding_info{u.first, (iter != set.binding_req.end()) ? iter->second : DescriptorRequirement()};
+                    vvl::DescriptorBindingInfo binding_info{
+                        u.first, (iter != set.binding_req.end()) ? iter->second : DescriptorRequirement()};
                     context.ValidateBinding(binding_info, u.second);
                 }
             }
@@ -218,13 +218,13 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue, const Location &loc) {
     ProcessAccelerationStructure(queue);
 }
 
-void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
+void gpuav::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
     if (!has_build_as_cmd) {
         return;
     }
-    auto *device_state = static_cast<GpuAssisted *>(dev_data);
+    auto *device_state = static_cast<Validator *>(dev_data);
     for (const auto &as_validation_buffer_info : as_validation_buffers) {
-        gpuav_glsl::AccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
+        glsl::AccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
 
         VkResult result = vmaMapMemory(device_state->vmaAllocator, as_validation_buffer_info.buffer_allocation,
                                        reinterpret_cast<void **>(&mapped_validation_buffer));
@@ -246,4 +246,3 @@ void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
         }
     }
 }
-

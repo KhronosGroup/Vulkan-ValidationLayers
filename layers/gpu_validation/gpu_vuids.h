@@ -19,4 +19,6 @@
 
 #pragma once
 // Getter function to provide kVUIDUndefined in case an invalid function is passed in
+namespace gpuav {
 const GpuVuid &GetGpuVuid(vvl::Func command);
+}  // namespace gpuav
