@@ -3538,7 +3538,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     // Mark the image as acquired.
     auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
     if (swapchain_data) {
-        swapchain_data->AcquireImage(*pImageIndex);
+        swapchain_data->AcquireImage(*pImageIndex, semaphore_state, fence_state);
     }
 }
 

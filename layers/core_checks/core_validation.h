@@ -1818,6 +1818,8 @@ class CoreChecks : public ValidationStateTracker {
                                              VkImage* pSwapchainImages, const RecordObject& record_obj) override;
     bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                         const ErrorObject& error_obj) const override;
+    bool ValidateImageAcquireWait(const SWAPCHAIN_IMAGE& swapchain_image, uint32_t image_index,
+                                  const VkPresentInfoKHR& present_info, const Location present_info_loc) const;
     bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,

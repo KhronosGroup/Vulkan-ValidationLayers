@@ -772,6 +772,68 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
     }
 }
 
+bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image, uint32_t image_index,
+                                          const VkPresentInfoKHR &present_info, const Location present_info_loc) const {
+    bool skip = false;
+
+    const auto &semaphore = swapchain_image.acquire_semaphore;
+    const auto &fence = swapchain_image.acquire_fence;
+    // The specification requires that either a semaphore or fence is specified (or both).
+    // If neither is specified the error is reported by the stateless validation.
+    if (!semaphore && !fence) {
+        return skip;
+    }
+
+    const bool is_external_semaphore = semaphore && semaphore->Scope() != SyncScope::kSyncScopeInternal;
+    const bool is_external_fence = fence && fence->Scope() != SyncScope::kSyncScopeInternal;
+    // Skip validation if external sync object is used.
+    // Validation error according to regular vulkan rules could be a false-positive,
+    // because synchronization could be established via external means.
+    if (is_external_semaphore || is_external_fence) {
+        return skip;
+    }
+
+    bool semaphore_was_waited = false;
+    if (semaphore) {
+        const auto wait_list = vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount);
+        const bool in_wait_list = IsValueIn(semaphore->semaphore(), wait_list);
+        // The acquire semaphore has been waited on if either of the following is true:
+        // - pWaitSemaphores list contains the acquire semaphore
+        // - the acquire semaphore has been waited on previously, in which case CanBinaryBeWaited() reports false
+        semaphore_was_waited = in_wait_list || !semaphore->CanBinaryBeWaited();
+    }
+    bool fence_was_waited = false;
+    if (fence) {
+        fence_was_waited = fence->State() != FENCE_INFLIGHT;
+    }
+
+    // Either semaphore or fence should be waited on (or both)
+    if (!semaphore_was_waited && !fence_was_waited) {
+        // TODO: Replace UNASSIGNED with official VUID when ready: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3616
+        static const char *missing_acquire_wait_vuid = "UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait";
+
+        const Location image_index_loc = present_info_loc.dot(Field::pImageIndices, image_index);
+        if (semaphore && fence) {
+            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->semaphore(), fence->fence());
+            skip |= LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
+                             "was acquired with a semaphore %s and fence %s and neither of them have since been waited on",
+                             FormatHandle(semaphore->semaphore()).c_str(), FormatHandle(fence->fence()).c_str());
+        } else if (semaphore) {
+            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->semaphore());
+            skip |= LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
+                             "was acquired with a semaphore %s that has not since been waited on",
+                             FormatHandle(semaphore->semaphore()).c_str());
+        } else {
+            assert(fence != nullptr);  // if both fence and semaphore are not provided we have an early exit
+            const LogObjectList objlist(swapchain_image.image_state->image(), fence->fence());
+            skip |=
+                LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
+                         "was acquired with a fence %s that has not since been waited on", FormatHandle(fence->fence()).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
@@ -841,6 +903,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                          image_state->createInfo.extent.width, image_state->createInfo.extent.height);
                     }
                 }
+
+                // Check that image acquire's semaphore/fence has been waited on
+                skip |= ValidateImageAcquireWait(swapchain_data->images[pPresentInfo->pImageIndices[i]], i, *pPresentInfo,
+                                                 present_info_loc);
             }
 
             // All physical devices and queue families are required to be able to present to any native window on Android

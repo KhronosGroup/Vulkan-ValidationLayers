@@ -535,6 +535,8 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
     if (!shared_presentable) {
         acquired_images--;
         images[image_index].acquired = false;
+        images[image_index].acquire_semaphore.reset();
+        images[image_index].acquire_fence.reset();
     } else {
         IMAGE_STATE *image_state = images[image_index].image_state;
         if (image_state) {
@@ -546,12 +548,15 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
     }
 }
 
-void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
+void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index, const std::shared_ptr<SEMAPHORE_STATE> &semaphore_state,
+                                  const std::shared_ptr<FENCE_STATE> &fence_state) {
     if (image_index >= images.size()) return;
 
     assert(acquired_images < std::numeric_limits<uint32_t>::max());
     acquired_images++;
     images[image_index].acquired = true;
+    images[image_index].acquire_semaphore = semaphore_state;
+    images[image_index].acquire_fence = fence_state;
     if (shared_presentable) {
         IMAGE_STATE *image_state = images[image_index].image_state;
         if (image_state) {
