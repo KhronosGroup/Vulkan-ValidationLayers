@@ -19,16 +19,46 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "vma/vma.h"
 
-class GpuAssistedBase;
+namespace gpu_tracker {
+
+class Validator;
+
+class Queue : public QUEUE_STATE {
+  public:
+    Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties &queueFamilyProperties);
+    virtual ~Queue();
+    void SubmitBarrier();
+
+  private:
+    Validator &state_;
+    VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
+    VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
+};
+
+class CommandBuffer : public CMD_BUFFER_STATE {
+  public:
+    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const COMMAND_POOL_STATE *pool);
+
+    virtual bool NeedsProcessing() const = 0;
+    virtual void Process(VkQueue queue, const Location &loc) = 0;
+};
+}  // namespace gpu_tracker
+
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_tracker::Queue, QUEUE_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, CMD_BUFFER_STATE)
+
+namespace gpu_tracker {
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
     VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 
-class UtilDescriptorSetManager {
+class DescriptorSetManager {
   public:
-    UtilDescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
-    ~UtilDescriptorSetManager();
+    DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
+    ~DescriptorSetManager();
 
     VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *desc_sets);
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
@@ -49,34 +79,8 @@ class UtilDescriptorSetManager {
     mutable std::mutex lock_;
 };
 
-namespace gpu_utils_state {
-class Queue : public QUEUE_STATE {
-  public:
-    Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties &queueFamilyProperties);
-    virtual ~Queue();
-    void SubmitBarrier();
-
-  private:
-    GpuAssistedBase &state_;
-    VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
-    VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
-};
-
-class CommandBuffer : public CMD_BUFFER_STATE {
-  public:
-    CommandBuffer(GpuAssistedBase *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const COMMAND_POOL_STATE *pool);
-
-    virtual bool NeedsProcessing() const = 0;
-    virtual void Process(VkQueue queue, const Location &loc) = 0;
-};
-}  // namespace gpu_utils_state
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_utils_state::Queue, QUEUE_STATE)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_utils_state::CommandBuffer, CMD_BUFFER_STATE)
-
-VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
-                           VmaAllocator *pAllocator);
+VkResult InitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
+                       VmaAllocator *pAllocator);
 
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
@@ -85,8 +89,10 @@ struct GpuAssistedShaderTracker {
     std::vector<uint32_t> pgm;
 };
 
-class GpuAssistedBase : public ValidationStateTracker {
+class Validator : public ValidationStateTracker {
   public:
+    using BaseClass = ValidationStateTracker;
+
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
@@ -187,7 +193,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer, const Location &loc);
 
     void SubmitBarrier(VkQueue queue) {
-        auto queue_state = Get<gpu_utils_state::Queue>(queue);
+        auto queue_state = Get<Queue>(queue);
         if (queue_state) {
             queue_state->SubmitBarrier();
         }
@@ -195,8 +201,7 @@ class GpuAssistedBase : public ValidationStateTracker {
 
     std::shared_ptr<QUEUE_STATE> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                                              const VkQueueFamilyProperties &queueFamilyProperties) override {
-        return std::static_pointer_cast<QUEUE_STATE>(
-            std::make_shared<gpu_utils_state::Queue>(*this, q, index, flags, queueFamilyProperties));
+        return std::static_pointer_cast<QUEUE_STATE>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
     }
 
     template <typename CreateInfo, typename SafeCreateInfo, typename GPUAVState>
@@ -230,7 +235,9 @@ class GpuAssistedBase : public ValidationStateTracker {
     uint32_t desc_set_bind_index = 0;
     VmaAllocator vmaAllocator = {};
     VmaPool output_buffer_pool = VK_NULL_HANDLE;
-    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
+    std::unique_ptr<DescriptorSetManager> desc_set_manager;
     vl_concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> bindings_;
 };
+
+}  // namespace gpu_tracker

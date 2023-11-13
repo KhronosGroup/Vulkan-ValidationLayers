@@ -495,7 +495,7 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
 
     vk::GetPhysicalDeviceProperties2(gpu(), &props2);
 
-    ASSERT_GE(gpuav_glsl::kDebugInputBindlessMaxDescriptors, desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
+    ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
 
 TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
@@ -509,7 +509,7 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
 
     vk::GetPhysicalDeviceProperties2(gpu(), &props2);
 
-    ASSERT_GE(gpuav_glsl::kDebugInputBindlessMaxDescriptors, vk12_props.maxUpdateAfterBindDescriptorsInAllPools);
+    ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, vk12_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
 
 TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {

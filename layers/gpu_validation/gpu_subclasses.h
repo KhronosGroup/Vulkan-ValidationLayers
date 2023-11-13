@@ -25,9 +25,9 @@
 #include "generated/vk_object_types.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
 
-class GpuAssisted;
+namespace gpuav {
 
-namespace gpuav_state {
+class Validator;
 
 struct DescSetState {
     uint32_t num;
@@ -107,7 +107,7 @@ struct AccelerationStructureBuildValidationBufferInfo {
     VmaAllocation buffer_allocation = VK_NULL_HANDLE;
 };
 
-class CommandBuffer : public gpu_utils_state::CommandBuffer {
+class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
     // per draw/dispatch command state
     std::vector<CommandInfo> per_draw_buffer_list;
@@ -116,7 +116,7 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
     std::vector<AccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
 
-    CommandBuffer(GpuAssisted *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const COMMAND_POOL_STATE *pool);
     ~CommandBuffer();
 
@@ -202,9 +202,7 @@ class AccelerationStructureNV : public ACCELERATION_STRUCTURE_STATE_NV {
     const DescriptorId id;
 };
 
-}  // namespace gpuav_state
-
-namespace gpuav_glsl {
+namespace glsl {
 
 struct AccelerationStructureBuildValidationBuffer {
     uint32_t instances_to_validate;
@@ -224,6 +222,9 @@ struct DescriptorSetRecord {
 
 struct BindlessStateBuffer {
     VkDeviceAddress global_state;
-    DescriptorSetRecord desc_sets[gpuav_glsl::kDebugInputBindlessMaxDescSets];
+    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 };
-} // namespace gpuav_glsl
+
+}  // namespace glsl
+
+}  // namespace gpuav

@@ -93,10 +93,10 @@ static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED& 
         object_dispatch.emplace_back(new BestPractices);
     }
     if (enables[gpu_validation]) {
-        object_dispatch.emplace_back(new GpuAssisted);
+        object_dispatch.emplace_back(new gpuav::Validator);
     }
-    if (enables[debug_printf]) {
-        object_dispatch.emplace_back(new DebugPrintf);
+    if (enables[debug_printf_validation]) {
+        object_dispatch.emplace_back(new debug_printf::Validator);
     }
     if (enables[sync_validation]) {
         object_dispatch.emplace_back(new SyncValidator);
@@ -127,10 +127,10 @@ static void InitDeviceObjectDispatch(ValidationObject* instance_interceptor, Val
         device_interceptor->object_dispatch.emplace_back(new BestPractices);
     }
     if (enables[gpu_validation]) {
-        device_interceptor->object_dispatch.emplace_back(new GpuAssisted);
+        device_interceptor->object_dispatch.emplace_back(new gpuav::Validator);
     }
-    if (enables[debug_printf]) {
-        device_interceptor->object_dispatch.emplace_back(new DebugPrintf);
+    if (enables[debug_printf_validation]) {
+        device_interceptor->object_dispatch.emplace_back(new debug_printf::Validator);
     }
     if (enables[sync_validation]) {
         device_interceptor->object_dispatch.emplace_back(new SyncValidator);

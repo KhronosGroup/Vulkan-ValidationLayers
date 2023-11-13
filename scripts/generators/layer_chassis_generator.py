@@ -68,13 +68,13 @@ class APISpecific:
                     },
                     {
                         'include': 'gpu_validation/gpu_validation.h',
-                        'class': 'GpuAssisted',
+                        'class': 'gpuav::Validator',
                         'enabled': 'enables[gpu_validation]'
                     },
                     {
                         'include': 'gpu_validation/debug_printf.h',
-                        'class': 'DebugPrintf',
-                        'enabled': 'enables[debug_printf]'
+                        'class': 'debug_printf::Validator',
+                        'enabled': 'enables[debug_printf_validation]'
                     },
                     {
                         'include': 'sync/sync_validation.h',
@@ -131,8 +131,8 @@ void ValidationObject::InitObjectDispatchVectors() {
                                 typeid(&ObjectLifetimes::name), \\
                                 typeid(&CoreChecks::name), \\
                                 typeid(&BestPractices::name), \\
-                                typeid(&GpuAssisted::name), \\
-                                typeid(&DebugPrintf::name), \\
+                                typeid(&gpuav::Validator::name), \\
+                                typeid(&debug_printf::Validator::name), \\
                                 typeid(&SyncValidator::name));
 
     auto init_object_dispatch_vector = [this](InterceptId id,
@@ -416,7 +416,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 vendor_specific_amd,
                 vendor_specific_img,
                 vendor_specific_nvidia,
-                debug_printf,
+                debug_printf_validation,
                 sync_validation,
                 sync_validation_queue_submit,
                 // Insert new enables above this line

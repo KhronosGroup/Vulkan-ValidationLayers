@@ -2191,7 +2191,7 @@ typedef enum EnableFlags {
     vendor_specific_amd,
     vendor_specific_img,
     vendor_specific_nvidia,
-    debug_printf,
+    debug_printf_validation,
     sync_validation,
     sync_validation_queue_submit,
     // Insert new enables above this line

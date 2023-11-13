@@ -22,9 +22,9 @@
 #include "state_tracker/descriptor_sets.h"
 #include "vma/vma.h"
 
-class GpuAssisted;
+namespace gpuav {
 
-namespace gpuav_state {
+class Validator;
 
 class DescriptorSet : public vvl::DescriptorSet {
   public:
@@ -42,8 +42,8 @@ class DescriptorSet : public vvl::DescriptorSet {
         VmaAllocation allocation{nullptr};
         VkBuffer buffer{VK_NULL_HANDLE};
         VkDeviceAddress device_addr{0};
-    
-        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const gpuav_state::DescriptorSet &set) const;
+
+        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const DescriptorSet &set) const;
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
@@ -71,10 +71,9 @@ class DescriptorSet : public vvl::DescriptorSet {
 };
 
 typedef uint32_t DescriptorId;
-
 class DescriptorHeap {
   public:
-    DescriptorHeap(GpuAssisted &, uint32_t max_descriptors);
+    DescriptorHeap(Validator &, uint32_t max_descriptors);
     ~DescriptorHeap();
     DescriptorId NextId(const VulkanTypedHandle &handle);
     void DeleteId(DescriptorId id);
@@ -89,8 +88,8 @@ class DescriptorHeap {
     mutable std::mutex lock_;
 
     const uint32_t max_descriptors_;
-    gpuav_state::DescriptorId next_id_{1};
-    vvl::unordered_map<gpuav_state::DescriptorId, VulkanTypedHandle> alloc_map_;
+    DescriptorId next_id_{1};
+    vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
     VmaAllocator allocator_{nullptr};
     VmaAllocation allocation_{nullptr};
@@ -99,5 +98,4 @@ class DescriptorHeap {
     VkDeviceAddress device_address_{0};
 };
 
-
-}  // namespace gpuav_state
+}  // namespace gpuav

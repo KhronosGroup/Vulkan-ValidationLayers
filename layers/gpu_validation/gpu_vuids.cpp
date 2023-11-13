@@ -17,35 +17,35 @@
 #include "gpu_vuids.h"
 
 // clang-format off
-struct GpuVuidsCmdDraw : GpuVuid {
+struct GpuVuidsCmdDraw : gpuav::GpuVuid {
     GpuVuidsCmdDraw() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDraw-None-08612";
         storage_access_oob = "VUID-vkCmdDraw-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawMultiEXT : GpuVuid {
+struct GpuVuidsCmdDrawMultiEXT : gpuav::GpuVuid {
     GpuVuidsCmdDrawMultiEXT() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMultiEXT-None-08612";
         storage_access_oob = "VUID-vkCmdDrawMultiEXT-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawIndexed : GpuVuid {
+struct GpuVuidsCmdDrawIndexed : gpuav::GpuVuid {
     GpuVuidsCmdDrawIndexed() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndexed-None-08612";
         storage_access_oob = "VUID-vkCmdDrawIndexed-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawMultiIndexedEXT : GpuVuid {
+struct GpuVuidsCmdDrawMultiIndexedEXT : gpuav::GpuVuid {
     GpuVuidsCmdDrawMultiIndexedEXT() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMultiIndexedEXT-None-08612";
         storage_access_oob = "VUID-vkCmdDrawMultiIndexedEXT-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawIndirect : GpuVuid {
+struct GpuVuidsCmdDrawIndirect : gpuav::GpuVuid {
     GpuVuidsCmdDrawIndirect() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndirect-None-08612";
         storage_access_oob = "VUID-vkCmdDrawIndirect-None-08613";
@@ -53,7 +53,7 @@ struct GpuVuidsCmdDrawIndirect : GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
+struct GpuVuidsCmdDrawIndexedIndirect : gpuav::GpuVuid {
     GpuVuidsCmdDrawIndexedIndirect() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndexedIndirect-None-08612";
         storage_access_oob = "VUID-vkCmdDrawIndexedIndirect-None-08613";
@@ -61,14 +61,14 @@ struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDispatch : GpuVuid {
+struct GpuVuidsCmdDispatch : gpuav::GpuVuid {
     GpuVuidsCmdDispatch() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDispatch-None-08612";
         storage_access_oob = "VUID-vkCmdDispatch-None-08613";
     }
 };
 
-struct GpuVuidsCmdDispatchIndirect : GpuVuid {
+struct GpuVuidsCmdDispatchIndirect : gpuav::GpuVuid {
     GpuVuidsCmdDispatchIndirect() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDispatchIndirect-None-08612";
         storage_access_oob = "VUID-vkCmdDispatchIndirect-None-08613";
@@ -79,7 +79,7 @@ struct GpuVuidsCmdDispatchIndirect : GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
+struct GpuVuidsCmdDrawIndirectCount : gpuav::GpuVuid {
     GpuVuidsCmdDrawIndirectCount() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndirectCount-None-08612";
         storage_access_oob = "VUID-vkCmdDrawIndirectCount-None-08613";
@@ -89,7 +89,7 @@ struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
+struct GpuVuidsCmdDrawIndexedIndirectCount : gpuav::GpuVuid {
     GpuVuidsCmdDrawIndexedIndirectCount() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndexedIndirectCount-None-08612";
         storage_access_oob = "VUID-vkCmdDrawIndexedIndirectCount-None-08613";
@@ -99,63 +99,63 @@ struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
     }
 };
 
-struct GpuVuidsCmdTraceRaysNV : GpuVuid {
+struct GpuVuidsCmdTraceRaysNV : gpuav::GpuVuid {
     GpuVuidsCmdTraceRaysNV() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdTraceRaysNV-None-08612";
         storage_access_oob = "VUID-vkCmdTraceRaysNV-None-08613";
     }
 };
 
-struct GpuVuidsCmdTraceRaysKHR : GpuVuid {
+struct GpuVuidsCmdTraceRaysKHR : gpuav::GpuVuid {
     GpuVuidsCmdTraceRaysKHR() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdTraceRaysKHR-None-08612";
         storage_access_oob = "VUID-vkCmdTraceRaysKHR-None-08613";
     }
 };
 
-struct GpuVuidsCmdTraceRaysIndirectKHR : GpuVuid {
+struct GpuVuidsCmdTraceRaysIndirectKHR : gpuav::GpuVuid {
     GpuVuidsCmdTraceRaysIndirectKHR() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdTraceRaysIndirectKHR-None-08612";
         storage_access_oob = "VUID-vkCmdTraceRaysIndirectKHR-None-08613";
     }
 };
 
-struct GpuVuidsCmdTraceRaysIndirect2KHR : GpuVuid {
+struct GpuVuidsCmdTraceRaysIndirect2KHR : gpuav::GpuVuid {
     GpuVuidsCmdTraceRaysIndirect2KHR() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdTraceRaysIndirect2KHR-None-08612";
         storage_access_oob = "VUID-vkCmdTraceRaysIndirect2KHR-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksNV : GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksNV : gpuav::GpuVuid {
     GpuVuidsCmdDrawMeshTasksNV() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMeshTasksNV-None-08612";
         storage_access_oob = "VUID-vkCmdDrawMeshTasksNV-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksIndirectNV : GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksIndirectNV : gpuav::GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectNV() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08612";
         storage_access_oob = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : gpuav::GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectCountNV() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08612";
         storage_access_oob = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08613";
     }
 };
 
-struct GpuVuidsCmdDrawIndirectByteCountEXT : GpuVuid {
+struct GpuVuidsCmdDrawIndirectByteCountEXT : gpuav::GpuVuid {
     GpuVuidsCmdDrawIndirectByteCountEXT() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndirectByteCountEXT-None-08612";
         storage_access_oob = "VUID-vkCmdDrawIndirectByteCountEXT-None-08613";
     }
 };
 
-struct GpuVuidsCmdDispatchBase : GpuVuid {
+struct GpuVuidsCmdDispatchBase : gpuav::GpuVuid {
     GpuVuidsCmdDispatchBase() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDispatchBase-None-08612";
         storage_access_oob = "VUID-vkCmdDispatchBase-None-08613";
@@ -164,7 +164,7 @@ struct GpuVuidsCmdDispatchBase : GpuVuid {
 
 using Func = vvl::Func;
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
-static const std::map<Func, GpuVuid> gpu_vuid = {
+static const std::map<Func, gpuav::GpuVuid> gpu_vuid = {
     {Func::vkCmdDraw, GpuVuidsCmdDraw()},
     {Func::vkCmdDrawMultiEXT, GpuVuidsCmdDrawMultiEXT()},
     {Func::vkCmdDrawIndexed, GpuVuidsCmdDrawIndexed()},
@@ -188,10 +188,10 @@ static const std::map<Func, GpuVuid> gpu_vuid = {
     {Func::vkCmdDispatchBase, GpuVuidsCmdDispatchBase()},
     {Func::vkCmdDispatchBaseKHR, GpuVuidsCmdDispatchBase()},
     // Used if invalid function is used
-    {Func::Empty, GpuVuid()}
+    {Func::Empty, gpuav::GpuVuid()}
 };
 
-const GpuVuid &GetGpuVuid(Func command) {
+const gpuav::GpuVuid &gpuav::GetGpuVuid(Func command) {
     if (gpu_vuid.find(command) != gpu_vuid.cend()) {
         return gpu_vuid.at(command);
     }
