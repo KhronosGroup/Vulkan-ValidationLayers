@@ -184,8 +184,10 @@ struct ImageAccess {
 
     bool is_dref = false;
     bool is_sampler_implicitLod_dref_proj = false;
-    bool is_sampler_sampled = false;
+    bool is_sampler_sampled = false;  // OpImageSample* or OpImageSparseSample*
+    bool is_not_sampler_sampled = false;
     bool is_sampler_bias_offset = false;
+    bool is_sampler_offset = false;  // ConstOffset or Offset (not ConstOffsets)
     bool is_written_to = false;
     bool is_read_from = false;
     bool is_sign_extended = false;
@@ -335,9 +337,11 @@ struct ResourceInterfaceVariable : public VariableBase {
         bool is_multisampled;
         bool is_atomic_operation;
 
-        bool is_sampler_sampled{false};
+        bool is_sampler_sampled{false};  // OpImageSample* or OpImageSparseSample*
+        bool is_not_sampler_sampled{false};
         bool is_sampler_implicitLod_dref_proj{false};
         bool is_sampler_bias_offset{false};
+        bool is_sampler_offset{false};        // ConstOffset or Offset (not ConstOffsets)
         bool is_read_without_format{false};   // For storage images
         bool is_write_without_format{false};  // For storage images
         bool is_dref{false};
