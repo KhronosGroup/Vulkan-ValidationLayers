@@ -1607,27 +1607,6 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                                          "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                          FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->shader()).c_str(),
                                          error_string.c_str());
-                    } else {  // Valid set is bound and layout compatible, validate that it's updated
-                        // Pull the set node
-                        const auto *descriptor_set = set_info.bound_descriptor_set.get();
-                        assert(descriptor_set);
-                        // Validate the draw-time state for this descriptor set
-                        // We can skip validating the descriptor set if "nothing" has changed since the last validation.
-                        // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
-                        // any dynamic descriptors, always revalidate rather than caching the values.
-                        bool need_validate =
-                            // Revalidate each time if the set has dynamic offsets
-                            set_info.dynamicOffsets.size() > 0 ||
-                            // Revalidate if descriptor set (or contents) has changed
-                            set_info.validated_set != descriptor_set ||
-                            set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                            (!disabled[image_layout_validation] &&
-                             set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
-
-                        if (need_validate) {
-                            skip |=
-                                ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state, loc, vuid);
-                        }
                     }
                 }
             }
