@@ -573,13 +573,20 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
             break;
     }
 
+    is_not_sampler_sampled = !is_sampler_sampled;
+
     // Find any optional Image Operands
     const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
     if (image_insn.Length() > image_operand_position) {
         const uint32_t image_operand_word = image_insn.Word(image_operand_position);
 
-        if (is_sampler_sampled && IsImageOperandsBiasOffset(image_operand_word)) {
-            is_sampler_bias_offset = true;
+        if (is_sampler_sampled) {
+            if (IsImageOperandsBiasOffset(image_operand_word)) {
+                is_sampler_bias_offset = true;
+            }
+            if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
+                is_sampler_offset = true;
+            }
         }
 
         if ((image_operand_word & spv::ImageOperandsSignExtendMask) != 0) {
@@ -1825,7 +1832,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 info.is_dref |= image_access.is_dref;
                 info.is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
                 info.is_sampler_sampled |= image_access.is_sampler_sampled;
+                info.is_not_sampler_sampled |= image_access.is_not_sampler_sampled;
                 info.is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
+                info.is_sampler_offset |= image_access.is_sampler_offset;
                 info.is_sign_extended |= image_access.is_sign_extended;
                 info.is_zero_extended |= image_access.is_zero_extended;
                 is_written_to |= image_access.is_written_to;

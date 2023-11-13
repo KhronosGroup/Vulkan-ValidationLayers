@@ -166,6 +166,8 @@ struct DrawDispatchVuid {
     const char* descriptor_buffer_bit_set_08114 = kVUIDUndefined;
     const char* descriptor_buffer_bit_not_set_08115 = kVUIDUndefined;
     const char* descriptor_buffer_set_offset_missing_08117 = kVUIDUndefined;
+    const char* image_ycbcr_sampled_06550 = kVUIDUndefined;
+    const char* image_ycbcr_offset_06551 = kVUIDUndefined;
     const char* image_view_dim_07752 = kVUIDUndefined;
     const char* image_view_numeric_format_07753 = kVUIDUndefined;
     const char* stippled_rectangular_lines_07495 = kVUIDUndefined;

@@ -325,6 +325,27 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                         FormatHandle(set).c_str(), binding, index);
     }
 
+    if (image_view_state->samplerConversion) {
+        if (variable.info.is_not_sampler_sampled) {
+            auto set = descriptor_set.GetSet();
+            const LogObjectList objlist(set, image_view);
+            return dev_state.LogError(
+                vuids.image_ycbcr_sampled_06550, set, loc,
+                "the image descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                ") was created with a sampler Ycbcr conversion, but was accessed with a non OpImage*Sample* command.",
+                FormatHandle(set).c_str(), binding, index);
+        }
+        if (variable.info.is_sampler_offset) {
+            auto set = descriptor_set.GetSet();
+            const LogObjectList objlist(set, image_view);
+            return dev_state.LogError(
+                vuids.image_ycbcr_offset_06551, set, loc,
+                "the image descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                ") was created with a sampler Ycbcr conversion, but was accessed with ConstOffset/Offset image operands.",
+                FormatHandle(set).c_str(), binding, index);
+        }
+    }
+
     // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
     if (variable.info.is_atomic_operation && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
         !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
@@ -725,6 +746,27 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                 ") Image View %s is used by %s that uses invalid bias or offset operator.",
                                 FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
                                 FormatHandle(sampler_state->sampler()).c_str());
+            }
+        }
+
+        if (sampler_state->samplerConversion) {
+            if (variable.info.is_not_sampler_sampled) {
+                auto set = descriptor_set.GetSet();
+                const LogObjectList objlist(set, image_view, sampler_state->sampler());
+                return dev_state.LogError(
+                    vuids.image_ycbcr_sampled_06550, set, loc,
+                    "the sampler descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                    ") was created with a sampler Ycbcr conversion, but was accessed with a non OpImage*Sample* command.",
+                    FormatHandle(set).c_str(), binding, index);
+            }
+            if (variable.info.is_sampler_offset) {
+                auto set = descriptor_set.GetSet();
+                const LogObjectList objlist(set, image_view, sampler_state->sampler());
+                return dev_state.LogError(
+                    vuids.image_ycbcr_offset_06551, set, loc,
+                    "the sampler descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                    ") was created with a sampler Ycbcr conversion, but was accessed with ConstOffset/Offset image operands.",
+                    FormatHandle(set).c_str(), binding, index);
             }
         }
     }
