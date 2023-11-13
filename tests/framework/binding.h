@@ -668,6 +668,12 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     static VkExtent3D extent(int32_t width, int32_t height, int32_t depth);
 
+    static VkImageMemoryBarrier transition_to_present(VkImage swapchain_image, VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                                      VkAccessFlags src_access_mask = 0);
+    static VkImageMemoryBarrier2 transition_to_present_2(
+        VkImage swapchain_image, VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+        VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 src_access_mask = 0);
+
   private:
     void init_info(const Device &dev, const VkImageCreateInfo &info);
 
