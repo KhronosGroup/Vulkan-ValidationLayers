@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "sync/sync_validation.h"
+#include "sync/sync_access_context.h"
 #include "sync/sync_utils.h"
 
 // Utilities to DRY up Get... calls
@@ -47,50 +48,6 @@ Value *GetMappedPlainFromShared(const Map &map, const Key &key) {
     return nullptr;
 }
 
-static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
-
-static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
-
-static const char *string_SyncHazardVUID(SyncHazard hazard) {
-    switch (hazard) {
-        case SyncHazard::NONE:
-            return "SYNC-HAZARD-NONE";
-            break;
-        case SyncHazard::READ_AFTER_WRITE:
-            return "SYNC-HAZARD-READ-AFTER-WRITE";
-            break;
-        case SyncHazard::WRITE_AFTER_READ:
-            return "SYNC-HAZARD-WRITE-AFTER-READ";
-            break;
-        case SyncHazard::WRITE_AFTER_WRITE:
-            return "SYNC-HAZARD-WRITE-AFTER-WRITE";
-            break;
-        case SyncHazard::READ_RACING_WRITE:
-            return "SYNC-HAZARD-READ-RACING-WRITE";
-            break;
-        case SyncHazard::WRITE_RACING_WRITE:
-            return "SYNC-HAZARD-WRITE-RACING-WRITE";
-            break;
-        case SyncHazard::WRITE_RACING_READ:
-            return "SYNC-HAZARD-WRITE-RACING-READ";
-            break;
-        case SyncHazard::READ_AFTER_PRESENT:
-            return "SYNC-HAZARD-READ-AFTER-PRESENT";
-            break;
-        case SyncHazard::WRITE_AFTER_PRESENT:
-            return "SYNC-HAZARD-WRITE-AFTER-PRESENT";
-            break;
-        case SyncHazard::PRESENT_AFTER_WRITE:
-            return "SYNC-HAZARD-PRESENT-AFTER-WRITE";
-            break;
-        case SyncHazard::PRESENT_AFTER_READ:
-            return "SYNC-HAZARD-PRESENT-AFTER-READ";
-            break;
-        default:
-            assert(0);
-    }
-    return "SYNC-HAZARD-INVALID";
-}
 
 static bool IsHazardVsRead(SyncHazard hazard) {
     bool vs_read = false;
@@ -108,47 +65,6 @@ static bool IsHazardVsRead(SyncHazard hazard) {
             break;
     }
     return vs_read;
-}
-
-static const char *string_SyncHazard(SyncHazard hazard) {
-    switch (hazard) {
-        case SyncHazard::NONE:
-            return "NONE";
-            break;
-        case SyncHazard::READ_AFTER_WRITE:
-            return "READ_AFTER_WRITE";
-            break;
-        case SyncHazard::WRITE_AFTER_READ:
-            return "WRITE_AFTER_READ";
-            break;
-        case SyncHazard::WRITE_AFTER_WRITE:
-            return "WRITE_AFTER_WRITE";
-            break;
-        case SyncHazard::READ_RACING_WRITE:
-            return "READ_RACING_WRITE";
-            break;
-        case SyncHazard::WRITE_RACING_WRITE:
-            return "WRITE_RACING_WRITE";
-            break;
-        case SyncHazard::WRITE_RACING_READ:
-            return "WRITE_RACING_READ";
-            break;
-        case SyncHazard::READ_AFTER_PRESENT:
-            return "READ_AFTER_PRESENT";
-            break;
-        case SyncHazard::WRITE_AFTER_PRESENT:
-            return "WRITE_AFTER_PRESENT";
-            break;
-        case SyncHazard::PRESENT_AFTER_WRITE:
-            return "PRESENT_AFTER_WRITE";
-            break;
-        case SyncHazard::PRESENT_AFTER_READ:
-            return "PRESENT_AFTER_READ";
-            break;
-        default:
-            assert(0);
-    }
-    return "INVALID HAZARD";
 }
 
 static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAccessFlags flags) {
@@ -275,12 +191,6 @@ std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &haz
     return out;
 }
 
-struct NoopBarrierAction {
-    explicit NoopBarrierAction() {}
-    void operator()(ResourceAccessState *access) const {}
-    const bool layout_transition = false;
-};
-
 static void InitSubpassContexts(VkQueueFlags queue_flags, const RENDER_PASS_STATE &rp_state, const AccessContext *external_context,
                                 std::vector<AccessContext> &subpass_contexts) {
     const auto &create_info = rp_state.createInfo;
@@ -291,6 +201,21 @@ static void InitSubpassContexts(VkQueueFlags queue_flags, const RENDER_PASS_STAT
         subpass_contexts.emplace_back(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts, external_context);
     }
 }
+
+CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator *sync_validator)
+    : CommandExecutionContext(sync_validator),
+      cb_state_(),
+      access_log_(std::make_shared<AccessLog>()),
+      cbs_referenced_(std::make_shared<CommandBufferSet>()),
+      command_number_(0),
+      subcommand_number_(0),
+      reset_count_(0),
+      cb_access_context_(),
+      current_context_(&cb_access_context_),
+      events_context_(),
+      render_pass_contexts_(),
+      current_renderpass_context_(),
+      sync_ops_() {}
 
 // NOTE: Make sure the proxy doesn't outlive from, as the proxy is pointing directly to access contexts owned by from.
 CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccessContext &from, AsProxyContext dummy)
@@ -313,6 +238,25 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     events_context_ = from.events_context_;
 
     // We don't want to copy the full render_pass_context_ history just for the proxy.
+}
+
+void CommandBufferAccessContext::Reset() {
+    access_log_ = std::make_shared<AccessLog>();
+    cbs_referenced_ = std::make_shared<CommandBufferSet>();
+    if (cb_state_) {
+        cbs_referenced_->insert(cb_state_->shared_from_this());
+    }
+    sync_ops_.clear();
+    command_number_ = 0;
+    subcommand_number_ = 0;
+    reset_count_++;
+    command_handles_.clear();
+    cb_access_context_.Reset();
+    render_pass_contexts_.clear();
+    current_context_ = &cb_access_context_;
+    current_renderpass_context_ = nullptr;
+    events_context_.Clear();
+    dynamic_rendering_info_.reset();
 }
 
 std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) const {
@@ -346,8 +290,6 @@ bool CommandExecutionContext::ValidForSyncOps() const {
     assert(valid);
     return valid;
 }
-
-static VkDeviceSize ResourceBaseAddress(const BUFFER_STATE &buffer) { return buffer.GetFakeBaseAddress(); }
 
 template <typename T>
 static ResourceAccessRange MakeRange(const T &has_offset_and_size) {
@@ -386,27 +328,6 @@ static ResourceAccessRange MakeRange(const BufferBinding &binding, uint32_t firs
 //  Constructor() -- initializes the generator to point to the begin of the space declared.
 //  *  -- the current range of the generator empty signfies end
 //  ++ -- advance to the next non-empty range (or end)
-
-// A wrapper for a single range with the same semantics as the actual generators below
-template <typename KeyType>
-class SingleRangeGenerator {
-  public:
-    using RangeType = KeyType;
-    SingleRangeGenerator(const KeyType &range) : current_(range) {}
-    const KeyType &operator*() const { return current_; }
-    const KeyType *operator->() const { return &current_; }
-    SingleRangeGenerator &operator++() {
-        current_ = KeyType();  // just one real range
-        return *this;
-    }
-
-    bool operator==(const SingleRangeGenerator &other) const { return current_ == other.current_; }
-
-  private:
-    SingleRangeGenerator() = default;
-    const KeyType range_;
-    KeyType current_;
-};
 
 // Generate the ranges that are the intersection of range and the entries in the RangeMap
 template <typename RangeMap, typename KeyType = typename RangeMap::key_type>
@@ -620,7 +541,7 @@ bool IsStencilAttachmentWriteable(const LAST_BOUND_STATE &last_bound_state, cons
     return !vkuFormatIsDepthOnly(format) && stencil_test_enable && IsImageLayoutStencilWritable(layout);
 }
 
-// Tranverse the attachment resolves for this a specific subpass, and do action() to them.
+// Traverse the attachment resolves for this a specific subpass, and do action() to them.
 // Used by both validation and record operations
 //
 // The signature for Action() reflect the needs of both uses.
@@ -732,409 +653,6 @@ class UpdateStateResolveAction {
     const ResourceUsageTag tag_;
 };
 
-AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
-                             const std::vector<SubpassDependencyGraphNode> &dependencies,
-                             const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
-    Reset();
-    const auto &subpass_dep = dependencies[subpass];
-    const bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
-    prev_.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
-    prev_by_subpass_.resize(subpass, nullptr);  // Can't be more prevs than the subpass we're on
-    for (const auto &prev_dep : subpass_dep.prev) {
-        const auto prev_pass = prev_dep.first->pass;
-        const auto &prev_barriers = prev_dep.second;
-        assert(prev_dep.second.size());
-        prev_.emplace_back(&contexts[prev_pass], queue_flags, prev_barriers);
-        prev_by_subpass_[prev_pass] = &prev_.back();
-    }
-
-    async_.reserve(subpass_dep.async.size());
-    for (const auto async_subpass : subpass_dep.async) {
-        // Start tags are not known at creation time (as it's done at BeginRenderpass)
-        async_.emplace_back(contexts[async_subpass], kInvalidTag);
-    }
-
-    if (has_barrier_from_external) {
-        // Store the barrier from external with the reat, but save pointer for "by subpass" lookups.
-        prev_.emplace_back(external_context, queue_flags, subpass_dep.barrier_from_external);
-        src_external_ = &prev_.back();
-    }
-    if (subpass_dep.barrier_to_external.size()) {
-        dst_external_ = TrackBack(this, queue_flags, subpass_dep.barrier_to_external);
-    }
-}
-
-template <typename NormalizeOp>
-void AccessContext::Trim(NormalizeOp &&normalize) {
-    ForAll(std::forward<NormalizeOp>(normalize));
-    sparse_container::consolidate(access_state_map_);
-}
-
-void AccessContext::Trim() {
-    auto normalize = [](ResourceAccessRangeMap::value_type &access) { access.second.Normalize(); };
-    Trim(normalize);
-}
-
-void AccessContext::TrimAndClearFirstAccess() {
-    auto normalize = [](ResourceAccessRangeMap::value_type &access) {
-        access.second.Normalize();
-        access.second.ClearFirstUse();
-    };
-    Trim(normalize);
-}
-
-void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
-    auto gather = [&used](const ResourceAccessRangeMap::value_type &access) { access.second.GatherReferencedTags(used); };
-    ConstForAll(gather);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const {
-    ResourceAccessRangeMap descent_map;
-    ResolvePreviousAccess(range, &descent_map, nullptr);
-
-    HazardResult hazard;
-    for (auto prev = descent_map.begin(); prev != descent_map.end() && !hazard.IsHazard(); ++prev) {
-        hazard = detector.Detect(prev);
-    }
-    return hazard;
-}
-
-template <typename Action>
-void AccessContext::ForAll(Action &&action) {
-    for (auto &access : access_state_map_) {
-        action(access);
-    }
-}
-
-template <typename Action>
-void AccessContext::ConstForAll(Action &&action) const {
-    for (auto &access : access_state_map_) {
-        action(access);
-    }
-}
-
-template <typename Predicate>
-void AccessContext::EraseIf(Predicate &&pred) {
-    // Note: Don't forward, we don't want r-values moved, since we're going to make multiple calls.
-    vvl::EraseIf(access_state_map_, pred);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazardRange(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const {
-    SingleRangeGenerator range_gen(range);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
-// ForEachEntryInRangesUntil -- Execute Action for each map entry in the generated ranges until it returns true
-//
-// Action is const w.r.t. map
-// Action is allowed (assumed) to modify pos
-// Action must not advance pos for ranges strictly < pos->first
-// Action must handle range strictly less than pos->first correctly
-// Action must handle pos == end correctly
-// Action is assumed to only require invocation once per map entry
-// RangeGen must be strictly monotonic
-// Note: If Action invocations are heavyweight and inter-entry (gap) calls are not needed
-//       add a template or function parameter to skip them. TBD.
-template <typename RangeMap, typename RangeGen, typename Action>
-bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action &action) {
-    using RangeType = typename RangeGen::RangeType;
-    using IndexType = typename RangeType::index_type;
-    auto pos = map.lower_bound(*range_gen);
-    const auto end = map.end();
-    IndexType skip_limit = 0;
-    for (; range_gen->non_empty() && pos != end; ++range_gen) {
-        RangeType range = *range_gen;
-        // See if a prev pos has covered this range
-        if (range.end <= skip_limit) {
-            // Since the map is const, we needn't call action on the same pos again
-            continue;
-        }
-
-        //  If the current range was *partially* covered be a previous pos, trim, such that Action is only
-        //  called once for a given range (and pos)
-        if (range.begin < skip_limit) {
-            range.begin = skip_limit;
-        }
-
-        // Now advance pos as needed to match range
-        if (pos->first.strictly_less(range)) {
-            ++pos;
-            if (pos == end) break;
-            if (pos->first.strictly_less(range)) {
-                pos = map.lower_bound(range);
-                if (pos == end) break;
-            }
-            assert(pos == map.lower_bound(range));
-        }
-
-        // If the range intersects pos->first, consider Action performed for that map entry, and
-        // make sure not to call Action for this pos for any subsequent ranges
-        skip_limit = range.end > pos->first.begin ? pos->first.end : 0U;
-
-        // Action is allowed to alter pos but shouldn't do so if range is strictly < pos->first
-        if (action(range, end, pos)) return true;
-    }
-
-    // Action needs to handle the "at end " condition (and can be useful for recursive actions)
-    for (; range_gen->non_empty(); ++range_gen) {
-        if (action(*range_gen, end, pos)) return true;
-    }
-
-    return false;
-}
-
-// A recursive range walker for hazard detection, first for the current context and the (DetectHazardRecur) to walk
-// the DAG of the contexts (for example subpasses)
-template <typename Detector, typename RangeGen>
-HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, RangeGen &range_gen, DetectOptions options) const {
-    HazardResult hazard;
-
-    // Do this before range_gen is incremented s.t. the copies used will be correct
-    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
-        // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
-        // so we'll check these first
-        for (const auto &async_ref : async_) {
-            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen, async_ref.StartTag());
-            if (hazard.IsHazard()) return hazard;
-        }
-    }
-
-    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
-
-    using RangeType = typename RangeGen::RangeType;
-    using ConstIterator = ResourceAccessRangeMap::const_iterator;
-    auto do_detect_hazard_range = [this, &detector, &hazard, detect_prev](const RangeType &range, const ConstIterator &end,
-                                                                          ConstIterator &pos) {
-        hazard = DetectHazardOneRange(detector, detect_prev, pos, end, range);
-        return hazard.IsHazard();
-    };
-
-    ForEachEntryInRangesUntil(access_state_map_, range_gen, do_detect_hazard_range);
-
-    return hazard;
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect_prev, ResourceAccessRangeMap::const_iterator &pos,
-                                                 const ResourceAccessRangeMap::const_iterator &the_end,
-                                                 const ResourceAccessRange &range) const {
-    HazardResult hazard;
-    ResourceAccessRange gap = {range.begin, range.begin};
-
-    while (pos != the_end && pos->first.begin < range.end) {
-        // Cover any leading gap, or gap between entries
-        if (detect_prev) {
-            // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
-            // Cover any leading gap, or gap between entries
-            gap.end = pos->first.begin;  // We know this begin is < range.end
-            if (gap.non_empty()) {
-                // Recur on all gaps
-                hazard = DetectPreviousHazard(detector, gap);
-                if (hazard.IsHazard()) return hazard;
-            }
-            // Set up for the next gap.  If pos..end is >= range.end, loop will exit, and trailing gap will be empty
-            gap.begin = pos->first.end;
-        }
-
-        hazard = detector.Detect(pos);
-        if (hazard.IsHazard()) return hazard;
-        ++pos;
-    }
-
-    if (detect_prev) {
-        // Detect in the trailing empty as needed
-        gap.end = range.end;
-        if (gap.non_empty()) {
-            hazard = DetectPreviousHazard(detector, gap);
-        }
-    }
-
-    return hazard;
-}
-
-// A non recursive range walker for the asynchronous contexts (those we have no barriers with)
-template <typename Detector, typename RangeGen>
-HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen,
-                                              ResourceUsageTag async_tag) const {
-    using RangeType = typename RangeGen::RangeType;
-    using ConstIterator = ResourceAccessRangeMap::const_iterator;
-    RangeGen range_gen(const_range_gen);
-
-    HazardResult hazard;
-
-    auto do_async_hazard_check = [&detector, async_tag, &hazard](const RangeType &range, const ConstIterator &end,
-                                                                 ConstIterator &pos) {
-        while (pos != end && pos->first.begin < range.end) {
-            hazard = detector.DetectAsync(pos, async_tag);
-            if (hazard.IsHazard()) return true;
-            ++pos;
-        }
-        return false;
-    };
-
-    ForEachEntryInRangesUntil(access_state_map_, range_gen, do_async_hazard_check);
-
-    return hazard;
-}
-
-struct ApplySubpassTransitionBarriersAction {
-    explicit ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
-    void operator()(ResourceAccessState *access) const {
-        assert(access);
-        access->ApplyBarriers(barriers, true);
-    }
-    const std::vector<SyncBarrier> &barriers;
-};
-
-struct QueueTagOffsetBarrierAction {
-    QueueTagOffsetBarrierAction(QueueId qid, ResourceUsageTag offset) : queue_id(qid), tag_offset(offset) {}
-    void operator()(ResourceAccessState *access) const {
-        access->OffsetTag(tag_offset);
-        access->SetQueueId(queue_id);
-    };
-    QueueId queue_id;
-    ResourceUsageTag tag_offset;
-};
-
-struct ApplyTrackbackStackAction {
-    explicit ApplyTrackbackStackAction(const std::vector<SyncBarrier> &barriers_,
-                                       const ResourceAccessStateFunction *previous_barrier_ = nullptr)
-        : barriers(barriers_), previous_barrier(previous_barrier_) {}
-    void operator()(ResourceAccessState *access) const {
-        assert(access);
-        assert(!access->HasPendingState());
-        access->ApplyBarriers(barriers, false);
-        // NOTE: We can use invalid tag, as these barriers do no include layout transitions (would assert in SetWrite)
-        access->ApplyPendingBarriers(kInvalidTag);
-        if (previous_barrier) {
-            assert(bool(*previous_barrier));
-            (*previous_barrier)(access);
-        }
-    }
-    const std::vector<SyncBarrier> &barriers;
-    const ResourceAccessStateFunction *previous_barrier;
-};
-
-static SyncBarrier MergeBarriers(const std::vector<SyncBarrier> &barriers) {
-    SyncBarrier merged = {};
-    for (const auto &barrier : barriers) {
-        merged.Merge(barrier);
-    }
-    return merged;
-}
-
-void AccessContext::ResolveFromContext(const AccessContext &from) {
-    const NoopBarrierAction noop_barrier;
-    from.ResolveAccessRange(kFullRange, noop_barrier, &access_state_map_, nullptr);
-}
-
-template <typename BarrierAction>
-void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, BarrierAction &barrier_action,
-                                       ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
-                                       bool recur_to_infill) const {
-    if (!range.non_empty()) return;
-
-    ResourceRangeMergeIterator current(*resolve_map, access_state_map_, range.begin);
-    while (current->range.non_empty() && range.includes(current->range.begin)) {
-        const auto current_range = current->range & range;
-        if (current->pos_B->valid) {
-            const auto &src_pos = current->pos_B->lower_bound;
-            ResourceAccessState access(src_pos->second);  // intentional copy
-            barrier_action(&access);
-            if (current->pos_A->valid) {
-                const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
-                trimmed->second.Resolve(access);
-                current.invalidate_A(trimmed);
-            } else {
-                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current_range, access));
-                current.invalidate_A(inserted);  // Update the parallel iterator to point at the insert segment
-            }
-        } else {
-            // we have to descend to fill this gap
-            if (recur_to_infill) {
-                ResourceAccessRange recurrence_range = current_range;
-                // The current context is empty for the current range, so recur to fill the gap.
-                // Since we will be recurring back up the DAG, expand the gap descent to cover the full range for which B
-                // is not valid, to minimize that recurrence
-                if (current->pos_B.at_end()) {
-                    // Do the remainder here....
-                    recurrence_range.end = range.end;
-                } else {
-                    // Recur only over the range until B becomes valid (within the limits of range).
-                    recurrence_range.end = std::min(range.end, current->pos_B->lower_bound->first.begin);
-                }
-                ResolvePreviousAccessStack(recurrence_range, resolve_map, infill_state, barrier_action);
-
-                // Given that there could be gaps we need to seek carefully to not repeatedly search the same gaps in the next
-                // iterator of the outer while.
-
-                // Set the parallel iterator to the end of this range s.t. ++ will move us to the next range whether or
-                // not the end of the range is a gap.  For the seek to work, first we need to warn the parallel iterator
-                // we stepped on the dest map
-                const auto seek_to = recurrence_range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
-                current.invalidate_A();                         // Changes current->range
-                current.seek(seek_to);
-            } else if (!current->pos_A->valid && infill_state) {
-                // If we didn't find anything in the current range, and we aren't reccuring... we infill if required
-                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current->range, *infill_state));
-                current.invalidate_A(inserted);  // Update the parallel iterator to point at the correct segment after insert
-            }
-        }
-        if (current->range.non_empty()) {
-            ++current;
-        }
-    }
-
-    // Infill if range goes passed both the current and resolve map prior contents
-    if (recur_to_infill && (current->range.end < range.end)) {
-        ResourceAccessRange trailing_fill_range = {current->range.end, range.end};
-        ResolvePreviousAccessStack<BarrierAction>(trailing_fill_range, resolve_map, infill_state, barrier_action);
-    }
-}
-
-template <typename BarrierAction>
-void AccessContext::ResolvePreviousAccessStack(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                                               const ResourceAccessState *infill_state,
-                                               const BarrierAction &previous_barrier) const {
-    ResourceAccessStateFunction stacked_barrier(std::ref(previous_barrier));
-    ResolvePreviousAccess(range, descent_map, infill_state, &stacked_barrier);
-}
-
-void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                                          const ResourceAccessState *infill_state,
-                                          const ResourceAccessStateFunction *previous_barrier) const {
-    if (prev_.size() == 0) {
-        if (range.non_empty() && infill_state) {
-            // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
-            ResourceAccessState state_copy;
-            if (previous_barrier) {
-                assert(bool(*previous_barrier));
-                state_copy = *infill_state;
-                (*previous_barrier)(&state_copy);
-                infill_state = &state_copy;
-            }
-            sparse_container::update_range_value(*descent_map, range, *infill_state,
-                                                 sparse_container::value_precedence::prefer_dest);
-        }
-    } else {
-        // Look for something to fill the gap further along.
-        for (const auto &prev_dep : prev_) {
-            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, previous_barrier);
-            prev_dep.source_subpass->ResolveAccessRange(range, barrier_action, descent_map, infill_state);
-        }
-    }
-}
-
-// Non-lazy import of all accesses, WaitEvents needs this.
-void AccessContext::ResolvePreviousAccesses() {
-    ResourceAccessState default_state;
-    if (!prev_.size()) return;  // If no previous contexts, nothing to do
-
-    ResolvePreviousAccess(kFullRange, &access_state_map_, &default_state);
-}
-
 static SyncStageAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
     SyncStageAccessIndex usage_index;
     if (load_op == VK_ATTACHMENT_LOAD_OP_NONE_EXT) {
@@ -1175,33 +693,6 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
     proxy->UpdateAttachmentResolveAccess(rp_state, attachment_views, subpass, kInvalidTag);
     proxy->UpdateAttachmentStoreAccess(rp_state, attachment_views, subpass, kInvalidTag);
     return proxy;
-}
-
-template <typename BarrierAction>
-void AccessContext::ResolveAccessRange(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                       BarrierAction &barrier_action, ResourceAccessRangeMap *descent_map,
-                                       const ResourceAccessState *infill_state) const {
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (!attachment_gen) return;
-
-    subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
-    for (; range_gen->non_empty(); ++range_gen) {
-        ResolveAccessRange(*range_gen, barrier_action, descent_map, infill_state);
-    }
-}
-
-template <typename ResolveOp>
-void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
-                                       const ResourceAccessState *infill_state, bool recur_to_infill) {
-    from_context.ResolveAccessRange(kFullRange, resolve_op, &access_state_map_, infill_state, recur_to_infill);
-}
-
-template <typename ResolveOp, typename RangeGenerator>
-void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context, RangeGenerator range_gen,
-                                       const ResourceAccessState *infill_state, bool recur_to_infill) {
-    for (; range_gen->non_empty(); ++range_gen) {
-        from_context.ResolveAccessRange(*range_gen, resolve_op, &access_state_map_, infill_state, recur_to_infill);
-    }
 }
 
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
@@ -1395,12 +886,6 @@ bool AccessContext::ValidateResolveOperations(const SyncValidationInfo &val_info
     return validate_action.GetSkip();
 }
 
-void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageTag tag) {
-    if (context) {
-        async_.emplace_back(*context, tag);
-    }
-}
-
 class HazardDetector {
     const SyncStageAccessInfoType &usage_info_;
 
@@ -1426,227 +911,6 @@ class HazardDetectorWithOrdering {
     HazardDetectorWithOrdering(SyncStageAccessIndex usage_index, SyncOrdering ordering)
         : usage_info_(SyncStageAccess::UsageInfo(usage_index)), ordering_rule_(ordering) {}
 };
-
-HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index,
-                                         const ResourceAccessRange &range) const {
-    if (!SimpleBinding(buffer)) return HazardResult();
-    const auto base_address = ResourceBaseAddress(buffer);
-    HazardDetector detector(usage_index);
-    return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                         DetectOptions options) const {
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (!attachment_gen) return HazardResult();
-
-    subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazard(Detector &detector, const ImageState &image,
-                                         const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                         const VkExtent3D &extent, bool is_depth_sliced, DetectOptions options) const {
-    // range_gen is non-temporary to avoid additional copy
-    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, offset, extent, is_depth_sliced);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazard(Detector &detector, const ImageState &image,
-                                         const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
-                                         DetectOptions options) const {
-    // range_gen is non-temporary to avoid additional copy
-    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, is_depth_sliced);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
-HazardResult AccessContext::DetectHazard(const ImageState &image, SyncStageAccessIndex current_usage,
-                                         const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const {
-    HazardDetector detector(current_usage);
-    return DetectHazard(detector, image, subresource_range, is_depth_sliced, DetectOptions::kDetectAll);
-}
-
-HazardResult AccessContext::DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const {
-    // Get is const, but callee will copy
-    HazardDetector detector(current_usage);
-    return DetectHazardGeneratedRanges(detector, image_view.GetFullViewImageRangeGen(), DetectOptions::kDetectAll);
-}
-
-HazardResult AccessContext::DetectHazard(const ImageRangeGen &ref_range_gen, SyncStageAccessIndex current_usage,
-                                         const SyncOrdering ordering_rule) const {
-    if (ordering_rule == SyncOrdering::kOrderingNone) {
-        HazardDetector detector(current_usage);
-        return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
-    }
-
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
-    return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
-}
-
-HazardResult AccessContext::DetectHazard(const ImageViewState &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
-                                         SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen(image_view.MakeImageRangeGen(offset, extent));
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
-    return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
-}
-
-HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                         SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
-    return DetectHazard(detector, view_gen, gen_type, DetectOptions::kDetectAll);
-}
-
-HazardResult AccessContext::DetectHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                                         const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
-                                         SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    if (ordering_rule == SyncOrdering::kOrderingNone) {
-        HazardDetector detector(current_usage);
-        return DetectHazard(detector, image, subresource_range, offset, extent, is_depth_sliced, DetectOptions::kDetectAll);
-    }
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
-    return DetectHazard(detector, image, subresource_range, offset, extent, is_depth_sliced, DetectOptions::kDetectAll);
-}
-
-class BarrierHazardDetector {
-  public:
-    BarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
-                          SyncStageAccessFlags src_access_scope)
-        : usage_info_(SyncStageAccess::UsageInfo(usage_index)),
-          src_exec_scope_(src_exec_scope),
-          src_access_scope_(src_access_scope) {}
-
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectBarrierHazard(usage_info_, kQueueIdInvalid, src_exec_scope_, src_access_scope_);
-    }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
-    }
-
-  private:
-    const SyncStageAccessInfoType &usage_info_;
-    VkPipelineStageFlags2KHR src_exec_scope_;
-    SyncStageAccessFlags src_access_scope_;
-};
-
-class EventBarrierHazardDetector {
-  public:
-    EventBarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
-                               SyncStageAccessFlags src_access_scope, const AccessContext::ScopeMap &event_scope, QueueId queue_id,
-                               ResourceUsageTag scope_tag)
-        : usage_info_(SyncStageAccess::UsageInfo(usage_index)),
-          src_exec_scope_(src_exec_scope),
-          src_access_scope_(src_access_scope),
-          event_scope_(event_scope),
-          scope_queue_id_(queue_id),
-          scope_tag_(scope_tag),
-          scope_pos_(event_scope.cbegin()),
-          scope_end_(event_scope.cend()) {}
-
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) {
-        // Need to piece together coverage of pos->first range:
-        // Copy the range as we'll be chopping it up as needed
-        ResourceAccessRange range = pos->first;
-        const ResourceAccessState &access = pos->second;
-        HazardResult hazard;
-
-        bool in_scope = AdvanceScope(range);
-        bool unscoped_tested = false;
-        while (in_scope && !hazard.IsHazard()) {
-            if (range.begin < ScopeBegin()) {
-                if (!unscoped_tested) {
-                    unscoped_tested = true;
-                    hazard = access.DetectHazard(usage_info_);
-                }
-                // Note: don't need to check for in_scope as AdvanceScope true means range and ScopeRange intersect.
-                // Thus a [ ScopeBegin, range.end ) will be non-empty.
-                range.begin = ScopeBegin();
-            } else {  // in_scope implied that ScopeRange and range intersect
-                hazard = access.DetectBarrierHazard(usage_info_, ScopeState(), src_exec_scope_, src_access_scope_, scope_queue_id_,
-                                                    scope_tag_);
-                if (!hazard.IsHazard()) {
-                    range.begin = ScopeEnd();
-                    in_scope = AdvanceScope(range);  // contains a non_empty check
-                }
-            }
-        }
-        if (range.non_empty() && !hazard.IsHazard() && !unscoped_tested) {
-            hazard = access.DetectHazard(usage_info_);
-        }
-        return hazard;
-    }
-
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
-    }
-
-  private:
-    bool ScopeInvalid() const { return scope_pos_ == scope_end_; }
-    bool ScopeValid() const { return !ScopeInvalid(); }
-    void ScopeSeek(const ResourceAccessRange &range) { scope_pos_ = event_scope_.lower_bound(range); }
-
-    // Hiding away the std::pair grunge...
-    ResourceAddress ScopeBegin() const { return scope_pos_->first.begin; }
-    ResourceAddress ScopeEnd() const { return scope_pos_->first.end; }
-    const ResourceAccessRange &ScopeRange() const { return scope_pos_->first; }
-    const ResourceAccessState &ScopeState() const { return scope_pos_->second; }
-
-    bool AdvanceScope(const ResourceAccessRange &range) {
-        // Note: non_empty is (valid && !empty), so don't change !non_empty to empty...
-        if (!range.non_empty()) return false;
-        if (ScopeInvalid()) return false;
-
-        if (ScopeRange().strictly_less(range)) {
-            ScopeSeek(range);
-        }
-
-        return ScopeValid() && ScopeRange().intersects(range);
-    }
-
-    const SyncStageAccessInfoType usage_info_;
-    VkPipelineStageFlags2KHR src_exec_scope_;
-    SyncStageAccessFlags src_access_scope_;
-    const AccessContext::ScopeMap &event_scope_;
-    QueueId scope_queue_id_;
-    const ResourceUsageTag scope_tag_;
-    AccessContext::ScopeMap::const_iterator scope_pos_;
-    AccessContext::ScopeMap::const_iterator scope_end_;
-};
-
-HazardResult AccessContext::DetectImageBarrierHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                                                     VkPipelineStageFlags2KHR src_exec_scope,
-                                                     const SyncStageAccessFlags &src_access_scope, QueueId queue_id,
-                                                     const ScopeMap &scope_map, const ResourceUsageTag scope_tag,
-                                                     AccessContext::DetectOptions options) const {
-    EventBarrierHazardDetector detector(SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope,
-                                        scope_map, queue_id, scope_tag);
-    return DetectHazard(detector, image, subresource_range, false, options);
-}
-
-HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen &view_gen, const SyncBarrier &barrier,
-                                                     DetectOptions options) const {
-    BarrierHazardDetector detector(SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, barrier.src_exec_scope.exec_scope,
-                                   barrier.src_access_scope);
-    return DetectHazard(detector, view_gen, AttachmentViewGen::Gen::kViewSubresource, options);
-}
-
-HazardResult AccessContext::DetectImageBarrierHazard(const ImageState &image, VkPipelineStageFlags2KHR src_exec_scope,
-                                                     const SyncStageAccessFlags &src_access_scope,
-                                                     const VkImageSubresourceRange &subresource_range,
-                                                     const DetectOptions options) const {
-    BarrierHazardDetector detector(SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope);
-    return DetectHazard(detector, image, subresource_range, false, options);
-}
-
-HazardResult AccessContext::DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const {
-    return DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope.exec_scope,
-                                    image_barrier.barrier.src_access_scope, image_barrier.range, kDetectAll);
-}
 
 template <typename Flags, typename Map>
 SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map &map) {
@@ -1675,55 +939,6 @@ SyncStageAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2KHR stage
     // accesses (after doing a couple factoring of common terms the union of stage/access intersections is the intersections
     // of the union of all stage/access types for all the stages and the same unions for the access mask...
     return AccessScopeByStage(stages) & AccessScopeByAccess(accesses);
-}
-
-// The semantics of the InfillUpdateOps of infill_update_range are slightly different than for the UpdateMemoryAccessState Action
-// operations, as this simplifies the generic traversal.  So we wrap them in a semantics Adapter to get the same effect.
-template <typename Action>
-struct ActionToOpsAdapter {
-    using Map = ResourceAccessRangeMap;
-    using Range = typename Map::key_type;
-    using Iterator = typename Map::iterator;
-    using IndexType = typename Map::index_type;
-
-    void infill(Map &accesses, const Iterator &pos, const Range &infill_range) const {
-        // Combine Infill and update operations to make the generic implementation simpler
-        Iterator infill = action.Infill(&accesses, pos, infill_range);
-        if (infill == accesses.end()) return;  // Allow action to 'pass' on filling in the blanks
-
-        // Need to apply the action to the Infill.  'infill_update_range' expect ops.infill to be completely done with
-        // the infill_range, where as Action::Infill assumes the caller will apply the action() logic to the infill_range
-        for (; infill != pos; ++infill) {
-            assert(infill != accesses.end());
-            action(infill);
-        }
-    }
-    void update(const Iterator &pos) const { action(pos); }
-    const Action &action;
-};
-template <typename Action, typename RangeGen>
-void UpdateMemoryAccessState(ResourceAccessRangeMap &accesses, const Action &action, RangeGen &range_gen) {
-    ActionToOpsAdapter<Action> ops{action};
-    infill_update_rangegen(accesses, range_gen, ops);
-}
-
-template <typename Action>
-void UpdateMemoryAccessRangeState(ResourceAccessRangeMap &accesses, Action &action, const ResourceAccessRange &range) {
-    ActionToOpsAdapter<Action> ops{action};
-    infill_update_range(accesses, range, ops);
-}
-
-ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(ResourceAccessRangeMap *accesses,
-                                                                                       const Iterator &pos,
-                                                                                       const ResourceAccessRange &range) const {
-    // this is only called on gaps, and never returns a gap.
-    ResourceAccessState default_state;
-    context.ResolvePreviousAccess(range, accesses, &default_state);
-    return accesses->lower_bound(range);
-}
-void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAccessRangeMap::iterator &pos) const {
-    auto &access_state = pos->second;
-    access_state.Update(usage_info, ordering_rule, tag);
 }
 
 // The barrier operation for pipeline and subpass dependencies`
@@ -1771,138 +986,6 @@ struct WaitEventBarrierOp {
     void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_ops, barrier, layout_transition); }
 };
 
-// This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
-// resolves the pending state. Suitable for processing Global memory barriers, or Subpass Barriers when the "final" barrier
-// of a collection is known/present.
-template <typename BarrierOp, typename OpVector = std::vector<BarrierOp>>
-class ApplyBarrierOpsFunctor {
-  public:
-    using Iterator = ResourceAccessRangeMap::iterator;
-    // Only called with a gap, and pos at the lower_bound(range)
-    inline Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
-        if (!infill_default_) {
-            return pos;
-        }
-        ResourceAccessState default_state;
-        auto inserted = accesses->insert(pos, std::make_pair(range, default_state));
-        return inserted;
-    }
-
-    void operator()(const Iterator &pos) const {
-        auto &access_state = pos->second;
-        for (const auto &op : barrier_ops_) {
-            op(&access_state);
-        }
-
-        if (resolve_) {
-            // If this is the last (or only) batch, we can do the pending resolve as the last step in this operation to avoid
-            // another walk
-            access_state.ApplyPendingBarriers(tag_);
-        }
-    }
-
-    // A valid tag is required IFF layout_transition is true, as transitions are write ops
-    ApplyBarrierOpsFunctor(bool resolve, typename OpVector::size_type size_hint, ResourceUsageTag tag)
-        : resolve_(resolve), infill_default_(false), barrier_ops_(), tag_(tag) {
-        barrier_ops_.reserve(size_hint);
-    }
-    void EmplaceBack(const BarrierOp &op) {
-        barrier_ops_.emplace_back(op);
-        infill_default_ |= op.layout_transition;
-    }
-
-  private:
-    bool resolve_;
-    bool infill_default_;
-    OpVector barrier_ops_;
-    const ResourceUsageTag tag_;
-};
-
-// This functor applies a single barrier, updating the "pending state" in each touched memory range, but does not
-// resolve the pendinging state. Suitable for processing Image and Buffer barriers from PipelineBarriers or Events
-template <typename BarrierOp>
-class ApplyBarrierFunctor : public ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>> {
-    using Base = ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>>;
-
-  public:
-    ApplyBarrierFunctor(const BarrierOp &barrier_op) : Base(false, 1, kInvalidTag) { Base::EmplaceBack(barrier_op); }
-};
-
-// This functor resolves the pendinging state.
-class ResolvePendingBarrierFunctor : public ApplyBarrierOpsFunctor<NoopBarrierAction, small_vector<NoopBarrierAction, 1>> {
-    using Base = ApplyBarrierOpsFunctor<NoopBarrierAction, small_vector<NoopBarrierAction, 1>>;
-
-  public:
-    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : Base(true, 0, tag) {}
-};
-
-void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const ResourceAccessRange &range, const ResourceUsageTag tag) {
-    if (!SimpleBinding(buffer)) return;
-    const auto base_address = ResourceBaseAddress(buffer);
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessRangeState(access_state_map_, action, range + base_address);
-}
-
-void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
-    // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, false);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
-}
-void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                      const VkExtent3D &extent, const ResourceUsageTag tag) {
-    // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, offset, extent, false);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
-}
-
-void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
-                                      SyncOrdering ordering_rule, const VkOffset3D &offset, const VkExtent3D &extent,
-                                      const ResourceUsageTag tag) {
-    // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen(image_view.MakeImageRangeGen(offset, extent));
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
-}
-
-void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
-                                      SyncOrdering ordering_rule, ResourceUsageTag tag) {
-    // Get is const, and will be copied in callee
-    UpdateAccessState(image_view.GetFullViewImageRangeGen(), current_usage, ordering_rule, tag);
-}
-
-void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                      SyncStageAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (attachment_gen) {
-        // Value of const optional is const, and will be copied in callee
-        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, tag);
-    }
-}
-
-void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTag tag) {
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
-    UpdateMemoryAccessState(access_state_map_, action, range_gen);
-}
-
-void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage,
-                                      SyncOrdering ordering_rule, ResourceUsageTag tag) {
-    // range_gen is non-temporary to avoid infinite call recursion
-    ImageRangeGen mutable_range_gen(range_gen);
-    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag);
-}
-
-template <typename Action>
-void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action) {
-    const std::optional<ImageRangeGen> &ref_range_gen = view_gen.GetRangeGen(gen_type);
-    if (ref_range_gen) {
-        ImageRangeGen range_gen(*ref_range_gen);
-        UpdateMemoryAccessState(access_state_map_, action, range_gen);
-    }
-}
-
 void AccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state,
                                                   const AttachmentViewGenVector &attachment_views, uint32_t subpass,
                                                   const ResourceUsageTag tag) {
@@ -1941,45 +1024,6 @@ void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_stat
             }
         }
     }
-}
-
-template <typename Action>
-void AccessContext::ApplyToContext(const Action &barrier_action) {
-    // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
-    UpdateMemoryAccessRangeState(access_state_map_, barrier_action, kFullRange);
-}
-
-void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
-    for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
-        auto &context = contexts[subpass_index];
-        ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
-        context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, nullptr, false);
-    }
-}
-
-// Caller must ensure that lifespan of this is less than the lifespan of from
-void AccessContext::ImportAsyncContexts(const AccessContext &from) {
-    async_.insert(async_.end(), from.async_.begin(), from.async_.end());
-}
-
-// Suitable only for *subpass* access contexts
-HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const {
-    if (!attach_view.IsValid()) return HazardResult();
-
-    // We should never ask for a transition from a context we don't have
-    assert(track_back.source_subpass);
-
-    // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
-    // Hazard detection for the transition can be against the merged of the barriers (it only uses src_...)
-    const auto merged_barrier = MergeBarriers(track_back.barriers);
-    HazardResult hazard = track_back.source_subpass->DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious);
-    if (!hazard.IsHazard()) {
-        // The Async hazard check is against the current context's async set.
-        SyncBarrier null_barrier = {};
-        hazard = DetectImageBarrierHazard(attach_view, null_barrier, kDetectAsync);
-    }
-
-    return hazard;
 }
 
 void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
@@ -2814,39 +1858,6 @@ void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {
     sync_ops_.emplace_back(tag, std::move(sync_op));
 }
 
-class HazardDetectFirstUse {
-  public:
-    HazardDetectFirstUse(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range)
-        : recorded_use_(recorded_use), queue_id_(queue_id), tag_range_(tag_range) {}
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_);
-    }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        return pos->second.DetectAsyncHazard(recorded_use_, tag_range_, start_tag);
-    }
-
-  private:
-    const ResourceAccessState &recorded_use_;
-    const QueueId queue_id_;
-    const ResourceUsageRange &tag_range_;
-};
-
-// This is called with the *recorded* command buffers access context, with the *active* access context pass in, againsts which
-// hazards will be detected
-HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
-                                                 const AccessContext &access_context) const {
-    HazardResult hazard;
-    for (const auto &recorded_access : access_state_map_) {
-        // Cull any entries not in the current tag range
-        if (!recorded_access.second.FirstAccessInTagRange(tag_range)) continue;
-        HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range);
-        hazard = access_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
-        if (hazard.IsHazard()) break;
-    }
-
-    return hazard;
-}
-
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecutionContext &exec_context,
                                                             const CMD_BUFFER_STATE &cmd_buffer, vvl::Func command) const {
     bool skip = false;
@@ -3234,7 +2245,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
         }
 
         // Use the merged barrier for the hazard check (safe since it just considers the src (first) scope.
-        const auto merged_barrier = MergeBarriers(trackback.barriers);
+        const SyncBarrier merged_barrier(trackback.barriers);
         auto hazard = context->DetectImageBarrierHazard(view_gen, merged_barrier, AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.IsHazard()) {
             const Location loc(command);
@@ -3442,6 +2453,12 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier) {
     auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
     dst_exec_scope = dst.exec_scope;
     dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask);
+}
+
+SyncBarrier::SyncBarrier(const std::vector<SyncBarrier> &barriers) : SyncBarrier() {
+    for (const auto &barrier : barriers) {
+        Merge(barrier);
+    }
 }
 
 ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const {
@@ -6130,13 +5147,13 @@ struct SyncOpPipelineBarrierFunctorFactory {
 
 template <typename Barriers, typename FunctorFactory>
 void SyncOpBarriers::ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, const QueueId queue_id,
-                                   const ResourceUsageTag tag, AccessContext *context) {
+                                   const ResourceUsageTag tag, AccessContext *access_context) {
     for (const auto &barrier : barriers) {
         const auto *state = barrier.GetState();
         if (state) {
             auto update_action = factory.MakeApplyFunctor(queue_id, barrier.barrier, barrier.IsLayoutTransition());
             auto range_gen = factory.MakeRangeGen(*state, barrier.Range());
-            UpdateMemoryAccessState(context->GetAccessStateMap(), update_action, range_gen);
+            access_context->UpdateMemoryAccessState(update_action, range_gen);
         }
     }
 }
@@ -6149,7 +5166,7 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
         barriers_functor.EmplaceBack(factory.MakeGlobalBarrierOpFunctor(queue_id, barrier));
     }
     auto range_gen = factory.MakeGlobalRangeGen();
-    UpdateMemoryAccessState(access_context->GetAccessStateMap(), barriers_functor, range_gen);
+    access_context->UpdateMemoryAccessState(barriers_functor, range_gen);
 }
 
 ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) {
@@ -7884,7 +6901,7 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
 
 void QueueBatchContext::SetupAccessContext(const PresentedImage &presented) {
     if (presented.batch) {
-        access_context_.ResolveFromContext(NoopBarrierAction(), presented.batch->access_context_);
+        access_context_.ResolveFromContext(presented.batch->access_context_);
         batch_log_.Import(presented.batch->batch_log_);
         ImportSyncTags(*presented.batch);
     }
@@ -7898,7 +6915,7 @@ void QueueBatchContext::CommonSetupAccessContext(const std::shared_ptr<const Que
         events_context_.DeepCopy(prev->events_context_);
         if (!vvl::Contains(batches_resolved, prev)) {
             // If there are no semaphores to the previous batch, make sure a "submit order" non-barriered import is done
-            access_context_.ResolveFromContext(NoopBarrierAction(), prev->access_context_);
+            access_context_.ResolveFromContext(prev->access_context_);
             batches_resolved.emplace(prev);
         }
     }
@@ -8312,10 +7329,6 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, 
 FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, const PresentedImage &image, ResourceUsageTag tag_)
     : fence(fence_), tag(tag_), queue_id(kQueueIdInvalid), acquired(image, tag) {}
 
-// For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
-// unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
-
-ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ == kInvalidTag) ? context_->StartTag() : tag_; }
 
 bool syncval_state::ImageState::IsSimplyBound() const {
     bool simple = SimpleBinding(static_cast<const BINDABLE &>(*this)) || IsSwapchainImage() || bind_swapchain;

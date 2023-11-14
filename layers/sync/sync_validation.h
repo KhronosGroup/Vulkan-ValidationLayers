@@ -26,7 +26,8 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 
-#include "sync/sync_model.h"
+//#include "sync/sync_model.h"
+#include "sync/sync_access_context.h"
 
 class AccessContext;
 class CommandBufferAccessContext;
@@ -44,50 +45,8 @@ struct SyncEventState;
 class SyncValidator;
 struct ClearAttachmentInfo;
 
-using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
 namespace syncval_state {
-class CommandBuffer;
-class Swapchain;
-
-class ImageState : public IMAGE_STATE {
-  public:
-    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
-               VkFormatFeatureFlags2KHR features)
-        : IMAGE_STATE(dev_data, img, pCreateInfo, features), opaque_base_address_(0U) {}
-
-    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-               uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
-        : IMAGE_STATE(dev_data, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
-    bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
-    bool IsTiled() const { return !IsLinear(); }
-    bool IsSimplyBound() const;
-
-    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
-
-    VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
-    bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
-    VkDeviceSize GetResourceBaseAddress() const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                    const VkExtent3D &extent, bool is_depth_sliced) const;
-
-  protected:
-    VkDeviceSize opaque_base_address_ = 0U;
-};
-class ImageViewState : public IMAGE_VIEW_STATE {
-  public:
-    ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
-    const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
-    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
-    const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
-
-  protected:
-    ImageRangeGen MakeImageRangeGen() const;
-    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this line.
-    const ImageRangeGen view_range_gen;
-};
 
 enum class AttachmentType { kColor, kDepth, kStencil };
 
@@ -391,24 +350,6 @@ struct FenceSyncState {
     FenceSyncState(const std::shared_ptr<const vvl::Fence> &fence_, const PresentedImage &image, ResourceUsageTag tag_);
 };
 
-class AttachmentViewGen {
-  public:
-    enum Gen { kViewSubresource = 0, kRenderArea = 1, kDepthOnlyRenderArea = 2, kStencilOnlyRenderArea = 3, kGenSize = 4 };
-    AttachmentViewGen(const syncval_state::ImageViewState *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
-    AttachmentViewGen(const AttachmentViewGen &other) = default;
-    AttachmentViewGen(AttachmentViewGen &&other) = default;
-    const syncval_state::ImageViewState *GetViewState() const { return view_; }
-    const std::optional<ImageRangeGen> &GetRangeGen(Gen type) const;
-    bool IsValid() const { return gen_store_[Gen::kViewSubresource].has_value(); }
-    Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
-
-  private:
-    const syncval_state::ImageViewState *view_ = nullptr;
-    VkImageAspectFlags view_mask_ = 0U;
-    std::array<std::optional<ImageRangeGen>, Gen::kGenSize> gen_store_;
-};
-
-using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
 using SyncMemoryBarrier = SyncBarrier;
 struct SyncBufferMemoryBarrier {
@@ -422,51 +363,6 @@ struct SyncBufferMemoryBarrier {
     SyncBufferMemoryBarrier(const Buffer &buffer_, const SyncBarrier &barrier_, const ResourceAccessRange &range_)
         : buffer(buffer_), barrier(barrier_), range(range_) {}
     SyncBufferMemoryBarrier() = default;
-};
-
-struct SyncImageMemoryBarrier {
-    using ImageState = syncval_state::ImageState;
-    using Image = std::shared_ptr<const ImageState>;
-
-    Image image;
-    uint32_t index;
-    SyncBarrier barrier;
-    VkImageLayout old_layout;
-    VkImageLayout new_layout;
-    VkImageSubresourceRange range;
-
-    bool IsLayoutTransition() const { return old_layout != new_layout; }
-    const VkImageSubresourceRange &Range() const { return range; };
-    const ImageState *GetState() const { return image.get(); }
-    SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
-                           VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
-        : image(image_),
-          index(index_),
-          barrier(barrier_),
-          old_layout(old_layout_),
-          new_layout(new_layout_),
-          range(subresource_range_) {}
-    SyncImageMemoryBarrier() = default;
-};
-
-template <typename SubpassNode>
-struct SubpassBarrierTrackback {
-    std::vector<SyncBarrier> barriers;
-    const SubpassNode *source_subpass = nullptr;
-    SubpassBarrierTrackback() = default;
-    SubpassBarrierTrackback(const SubpassBarrierTrackback &) = default;
-    SubpassBarrierTrackback(const SubpassNode *source_subpass_, VkQueueFlags queue_flags_,
-                            const std::vector<const VkSubpassDependency2 *> &subpass_dependencies_)
-        : barriers(), source_subpass(source_subpass_) {
-        barriers.reserve(subpass_dependencies_.size());
-        for (const VkSubpassDependency2 *dependency : subpass_dependencies_) {
-            assert(dependency);
-            barriers.emplace_back(queue_flags_, *dependency);
-        }
-    }
-    SubpassBarrierTrackback(const SubpassNode *source_subpass_, const SyncBarrier &barrier_)
-        : barriers(1, barrier_), source_subpass(source_subpass_) {}
-    SubpassBarrierTrackback &operator=(const SubpassBarrierTrackback &) = default;
 };
 
 class SyncOpBase {
@@ -673,237 +569,6 @@ class SyncOpEndRenderPass : public SyncOpBase {
     safe_VkSubpassEndInfo subpass_end_info_;
 };
 
-class AccessContext {
-  public:
-    using ImageState = syncval_state::ImageState;
-    using ImageViewState = syncval_state::ImageViewState;
-    using ScopeMap = ResourceAccessRangeMap;
-    enum DetectOptions : uint32_t {
-        kDetectPrevious = 1U << 0,
-        kDetectAsync = 1U << 1,
-        kDetectAll = (kDetectPrevious | kDetectAsync)
-    };
-
-    using TrackBack = SubpassBarrierTrackback<AccessContext>;
-
-
-    HazardResult DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
-    HazardResult DetectHazard(const ImageState &image, SyncStageAccessIndex current_usage,
-                              const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const;
-    HazardResult DetectHazard(const ImageRangeGen &ref_range_gen, SyncStageAccessIndex current_usage,
-                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
-    HazardResult DetectHazard(const ImageViewState &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
-                              SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
-    HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                              SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
-    HazardResult DetectHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                              const VkExtent3D &extent, bool is_depth_sliced, SyncStageAccessIndex current_usage,
-                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
-
-    HazardResult DetectImageBarrierHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                                          VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
-                                          QueueId queue_id, const ScopeMap &scope_map, ResourceUsageTag scope_tag,
-                                          DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
-                                          DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const ImageState &image, VkPipelineStageFlags2KHR src_exec_scope,
-                                          const SyncStageAccessFlags &src_access_scope,
-                                          const VkImageSubresourceRange &subresource_range, DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const;
-    HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
-
-    void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
-                                 const AttachmentViewGenVector &attachment_views, ResourceUsageTag tag);
-
-    HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
-                                      const AccessContext &access_context) const;
-
-    const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
-    void Reset() {
-        prev_.clear();
-        prev_by_subpass_.clear();
-        async_.clear();
-        src_external_ = nullptr;
-        dst_external_ = TrackBack();
-        start_tag_ = ResourceUsageTag();
-        access_state_map_.clear();
-    }
-
-    void ResolvePreviousAccesses();
-    void ResolveFromContext(const AccessContext &from);
-
-    template <typename ResolveOp>
-    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
-                            const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
-    template <typename ResolveOp, typename RangeGenerator>
-    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context, RangeGenerator range_gen,
-                            const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
-
-    void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const ResourceAccessRange &range, ResourceUsageTag tag);
-    void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
-    void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
-                           ResourceUsageTag tag);
-    void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
-                           SyncOrdering ordering_rule, ResourceUsageTag tag);
-    void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTag tag);
-    void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTag tag);
-    void UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTag tag);
-    void UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTag tag);
-    void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
-                                       uint32_t subpass, ResourceUsageTag tag);
-    void UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
-                                     uint32_t subpass, ResourceUsageTag tag);
-
-    void ResolveChildContexts(const std::vector<AccessContext> &contexts);
-
-    void ImportAsyncContexts(const AccessContext &from);
-    void ClearAsyncContexts() { async_.clear(); }
-    template <typename Action>
-    void ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action);
-    template <typename Action>
-    void ApplyToContext(const Action &barrier_action);
-
-    AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
-                  const std::vector<AccessContext> &contexts, const AccessContext *external_context);
-
-    AccessContext() { Reset(); }
-    AccessContext(const AccessContext &copy_from) = default;
-    void Trim();
-    void TrimAndClearFirstAccess();
-    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
-
-    ResourceAccessRangeMap &GetAccessStateMap() { return access_state_map_; }
-    const ResourceAccessRangeMap &GetAccessStateMap() const { return access_state_map_; }
-    const TrackBack *GetTrackBackFromSubpass(uint32_t subpass) const {
-        if (subpass == VK_SUBPASS_EXTERNAL) {
-            return src_external_;
-        } else {
-            assert(subpass < prev_by_subpass_.size());
-            return prev_by_subpass_[subpass];
-        }
-    }
-
-    bool ValidateLayoutTransitions(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state,
-                                   const VkRect2D &render_area, uint32_t subpass, const AttachmentViewGenVector &attachment_views,
-                                   vvl::Func command) const;
-    bool ValidateLoadOperation(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                               uint32_t subpass, const AttachmentViewGenVector &attachment_views, vvl::Func command) const;
-    bool ValidateStoreOperation(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                uint32_t subpass, const AttachmentViewGenVector &attachment_views, vvl::Func command) const;
-    bool ValidateResolveOperations(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state,
-                                   const VkRect2D &render_area, const AttachmentViewGenVector &attachment_views, vvl::Func command,
-                                   uint32_t subpass) const;
-
-    void SetStartTag(ResourceUsageTag tag) { start_tag_ = tag; }
-    ResourceUsageTag StartTag() const { return start_tag_; }
-
-    template <typename Action>
-    void ForAll(Action &&action);
-    template <typename Action>
-    void ConstForAll(Action &&action) const;
-    template <typename Predicate>
-    void EraseIf(Predicate &&pred);
-
-    // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
-    void AddAsyncContext(const AccessContext *context, ResourceUsageTag tag);
-
-    class AsyncReference {
-      public:
-        AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag)
-            : context_(&async_context), tag_(async_tag) {}
-        const AccessContext &Context() const { return *context_; }
-        // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
-        // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
-        ResourceUsageTag StartTag() const;
-
-      protected:
-        const AccessContext *context_;
-        ResourceUsageTag tag_;  // Start of open ended asynchronous range
-    };
-
-  private:
-    struct UpdateMemoryAccessStateFunctor {
-        using Iterator = ResourceAccessRangeMap::iterator;
-        Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const;
-        void operator()(const Iterator &pos) const;
-        UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncStageAccessIndex usage_, SyncOrdering ordering_rule_,
-                                       ResourceUsageTag tag_)
-            : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag(tag_) {}
-        const AccessContext &context;
-        const SyncStageAccessInfoType &usage_info;
-        const SyncOrdering ordering_rule;
-        const ResourceUsageTag tag;
-    };
-
-    // Follow the context previous to access the access state, supporting "lazy" import into the context. Not intended for
-    // subpass layout transition, as the pending state handling is more complex
-    // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
-    // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
-    void ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                               const ResourceAccessState *infill_state,
-                               const ResourceAccessStateFunction *previous_barrier = nullptr) const;
-    template <typename BarrierAction>
-    void ResolvePreviousAccessStack(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                                    const ResourceAccessState *infill_state, const BarrierAction &previous_barrie) const;
-    template <typename BarrierAction>
-    void ResolveAccessRange(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, BarrierAction &barrier_action,
-                            ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
-    template <typename BarrierAction>
-    void ResolveAccessRange(const ResourceAccessRange &range, BarrierAction &barrier_action, ResourceAccessRangeMap *resolve_map,
-                            const ResourceAccessState *infill_state, bool recur_to_infill = true) const;
-
-    template <typename Detector>
-    HazardResult DetectHazardRange(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const;
-    template <typename Detector, typename RangeGen>
-    HazardResult DetectHazardGeneratedRanges(Detector &detector, RangeGen &range_gen, DetectOptions options) const;
-    template <typename Detector, typename RangeGen>
-    HazardResult DetectHazardGeneratedRanges(Detector &detector, const RangeGen &range_gen, DetectOptions options) const {
-        RangeGen mutable_gen(range_gen);
-        return DetectHazardGeneratedRanges<Detector, RangeGen>(detector, mutable_gen, options);
-    }
-    template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                              DetectOptions options) const;
-    template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                              const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
-                              DetectOptions options) const;
-    template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                              bool is_depth_sliced, DetectOptions options) const;
-
-    template <typename Detector>
-    HazardResult DetectHazardOneRange(Detector &detector, bool detect_prev, ResourceAccessRangeMap::const_iterator &pos,
-                                      const ResourceAccessRangeMap::const_iterator &the_end,
-                                      const ResourceAccessRange &range) const;
-
-    template <typename Detector, typename RangeGen>
-    HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag) const;
-
-    template <typename NormalizeOp>
-    void Trim(NormalizeOp &&normalize);
-
-    template <typename Detector>
-    HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;
-
-    ResourceAccessRangeMap access_state_map_;
-    std::vector<TrackBack> prev_;
-    std::vector<TrackBack *> prev_by_subpass_;
-    // These contexts *must* have the same lifespan as this context, or be cleared, before the referenced contexts can expire
-    std::vector<AsyncReference> async_;
-    TrackBack *src_external_;
-    TrackBack dst_external_;
-    ResourceUsageTag start_tag_;
-};
-
 struct SyncEventState {
     enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
     using EventPointer = std::shared_ptr<const EVENT_STATE>;
@@ -998,6 +663,9 @@ class RenderPassAccessContext {
                             const std::vector<const syncval_state::ImageViewState *> &attachment_views,
                             const AccessContext *external_context);
 
+    bool ValidateStoreOperation(const SyncValidationInfo &val_info, vvl::Func command) const;
+    bool ValidateResolveOperations(const SyncValidationInfo &val_info, vvl::Func command) const;
+
     bool ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd_buffer,
                                        vvl::Func command) const;
     void RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd_buffer, ResourceUsageTag tag);
@@ -1089,20 +757,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         SyncOpEntry(const SyncOpEntry &other) = default;
     };
 
-    CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr)
-        : CommandExecutionContext(sync_validator),
-          cb_state_(),
-          access_log_(std::make_shared<AccessLog>()),
-          cbs_referenced_(std::make_shared<CommandBufferSet>()),
-          command_number_(0),
-          subcommand_number_(0),
-          reset_count_(0),
-          cb_access_context_(),
-          current_context_(&cb_access_context_),
-          events_context_(),
-          render_pass_contexts_(),
-          current_renderpass_context_(),
-          sync_ops_() {}
+    CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr);
     CommandBufferAccessContext(SyncValidator &sync_validator, CMD_BUFFER_STATE *cb_state)
         : CommandBufferAccessContext(&sync_validator) {
         cb_state_ = cb_state;
@@ -1124,24 +779,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         cb_state_ = nullptr;
     }
 
-    void Reset() {
-        access_log_ = std::make_shared<AccessLog>();
-        cbs_referenced_ = std::make_shared<CommandBufferSet>();
-        if (cb_state_) {
-            cbs_referenced_->insert(cb_state_->shared_from_this());
-        }
-        sync_ops_.clear();
-        command_number_ = 0;
-        subcommand_number_ = 0;
-        reset_count_++;
-        command_handles_.clear();
-        cb_access_context_.Reset();
-        render_pass_contexts_.clear();
-        current_context_ = &cb_access_context_;
-        current_renderpass_context_ = nullptr;
-        events_context_.Clear();
-        dynamic_rendering_info_.reset();
-    }
+    void Reset();
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
     std::string FormatUsage(const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
