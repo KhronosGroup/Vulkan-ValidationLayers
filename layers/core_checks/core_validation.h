@@ -107,8 +107,13 @@ struct SemaphoreSubmitState {
     const CoreChecks* core;
     VkQueue queue;
     VkQueueFlags queue_flags;
-    vvl::unordered_set<VkSemaphore> signaled_semaphores;
-    vvl::unordered_set<VkSemaphore> unsignaled_semaphores;
+
+    // This tracks how the payload of a binary semaphore changes **within the current submission**.
+    // Before the first wait or signal no map entry for the semaphore is defined, which means that
+    // semaphore's state is defined by the previous submissions on this queue or by the submissions on other queues.
+    // After the first wait/signal the map starts tracking binary payload value: true - signaled, false - unsignaled.
+    vvl::unordered_map<VkSemaphore, bool> binary_signaling_state;
+
     vvl::unordered_set<VkSemaphore> internal_semaphores;
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
@@ -116,10 +121,21 @@ struct SemaphoreSubmitState {
     SemaphoreSubmitState(const CoreChecks* core_, VkQueue q_, VkQueueFlags queue_flags_)
         : core(core_), queue(q_), queue_flags(queue_flags_) {}
 
-    bool CannotWait(const SEMAPHORE_STATE& semaphore_state) const {
-        auto semaphore = semaphore_state.semaphore();
-        return unsignaled_semaphores.count(semaphore) || (!signaled_semaphores.count(semaphore) && !semaphore_state.CanBeWaited());
+    bool CannotWaitBinary(const SEMAPHORE_STATE& semaphore_state) const {
+        assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
+        const auto semaphore = semaphore_state.semaphore();
+
+        // Check if this submission has signaled or unsignaled the semaphore
+        if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
+            const bool signaled = it->second;
+            return !signaled;  // not signaled => can't wait
+        }
+        // If not, then query semaphore's payload set by other submissions.
+        // This will return either the payload set by the previous submissions on the current queue,
+        // or the payload that is currently being updated by the async running queues.
+        return !semaphore_state.CanBinaryBeWaited();
     }
+
     VkQueue AnotherQueueWaits(const SEMAPHORE_STATE& semaphore_state) const {
         // spec (for 003871 but all submit functions have a similar VUID):
         // "When a semaphore wait operation for a binary semaphore is **executed**,
@@ -141,23 +157,30 @@ struct SemaphoreSubmitState {
     bool ValidateWaitSemaphore(const Location& wait_semaphore_loc, VkSemaphore semaphore, uint64_t value);
     bool ValidateSignalSemaphore(const Location& signal_semaphore_loc, VkSemaphore semaphore, uint64_t value);
 
-    bool CannotSignalBinarySemaphore(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
+    bool CannotSignalBinary(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
         assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
         const auto semaphore = semaphore_state.semaphore();
-        if (signaled_semaphores.count(semaphore)) {
+
+        // Check if this submission has signaled or unsignaled the semaphore
+        if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
+            const bool signaled = it->second;
+            if (!signaled) {
+                return false;  // not signaled => can't wait
+            }
             other_queue = queue;
             other_command = vvl::Func::Empty;
-            return true;
+            return true;  // signaled => can wait
         }
-        if (!unsignaled_semaphores.count(semaphore)) {
-            const auto last_op = semaphore_state.LastOp();
-            if (last_op && !CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
-                other_queue = last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
-                other_command = last_op->command;
-                return true;
-            }
+        // If not, get signaling state from the semaphore's last op.
+        // Last op was recorded either by the previous sumbissions on this queue,
+        // or it's a hot state from async running queues (so can get outdated immediately after was read).
+        const auto last_op = semaphore_state.LastOp();
+        if (!last_op || CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
+            return false;
         }
-        return false;
+        other_queue = last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
+        other_command = last_op->command;
+        return true;
     }
 
     bool CheckSemaphoreValue(const SEMAPHORE_STATE& semaphore_state, std::string& where, uint64_t& bad_value,

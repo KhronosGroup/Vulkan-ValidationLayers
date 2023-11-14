@@ -392,10 +392,8 @@ std::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemO
     return result;
 }
 
-bool SEMAPHORE_STATE::CanBeSignaled() const {
-    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        return true;
-    }
+bool SEMAPHORE_STATE::CanBinaryBeSignaled() const {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto guard = ReadLock();
     if (timeline_.empty()) {
         return CanSignalBinarySemaphoreAfterOperation(completed_.op_type);
@@ -403,10 +401,8 @@ bool SEMAPHORE_STATE::CanBeSignaled() const {
     return timeline_.rbegin()->second.HasWaiters();
 }
 
-bool SEMAPHORE_STATE::CanBeWaited() const {
-    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        return true;
-    }
+bool SEMAPHORE_STATE::CanBinaryBeWaited() const {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto guard = ReadLock();
     if (timeline_.empty()) {
         return CanWaitBinarySemaphoreAfterOperation(completed_.op_type);
@@ -560,11 +556,9 @@ void SEMAPHORE_STATE::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) 
         auto guard = WriteLock();
         scope_ = kSyncScopeExternalPermanent;
     } else {
+        assert(type == VK_SEMAPHORE_TYPE_BINARY);  // checked by validation phase
         // Exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's
         // payload as executing a semaphore wait operation
-        //
-        // TODO: rename CanBeWaited > CanWaitBinarySemaphoreAfterOperation discovered a _potential_ bug.
-        // We probably want here to check for all semaphores not only binary ones.
         auto filter = [](const SEMAPHORE_STATE::SemOp &op, bool is_pending) {
             return is_pending && CanWaitBinarySemaphoreAfterOperation(op.op_type);
         };

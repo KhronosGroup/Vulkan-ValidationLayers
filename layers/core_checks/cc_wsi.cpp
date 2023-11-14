@@ -1065,7 +1065,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
             // are completed. So it is possible to get in a condition where the semaphore is doing
             // acquire / wait / acquire and the first acquire (and thus the wait) have completed, but our state
             // isn't aware of it yet. This results in MANY false positives.
-            if (!semaphore_state->CanBeSignaled()) {
+            if (!semaphore_state->CanBinaryBeSignaled()) {
                 const char *vuid =
                     version_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01288" : "VUID-vkAcquireNextImageKHR-semaphore-01286";
                 skip |= LogError(vuid, semaphore, loc, "Semaphore must not be currently signaled.");
