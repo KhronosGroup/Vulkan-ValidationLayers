@@ -94,14 +94,13 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
             const LogObjectList objlist(semaphore, queue, other_queue);
             skip |= core->LogError(vuid, objlist, loc, "queue (%s) is already waiting on semaphore (%s).",
                                    core->FormatHandle(other_queue).c_str(), core->FormatHandle(semaphore).c_str());
-        } else if (CannotWait(semaphore_state)) {
+        } else if (CannotWaitBinary(semaphore_state)) {
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kBinaryCannotBeSignalled);
             const LogObjectList objlist(semaphore, queue);
             skip |= core->LogError(vuid, objlist, loc, "queue (%s) is waiting on semaphore (%s) that has no way to be signaled.",
                                    core->FormatHandle(queue).c_str(), core->FormatHandle(semaphore).c_str());
         } else {
-            signaled_semaphores.erase(semaphore);
-            unsignaled_semaphores.insert(semaphore);
+            binary_signaling_state[semaphore] = false;
         }
     } else if (semaphore_state.Scope() == kSyncScopeExternalTemporary) {
         internal_semaphores.insert(semaphore);
@@ -156,7 +155,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
             if ((semaphore_state->Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
                 vvl::Func other_command = vvl::Func::Empty;
-                if (CannotSignalBinarySemaphore(*semaphore_state, other_queue, other_command)) {
+                if (CannotSignalBinary(*semaphore_state, other_queue, other_command)) {
                     std::stringstream initiator;
                     if (other_command != vvl::Func::Empty) {
                         initiator << String(other_command);
@@ -174,8 +173,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                                            core->FormatHandle(queue).c_str(), core->FormatHandle(semaphore).c_str(),
                                            initiator.str().c_str());
                 } else {
-                    unsignaled_semaphores.erase(semaphore);
-                    signaled_semaphores.insert(semaphore);
+                    binary_signaling_state[semaphore] = true;
                 }
             }
             break;

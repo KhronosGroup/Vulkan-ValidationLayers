@@ -104,8 +104,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
                     LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03253", sem_state->Handle(), info_loc.dot(Field::handleType),
                              "is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT, but semaphore type is %s.",
                              string_VkSemaphoreType(sem_state->type));
-            }
-            if (!sem_state->CanBeWaited()) {
+            } else if (!sem_state->CanBinaryBeWaited()) {
                 skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03254", sem_state->Handle(),
                                  info_loc.dot(Field::semaphore), "must be signaled or have a pending signal operation.");
             }

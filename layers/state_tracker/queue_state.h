@@ -228,8 +228,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     // look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
 
-    bool CanBeSignaled() const;
-    bool CanBeWaited() const;
+    bool CanBinaryBeSignaled() const;
+    bool CanBinaryBeWaited() const;
     bool HasPendingOps() const {
         auto guard = ReadLock();
         return !timeline_.empty();
