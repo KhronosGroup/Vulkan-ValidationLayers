@@ -1660,7 +1660,7 @@ Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMa
         // If the new (pos + 1) *isn't* stricly_less and pos is,
         // (pos + 1) must be the lower_bound, otherwise we have to look for it O(log n)
         ++pos;
-        if (pos->first.strictly_less(range)) {
+        if ((pos != end) && pos->first.strictly_less(range)) {
             pos = map.lower_bound(range);
         }
         assert(pos == map.lower_bound(range));
