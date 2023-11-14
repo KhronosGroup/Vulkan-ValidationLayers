@@ -1473,6 +1473,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "External tests are not supported by MockICD, skipping tests";
+    }
     constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     VkExternalMemoryFeatureFlags external_features = 0;

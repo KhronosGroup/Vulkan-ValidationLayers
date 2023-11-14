@@ -762,6 +762,7 @@ extern PFN_vkCmdDrawMeshTasksIndirectEXT CmdDrawMeshTasksIndirectEXT;
 extern PFN_vkCmdDrawMeshTasksIndirectCountEXT CmdDrawMeshTasksIndirectCountEXT;
 
 void InitCore(const char *api_name);
+void InitExtensionFromCore(const char* extension_name);
 void InitInstanceExtension(VkInstance instance, const char* extension_name);
 void InitDeviceExtension(VkInstance instance, VkDevice device, const char* extension_name);
 void ResetAllExtensions();

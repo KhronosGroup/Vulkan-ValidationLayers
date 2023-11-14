@@ -34,6 +34,9 @@ TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature) {
 TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature12) {
     TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.2 using the extension");
 
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())

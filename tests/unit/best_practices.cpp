@@ -94,6 +94,9 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
 TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     TEST_DESCRIPTION("Create an instance with a deprecated extension.");
 
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework())

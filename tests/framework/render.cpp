@@ -198,6 +198,22 @@ void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
 void VkRenderFramework::InitFramework(void *instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
+    const auto ExtensionIncludedInTargetVersion = [this](const char *extension) {
+        if (!m_target_api_version.Valid()) return false;
+
+        const auto promotion_info_map = InstanceExtensions::get_promotion_info_map();
+        for (const auto &version_it : promotion_info_map) {
+            if (m_target_api_version >= version_it.first) {
+                const auto promoted_exts = version_it.second.second;
+                if (promoted_exts.find(extension) != promoted_exts.end()) {
+                    // Replicate the core entry points into the extension entry points
+                    vk::InitExtensionFromCore(extension);
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
     const auto LayerNotSupportedWithReporting = [this](const char *layer) {
         if (InstanceLayerSupported(layer))
             return false;
@@ -234,6 +250,14 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     }
 #endif
 
+    vk::ResetAllExtensions();
+
+    // Remove promoted extensions from both the instance and required extension lists
+    if (!allow_promoted_extensions_) {
+        RemoveIf(m_required_extensions, ExtensionIncludedInTargetVersion);
+        RemoveIf(m_instance_extension_names, ExtensionIncludedInTargetVersion);
+    }
+
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
     RemoveIf(m_instance_extension_names, ExtensionNotSupportedWithReporting);
 
@@ -258,7 +282,6 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance_));
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
-    vk::ResetAllExtensions();
     for (const char *instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(instance_, instance_ext_name);
     }
@@ -537,6 +560,23 @@ VkFormat VkRenderFramework::GetRenderTargetFormat() {
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
+    const auto ExtensionIncludedInDeviceApiVersion = [this](const char *extension) {
+        auto device_version = std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));
+        if (!device_version.Valid()) return false;
+
+        const auto promotion_info_map = DeviceExtensions::get_promotion_info_map();
+        for (const auto &version_it : promotion_info_map) {
+            if (device_version >= version_it.first) {
+                const auto promoted_exts = version_it.second.second;
+                if (promoted_exts.find(extension) != promoted_exts.end()) {
+                    // Replicate the core entry points into the extension entry points
+                    vk::InitExtensionFromCore(extension);
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
     const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
         if (DeviceExtensionSupported(extension))
             return false;
@@ -546,6 +586,12 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
             return true;
         }
     };
+
+    // Remove promoted extensions from both the instance and required extension lists
+    if (!allow_promoted_extensions_) {
+        RemoveIf(m_required_extensions, ExtensionIncludedInDeviceApiVersion);
+        RemoveIf(m_device_extension_names, ExtensionIncludedInDeviceApiVersion);
+    }
 
     RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
 

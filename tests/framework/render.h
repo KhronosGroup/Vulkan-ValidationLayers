@@ -134,6 +134,10 @@ class VkRenderFramework : public VkTestFramework {
     // if requested extensions are not supported, helper function to get string to print out
     std::string RequiredExtensionsNotSupported() const;
 
+    // By default, requested extensions that are promoted to the effective API version (and thus are redundant)
+    // are not enabled, but this can be overridden for individual test cases that explicitly test such use cases.
+    void AllowPromotedExtensions() { allow_promoted_extensions_ = true; }
+
     void *SetupValidationSettings(void *first_pnext);
 
     template <typename GLSLContainer>
@@ -169,6 +173,8 @@ class VkRenderFramework : public VkTestFramework {
 
     ErrorMonitor monitor_ = ErrorMonitor(m_print_vu);
     ErrorMonitor *m_errorMonitor = &monitor_;  // TODO: Removing this properly is it's own PR. It's a big change.
+
+    bool allow_promoted_extensions_ = false;
 
     VkApplicationInfo app_info_;
     std::vector<const char *> instance_layers_;

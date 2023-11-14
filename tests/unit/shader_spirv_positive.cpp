@@ -268,6 +268,9 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature) {
 TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature11) {
     TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.1 using the extension");
 
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework())

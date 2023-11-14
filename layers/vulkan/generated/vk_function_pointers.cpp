@@ -1035,6 +1035,201 @@ void InitCore(const char *api_name) {
     GetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageMemoryRequirements"));
     GetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageSparseMemoryRequirements"));
 }
+void InitExtensionFromCore(const char* extension_name) {
+    static const vvl::unordered_map<std::string, std::function<void()>> initializers = {
+        {
+            "VK_KHR_dynamic_rendering", []() {
+                CmdBeginRenderingKHR = CmdBeginRendering;
+                CmdEndRenderingKHR = CmdEndRendering;
+            }
+        },
+        {
+            "VK_KHR_get_physical_device_properties2", []() {
+                GetPhysicalDeviceFeatures2KHR = GetPhysicalDeviceFeatures2;
+                GetPhysicalDeviceProperties2KHR = GetPhysicalDeviceProperties2;
+                GetPhysicalDeviceFormatProperties2KHR = GetPhysicalDeviceFormatProperties2;
+                GetPhysicalDeviceImageFormatProperties2KHR = GetPhysicalDeviceImageFormatProperties2;
+                GetPhysicalDeviceQueueFamilyProperties2KHR = GetPhysicalDeviceQueueFamilyProperties2;
+                GetPhysicalDeviceMemoryProperties2KHR = GetPhysicalDeviceMemoryProperties2;
+                GetPhysicalDeviceSparseImageFormatProperties2KHR = GetPhysicalDeviceSparseImageFormatProperties2;
+            }
+        },
+        {
+            "VK_KHR_device_group", []() {
+                GetDeviceGroupPeerMemoryFeaturesKHR = GetDeviceGroupPeerMemoryFeatures;
+                CmdSetDeviceMaskKHR = CmdSetDeviceMask;
+                CmdDispatchBaseKHR = CmdDispatchBase;
+            }
+        },
+        {
+            "VK_KHR_maintenance1", []() {
+                TrimCommandPoolKHR = TrimCommandPool;
+            }
+        },
+        {
+            "VK_KHR_device_group_creation", []() {
+                EnumeratePhysicalDeviceGroupsKHR = EnumeratePhysicalDeviceGroups;
+            }
+        },
+        {
+            "VK_KHR_external_memory_capabilities", []() {
+                GetPhysicalDeviceExternalBufferPropertiesKHR = GetPhysicalDeviceExternalBufferProperties;
+            }
+        },
+        {
+            "VK_KHR_external_semaphore_capabilities", []() {
+                GetPhysicalDeviceExternalSemaphorePropertiesKHR = GetPhysicalDeviceExternalSemaphoreProperties;
+            }
+        },
+        {
+            "VK_KHR_descriptor_update_template", []() {
+                CreateDescriptorUpdateTemplateKHR = CreateDescriptorUpdateTemplate;
+                DestroyDescriptorUpdateTemplateKHR = DestroyDescriptorUpdateTemplate;
+                UpdateDescriptorSetWithTemplateKHR = UpdateDescriptorSetWithTemplate;
+            }
+        },
+        {
+            "VK_KHR_create_renderpass2", []() {
+                CreateRenderPass2KHR = CreateRenderPass2;
+                CmdBeginRenderPass2KHR = CmdBeginRenderPass2;
+                CmdNextSubpass2KHR = CmdNextSubpass2;
+                CmdEndRenderPass2KHR = CmdEndRenderPass2;
+            }
+        },
+        {
+            "VK_KHR_external_fence_capabilities", []() {
+                GetPhysicalDeviceExternalFencePropertiesKHR = GetPhysicalDeviceExternalFenceProperties;
+            }
+        },
+        {
+            "VK_KHR_get_memory_requirements2", []() {
+                GetImageMemoryRequirements2KHR = GetImageMemoryRequirements2;
+                GetBufferMemoryRequirements2KHR = GetBufferMemoryRequirements2;
+                GetImageSparseMemoryRequirements2KHR = GetImageSparseMemoryRequirements2;
+            }
+        },
+        {
+            "VK_KHR_sampler_ycbcr_conversion", []() {
+                CreateSamplerYcbcrConversionKHR = CreateSamplerYcbcrConversion;
+                DestroySamplerYcbcrConversionKHR = DestroySamplerYcbcrConversion;
+            }
+        },
+        {
+            "VK_KHR_bind_memory2", []() {
+                BindBufferMemory2KHR = BindBufferMemory2;
+                BindImageMemory2KHR = BindImageMemory2;
+            }
+        },
+        {
+            "VK_KHR_maintenance3", []() {
+                GetDescriptorSetLayoutSupportKHR = GetDescriptorSetLayoutSupport;
+            }
+        },
+        {
+            "VK_KHR_draw_indirect_count", []() {
+                CmdDrawIndirectCountKHR = CmdDrawIndirectCount;
+                CmdDrawIndexedIndirectCountKHR = CmdDrawIndexedIndirectCount;
+            }
+        },
+        {
+            "VK_KHR_timeline_semaphore", []() {
+                GetSemaphoreCounterValueKHR = GetSemaphoreCounterValue;
+                WaitSemaphoresKHR = WaitSemaphores;
+                SignalSemaphoreKHR = SignalSemaphore;
+            }
+        },
+        {
+            "VK_KHR_buffer_device_address", []() {
+                GetBufferDeviceAddressKHR = GetBufferDeviceAddress;
+                GetBufferOpaqueCaptureAddressKHR = GetBufferOpaqueCaptureAddress;
+                GetDeviceMemoryOpaqueCaptureAddressKHR = GetDeviceMemoryOpaqueCaptureAddress;
+            }
+        },
+        {
+            "VK_KHR_synchronization2", []() {
+                CmdSetEvent2KHR = CmdSetEvent2;
+                CmdResetEvent2KHR = CmdResetEvent2;
+                CmdWaitEvents2KHR = CmdWaitEvents2;
+                CmdPipelineBarrier2KHR = CmdPipelineBarrier2;
+                CmdWriteTimestamp2KHR = CmdWriteTimestamp2;
+                QueueSubmit2KHR = QueueSubmit2;
+            }
+        },
+        {
+            "VK_KHR_copy_commands2", []() {
+                CmdCopyBuffer2KHR = CmdCopyBuffer2;
+                CmdCopyImage2KHR = CmdCopyImage2;
+                CmdCopyBufferToImage2KHR = CmdCopyBufferToImage2;
+                CmdCopyImageToBuffer2KHR = CmdCopyImageToBuffer2;
+                CmdBlitImage2KHR = CmdBlitImage2;
+                CmdResolveImage2KHR = CmdResolveImage2;
+            }
+        },
+        {
+            "VK_KHR_maintenance4", []() {
+                GetDeviceBufferMemoryRequirementsKHR = GetDeviceBufferMemoryRequirements;
+                GetDeviceImageMemoryRequirementsKHR = GetDeviceImageMemoryRequirements;
+                GetDeviceImageSparseMemoryRequirementsKHR = GetDeviceImageSparseMemoryRequirements;
+            }
+        },
+        {
+            "VK_EXT_debug_marker", []() {
+            }
+        },
+        {
+            "VK_AMD_draw_indirect_count", []() {
+                CmdDrawIndirectCountAMD = CmdDrawIndirectCount;
+                CmdDrawIndexedIndirectCountAMD = CmdDrawIndexedIndirectCount;
+            }
+        },
+        {
+            "VK_EXT_tooling_info", []() {
+                GetPhysicalDeviceToolPropertiesEXT = GetPhysicalDeviceToolProperties;
+            }
+        },
+        {
+            "VK_EXT_host_query_reset", []() {
+                ResetQueryPoolEXT = ResetQueryPool;
+            }
+        },
+        {
+            "VK_EXT_extended_dynamic_state", []() {
+                CmdSetCullModeEXT = CmdSetCullMode;
+                CmdSetFrontFaceEXT = CmdSetFrontFace;
+                CmdSetPrimitiveTopologyEXT = CmdSetPrimitiveTopology;
+                CmdSetViewportWithCountEXT = CmdSetViewportWithCount;
+                CmdSetScissorWithCountEXT = CmdSetScissorWithCount;
+                CmdBindVertexBuffers2EXT = CmdBindVertexBuffers2;
+                CmdSetDepthTestEnableEXT = CmdSetDepthTestEnable;
+                CmdSetDepthWriteEnableEXT = CmdSetDepthWriteEnable;
+                CmdSetDepthCompareOpEXT = CmdSetDepthCompareOp;
+                CmdSetDepthBoundsTestEnableEXT = CmdSetDepthBoundsTestEnable;
+                CmdSetStencilTestEnableEXT = CmdSetStencilTestEnable;
+                CmdSetStencilOpEXT = CmdSetStencilOp;
+            }
+        },
+        {
+            "VK_EXT_private_data", []() {
+                CreatePrivateDataSlotEXT = CreatePrivateDataSlot;
+                DestroyPrivateDataSlotEXT = DestroyPrivateDataSlot;
+                SetPrivateDataEXT = SetPrivateData;
+                GetPrivateDataEXT = GetPrivateData;
+            }
+        },
+        {
+            "VK_EXT_extended_dynamic_state2", []() {
+                CmdSetRasterizerDiscardEnableEXT = CmdSetRasterizerDiscardEnable;
+                CmdSetDepthBiasEnableEXT = CmdSetDepthBiasEnable;
+                CmdSetPrimitiveRestartEnableEXT = CmdSetPrimitiveRestartEnable;
+            }
+        },
+
+    };
+
+    if (auto it = initializers.find(extension_name); it != initializers.end())
+        (it->second)();
+}
+
 void InitInstanceExtension(VkInstance instance, const char* extension_name) {
     assert(instance);
     static const vvl::unordered_map<std::string, std::function<void(VkInstance)>> initializers = {
