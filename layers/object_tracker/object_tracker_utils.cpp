@@ -31,6 +31,71 @@ VulkanTypedHandle ObjTrackStateTypedHandle(const ObjTrackState &track_state) {
     return typed_handle;
 }
 
+bool ObjectLifetimes::TracksObject(uint64_t object_handle, VulkanObjectType object_type) const {
+    // Look for object in object map
+    if (object_map[object_type].contains(object_handle)) {
+        return true;
+    }
+    // If object is an image, also look for it in the swapchain image map
+    if (object_type == kVulkanObjectTypeImage && swapchain_image_map.find(object_handle) != swapchain_image_map.end()) {
+        return true;
+    }
+    return false;
+}
+
+ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
+                             const char *wrong_parent_vuid, const Location &loc, VulkanObjectType parent_type) const {
+        constexpr bool skip = false;
+
+        // If this instance of lifetime validation tracks the object, report success
+        if (TracksObject(object_handle, object_type)) {
+            return skip;
+        }
+        // Object not found, look for it in other device object maps
+        const ObjectLifetimes *other_lifetimes = nullptr;
+        for (const auto &other_device_data : layer_data_map) {
+            const auto lifetimes = other_device_data.second->GetValidationObject<ObjectLifetimes>();
+            if (lifetimes && lifetimes != this && lifetimes->TracksObject(object_handle, object_type)) {
+                other_lifetimes = lifetimes;
+                break;
+            }
+        }
+        // Object was not found anywhere
+        if (!other_lifetimes) {
+            return LogError(invalid_handle_vuid, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
+                            object_handle);
+        }
+        // Anonymous object validation does not check parent, only that the object exists
+        if (wrong_parent_vuid == kVUIDUndefined) {
+            return skip;
+        }
+        // Object found on another device
+        LogObjectList objlist;
+        std::string handle_str;
+        std::string other_handle_str;
+        if (parent_type == kVulkanObjectTypeDevice) {
+            objlist = LogObjectList(instance, device, other_lifetimes->device);
+            handle_str = FormatHandle(device);
+            other_handle_str = FormatHandle(other_lifetimes->device);
+        } else if (parent_type == kVulkanObjectTypeInstance) {
+            objlist = LogObjectList(instance, other_lifetimes->instance);
+            handle_str = FormatHandle(instance);
+            other_handle_str = FormatHandle(other_lifetimes->instance);
+        } else if (parent_type == kVulkanObjectTypePhysicalDevice) {
+            objlist = LogObjectList(instance, physical_device, other_lifetimes->physical_device);
+            handle_str = FormatHandle(physical_device);
+            other_handle_str = FormatHandle(other_lifetimes->physical_device);
+        } else {
+            assert(false);
+            return skip;
+        }
+        return LogError(wrong_parent_vuid, objlist, loc,
+                        "(%s 0x%" PRIxLEAST64
+                        ") was created, allocated or retrieved from %s, but command is using (or its dispatchable parameter is "
+                        "associated with) %s",
+                        object_string[object_type], object_handle, other_handle_str.c_str(), handle_str.c_str());
+    }
+
 // Destroy memRef lists and free all memory
 void ObjectLifetimes::DestroyQueueDataStructures() {
     // Destroy the items in the queue map
@@ -264,13 +329,13 @@ void ObjectLifetimes::CreateQueue(VkQueue vkObj, const Location &loc) {
 }
 
 void ObjectLifetimes::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location &loc) {
-    if (!swapchainImageMap.contains(HandleToUint64(swapchain_image))) {
+    if (!swapchain_image_map.contains(HandleToUint64(swapchain_image))) {
         auto new_obj_node = std::make_shared<ObjTrackState>();
         new_obj_node->object_type = kVulkanObjectTypeImage;
         new_obj_node->status = OBJSTATUS_NONE;
         new_obj_node->handle = HandleToUint64(swapchain_image);
         new_obj_node->parent_object = HandleToUint64(swapchain);
-        InsertObject(swapchainImageMap, swapchain_image, kVulkanObjectTypeImage, loc, new_obj_node);
+        InsertObject(swapchain_image_map, swapchain_image, kVulkanObjectTypeImage, loc, new_obj_node);
     }
 }
 
@@ -749,10 +814,10 @@ void ObjectLifetimes::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapch
                                                        const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     RecordDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR);
 
-    auto snapshot = swapchainImageMap.snapshot(
+    auto snapshot = swapchain_image_map.snapshot(
         [swapchain](const std::shared_ptr<ObjTrackState> &pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
     for (const auto &itr : snapshot) {
-        swapchainImageMap.erase(itr.first);
+        swapchain_image_map.erase(itr.first);
     }
 }
 
