@@ -300,9 +300,6 @@ class AccessContext {
     HazardResult DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
 
-    void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
-                                 const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag);
-
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
 
@@ -342,10 +339,6 @@ class AccessContext {
                            ResourceUsageTag tag);
     void UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTag tag);
-    void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
-                                       uint32_t subpass, const ResourceUsageTag tag);
-    void UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
-                                     uint32_t subpass, const ResourceUsageTag tag);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTag tag);
     void ResolveChildContexts(const std::vector<AccessContext> &contexts);
@@ -359,20 +352,6 @@ class AccessContext {
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, const AccessContext *external_context);
-
-    bool ValidateLayoutTransitions(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state,
-                                   const VkRect2D &render_area, uint32_t subpass, const AttachmentViewGenVector &attachment_views,
-                                   vvl::Func command) const;
-
-    bool ValidateLoadOperation(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                               uint32_t subpass, const AttachmentViewGenVector &attachment_views, vvl::Func command) const;
-
-    bool ValidateStoreOperation(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                uint32_t subpass, const AttachmentViewGenVector &attachment_views, vvl::Func command) const;
-
-    bool ValidateResolveOperations(const SyncValidationInfo &val_info, const RENDER_PASS_STATE &rp_state,
-                                   const VkRect2D &render_area, const AttachmentViewGenVector &attachment_views, vvl::Func command,
-                                   uint32_t subpass) const;
 
     AccessContext() { Reset(); }
     AccessContext(const AccessContext &copy_from) = default;
@@ -420,10 +399,6 @@ class AccessContext {
 
     template <typename Action, typename RangeGen>
     void UpdateMemoryAccessState(const Action &action, RangeGen &range_gen);
-
-    template <typename BarrierAction>
-    void ResolveAccessRange(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, BarrierAction &barrier_action,
-                            ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
 
   private:
     template <typename Action>
@@ -733,19 +708,6 @@ template <typename Predicate>
 void AccessContext::EraseIf(Predicate &&pred) {
     // Note: Don't forward, we don't want r-values moved, since we're going to make multiple calls.
     vvl::EraseIf(access_state_map_, pred);
-}
-
-template <typename BarrierAction>
-void AccessContext::ResolveAccessRange(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                       BarrierAction &barrier_action, ResourceAccessRangeMap *descent_map,
-                                       const ResourceAccessState *infill_state) const {
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (!attachment_gen) return;
-
-    subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
-    for (; range_gen->non_empty(); ++range_gen) {
-        ResolveAccessRange(*range_gen, barrier_action, descent_map, infill_state);
-    }
 }
 
 template <typename ResolveOp>
