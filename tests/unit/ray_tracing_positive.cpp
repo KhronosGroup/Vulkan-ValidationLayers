@@ -214,7 +214,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     {
         VkStridedDeviceAddressRegionKHR valid_region = stridebufregion;
         valid_region.deviceAddress = 0;
-        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &valid_region, &stridebufregion, &stridebufregion, &stridebufregion, 100,
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &valid_region, &stridebufregion, &stridebufregion, 100,
                             100, 1);
     }
 
@@ -224,11 +224,15 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
         empty_region.deviceAddress += buffer.create_info().size + 128;
         empty_region.size = 0;
         empty_region.stride = 0;
-        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &empty_region, &stridebufregion, &stridebufregion, &stridebufregion, 100,
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &empty_region, &stridebufregion, &stridebufregion, 100,
                             100, 1);
     }
 
     m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer(true);
+
+    vk::DeviceWaitIdle(m_device->handle());
 
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
