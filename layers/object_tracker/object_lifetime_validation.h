@@ -43,6 +43,7 @@ struct ObjTrackState {
 };
 
 typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
+typedef vl_concurrent_unordered_map<uint64_t, std::vector<std::shared_ptr<ObjTrackState>>, 6> object_list_map_type;
 
 class ObjectLifetimes : public ValidationObject {
     using Func = vvl::Func;
@@ -66,6 +67,7 @@ class ObjectLifetimes : public ValidationObject {
     object_map_type object_map[kVulkanObjectTypeMax + 1];
     // Special-case map for swapchain images
     object_map_type swapchain_image_map;
+    object_list_map_type linked_graphics_pipeline_map;
 
     void *device_createinfo_pnext;
     bool null_descriptor_enabled;

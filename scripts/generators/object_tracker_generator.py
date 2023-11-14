@@ -119,6 +119,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkCreateRayTracingPipelinesKHR',
             'vkExportMetalObjectsEXT',
             'vkGetDescriptorEXT',
+            'vkDestroyPipeline',
             ]
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
         # which is translated here into a good VU.  Saves ~40 checks.
@@ -134,8 +135,6 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "image-nullalloc": "\"VUID-vkDestroyImage-image-01002\"",
             "shaderModule-compatalloc": "\"VUID-vkDestroyShaderModule-shaderModule-01092\"",
             "shaderModule-nullalloc": "\"VUID-vkDestroyShaderModule-shaderModule-01093\"",
-            "pipeline-compatalloc": "\"VUID-vkDestroyPipeline-pipeline-00766\"",
-            "pipeline-nullalloc": "\"VUID-vkDestroyPipeline-pipeline-00767\"",
             "sampler-compatalloc": "\"VUID-vkDestroySampler-sampler-01083\"",
             "sampler-nullalloc": "\"VUID-vkDestroySampler-sampler-01084\"",
             "renderPass-compatalloc": "\"VUID-vkDestroyRenderPass-renderPass-00874\"",

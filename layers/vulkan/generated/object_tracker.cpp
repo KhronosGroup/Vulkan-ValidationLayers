@@ -1110,6 +1110,20 @@ void ObjectLifetimes::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkP
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
                          record_obj.location.dot(Field::pPipelines, index));
+
+            if (auto pNext = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index].pNext)) {
+                if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
+                    auto lock = WriteSharedLock();
+                    const uint64_t linked_handle = HandleToUint64(pPipelines[index]);
+                    std::vector<std::shared_ptr<ObjTrackState>> libraries;
+                    for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
+                        const uint64_t library_handle = HandleToUint64(pNext->pLibraries[index2]);
+                        const auto& linked_pipeline = object_map[kVulkanObjectTypePipeline].find(library_handle);
+                        libraries.push_back(linked_pipeline->second);
+                    }
+                    linked_graphics_pipeline_map.insert(linked_handle, libraries);
+                }
+            }
         }
     }
 }
@@ -1168,23 +1182,6 @@ void ObjectLifetimes::PostCallRecordCreateComputePipelines(VkDevice device, VkPi
                          record_obj.location.dot(Field::pPipelines, index));
         }
     }
-}
-
-bool ObjectLifetimes::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
-                                                     const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkDestroyPipeline-device-parameter"
-    skip |= ValidateObject(pipeline, kVulkanObjectTypePipeline, true, "VUID-vkDestroyPipeline-pipeline-parameter",
-                           "VUID-vkDestroyPipeline-pipeline-parent", error_obj.location.dot(Field::pipeline));
-    skip |= ValidateDestroyObject(pipeline, kVulkanObjectTypePipeline, pAllocator, "VUID-vkDestroyPipeline-pipeline-00766",
-                                  "VUID-vkDestroyPipeline-pipeline-00767", error_obj.location);
-
-    return skip;
-}
-
-void ObjectLifetimes::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
-                                                   const RecordObject& record_obj) {
-    RecordDestroyObject(pipeline, kVulkanObjectTypePipeline);
 }
 
 bool ObjectLifetimes::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
