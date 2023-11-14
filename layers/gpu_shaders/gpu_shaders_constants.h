@@ -27,7 +27,7 @@ using uint = unsigned int;
 // be small enough to allow for a table in memory, but some devices set it to 2^32.
 // This value only matters for host code, but it is defined here so it can be used
 // in unit tests.
-const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u;
+const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u*4u;
 
 #endif
 
