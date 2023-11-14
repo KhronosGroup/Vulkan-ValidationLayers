@@ -49,6 +49,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/descriptor_helper.cpp
     framework/thread_timeout_helper.h
     framework/thread_timeout_helper.cpp
+    framework/gpu_av_helper.h
     unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
