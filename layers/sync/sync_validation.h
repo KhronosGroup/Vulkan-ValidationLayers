@@ -663,8 +663,26 @@ class RenderPassAccessContext {
                             const std::vector<const syncval_state::ImageViewState *> &attachment_views,
                             const AccessContext *external_context);
 
+    static bool ValidateLayoutTransitions(const SyncValidationInfo &val_info, const AccessContext &access_context,
+                                          const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, uint32_t subpass,
+                                          const AttachmentViewGenVector &attachment_views, vvl::Func command);
+
+    static bool ValidateLoadOperation(const SyncValidationInfo &val_info, const AccessContext &access_context,
+                                      const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, uint32_t subpass,
+                                      const AttachmentViewGenVector &attachment_views, vvl::Func command);
+
     bool ValidateStoreOperation(const SyncValidationInfo &val_info, vvl::Func command) const;
     bool ValidateResolveOperations(const SyncValidationInfo &val_info, vvl::Func command) const;
+
+    static void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
+                                              uint32_t subpass, const ResourceUsageTag tag, AccessContext access_context);
+
+    static void UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
+                                            uint32_t subpass, const ResourceUsageTag tag, AccessContext &access_context);
+
+    static void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
+                                        const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
+                                        AccessContext &access_context);
 
     bool ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd_buffer,
                                        vvl::Func command) const;
