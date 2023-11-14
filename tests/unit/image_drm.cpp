@@ -122,13 +122,13 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
 
     VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
-    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     image_format_info.pNext = nullptr;
     image_format_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
-    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     VkImageFormatListCreateInfo format_list = vku::InitStructHelper(&image_drm_format_modifier);
@@ -136,7 +136,7 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
     image_format_info.pNext = &format_list;
     image_format_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313");
-    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 }
 

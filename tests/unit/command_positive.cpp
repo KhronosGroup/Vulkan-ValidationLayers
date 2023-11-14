@@ -371,6 +371,9 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
 TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 using the extension");
 
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     RETURN_IF_SKIP(Init())

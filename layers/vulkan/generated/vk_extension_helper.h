@@ -41,6 +41,11 @@ enum ExtEnabled : unsigned char {
     kEnabledByInteraction,
 };
 
+// Map of promoted extension information per version (a separate map exists for instance and device extensions).
+// The map is keyed by the version number (e.g. VK_API_VERSION_1_1) and each value is a pair consisting of the
+// version string (e.g. "VK_VERSION_1_1") and the set of name of the promoted extensions.
+typedef vvl::unordered_map<uint32_t, std::pair<const char *, vvl::unordered_set<std::string>>> PromotedExtensionInfoMap;
+
 /*
 This function is a helper to know if the extension is enabled.
 
@@ -108,6 +113,22 @@ struct InstanceExtensions {
     ExtEnabled vk_qnx_screen_surface{kNotEnabled};
     ExtEnabled vk_google_surfaceless_query{kNotEnabled};
     ExtEnabled vk_lunarg_direct_driver_loading{kNotEnabled};
+
+    static const PromotedExtensionInfoMap &get_promotion_info_map() {
+        static const PromotedExtensionInfoMap promoted_map = {
+            {VK_API_VERSION_1_1,
+             {"VK_VERSION_1_1",
+              {
+                  VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                  VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
+                  VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+                  VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+                  VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
+              }}},
+
+        };
+        return promoted_map;
+    }
 
     struct InstanceReq {
         const ExtEnabled InstanceExtensions::*enabled;
@@ -274,43 +295,23 @@ struct InstanceExtensions {
     }
 
     APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
-        constexpr std::array<const char *, 5> V_1_1_promoted_instance_apis = {
-            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,     VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
-        };
-        constexpr std::array<const char *, 0> V_1_2_promoted_instance_apis = {};
-        constexpr std::array<const char *, 0> V_1_3_promoted_instance_apis = {};
-
         // Initialize struct data, robust to invalid pCreateInfo
         auto api_version = NormalizeApiVersion(requested_api_version);
-        if (api_version >= VK_API_VERSION_1_1) {
-            auto info = get_info("VK_VERSION_1_1");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_1_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+        if (!api_version.Valid()) return api_version;
+
+        const auto promotion_info_map = get_promotion_info_map();
+        for (const auto &version_it : promotion_info_map) {
+            auto info = get_info(version_it.second.first);
+            if (api_version >= version_it.first) {
+                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                for (const auto &ext_name : version_it.second.second) {
+                    info = get_info(ext_name.c_str());
+                    assert(info.state);
+                    if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                }
             }
         }
-        if (api_version >= VK_API_VERSION_1_2) {
-            auto info = get_info("VK_VERSION_1_2");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_2_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
-        if (api_version >= VK_API_VERSION_1_3) {
-            auto info = get_info("VK_VERSION_1_3");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_3_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
+
         // CreateInfo takes precedence over promoted
         if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
             for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -706,6 +707,90 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
     ExtEnabled vk_ext_mesh_shader{kNotEnabled};
+
+    static const PromotedExtensionInfoMap &get_promotion_info_map() {
+        static const PromotedExtensionInfoMap promoted_map = {
+            {VK_API_VERSION_1_1,
+             {"VK_VERSION_1_1",
+              {
+                  VK_KHR_MULTIVIEW_EXTENSION_NAME,
+                  VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
+                  VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+                  VK_KHR_MAINTENANCE_1_EXTENSION_NAME,
+                  VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+                  VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+                  VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
+                  VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
+                  VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,
+                  VK_KHR_MAINTENANCE_2_EXTENSION_NAME,
+                  VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
+                  VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+                  VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
+                  VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
+                  VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+                  VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
+                  VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+                  VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
+              }}},
+            {VK_API_VERSION_1_2,
+             {"VK_VERSION_1_2",
+              {
+                  VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
+                  VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
+                  VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
+                  VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+                  VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
+                  VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
+                  VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
+                  VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
+                  VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME,
+                  VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+                  VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+                  VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+                  VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+                  VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME,
+                  VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+                  VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
+                  VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,
+                  VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                  VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
+                  VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+                  VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+                  VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
+                  VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
+                  VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+              }}},
+            {VK_API_VERSION_1_3,
+             {"VK_VERSION_1_3",
+              {
+                  VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                  VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
+                  VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
+                  VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+                  VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+                  VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
+                  VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+                  VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
+                  VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
+                  VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
+                  VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
+                  VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
+                  VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
+                  VK_EXT_TOOLING_INFO_EXTENSION_NAME,
+                  VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+                  VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
+                  VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
+                  VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
+                  VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
+                  VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME,
+                  VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
+                  VK_EXT_4444_FORMATS_EXTENSION_NAME,
+                  VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+              }}},
+
+        };
+        return promoted_map;
+    }
 
     struct DeviceReq {
         const ExtEnabled DeviceExtensions::*enabled;
@@ -1765,107 +1850,24 @@ struct DeviceExtensions : public InstanceExtensions {
         // Initialize: this to defaults,  base class fields to input.
         assert(instance_extensions);
         *this = DeviceExtensions(*instance_extensions);
-        constexpr std::array<const char *, 18> V_1_1_promoted_device_apis = {
-            VK_KHR_MULTIVIEW_EXTENSION_NAME,
-            VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
-            VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE_1_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
-            VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
-            VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE_2_EXTENSION_NAME,
-            VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
-            VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
-            VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
-            VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
-            VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-            VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
-            VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
-        };
-        constexpr std::array<const char *, 24> V_1_2_promoted_device_apis = {
-            VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
-            VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
-            VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
-            VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
-            VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
-            VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
-            VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
-            VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
-            VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME,
-            VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
-            VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
-            VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
-            VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-            VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME,
-            VK_KHR_SPIRV_1_4_EXTENSION_NAME,
-            VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
-            VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,
-            VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-            VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
-            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-            VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
-            VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
-            VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
-        };
-        constexpr std::array<const char *, 23> V_1_3_promoted_device_apis = {
-            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-            VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
-            VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
-            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-            VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
-            VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
-            VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
-            VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
-            VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
-            VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
-            VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
-            VK_EXT_TOOLING_INFO_EXTENSION_NAME,
-            VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
-            VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
-            VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
-            VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
-            VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
-            VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME,
-            VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
-            VK_EXT_4444_FORMATS_EXTENSION_NAME,
-            VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
-        };
 
         // Initialize struct data, robust to invalid pCreateInfo
         auto api_version = NormalizeApiVersion(requested_api_version);
-        if (api_version >= VK_API_VERSION_1_1) {
-            auto info = get_info("VK_VERSION_1_1");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_1_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+        if (!api_version.Valid()) return api_version;
+
+        const auto promotion_info_map = get_promotion_info_map();
+        for (const auto &version_it : promotion_info_map) {
+            auto info = get_info(version_it.second.first);
+            if (api_version >= version_it.first) {
+                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                for (const auto &ext_name : version_it.second.second) {
+                    info = get_info(ext_name.c_str());
+                    assert(info.state);
+                    if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                }
             }
         }
-        if (api_version >= VK_API_VERSION_1_2) {
-            auto info = get_info("VK_VERSION_1_2");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_2_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
-        if (api_version >= VK_API_VERSION_1_3) {
-            auto info = get_info("VK_VERSION_1_3");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_3_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
+
         // CreateInfo takes precedence over promoted
         if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
             for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -1874,6 +1876,7 @@ struct DeviceExtensions : public InstanceExtensions {
                 if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             }
         }
+
         // Workaround for functions being introduced by multiple extensions, until the layer is fixed to handle this correctly
         // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600

@@ -86,6 +86,7 @@ namespace vk {
         out.extend(guard_helper.add_guard(None))
         out.append('''
 void InitCore(const char *api_name);
+void InitExtensionFromCore(const char* extension_name);
 void InitInstanceExtension(VkInstance instance, const char* extension_name);
 void InitDeviceExtension(VkInstance instance, VkDevice device, const char* extension_name);
 void ResetAllExtensions();
@@ -181,6 +182,29 @@ void InitCore(const char *api_name) {
 ''')
         out.extend([f'    {x.name[2:]} = reinterpret_cast<PFN_{x.name}>(get_proc_address(lib_handle, "{x.name}"));\n' for x in self.vk.commands.values() if not x.extensions])
         out.append('}')
+
+        out.append('''
+void InitExtensionFromCore(const char* extension_name) {
+    static const vvl::unordered_map<std::string, std::function<void()>> initializers = {
+''')
+        for extension in [x for x in self.vk.extensions.values() if x.commands and x.promotedTo]:
+            out.extend(guard_helper.add_guard(extension.protect))
+            out.append('        {\n')
+            out.append(f'            "{extension.name}", []() {{\n')
+            for command in [x for x in extension.commands]:
+                if command.alias is not None and not self.vk.commands[command.alias].extensions:
+                    out.append(f'                {command.name[2:]} = {command.alias[2:]};\n')
+            out.append('            }\n')
+            out.append('        },\n')
+        out.extend(guard_helper.add_guard(None))
+
+        out.append('''
+    };
+
+    if (auto it = initializers.find(extension_name); it != initializers.end())
+        (it->second)();
+}
+''')
 
         out.append('''
 void InitInstanceExtension(VkInstance instance, const char* extension_name) {

@@ -40,22 +40,6 @@ TEST_F(PositiveInstance, TwoInstances) {
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i1, nullptr));
 }
 
-TEST_F(PositiveInstance, NullFunctionPointer) {
-    TEST_DESCRIPTION("On 1_0 instance , call GetDeviceProcAddr on promoted 1_1 device-level entrypoint");
-    SetTargetApiVersion(VK_API_VERSION_1_0);
-
-    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-
-    RETURN_IF_SKIP(InitState())
-
-    auto fpGetBufferMemoryRequirements =
-        (PFN_vkGetBufferMemoryRequirements2)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferMemoryRequirements2");
-    if (fpGetBufferMemoryRequirements) {
-        m_errorMonitor->SetError("Null was expected!");
-    }
-}
-
 TEST_F(PositiveInstance, ValidationInstanceExtensions) {
     RETURN_IF_SKIP(Init())
 

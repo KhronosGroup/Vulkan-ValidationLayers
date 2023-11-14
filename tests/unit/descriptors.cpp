@@ -4874,6 +4874,7 @@ TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutFlags) {
 TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     TEST_DESCRIPTION("Verify that OpImage*Dref* operations are supported for given format ");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
