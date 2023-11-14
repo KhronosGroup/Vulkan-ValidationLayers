@@ -502,7 +502,7 @@ gpuav_state::DescriptorHeap::DescriptorHeap(GpuAssisted &gpu_dev, uint32_t max_d
      }
 
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_info.size = BitBufferSize(max_descriptors_);
+    buffer_info.size = BitBufferSize(max_descriptors_ + 1); // add extra entry since 0 is the invalid id.
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
 
     VmaAllocationCreateInfo alloc_info{};
@@ -541,13 +541,16 @@ gpuav_state::DescriptorId gpuav_state::DescriptorHeap::NextId(const VulkanTypedH
     }
     gpuav_state::DescriptorId result;
 
+    // NOTE: valid ids are in the range [1, max_descriptors_] (inclusive)
+    // 0 is the invalid id.
     auto guard = Lock();
-    assert(alloc_map_.size() < max_descriptors_);
+    if (alloc_map_.size() >= max_descriptors_) {
+        return 0;
+    }
     do {
         result = next_id_++;
-        if (next_id_ == max_descriptors_) {
+        if (next_id_ > max_descriptors_) {
             next_id_ = 1;
-            result = next_id_;
         }
     } while (alloc_map_.count(result) > 0);
     alloc_map_[result] = handle;
