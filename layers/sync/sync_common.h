@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 #pragma once
-
+#include "error_message/error_location.h"
+#include "containers/subresource_adapter.h"
 #include "containers/range_vector.h"
 #include "generated/sync_validation_types.h"
+#include "state_tracker/image_state.h"
 
 class HazardResult;
 class SyncValidator;
+
+using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found
 using QueueId = uint32_t;
@@ -48,28 +52,6 @@ class SyncValidationInfo {
     const SyncValidator* sync_state_;
 };
 
-enum SyncHazard {
-    NONE = 0,
-    READ_AFTER_WRITE,
-    WRITE_AFTER_READ,
-    WRITE_AFTER_WRITE,
-    READ_RACING_WRITE,
-    WRITE_RACING_WRITE,
-    WRITE_RACING_READ,
-    WRITE_AFTER_PRESENT,  // Once presented, an image may not be used until acquired
-    READ_AFTER_PRESENT,
-    PRESENT_AFTER_READ,  // Must be unreferenced and visible to present
-    PRESENT_AFTER_WRITE,
-};
-
-enum class SyncOrdering : uint8_t {
-    kOrderingNone = 0,
-    kNonAttachment = kOrderingNone,
-    kColorAttachment = 1,
-    kDepthStencilAttachment = 2,
-    kRaster = 3,
-    kNumOrderings = 4,
-};
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
@@ -130,3 +112,69 @@ class CachedInsertSet : public std::set<IntegralKey> {
   private:
     key_type entries_[kSize];
 };
+
+// A wrapper for a single range with the same semantics as other non-trivial range generators
+template <typename KeyType>
+class SingleRangeGenerator {
+  public:
+    using RangeType = KeyType;
+    SingleRangeGenerator(const KeyType &range) : current_(range) {}
+    const KeyType &operator*() const { return current_; }
+    const KeyType *operator->() const { return &current_; }
+    SingleRangeGenerator &operator++() {
+        current_ = KeyType();  // just one real range
+        return *this;
+    }
+
+    bool operator==(const SingleRangeGenerator &other) const { return current_ == other.current_; }
+
+  private:
+    SingleRangeGenerator() = default;
+    const KeyType range_;
+    KeyType current_;
+};
+namespace syncval_state {
+class CommandBuffer;
+class Swapchain;
+
+class ImageState : public IMAGE_STATE {
+  public:
+    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
+               VkFormatFeatureFlags2KHR features)
+        : IMAGE_STATE(dev_data, img, pCreateInfo, features), opaque_base_address_(0U) {}
+
+    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+               uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
+        : IMAGE_STATE(dev_data, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
+    bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
+    bool IsTiled() const { return !IsLinear(); }
+    bool IsSimplyBound() const;
+
+    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
+
+    VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
+    bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
+    VkDeviceSize GetResourceBaseAddress() const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                                    const VkExtent3D &extent, bool is_depth_sliced) const;
+
+  protected:
+    VkDeviceSize opaque_base_address_ = 0U;
+};
+
+class ImageViewState : public IMAGE_VIEW_STATE {
+  public:
+    ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+    const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
+    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
+    const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
+
+  protected:
+    ImageRangeGen MakeImageRangeGen() const;
+    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this line.
+    const ImageRangeGen view_range_gen;
+};
+
+}  // namespace syncval_state

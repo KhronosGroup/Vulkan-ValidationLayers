@@ -40,6 +40,31 @@ const SyncStageAccessFlags kDepthStencilAttachmentAccessScope =
 constexpr VkPipelineStageFlags2KHR kRasterAttachmentExecScope = kDepthStencilAttachmentExecScope | kColorAttachmentExecScope;
 const SyncStageAccessFlags kRasterAttachmentAccessScope = kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope;
 
+enum SyncHazard {
+    NONE = 0,
+    READ_AFTER_WRITE,
+    WRITE_AFTER_READ,
+    WRITE_AFTER_WRITE,
+    READ_RACING_WRITE,
+    WRITE_RACING_WRITE,
+    WRITE_RACING_READ,
+    WRITE_AFTER_PRESENT,  // Once presented, an image may not be used until acquired
+    READ_AFTER_PRESENT,
+    PRESENT_AFTER_READ,  // Must be unreferenced and visible to present
+    PRESENT_AFTER_WRITE,
+};
+
+enum class SyncOrdering : uint8_t {
+    kOrderingNone = 0,
+    kNonAttachment = kOrderingNone,
+    kColorAttachment = 1,
+    kDepthStencilAttachment = 2,
+    kRaster = 3,
+    kNumOrderings = 4,
+};
+const char *string_SyncHazard(SyncHazard hazard);
+const char *string_SyncHazardVUID(SyncHazard hazard);
+
 class HazardResult {
   public:
     struct HazardState {
@@ -137,6 +162,7 @@ struct SyncBarrier {
         dst_exec_scope.exec_scope |= other.dst_exec_scope.exec_scope;
         dst_access_scope |= other.dst_access_scope;
     }
+    SyncBarrier(const std::vector<SyncBarrier> &barriers);
 };
 
 struct ResourceFirstAccess {
@@ -486,6 +512,7 @@ using ResourceAddress = VkDeviceSize;
 using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
+static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
 // Apply the memory barrier without updating the existing barriers.  The execution barrier
 // changes the "chaining" state, but to keep barriers independent, we defer this until all barriers

@@ -266,6 +266,8 @@ target_sources(vvl PRIVATE
     stateless/sl_utils.cpp
     stateless/sl_wsi.cpp
     stateless/stateless_validation.h
+    sync/sync_access_context.cpp
+    sync/sync_access_context.h
     sync/sync_common.h
     sync/sync_validation.cpp
     sync/sync_validation.h
