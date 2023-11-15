@@ -293,6 +293,10 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         }
     }
 
+    // WORKAROUND for not being able to handle packed MIPS without resulting in a non-monotonically increasing range generation
+    // Need to clean this up to correctly detect aliasing conflicts between linear image(s) and buffers
+    if (limits_.mipLevel > 1) linear_image_ = false;
+
     is_compressed_ = vkuFormatIsCompressed(image.createInfo.format);
     texel_extent_ = vkuFormatTexelBlockExtent(image.createInfo.format);
 
