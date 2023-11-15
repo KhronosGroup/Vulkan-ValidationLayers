@@ -2284,8 +2284,9 @@ bool ObjectLifetimes::PreCallValidateDestroyPrivateDataSlot(VkDevice device, VkP
     skip |= ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, true,
                            "VUID-vkDestroyPrivateDataSlot-privateDataSlot-parameter",
                            "VUID-vkDestroyPrivateDataSlot-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
-    skip |= ValidateDestroyObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, pAllocator,
+                                  "VUID-vkDestroyPrivateDataSlot-privateDataSlot-04062",
+                                  "VUID-vkDestroyPrivateDataSlot-privateDataSlot-04063", error_obj.location);
 
     return skip;
 }
@@ -3894,8 +3895,9 @@ bool ObjectLifetimes::PreCallValidateDestroyDeferredOperationKHR(VkDevice device
     skip |= ValidateObject(operation, kVulkanObjectTypeDeferredOperationKHR, true,
                            "VUID-vkDestroyDeferredOperationKHR-operation-parameter",
                            "VUID-vkDestroyDeferredOperationKHR-operation-parent", error_obj.location.dot(Field::operation));
-    skip |= ValidateDestroyObject(operation, kVulkanObjectTypeDeferredOperationKHR, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(operation, kVulkanObjectTypeDeferredOperationKHR, pAllocator,
+                                  "VUID-vkDestroyDeferredOperationKHR-operation-03434",
+                                  "VUID-vkDestroyDeferredOperationKHR-operation-03435", error_obj.location);
 
     return skip;
 }
@@ -4221,8 +4223,9 @@ bool ObjectLifetimes::PreCallValidateDestroyDebugReportCallbackEXT(VkInstance in
     skip |= ValidateObject(
         callback, kVulkanObjectTypeDebugReportCallbackEXT, true, "VUID-vkDestroyDebugReportCallbackEXT-callback-parameter",
         "VUID-vkDestroyDebugReportCallbackEXT-callback-parent", error_obj.location.dot(Field::callback), kVulkanObjectTypeInstance);
-    skip |= ValidateDestroyObject(callback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(callback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator,
+                                  "VUID-vkDestroyDebugReportCallbackEXT-instance-01242",
+                                  "VUID-vkDestroyDebugReportCallbackEXT-instance-01243", error_obj.location);
 
     return skip;
 }
@@ -4759,8 +4762,9 @@ bool ObjectLifetimes::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstance in
                            "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parameter",
                            "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parent", error_obj.location.dot(Field::messenger),
                            kVulkanObjectTypeInstance);
-    skip |= ValidateDestroyObject(messenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(messenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator,
+                                  "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-01915",
+                                  "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-01916", error_obj.location);
 
     return skip;
 }
@@ -4937,8 +4941,9 @@ bool ObjectLifetimes::PreCallValidateDestroyValidationCacheEXT(VkDevice device, 
     skip |= ValidateObject(
         validationCache, kVulkanObjectTypeValidationCacheEXT, true, "VUID-vkDestroyValidationCacheEXT-validationCache-parameter",
         "VUID-vkDestroyValidationCacheEXT-validationCache-parent", error_obj.location.dot(Field::validationCache));
-    skip |= ValidateDestroyObject(validationCache, kVulkanObjectTypeValidationCacheEXT, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(validationCache, kVulkanObjectTypeValidationCacheEXT, pAllocator,
+                                  "VUID-vkDestroyValidationCacheEXT-validationCache-01537",
+                                  "VUID-vkDestroyValidationCacheEXT-validationCache-01538", error_obj.location);
 
     return skip;
 }
@@ -6436,8 +6441,8 @@ bool ObjectLifetimes::PreCallValidateDestroyMicromapEXT(VkDevice device, VkMicro
     // Checked by chassis: device: "VUID-vkDestroyMicromapEXT-device-parameter"
     skip |= ValidateObject(micromap, kVulkanObjectTypeMicromapEXT, true, "VUID-vkDestroyMicromapEXT-micromap-parameter",
                            "VUID-vkDestroyMicromapEXT-micromap-parent", error_obj.location.dot(Field::micromap));
-    skip |= ValidateDestroyObject(micromap, kVulkanObjectTypeMicromapEXT, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(micromap, kVulkanObjectTypeMicromapEXT, pAllocator, "VUID-vkDestroyMicromapEXT-micromap-07442",
+                                  "VUID-vkDestroyMicromapEXT-micromap-07443", error_obj.location);
 
     return skip;
 }
