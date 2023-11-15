@@ -613,8 +613,12 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
         while (!insn_to_search.empty()) {
             // for debugging, easier if only search one function at a time
             if (new_func) {
+                // If any function can't resolve to a variable, by design,
+                // it will kill searching other functions and those before it are now invalidated.
                 new_func = false;
                 insn = insn_to_search.front();
+                // spirv-val makes sure functions-to-functions are not recursive
+                visited.clear();
             }
 
             const uint32_t current_id = insn->ResultId();
@@ -675,6 +679,7 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
                         variable_image_insn.push_back(insn);
                     }
                     insn_to_search.pop();
+                    new_func = true;  // keep searching if more functions
                     break;
                 }
                 default:
