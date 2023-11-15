@@ -227,11 +227,11 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR;
     vkt::Buffer buffer(*m_device, buffer_ci);
 
     VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR;
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
 
     VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
