@@ -682,18 +682,19 @@ void BestPractices::PostRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
     cb->nv = {};
 
     auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    if (rp_state) {
+        // track depth / color attachment usage within the renderpass
+        for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
+            // record if depth/color attachments are in use for this renderpass
+            if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) render_pass_state.depthAttachment = true;
 
-    // track depth / color attachment usage within the renderpass
-    for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
-        // record if depth/color attachments are in use for this renderpass
-        if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) render_pass_state.depthAttachment = true;
-
-        if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) render_pass_state.colorAttachment = true;
-    }
-    if (cb->activeRenderPass) {
-        // Spec states that after BeginRenderPass all resources should be rebound
-        if (cb->activeRenderPass->has_multiview_enabled) {
-            cb->UnbindResources();
+            if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) render_pass_state.colorAttachment = true;
+        }
+        if (cb->activeRenderPass) {
+            // Spec states that after BeginRenderPass all resources should be rebound
+            if (cb->activeRenderPass->has_multiview_enabled) {
+                cb->UnbindResources();
+            }
         }
     }
 }
