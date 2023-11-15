@@ -199,6 +199,7 @@ def RunVVLTests(args):
         lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'bin\\VkICD_mock_icd.json')
     else:
         lvt_env['LD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
+        lvt_env['DYLD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
         lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
         lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/icd.d/VkICD_mock_icd.json')
 
@@ -257,9 +258,6 @@ def GetArgParser():
     configs = ['release', 'debug']
     default_config = configs[0]
 
-    osx_choices = ['min', 'latest']
-    osx_default = osx_choices[1]
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', dest='configuration',
@@ -277,8 +275,5 @@ def GetArgParser():
     parser.add_argument(
         '--test', dest='test',
         action='store_true', help='Tests the layers')
-    parser.add_argument(
-        '--osx', dest='osx', action='store',
-        choices=osx_choices, default=osx_default,
-        help='Sets MACOSX_DEPLOYMENT_TARGET on Apple platforms.')
+
     return parser
