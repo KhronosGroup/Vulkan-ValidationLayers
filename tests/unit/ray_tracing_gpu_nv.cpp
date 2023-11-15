@@ -24,7 +24,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
     if (!CanEnableGpuAV(*this)) {
@@ -104,7 +104,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
     if (!CanEnableGpuAV(*this)) {
@@ -193,7 +193,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
     if (!CanEnableGpuAV(*this)) {
@@ -302,7 +302,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
 
     if (!CanEnableGpuAV(*this)) {

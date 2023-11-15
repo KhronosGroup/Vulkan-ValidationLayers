@@ -1171,7 +1171,9 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveShaderObject, SelectInstrumentedShaders) {
+class PositiveGpuAssistedShaderObject : public PositiveShaderObject, public PositiveGpuAssistedLayer {};
+
+TEST_F(PositiveGpuAssistedShaderObject, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1180,7 +1182,7 @@ TEST_F(PositiveShaderObject, SelectInstrumentedShaders) {
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     validation_features.pNext = &layer_settings_create_info;
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);

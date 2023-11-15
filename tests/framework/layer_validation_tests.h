@@ -250,12 +250,14 @@ class VkGpuAssistedLayerTest : public virtual VkLayerTest {
   public:
     void InitGpuAvFramework(void *p_next = nullptr);
 
-    VkValidationFeaturesEXT GetValidationFeatures();
+    VkValidationFeaturesEXT GetGpuAvValidationFeatures();
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                               VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error, bool shader_objects = false);
 
   protected:
 };
+
+class PositiveGpuAssistedLayer : public VkGpuAssistedLayerTest {};
 
 class NegativeDebugPrintf : public VkLayerTest {
   public:
@@ -488,7 +490,7 @@ class ShaderComputeTest : public VkLayerTest {};
 class NegativeShaderCompute : public ShaderComputeTest {};
 class PositiveShaderCompute : public ShaderComputeTest {};
 
-class ShaderObjectTest : public VkLayerTest {
+class ShaderObjectTest : public virtual VkLayerTest {
     vkt::Buffer vertexBuffer;
 
   public:
