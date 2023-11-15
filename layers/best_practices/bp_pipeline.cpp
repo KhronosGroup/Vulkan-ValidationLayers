@@ -52,6 +52,9 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount, co
         }
 
         auto rp_state = Get<RENDER_PASS_STATE>(create_info->renderPass);
+        if (!rp_state) {
+            continue;
+        }
         const auto& subpass = rp_state->createInfo.pSubpasses[create_info->subpass];
 
         // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
