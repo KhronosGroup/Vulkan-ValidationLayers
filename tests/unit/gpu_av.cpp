@@ -19,15 +19,12 @@
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
 void VkGpuAssistedLayerTest::InitGpuAvFramework(void *p_next) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures(*this);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     validation_features.pNext = p_next;
     RETURN_IF_SKIP(InitFramework(&validation_features));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
@@ -3595,7 +3592,12 @@ TEST_F(VkGpuAssistedLayerTest, UnnormalizedCoordinatesSeparateSamplerSharedSampl
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08609");
+    // Core validation triggers 08610, causing the following draw to be skipped. GPU-AV will thus not be able to validate this draw
+    // call, and so will not trigger any of those 2 VUIDs. Descriptor arrays are not validated in core validation (See call to
+    // `descriptor_set.SkipBinding()` in `CoreChecks::ValidateDrawState()`), so 08609 will not fire
+    if (!m_gpuav_enable_core) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08609");
+    }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08610");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
