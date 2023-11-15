@@ -398,7 +398,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,
                              create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage), "is %s.",
                              string_VkBufferUsageFlags2KHR(usage).c_str());
-        } else if ((usage & buffer_state.usage) != buffer_state.usage) {
+        } else if ((usage & buffer_state.usage) != usage) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08781", objlist,
                              create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage),
                              "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2KHR(usage).c_str(),
