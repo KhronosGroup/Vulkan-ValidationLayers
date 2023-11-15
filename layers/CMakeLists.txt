@@ -216,6 +216,8 @@ target_sources(vvl PRIVATE
     state_tracker/device_memory_state.cpp
     state_tracker/device_memory_state.h
     state_tracker/device_state.h
+    state_tracker/fence_state.cpp
+    state_tracker/fence_state.h
     state_tracker/image_layout_map.cpp
     state_tracker/image_layout_map.h
     state_tracker/image_state.cpp
@@ -227,6 +229,8 @@ target_sources(vvl PRIVATE
     state_tracker/pipeline_sub_state.cpp
     state_tracker/pipeline_sub_state.h
     state_tracker/query_state.h
+    state_tracker/semaphore_state.cpp
+    state_tracker/semaphore_state.h
     state_tracker/queue_state.cpp
     state_tracker/queue_state.h
     state_tracker/ray_tracing_state.h
