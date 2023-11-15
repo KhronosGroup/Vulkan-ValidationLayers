@@ -174,6 +174,18 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "VkAccelerationStructureNV-accelerationStructure-nullalloc": "\"VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03754\"",
             "shader-compatalloc": "\"VUID-vkDestroyShaderEXT-pAllocator-08483\"",
             "shader-nullalloc": "\"VUID-vkDestroyShaderEXT-pAllocator-08484\"",
+            "callback-compatalloc": "\"VUID-vkDestroyDebugReportCallbackEXT-instance-01242\"",
+            "callback-nullalloc": "\"VUID-vkDestroyDebugReportCallbackEXT-instance-01243\"",
+            "messenger-compatalloc": "\"VUID-vkDestroyDebugUtilsMessengerEXT-messenger-01915\"",
+            "messenger-nullalloc": "\"VUID-vkDestroyDebugUtilsMessengerEXT-messenger-01916\"",
+            "operation-compatalloc": "\"VUID-vkDestroyDeferredOperationKHR-operation-03434\"",
+            "operation-nullalloc": "\"VUID-vkDestroyDeferredOperationKHR-operation-03435\"",
+            "micromap-compatalloc": "\"VUID-vkDestroyMicromapEXT-micromap-07442\"",
+            "micromap-nullalloc": "\"VUID-vkDestroyMicromapEXT-micromap-07443\"",
+            "privateDataSlot-compatalloc": "\"VUID-vkDestroyPrivateDataSlot-privateDataSlot-04062\"",
+            "privateDataSlot-nullalloc": "\"VUID-vkDestroyPrivateDataSlot-privateDataSlot-04063\"",
+            "validationCache-compatalloc": "\"VUID-vkDestroyValidationCacheEXT-validationCache-01537\"",
+            "validationCache-nullalloc": "\"VUID-vkDestroyValidationCacheEXT-validationCache-01538\"",
            }
 
         # Structures that do not define parent/commonparent VUIDs for vulkan handles.
