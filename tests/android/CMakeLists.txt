@@ -15,21 +15,16 @@
 # limitations under the License.
 # ~~~
 
-# NOTE: This can be removed when the minimum API level we support is 28.
-#
 # Our unit tests on Android repeatedly close/open the vulkan validation layers.
-# This causes issues with issues with thread_local variables.
+# This causes issues with issues with thread_local variables and overall performance.
 #
-# To run our tests on more devices without issue we can inform the linker to not unload VVL at runtime.
+# To run our tests without issue we can inform the linker to not unload VVL at runtime.
 # This will prevent VVL from being unloaded by dlclose which will avoid the issue.
-#
+# 
 # https://github.com/android/ndk/issues/360
 # https://github.com/android/ndk/issues/360#issuecomment-339107521
 # https://github.com/android/ndk/releases/tag/r26-beta1
-if ("${CMAKE_ANDROID_STL_TYPE}" MATCHES "static")
-    # nodelete : Marks that vvl shouldn't be unloaded at runtime. 
-    target_link_options(vvl PRIVATE -Wl,-z,nodelete)
-endif()
+target_link_options(vvl PRIVATE -Wl,-z,nodelete)
 
 set_directory_properties(PROPERTIES "COMPILE_OPTIONS" "") # Disable compiler warnings for android glue
 
