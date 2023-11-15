@@ -76,9 +76,8 @@ bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPip
         if ((pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892", device,
                              error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
-                             "includes "
-                             "VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT, but pipelineCreationCacheControl feature "
-                             "was not eanbled");
+                             "includes VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT, but pipelineCreationCacheControl "
+                             "feature was not enabled");
         }
     }
     return skip;
