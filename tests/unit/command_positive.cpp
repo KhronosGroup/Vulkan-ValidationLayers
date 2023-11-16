@@ -18,7 +18,7 @@
 
 TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
     TEST_DESCRIPTION("Add a pipeline barrier in a secondary command buffer");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // A renderpass with a single subpass that declared a self-dependency
     VkAttachmentDescription attach[] = {
@@ -94,7 +94,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledInSecondaryCB) {
         "This test is to verify that when vkCmdClearAttachments is called by a secondary commandbuffer, the validation layers do "
         "not throw an error if the primary commandbuffer begins a renderpass before executing the secondary commandbuffer.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -136,7 +136,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
         "Verify calling vkCmdClearAttachments inside secondary commandbuffer without linking framebuffer pointer to"
         "inheritance struct");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -176,7 +176,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
 
 TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
     TEST_DESCRIPTION("Ensure the validation layers bookkeeping tracks the implicit command buffer frees.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkCommandPoolCreateInfo cmd_pool_info = vku::InitStructHelper();
     cmd_pool_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -222,7 +222,7 @@ TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
 
 TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
     TEST_DESCRIPTION("Create a secondary command buffer and record a CmdClearAttachments call into it");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
@@ -261,7 +261,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
 
 TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     TEST_DESCRIPTION("Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     InitRenderTarget();
     // Allocate a secondary and primary cmd buffer
@@ -335,7 +335,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (DeviceValidationVersion() != VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
@@ -376,7 +376,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -410,7 +410,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 with feature bit enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     features12.drawIndirectCount = VK_TRUE;
@@ -420,7 +420,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
         return;
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -451,7 +451,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
 }
 
 TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // Record (empty!) command buffer that can be submitted multiple times
     // simultaneously.
@@ -495,7 +495,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
         "This test should pass. Create a Framebuffer and command buffer, bind them together, then destroy command pool and "
         "framebuffer and verify there are no errors.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // A renderpass with one color attachment.
     VkAttachmentDescription attachment = {0,
@@ -649,7 +649,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
 
 TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     vkt::CommandBuffer commandBuffer(m_device, m_commandPool);
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -676,7 +676,7 @@ TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
 
 TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Test setting and waiting for an event in a secondary command buffer");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
@@ -704,7 +704,7 @@ TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
 
 TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     constexpr int worker_count = 8;
     ThreadTimeoutHelper timeout_helper(worker_count);
@@ -748,7 +748,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
 TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
     TEST_DESCRIPTION("Call CmdClearAttachments with no depth/stencil attachment.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -776,7 +776,7 @@ TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
 TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     TEST_DESCRIPTION("Record clear color with a valid VkImageSubresourceRange");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkImageObj image(m_device);
@@ -809,7 +809,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
 TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     TEST_DESCRIPTION("Record clear depth with a valid VkImageSubresourceRange");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -847,7 +847,7 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
         "compute opeartions");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> transfer =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
@@ -869,7 +869,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffer) {
     TEST_DESCRIPTION("Create a debug label on a primary command buffer");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     m_commandBuffer->begin();
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
@@ -893,7 +893,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
     TEST_DESCRIPTION("Begin a debug label on 1 command buffer, then end it on another command buffer");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     vkt::CommandBuffer command_buffer_start(m_device, m_commandPool);
     vkt::CommandBuffer command_buffer_end(m_device, m_commandPool);
@@ -926,7 +926,7 @@ TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
 
 TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
     {
@@ -943,7 +943,7 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
         "Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS using VK_KHR_maintenance5");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
@@ -998,7 +998,7 @@ TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
     TEST_DESCRIPTION("Test copying an image with extent mistmatch using VK_KHR_maintenance5");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
@@ -1052,7 +1052,7 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
@@ -1096,7 +1096,7 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
     GetPhysicalDeviceFeatures2(multi_draw_features);
@@ -1131,7 +1131,7 @@ TEST_F(PositiveCommand, CopyImageLayerCount) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
@@ -1345,7 +1345,7 @@ TEST_F(PositiveCommand, CopyBufferToRemaingImageLayers) {
 // added in https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6769
 TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);

@@ -26,7 +26,7 @@ bool QueryTest::HasZeroTimestampValidBits() {
 TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
     TEST_DESCRIPTION("Reset a query on one CB and use it in another.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -76,7 +76,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
 TEST_F(PositiveQuery, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     uint32_t qfi = 0;
@@ -141,7 +141,7 @@ TEST_F(PositiveQuery, BasicQuery) {
 
 TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     TEST_DESCRIPTION("Destroy a QueryPool based on vkGetQueryPoolResults");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     std::array<uint64_t, 4> samples_passed = {};
@@ -215,7 +215,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     TEST_DESCRIPTION("Issue a query on a secondary command buffer and copy it on a primary.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -274,7 +274,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
 TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     TEST_DESCRIPTION("Issue a query and copy from it on a second command buffer.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -341,7 +341,7 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
 TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
     TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
@@ -375,7 +375,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     TEST_DESCRIPTION("Test using vkCmdWriteTimestamp2 with NONE and ALL_COMMANDS.");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
     synchronization2.synchronization2 = VK_TRUE;
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
@@ -402,7 +402,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
 
 TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     TEST_DESCRIPTION("Test executing secondary command buffer with VkCommandBufferInheritanceInfo::queryFlags.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (!m_device->phy().features().inheritedQueries) {
         GTEST_SKIP() << "inheritedQueries not supported";
     }
@@ -447,7 +447,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     auto performance_query_features = vku::InitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(performance_query_features);
@@ -456,7 +456,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         GTEST_SKIP() << "Test requires (unsupported) performanceCounterQueryPools";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     uint32_t counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,

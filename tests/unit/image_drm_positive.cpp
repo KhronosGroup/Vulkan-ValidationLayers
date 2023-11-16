@@ -16,7 +16,7 @@
 void ImageDrmTest::InitBasicImageDrm(void *pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);  // required extension added here
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(features11);
@@ -52,7 +52,7 @@ std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatF
 TEST_F(PositiveImageDrm, Basic) {
     // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/2610
     TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     // we just hope that one of these formats supports modifiers
     // for more detailed checking, we could also check multi-planar formats.
@@ -144,7 +144,7 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
         "Create image with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and VkExternalMemoryImageCreateInfo in the pNext chain");
 
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
@@ -206,7 +206,7 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
 }
 
 TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
@@ -259,7 +259,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
 
 TEST_F(PositiveImageDrm, MutableFormat) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT with no VkImageFormatListCreateInfo .");
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
@@ -292,7 +292,7 @@ TEST_F(PositiveImageDrm, MutableFormat) {
 
 TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
     TEST_DESCRIPTION("Use vkGetImageDrmFormatModifierPropertiesEXT");
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
@@ -323,7 +323,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
 TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoExclusive) {
     TEST_DESCRIPTION("Use vkPhysicalDeviceImageDrmFormatModifierInfo with VK_SHARING_MODE_EXCLUSIVE");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -347,7 +347,7 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoExclusive) {
 TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoConcurrent) {
     TEST_DESCRIPTION("Use vkPhysicalDeviceImageDrmFormatModifierInfo with VK_SHARING_MODE_CONCURRENT");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicImageDrm())
+    RETURN_IF_SKIP(InitBasicImageDrm());
 
     uint32_t queue_family_property_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);

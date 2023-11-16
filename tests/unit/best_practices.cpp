@@ -46,8 +46,8 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
 
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
@@ -99,7 +99,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD - currently can't create 2 concurrent instances";
     }
@@ -138,7 +138,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
 
     VkDevice local_device;
     VkDeviceCreateInfo dev_info = {};
@@ -170,7 +170,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     TEST_DESCRIPTION("Create a device with a 'specialuse' extension.");
 
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
 
     VkDevice local_device;
     VkDeviceCreateInfo dev_info = {};
@@ -198,7 +198,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
 TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     InitRenderTarget();
 
@@ -227,7 +227,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
 TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments with secondary command buffers");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     InitRenderTarget();
 
@@ -295,7 +295,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 }
 
 TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     // Create two images of different types and try to copy between them
@@ -358,7 +358,7 @@ TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
 TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     TEST_DESCRIPTION("vkCmdBlitImage with a zero area region");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     VkImageObj image_src(m_device);
@@ -388,7 +388,7 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
 TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
     TEST_DESCRIPTION("Test for getting warned when render area is 0 in VkRenderPassBeginInfo during vkCmdBeginRenderPass");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     InitRenderTarget();
 
@@ -402,7 +402,7 @@ TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
 }
 
 TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds");
@@ -445,7 +445,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
 TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
     TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with COMMAND_BUFFER_RESET_BIT");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -464,7 +464,7 @@ TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
 TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with VK_COMMAND_BUFFER_LEVEL_SECONDARY");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     uint32_t queue_family_count;
@@ -507,7 +507,7 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
 TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
     TEST_DESCRIPTION("Test for validating usage of vkBeginCommandBuffer with SIMULTANEOUS_USE");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use");
@@ -525,7 +525,7 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
 TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
     TEST_DESCRIPTION("Test for small memory allocations");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
@@ -556,7 +556,7 @@ TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
 TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     TEST_DESCRIPTION("Test for small dedicated memory allocations");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -590,7 +590,7 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
 TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     TEST_DESCRIPTION("Test for MS image that requires memory");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -622,7 +622,7 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
 TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     TEST_DESCRIPTION("Test for non-lazy multisampled images");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -691,7 +691,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
 TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     TEST_DESCRIPTION("Test for too many instanced vertex buffers");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -744,7 +744,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
 TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     TEST_DESCRIPTION("Test for clearing attachments after load");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_load_op_clear = false;  // Force LOAD_OP_LOAD
@@ -779,7 +779,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
 TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     TEST_DESCRIPTION("Test for clearing attachments after load with secondary command buffers");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
     m_load_op_clear = false;  // Force LOAD_OP_LOAD
@@ -903,7 +903,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     TEST_DESCRIPTION("Test for usage of triple buffering");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
@@ -960,7 +960,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     TEST_DESCRIPTION("Test for correct swapchain creation");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
@@ -1112,8 +1112,8 @@ TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
     TEST_DESCRIPTION("Pass an 'incorrect' count to the second GetSwapchainImagesKHR call");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -1132,7 +1132,7 @@ TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
 TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
     TEST_DESCRIPTION("Enable depthBias without a depth attachment");
 
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     InitRenderTarget();
 
@@ -1157,7 +1157,7 @@ TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
 TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -1192,8 +1192,8 @@ TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
 
     const char *spv_source = R"(
                OpCapability Shader
@@ -1228,7 +1228,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     TEST_DESCRIPTION("Test creating a graphics pipeline with no render pass");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     // This test checks that no BP messages are incorrectly triggered, but triggers core errors
     m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
@@ -1247,7 +1247,7 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
     TEST_DESCRIPTION("Create image with extended usage bit but not mutable format bit.");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
@@ -1275,7 +1275,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
@@ -1336,7 +1336,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
     TEST_DESCRIPTION("Transition image layout from undefined to read only");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -1379,7 +1379,7 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     TEST_DESCRIPTION("Test creating fifo relaxed swapchain");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
@@ -1430,7 +1430,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     TEST_DESCRIPTION("Set semaphore in SubmitInfo but count is 0");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::Semaphore semaphore(*m_device);
     VkSemaphore semaphore_handle = semaphore.handle();
@@ -1461,8 +1461,8 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -1502,7 +1502,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     TEST_DESCRIPTION("Test for clearing a RenderPass with non-zero clearValueCount without any VK_ATTACHMENT_LOAD_OP_CLEAR");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     // Setup necessary objects correctly
 
@@ -1597,7 +1597,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
         "Test for beginning a RenderPass with VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     // Setup necessary objects correctly
 
@@ -1698,7 +1698,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     TEST_DESCRIPTION("Test for storing an attachment with STORE_OP_DONT_CARE then loading with LOAD_OP_LOAD");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     // Setup necessary objects correctly
 
@@ -1857,7 +1857,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     TEST_DESCRIPTION("Test for using a queue exclusive image on multiple queues");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::Queue *graphics_queue = m_device->graphics_queues()[0];
 
@@ -2066,7 +2066,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -2180,7 +2180,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
 
 TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -2206,9 +2206,9 @@ TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -2222,7 +2222,7 @@ TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
     TEST_DESCRIPTION("Create pipeline with VK_NULL_HANDLE render pass and no VkPipelineRenderingCreateInfo in pNext chain");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(dynamic_rendering_features);
 
@@ -2244,8 +2244,8 @@ TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
 TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
     TEST_DESCRIPTION("Get query pool results without ever beginning the query");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -2274,8 +2274,8 @@ TEST_F(VkBestPracticesLayerTest, NonOptimalResolveFormat) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 

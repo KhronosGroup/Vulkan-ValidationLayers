@@ -14,7 +14,7 @@
 
 TEST_F(NegativeShaderImageAccess, FunctionOpImage) {
     TEST_DESCRIPTION("Use Component Format mismatch to test image access edge cases");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // layout(set=0, binding=0) uniform isampler2D s;
@@ -105,7 +105,7 @@ TEST_F(NegativeShaderImageAccess, FunctionOpImage) {
 TEST_F(NegativeShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     TEST_DESCRIPTION("Pass a signed and unsinged sampler, and use the incorrect one.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -214,7 +214,7 @@ TEST_F(NegativeShaderImageAccess, UnnormalizedCoordinatesFunction) {
 
 TEST_F(NegativeShaderImageAccess, MultisampleMismatchWithPipeline) {
     TEST_DESCRIPTION("Shader uses Multisample, but image view isn't.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -263,7 +263,7 @@ TEST_F(NegativeShaderImageAccess, MultisampleMismatchWithPipeline) {
 
 TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipeline) {
     TEST_DESCRIPTION("Shader uses non-Multisample, but image view is.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -321,7 +321,7 @@ TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipeline) {
 }
 
 TEST_F(NegativeShaderImageAccess, MultipleFunctionCalls) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;

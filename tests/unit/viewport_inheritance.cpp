@@ -403,7 +403,7 @@ class ViewportInheritanceTestData {
 TEST_F(NegativeViewportInheritance, BasicUsage) {
     TEST_DESCRIPTION("Simple correct and incorrect usage of VK_NV_inherited_viewport_scissor");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
@@ -637,7 +637,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
 TEST_F(NegativeViewportInheritance, MissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling feature.");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
@@ -664,7 +664,7 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
 TEST_F(NegativeViewportInheritance, MultiViewport) {
     TEST_DESCRIPTION("VK_NV_inherited_viewport_scissor tests with multiple viewports/scissors");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
@@ -894,7 +894,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
 TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling multiViewport feature.");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
@@ -921,7 +921,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rect_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(discard_rect_props);

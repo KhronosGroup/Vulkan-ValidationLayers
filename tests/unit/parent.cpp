@@ -46,7 +46,7 @@ struct Surface {
 TEST_F(NegativeParent, FillBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -67,8 +67,8 @@ TEST_F(NegativeParent, BindBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -104,8 +104,8 @@ TEST_F(NegativeParent, BindImage) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -138,7 +138,7 @@ TEST_F(NegativeParent, BindImage) {
 TEST_F(NegativeParent, ImageView) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -165,7 +165,7 @@ TEST_F(NegativeParent, ImageView) {
 TEST_F(NegativeParent, BindPipeline) {
     TEST_DESCRIPTION("Test binding pipeline from another device");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -191,7 +191,7 @@ TEST_F(NegativeParent, BindPipeline) {
 TEST_F(NegativeParent, RenderPassFramebuffer) {
     TEST_DESCRIPTION("Test RenderPass and Framebuffer");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget(); // Renderpass created on first device
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
@@ -211,7 +211,7 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
 TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     TEST_DESCRIPTION("Test RenderPass and Imageless Framebuffer");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_framebuffer);
     RETURN_IF_SKIP(InitState(nullptr, &imageless_framebuffer));
@@ -265,7 +265,7 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
 TEST_F(NegativeParent, RenderPassCommandBuffer) {
     TEST_DESCRIPTION("Test RenderPass and Framebuffer");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Renderpass created on first device
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
@@ -286,8 +286,8 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
 TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetPhysicalDeviceSurfaceSupportKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -308,8 +308,8 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 TEST_F(NegativeParent, Instance_DeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetDeviceGroupSurfacePresentModesKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -330,8 +330,8 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 TEST_F(NegativeParent, Instance_Surface) {
     TEST_DESCRIPTION("Surface from a different instance in vkCreateSwapchainKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -372,8 +372,8 @@ TEST_F(NegativeParent, Instance_Surface) {
 TEST_F(NegativeParent, Device_OldSwapchain) {
     TEST_DESCRIPTION("oldSwapchain from a different device in vkCreateSwapchainKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -431,8 +431,8 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
 TEST_F(NegativeParent, Instance_Surface_2) {
     TEST_DESCRIPTION("Surface from a different instance in vkDestroySurfaceKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -453,8 +453,8 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
     TEST_DESCRIPTION("VkDebugUtilsMessengerEXT from a different instance in vkDestroyDebugUtilsMessengerEXT");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -484,8 +484,8 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
 TEST_F(NegativeParent, Instance_DebugReportCallback) {
     TEST_DESCRIPTION("VkDebugReportCallbackEXT from a different instance in vkDestroyDebugReportCallbackEXT");
     AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -509,8 +509,8 @@ TEST_F(NegativeParent, Instance_DebugReportCallback) {
 TEST_F(NegativeParent, PhysicalDevice_Display) {
     TEST_DESCRIPTION("VkDisplayKHR from a different physical device in vkGetDisplayModePropertiesKHR");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -546,8 +546,8 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
 TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     TEST_DESCRIPTION("VkDisplayModeKHR from a different physical device in vkGetDisplayPlaneCapabilitiesKHR");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -602,7 +602,7 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(pipeline_exe_features);
@@ -637,7 +637,7 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
 }
 
 TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     auto features = m_device->phy().features();
@@ -659,7 +659,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
 }
 
 TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     auto features = m_device->phy().features();

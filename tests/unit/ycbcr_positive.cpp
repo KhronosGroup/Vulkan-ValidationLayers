@@ -22,7 +22,7 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
     if (!use_12) {
         AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     }
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper(pNextFeatures);
@@ -44,7 +44,7 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
 
 TEST_F(PositiveYcbcr, PlaneAspectNone) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_createinfo = vku::InitStructHelper();
     image_createinfo.imageType = VK_IMAGE_TYPE_2D;
@@ -66,7 +66,7 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
 
 TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
     TEST_DESCRIPTION("Positive test, query layout of a single plane of a multiplane image. (repro Github #2530)");
-    RETURN_IF_SKIP(InitBasicYcbcr())
+    RETURN_IF_SKIP(InitBasicYcbcr());
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -102,7 +102,7 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
 
 TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     TEST_DESCRIPTION("Positive test of multiplane copy buffer to image");
-    RETURN_IF_SKIP(InitBasicYcbcr())
+    RETURN_IF_SKIP(InitBasicYcbcr());
     InitRenderTarget();
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
@@ -155,7 +155,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     TEST_DESCRIPTION("Copy Plane 0 to Plane 2");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicYcbcr())
+    RETURN_IF_SKIP(InitBasicYcbcr());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
@@ -223,7 +223,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     TEST_DESCRIPTION("Bind image with disjoint memory");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicYcbcr())
+    RETURN_IF_SKIP(InitBasicYcbcr());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
@@ -313,7 +313,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
 TEST_F(PositiveYcbcr, ImageLayout) {
     TEST_DESCRIPTION("Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicYcbcr())
+    RETURN_IF_SKIP(InitBasicYcbcr());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,

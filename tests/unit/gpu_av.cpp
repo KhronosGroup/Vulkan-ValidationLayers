@@ -33,7 +33,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
     bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
@@ -490,7 +490,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
@@ -681,7 +681,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
@@ -870,7 +870,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDevicePipelineRobustnessFeaturesEXT pipeline_robustness_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
@@ -878,7 +878,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     if (!pipeline_robustness_features.pipelineRobustness) {
         GTEST_SKIP() << "pipelineRobustness feature not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
@@ -947,7 +947,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     const bool multi_draw = IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -1123,7 +1123,7 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
         AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     }
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     dynamic_rendering_features.dynamicRendering = VK_TRUE;
@@ -1324,7 +1324,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     const bool mesh_shader_supported = IsExtensionsEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 
@@ -1580,7 +1580,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);  // instead of enabling feature
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
@@ -1663,7 +1663,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit using vkQueueSubmit2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -1683,7 +1683,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     if (!features_12.drawIndirectCount) {
         GTEST_SKIP() << "drawIndirectCount not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -1737,7 +1737,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     TEST_DESCRIPTION("GPU validation: Validate Draw*IndirectCount countBuffer contents");
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -1852,7 +1852,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
@@ -2163,7 +2163,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT = nullptr;
@@ -2179,7 +2179,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     features.fragmentStoresAndAtomics = false;
     fpvkSetPhysicalDeviceFeaturesEXT(gpu(), features);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "GPU-Assisted Validation disabled");
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
 }
 
@@ -2213,9 +2213,9 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
         "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
         "unbound.");
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (DeviceValidationVersion() != VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
@@ -2931,7 +2931,7 @@ TEST_F(VkGpuAssistedLayerTest, ImageArrayDynamicIndexing) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
@@ -3123,11 +3123,11 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_InvalidAtomicStorageOperation) {
 
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     if (atomic_float_features.shaderImageFloat32Atomics == VK_FALSE) {
         GTEST_SKIP() << "shaderImageFloat32Atomics not supported.";
@@ -3246,8 +3246,8 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpInBoundsAccessChain");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -3373,8 +3373,8 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesCopyObject) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpCopyObject");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -3486,8 +3486,8 @@ TEST_F(VkGpuAssistedLayerTest, UnnormalizedCoordinatesSeparateSamplerSharedSampl
     TEST_DESCRIPTION("Doesn't use COMBINED_IMAGE_SAMPLER, but multiple OpLoad share Sampler OpVariable");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
@@ -3714,7 +3714,7 @@ TEST_F(VkGpuAssistedLayerTest, UpdateAfterBind) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
     VkPhysicalDeviceDescriptorIndexingFeatures indexing_features = vku::InitStructHelper();
@@ -3861,7 +3861,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeImageViewTypeMismatchWithPipelineUpdateAf
         "Test that an error is produced when an image view type does not match the dimensionality declared in the shader");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(indexing_features);

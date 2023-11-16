@@ -23,7 +23,7 @@ TEST_F(NegativeBuffer, Extents) {
     TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
 
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
     vkt::Buffer buffer_one(*m_device, 2048, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -113,7 +113,7 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     TEST_DESCRIPTION("Check alignment parameters for vkCmdUpdateBuffer");
     uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     m_commandBuffer->begin();
@@ -143,7 +143,7 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
 TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
     TEST_DESCRIPTION("Check alignment and size parameters for vkCmdFillBuffer");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     m_commandBuffer->begin();
 
@@ -182,7 +182,7 @@ TEST_F(NegativeBuffer, BufferViewObject) {
     VkResult err;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02994");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -232,7 +232,7 @@ TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          " used with no memory bound. Memory should be bound by calling vkBindBufferMemory().");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // Create a buffer with no bound memory and then attempt to create
     // a buffer view.
@@ -258,7 +258,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
 
     // Attempt to enable texel buffer alignmnet extension
     AddOptionalExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
@@ -364,7 +364,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
 TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     TEST_DESCRIPTION("texelBufferAlignment is not enabled by default in 1.2.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
         GTEST_SKIP() << "Vulkan version 1.2 or less is required";
     }
@@ -394,7 +394,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
 TEST_F(NegativeBuffer, TexelBufferAlignment) {
     TEST_DESCRIPTION("Test VK_EXT_texel_buffer_alignment.");
     AddRequiredExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(texel_buffer_alignment_features);
@@ -477,7 +477,7 @@ TEST_F(NegativeBuffer, FillBufferWithinRenderPass) {
     // Call CmdFillBuffer within an active renderpass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-renderpass");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -498,7 +498,7 @@ TEST_F(NegativeBuffer, UpdateBufferWithinRenderPass) {
     // Call CmdUpdateBuffer within an active renderpass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-renderpass");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -519,7 +519,7 @@ TEST_F(NegativeBuffer, UpdateBufferWithinRenderPass) {
 
 TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
     // Bind a BeginRenderPass within an active RenderPass
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     uint32_t const indices[] = {0};
@@ -537,7 +537,7 @@ TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
 }
 
 TEST_F(NegativeBuffer, DoubleDelete) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     VkBufferCreateInfo create_info = vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     VkBuffer buffer = VK_NULL_HANDLE;
     vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
@@ -549,7 +549,7 @@ TEST_F(NegativeBuffer, DoubleDelete) {
 }
 
 TEST_F(NegativeBuffer, BindNull) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     VkBufferCreateInfo create_info = vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     VkBuffer buffer = VK_NULL_HANDLE;
     vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
@@ -570,7 +570,7 @@ TEST_F(NegativeBuffer, BindNull) {
 TEST_F(NegativeBuffer, VertexBufferOffset) {
     TEST_DESCRIPTION("Submit an offset past the end of a vertex buffer");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     const uint32_t maxVertexInputBindings = m_device->phy().limits_.maxVertexInputBindings;
     const VkDeviceSize vbo_size = 3 * sizeof(float);
@@ -602,8 +602,8 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
     TEST_DESCRIPTION("Submit bad offsets binding the index buffer");
 
     AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     const uint32_t buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -634,7 +634,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
@@ -668,7 +668,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     TEST_DESCRIPTION("Submit bad size binding the index buffer using vkCmdBindIndexBuffer2KHR");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
@@ -698,7 +698,7 @@ TEST_F(NegativeBuffer, BufferUsageFlags2) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with bad flags.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
@@ -721,7 +721,7 @@ TEST_F(NegativeBuffer, BufferUsageFlags2) {
 
 TEST_F(NegativeBuffer, BufferUsageFlagsUsage) {
     TEST_DESCRIPTION("Use bad buffer usage flag.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -736,7 +736,7 @@ TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are not a subset of the Buffer.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
@@ -760,7 +760,7 @@ TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
 TEST_F(NegativeBuffer, CreateBufferSize) {
     TEST_DESCRIPTION("Attempt to create VkBuffer with size of zero");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo info = vku::InitStructHelper();
     info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -773,8 +773,8 @@ TEST_F(NegativeBuffer, DedicatedAllocationBufferFlags) {
 
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
     AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = vku::InitStructHelper();
     dedicated_buffer_create_info.dedicatedAllocation = VK_TRUE;
@@ -795,7 +795,7 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
         "Use a command buffer with vkCmdFillBuffer that was allocated from a command pool that does not support graphics or "
         "compute opeartions");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const std::optional<uint32_t> transfer =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
     if (!transfer) {
@@ -817,7 +817,7 @@ TEST_F(NegativeBuffer, ConditionalRenderingBufferUsage) {
     TEST_DESCRIPTION("Use a buffer without conditional rendering usage when needed.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
@@ -838,9 +838,9 @@ TEST_F(NegativeBuffer, ConditionalRenderingOffset) {
     TEST_DESCRIPTION("Begin conditional rendering with invalid offset.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 128;
@@ -869,7 +869,7 @@ TEST_F(NegativeBuffer, BeginConditionalRendering) {
     TEST_DESCRIPTION("Begin conditional rendering when it is already active.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 32;
@@ -890,7 +890,7 @@ TEST_F(NegativeBuffer, BeginConditionalRendering) {
 
 TEST_F(NegativeBuffer, CompletelyOverlappingBufferCopy) {
     TEST_DESCRIPTION("Test copying between buffers with completely overlapping source and destination regions.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
@@ -917,7 +917,7 @@ TEST_F(NegativeBuffer, CompletelyOverlappingBufferCopy) {
 
 TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
     TEST_DESCRIPTION("Test copying between interleaved source and destination regions.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCopy copy_infos[4];
     copy_infos[0].srcOffset = 0;
@@ -960,7 +960,7 @@ TEST_F(NegativeBuffer, MaxBufferSize) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance4_features);

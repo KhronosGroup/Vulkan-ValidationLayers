@@ -18,7 +18,7 @@
 
 void GraphicsLibraryTest::InitBasicGraphicsLibrary(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(gpl_features);
@@ -33,7 +33,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInput) {
     TEST_DESCRIPTION("Create a vertex input graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitVertexInputLibInfo();
@@ -45,7 +45,7 @@ TEST_F(PositiveGraphicsLibrary, PreRaster) {
     TEST_DESCRIPTION("Create a pre-raster graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     InitRenderTarget();
 
@@ -62,7 +62,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentShader) {
     TEST_DESCRIPTION("Create a fragment shader graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -77,7 +77,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentOutput) {
     TEST_DESCRIPTION("Create a fragment output graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -91,7 +91,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentMixedAttachmentSamplesAMD) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -112,7 +112,7 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     TEST_DESCRIPTION("Create an executable library by linking one or more graphics libraries");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper vertex_input_lib(*this);
@@ -165,7 +165,7 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
 TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     TEST_DESCRIPTION("Make a draw with a pipeline layout derived from null DSLs");
 
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     // Prepare descriptors
@@ -261,7 +261,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
 TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
     TEST_DESCRIPTION("Test VUID-VkVertexInputAttributeDescription-offset-00622: is not trigged with graphics library");
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
@@ -302,7 +302,7 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     InitRenderTarget();
 
@@ -340,7 +340,7 @@ TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&extended_dynamic_state3_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&extended_dynamic_state3_features));
 
     if (!m_device->phy().features().dualSrcBlend) {
         GTEST_SKIP() << "dualSrcBlend feature is not available";
@@ -370,7 +370,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     TEST_DESCRIPTION("VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY works when GPL sets it in every state");
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
@@ -456,7 +456,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     TEST_DESCRIPTION("set VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY in Vertex State only and at Link time");
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
@@ -545,7 +545,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     TEST_DESCRIPTION("set VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY in Vertex State only, but not at Link time");
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
@@ -629,7 +629,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
 
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dyn_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state3_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state3_features));
     InitRenderTarget();
 
     if (!dyn_state3_features.extendedDynamicState3AlphaToOneEnable) {
@@ -709,7 +709,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
 
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dyn_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state3_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state3_features));
     InitRenderTarget();
 
     if (!dyn_state3_features.extendedDynamicState3AlphaToOneEnable) {
@@ -786,7 +786,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
 TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
     TEST_DESCRIPTION("Make sure OpCapability InputAttachment is not detected at linking time");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     VkPipelineLayout layout = VK_NULL_HANDLE;
@@ -863,7 +863,7 @@ TEST_F(PositiveGraphicsLibrary, TessellationWithoutPreRasterization) {
     TEST_DESCRIPTION("have Tessellation stages with null pTessellationState but not Pre-Rasterization");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -903,7 +903,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
 
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
@@ -983,7 +983,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
 
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
@@ -1094,7 +1094,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dyn_state2_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state2_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state2_features));
 
     if (!dyn_state2_features.extendedDynamicState2) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2";
@@ -1206,7 +1206,7 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
 
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
@@ -1273,7 +1273,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     TEST_DESCRIPTION("Create pipeline sub-state that references shader module identifiers");
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
     VkPhysicalDevicePipelineCreationCacheControlFeatures pipeline_cache_control_features = vku::InitStructHelper(&gpl_features);
@@ -1372,7 +1372,7 @@ TEST_F(PositiveGraphicsLibrary, DepthStencilStateIgnored) {
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features =
         vku::InitStructHelper(&extended_dynamic_state_features);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
 
     InitRenderTarget();
 
@@ -1406,7 +1406,7 @@ TEST_F(PositiveGraphicsLibrary, ColorBlendStateIgnored) {
         vku::InitStructHelper(&extended_dynamic_state2_features);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features =
         vku::InitStructHelper(&extended_dynamic_state3_features);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
     InitRenderTarget();
 
     if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
@@ -1466,7 +1466,7 @@ TEST_F(PositiveGraphicsLibrary, PipelineLibraryNoRendering) {
     TEST_DESCRIPTION("Create a pipeline library without a render pass or rendering info");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper vertex_input_lib(*this);
@@ -1520,7 +1520,7 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
     TEST_DESCRIPTION("Create a pipeline library with tessellation shader but no tessellation state");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary())
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper vertex_input_lib(*this);

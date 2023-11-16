@@ -18,7 +18,7 @@
 TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
@@ -31,7 +31,7 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     props.limits.maxFragmentInputComponents = 128;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // vec4 == 4 components
@@ -97,7 +97,7 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
 TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpDecorate built-ins");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
@@ -110,7 +110,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     props.limits.maxFragmentInputComponents = 128;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // vec4 == 4 components
@@ -165,7 +165,7 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
     TEST_DESCRIPTION(
         "Test that an error is produced when the number of output components from the vertex stage exceeds the device limit");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
@@ -238,7 +238,7 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
 TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
     TEST_DESCRIPTION("Test if the max componenets checks are done properly when in a single block");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // To make the test simple, just make sure max is 128 or less (most HW is 64 or 128)
@@ -296,7 +296,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
     TEST_DESCRIPTION(
         "Test that an error is produced when the number of input components from the fragment stage exceeds the device limit");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
@@ -362,7 +362,7 @@ TEST_F(NegativeShaderInterface, FragmentInputNotProvided) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader input which is not present in the outputs of the previous stage");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -386,7 +386,7 @@ TEST_F(NegativeShaderInterface, FragmentInputNotProvidedInBlock) {
         "Test that an error is produced for a fragment shader input within an interace block, which is not present in the outputs "
         "of the previous stage.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -409,7 +409,7 @@ TEST_F(NegativeShaderInterface, FragmentInputNotProvidedInBlock) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatch) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched types across the vertex->fragment shader interface");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -443,7 +443,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchInBlock) {
         "Test that an error is produced for mismatched types across the vertex->fragment shader interface, when the variable is "
         "contained within an interface block");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -476,7 +476,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSize) {
     TEST_DESCRIPTION("OpTypeVector has larger output than input");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -507,7 +507,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSize) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct) {
     TEST_DESCRIPTION("Have a struct inside a block between shaders");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -562,7 +562,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct64bit) {
     TEST_DESCRIPTION("Have a struct inside a block between shaders");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (!m_device->phy().features().shaderFloat64) {
         GTEST_SKIP() << "Device does not support 64bit floats";
@@ -618,7 +618,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct64bit) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockArrayOfStruct) {
     TEST_DESCRIPTION("Have an array of struct inside a block between shaders");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -673,7 +673,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockArrayOfStruct) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructInnerArraySize) {
     TEST_DESCRIPTION("Have an struct inside a block between shaders, array size is difference");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
@@ -733,7 +733,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructInnerArraySize) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuterArraySize) {
     TEST_DESCRIPTION("Have an struct inside a block between shaders, array size is difference");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
@@ -792,7 +792,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructArraySizeVertex) {
     TEST_DESCRIPTION(
         "Have an struct inside a block between shaders, array size is difference, but from the vertex shader being too large");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
@@ -852,7 +852,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructArraySizeVertex) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
     TEST_DESCRIPTION("Have an struct inside a block between shaders, array size is difference");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
@@ -903,7 +903,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType64bit) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (!m_device->phy().features().shaderFloat64) {
         GTEST_SKIP() << "Device does not support 64bit floats";
@@ -970,7 +970,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType64bit) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -1034,7 +1034,7 @@ TEST_F(NegativeShaderInterface, VsFsMismatchByLocation) {
         "Test that an error is produced for location mismatches across the vertex->fragment shader interface; This should manifest "
         "as a not-written/not-consumed pair, but flushes out broken walking of the interfaces");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -1068,7 +1068,7 @@ TEST_F(NegativeShaderInterface, VsFsMismatchByComponent) {
         "Test that an error is produced for component mismatches across the vertex->fragment shader interface. It's not enough to "
         "have the same set of locations in use; matching is defined in terms of spirv variables.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -1100,7 +1100,7 @@ TEST_F(NegativeShaderInterface, VsFsMismatchByComponent) {
 TEST_F(NegativeShaderInterface, InputOutputMismatch) {
     TEST_DESCRIPTION("Test mismatch between vertex shader output and fragment shader input.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char vsSource[] = R"glsl(
@@ -1136,7 +1136,7 @@ TEST_F(NegativeShaderInterface, VertexOutputNotConsumed) {
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -1161,7 +1161,7 @@ TEST_F(NegativeShaderInterface, VertexOutputNotConsumed) {
 TEST_F(NegativeShaderInterface, DISABLED_InputAndOutputComponents) {
     TEST_DESCRIPTION("Test invalid shader layout in and out with different components.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     {
@@ -1329,7 +1329,7 @@ TEST_F(NegativeShaderInterface, DISABLED_InputAndOutputComponents) {
 TEST_F(NegativeShaderInterface, AlphaToCoverageOutputLocation0) {
     TEST_DESCRIPTION("Test that an error is produced when alpha to coverage is enabled but no output at location 0 is declared.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
     VkShaderObj fs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1349,7 +1349,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputNoAlpha) {
     TEST_DESCRIPTION(
         "Test that an error is produced when alpha to coverage is enabled but output at location 0 doesn't have alpha component.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
     char const *fsSource = R"glsl(
@@ -1375,7 +1375,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputNoAlpha) {
 TEST_F(NegativeShaderInterface, AlphaToCoverageArrayIndex) {
     TEST_DESCRIPTION("Have array out outputs, but start at index 1");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
     char const *fsSource = R"glsl(
@@ -1401,7 +1401,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageArrayIndex) {
 TEST_F(NegativeShaderInterface, AlphaToCoverageArrayVec3) {
     TEST_DESCRIPTION("Have array out outputs, but not contain the alpha component");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
     char const *fsSource = R"glsl(
@@ -1427,7 +1427,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageArrayVec3) {
 TEST_F(NegativeShaderInterface, MultidimensionalArray) {
     TEST_DESCRIPTION("Make sure multidimensional arrays are handled");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
@@ -1458,7 +1458,7 @@ TEST_F(NegativeShaderInterface, MultidimensionalArray) {
 TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
     TEST_DESCRIPTION("Make sure multidimensional arrays are handled");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
@@ -1489,7 +1489,7 @@ TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
 TEST_F(NegativeShaderInterface, MultidimensionalArray64bit) {
     TEST_DESCRIPTION("Make sure multidimensional arrays are handled for 64bits");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (!m_device->phy().features().shaderFloat64) {
         GTEST_SKIP() << "Device does not support 64bit floats";
@@ -1523,7 +1523,7 @@ TEST_F(NegativeShaderInterface, MultidimensionalArray64bit) {
 TEST_F(NegativeShaderInterface, PackingInsideArray) {
     TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -1554,7 +1554,7 @@ TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputNotWritten) {
         "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
         "attachments");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkShaderObj fs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1571,7 +1571,7 @@ TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputTypeMismatch) {
         "Test that an error is produced for a mismatch between the fundamental type of an fragment shader output variable, and the "
         "format of the corresponding attachment");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -1594,7 +1594,7 @@ TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputNotConsumed) {
     TEST_DESCRIPTION(
         "Test that a warning is produced for a fragment shader which provides a spurious output with no matching attachment");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(

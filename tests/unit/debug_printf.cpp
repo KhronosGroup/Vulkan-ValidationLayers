@@ -38,7 +38,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
@@ -311,13 +311,13 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
 
     // Create a device that enables mesh_shader
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     static const char taskShaderText[] =
@@ -377,7 +377,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&multi_draw_features);
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
@@ -701,7 +701,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
 
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
@@ -843,7 +843,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
 
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
@@ -992,7 +992,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&shader_object_features);
@@ -1285,7 +1285,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDebugPrintfFramework())
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
 
     // Create a device that enables mesh_shader
     VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
@@ -1298,7 +1298,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
         GTEST_SKIP() << "Task or mesh shader not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitDynamicRenderTarget();
 
     static const char *taskShaderText = R"glsl(

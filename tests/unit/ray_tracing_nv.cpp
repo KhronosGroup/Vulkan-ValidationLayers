@@ -20,12 +20,12 @@
 
 TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
 
     VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_props);
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     uint32_t maxBlocks = ray_tracing_props.maxDescriptorSetAccelerationStructures;
     if (maxBlocks > 4096) {
@@ -65,8 +65,8 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
 TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     TEST_DESCRIPTION("Validate acceleration structure geometries.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
@@ -317,8 +317,8 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
 TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -424,8 +424,8 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure binding.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -572,8 +572,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     OneOffDescriptorSet ds(m_device,
                            {
@@ -604,8 +604,8 @@ TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -726,8 +726,8 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -777,8 +777,8 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
     TEST_DESCRIPTION("Validate acceleration structure handle querying.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -816,7 +816,7 @@ TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
 TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure copying.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;

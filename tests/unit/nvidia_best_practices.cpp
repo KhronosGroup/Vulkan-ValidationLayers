@@ -26,7 +26,7 @@ static constexpr float defaultQueuePriority = 0.0f;
 
 TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
 
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueCount = 1;
@@ -64,7 +64,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -95,7 +95,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -129,7 +129,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     if (!m_device->phy().features().sparseBinding) {
@@ -247,7 +247,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper();
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper(&rt_pipeline_features);
@@ -300,7 +300,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
@@ -327,7 +327,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
@@ -360,7 +360,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
 
     InitState();
 
@@ -440,7 +440,7 @@ static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorTy
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkDescriptorSetLayoutBinding separate_bindings[] = {
@@ -485,7 +485,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkDescriptorSetLayoutBinding large_bindings[] = {
@@ -543,7 +543,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
         GTEST_SKIP() << "This test requires dynamicRendering";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     if (m_device->phy().limits_.maxGeometryOutputVertices <= 3) {
         GTEST_SKIP() << "Device doesn't support requried maxGeometryOutputVertices";
@@ -611,7 +611,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "This test requires dynamicRendering";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -983,7 +983,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
         GTEST_SKIP() << "This test requires dynamicRendering";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     auto set_desired = [this] {
         m_errorMonitor->Finish();
@@ -1084,7 +1084,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation))
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     InitState();
 
     VkCommandPoolCreateInfo command_pool_ci = vku::InitStructHelper();

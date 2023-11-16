@@ -17,7 +17,7 @@
 
 void DescriptorIndexingTest::InitBasicDescriptorIndexing(void* pNextFeatures) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     descriptor_indexing_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(descriptor_indexing_features);
@@ -25,7 +25,7 @@ void DescriptorIndexingTest::InitBasicDescriptorIndexing(void* pNextFeatures) {
 }
 
 void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings) {
-    RETURN_IF_SKIP(InitBasicDescriptorIndexing())
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing());
     InitRenderTarget();
 
     CreateComputePipelineHelper pipe(*this);
@@ -39,7 +39,7 @@ void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::
 TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicDescriptorIndexing())
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing());
 
     if (!descriptor_indexing_features.descriptorBindingPartiallyBound) {
         GTEST_SKIP() << "Partially bound bindings not supported, skipping test";
@@ -133,7 +133,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorIndexing(&synchronization2))
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing(&synchronization2));
 
     if (descriptor_indexing_features.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
         GTEST_SKIP() << "descriptorBindingStorageBufferUpdateAfterBind feature is not available";
@@ -252,7 +252,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorIndexing(&synchronization2))
+    RETURN_IF_SKIP(InitBasicDescriptorIndexing(&synchronization2));
 
     if (descriptor_indexing_features.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
         GTEST_SKIP() << "descriptorBindingStorageBufferUpdateAfterBind feature is not available";

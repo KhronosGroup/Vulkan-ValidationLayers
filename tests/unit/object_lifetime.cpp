@@ -24,7 +24,7 @@
 // dispatchable handle can cause a crash.
 TEST_F(NegativeObjectLifetime, DISABLED_CreateBufferUsingInvalidDevice) {
     TEST_DESCRIPTION("Create buffer using invalid device handle.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -39,7 +39,7 @@ TEST_F(NegativeObjectLifetime, DISABLED_CreateBufferUsingInvalidDevice) {
 
 TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBuffer buffer;
     VkDeviceMemory mem;
@@ -87,7 +87,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
 }
 
 TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -134,7 +134,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
 }
 
 TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     vkt::Image image;
     vkt::DeviceMemory image_mem;
@@ -184,7 +184,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
 TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -251,7 +251,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
 TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -314,7 +314,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
 TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     TEST_DESCRIPTION("Delete bufferView bound to cmd buffer, then attempt to submit cmd buffer.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -455,7 +455,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
 TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a framebuffer image dependency being destroyed.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
     VkResult err = VK_SUCCESS;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
@@ -522,7 +522,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
 
 TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     TEST_DESCRIPTION("Attempt to create framebuffer with attachment which memory was freed.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
     if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
@@ -577,7 +577,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
 
 TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete a DescriptorPool with a DescriptorSet that is in use.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Create image to update the descriptor with
@@ -630,7 +630,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
 
 TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use framebuffer.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
     VkResult err = VK_SUCCESS;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
@@ -675,8 +675,8 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -735,7 +735,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 
 TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use image that's child of framebuffer.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
     VkResult err = VK_SUCCESS;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
@@ -790,7 +790,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
 }
 
 TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -816,7 +816,7 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
         "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are in use. "
         "Call VkQueueSubmit with an event that has been deleted.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
@@ -883,7 +883,7 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
 TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use pipeline.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const vkt::PipelineLayout pipeline_layout(*m_device);
@@ -923,7 +923,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
 TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use imageView.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -984,7 +984,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
 TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use bufferView.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     uint32_t queue_family_index = 0;
@@ -1058,7 +1058,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
 TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use sampler.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -1119,7 +1119,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
 
 TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an event dependency being destroyed.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkEvent event;
     VkEventCreateInfo evci = vku::InitStructHelper();
@@ -1146,8 +1146,8 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     TEST_DESCRIPTION("Import semaphore when semaphore is in use.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
     if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
@@ -1181,8 +1181,8 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     TEST_DESCRIPTION("Import semaphore when semaphore is in use.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     if (!SemaphoreExportImportSupported(gpu(), handle_type)) {

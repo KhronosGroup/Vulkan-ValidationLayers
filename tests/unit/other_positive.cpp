@@ -39,7 +39,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
 
     TEST_DESCRIPTION("Call all applicable destroy and free routines with NULL handles, expecting no validation errors");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);
     vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, NULL);
     vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, NULL);
@@ -111,8 +111,8 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     TEST_DESCRIPTION("Validate various special cases for the Maintenance1_KHR extension");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
     cmd_buf.begin();
@@ -127,8 +127,8 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
 
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
     AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = vku::InitStructHelper();
     dedicated_buffer_create_info.dedicatedAllocation = VK_TRUE;
@@ -173,7 +173,7 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
     TEST_DESCRIPTION("Ensure affected API calls can be made with surfacless query extension");
 
     AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "VK_GOOGLE_surfaceless_query not supported on desktop";
@@ -212,7 +212,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkResult err;
 
@@ -280,7 +280,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     TEST_DESCRIPTION("Check that apiVersion = 0 is valid.");
     app_info_.apiVersion = 0U;
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 }
 
 TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
@@ -288,9 +288,9 @@ TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -310,7 +310,7 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV shading = vku::InitStructHelper();
     shading.maxFragmentShadingRateInvocationCount = static_cast<VkSampleCountFlagBits>(0);
@@ -324,7 +324,7 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(host_query_reset_features);
@@ -340,7 +340,7 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
     TEST_DESCRIPTION("Use first queue family and one queue without first querying with vkGetPhysicalDeviceQueueFamilyProperties");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     const float q_priority[] = {1.0f};
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
@@ -363,8 +363,8 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
 TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkDestroySurfaceKHR");
     if (fpDestroySurface) {
@@ -375,8 +375,8 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
 TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr with and without extension enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     auto vkTrimCommandPool = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPool");
     auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPoolKHR");
@@ -408,7 +408,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
 TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
     TEST_DESCRIPTION("Enable bufferDeviceAddress feature via Vulkan12features struct");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(bda_features);
     if (!bda_features.bufferDeviceAddress) {
@@ -418,7 +418,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     features12.bufferDeviceAddress = true;
     features2.pNext = &features12;
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -438,7 +438,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     using namespace std::chrono;
     using std::thread;
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const auto queue_family = m_device->graphics_queues()[0]->get_family_index();
     constexpr uint32_t queue_index = 0;
@@ -564,7 +564,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_features = vku::InitStructHelper();
         auto features2 = GetPhysicalDeviceFeatures2(portability_features);
 
-        RETURN_IF_SKIP(InitState(nullptr, &features2))
+        RETURN_IF_SKIP(InitState(nullptr, &features2));
     }
 
     const VkDevice device = m_device->device();
@@ -676,7 +676,7 @@ TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
     }
     m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     if (!DeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) ||
         !DeviceExtensionSupported(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
@@ -685,7 +685,7 @@ TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
 
     m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5112
@@ -738,8 +738,8 @@ TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
     TEST_DESCRIPTION("Make sure VkFormatProperties3KHR is overwritten correctly in Profiles layer");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
@@ -750,8 +750,8 @@ TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
 TEST_F(VkPositiveLayerTest, GDPAWithMultiCmdExt) {
     TEST_DESCRIPTION("Use GetDeviceProcAddr on a function which is provided by multiple extensions");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     auto vkCmdSetColorBlendAdvancedEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendAdvancedEXT>("vkCmdSetColorBlendAdvancedEXT");
     ASSERT_NE(vkCmdSetColorBlendAdvancedEXT, nullptr);
@@ -761,8 +761,8 @@ TEST_F(VkPositiveLayerTest, UseInteractionApi) {
     TEST_DESCRIPTION("Use an API that is provided by multiple extensions");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     auto vkGetDeviceGroupPresentCapabilitiesKHR =
         GetDeviceProcAddr<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>("vkGetDeviceGroupPresentCapabilitiesKHR");
@@ -779,7 +779,7 @@ TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(fsr_features);
@@ -843,7 +843,7 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
         }
     }
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 }
 
 TEST_F(VkPositiveLayerTest, CustomSafePNextCopy) {
@@ -926,7 +926,7 @@ TEST_F(VkPositiveLayerTest, CustomSafePNextCopy) {
 TEST_F(VkPositiveLayerTest, FreeCommandBuffersNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeCommandBuffers");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
@@ -942,7 +942,7 @@ TEST_F(VkPositiveLayerTest, FreeCommandBuffersNull) {
 TEST_F(VkPositiveLayerTest, FreeDescriptorSetsNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
 
@@ -972,7 +972,7 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
     TEST_DESCRIPTION("Test using vkCmdSetExclusiveScissorEnableNV.");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     uint32_t propertyCount = 0u;
     vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, nullptr);
     std::vector<VkExtensionProperties> properties(propertyCount);
@@ -989,7 +989,7 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
     if (!exclusiveScissor2) {
         GTEST_SKIP() << VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME << " version 2 not supported";
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     m_commandBuffer->begin();
     VkBool32 exclusiveScissorEnable = VK_TRUE;
@@ -1001,8 +1001,8 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestamps) {
     TEST_DESCRIPTION("Basic usage of vkGetCalibratedTimestampsEXT.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);

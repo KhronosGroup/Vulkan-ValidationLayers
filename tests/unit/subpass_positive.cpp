@@ -21,7 +21,7 @@
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -116,7 +116,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
 TEST_F(PositiveSubpass, SubpassWithEventWait) {
     TEST_DESCRIPTION("Subpass waits for the event set outside of this subpass");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -219,7 +219,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
 // This is not working because of a bug in the Spec Constant logic
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
 TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(

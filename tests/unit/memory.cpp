@@ -19,7 +19,7 @@
 TEST_F(NegativeMemory, MapMemory) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
     bool pass;
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkBuffer buffer;
     VkDeviceMemory mem;
@@ -192,7 +192,7 @@ TEST_F(NegativeMemory, MapMemory2) {
 
     AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     /* Vulkan doesn't have any requirements on what allocationSize can be
      * other than that it must be non-zero.  Pick 64KB because that should
@@ -252,7 +252,7 @@ TEST_F(NegativeMemory, MapMemory2) {
 TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 1024;
@@ -287,7 +287,7 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
 TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
     TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
     AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 1024;
@@ -316,7 +316,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-07460");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // Create an image, allocate memory, free it, and then try to bind it
     VkImage image;
@@ -384,7 +384,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
 
 TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -416,7 +416,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
 
 TEST_F(NegativeMemory, BindImageMemoryType) {
     TEST_DESCRIPTION("Create an image, allocate memory, set a bad typeIndex and then try to bind it");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -470,7 +470,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
 }
 
 TEST_F(NegativeMemory, BindMemory) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -685,7 +685,7 @@ TEST_F(NegativeMemory, BindMemory) {
 }
 
 TEST_F(NegativeMemory, BindMemoryUnsupported) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -745,7 +745,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const bool mp_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
     // first test buffer
@@ -965,10 +965,10 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     const bool mp_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1148,7 +1148,7 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-parameter");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // Create an image object, allocate memory, destroy the object and then try
     // to bind it
@@ -1209,7 +1209,7 @@ TEST_F(NegativeMemory, AllocationCount) {
     const int max_mems = 32;
     VkDeviceMemory mems[max_mems + 1];
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -1222,7 +1222,7 @@ TEST_F(NegativeMemory, AllocationCount) {
         props.limits.maxMemoryAllocationCount = max_mems;
         fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
@@ -1245,7 +1245,7 @@ TEST_F(NegativeMemory, AllocationCount) {
 
 TEST_F(NegativeMemory, ImageMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to draw with an image which has not had memory bound to it.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImage image;
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1302,7 +1302,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
 
 TEST_F(NegativeMemory, BufferMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to copy from a buffer which has not had memory bound to it.");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -1357,8 +1357,8 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
 
 TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
@@ -1431,7 +1431,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV aliasing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(aliasing_features);
@@ -1510,7 +1510,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
 TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
     AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceBufferAddressFeaturesEXT buffer_device_address_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
@@ -1561,7 +1561,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
 TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
     AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceBufferAddressFeaturesEXT buffer_device_address_features = vku::InitStructHelper();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
@@ -1593,7 +1593,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
@@ -1671,7 +1671,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = vku::InitStructHelper();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
@@ -1733,8 +1733,8 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
 TEST_F(NegativeMemory, MemoryType) {
     // Attempts to allocate from a memory type that doesn't exist
 
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
@@ -1754,8 +1754,8 @@ TEST_F(NegativeMemory, MemoryType) {
 TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
     // Attempts to allocate a single piece of memory that's larger than the heap size
 
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
@@ -1776,7 +1776,7 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
     // Attempts to allocate device coherent memory without enabling the extension/feature
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
@@ -1821,7 +1821,7 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     // Both VK_KHR_dedicated_allocation and VK_KHR_sampler_ycbcr_conversion supported in 1.1
     // Quicke to set 1.1 then check all extensions in 1.0
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const VkFormat disjoint_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     const VkFormat normal_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1963,9 +1963,9 @@ TEST_F(NegativeMemory, MemoryRequirements) {
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     // Need to make sure disjoint is supported for format
     // Also need to support an arbitrary image usage feature
@@ -2063,8 +2063,8 @@ TEST_F(NegativeMemory, MemoryRequirements) {
 
 TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     VkDeviceMemory mem;
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
@@ -2121,7 +2121,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
@@ -2152,7 +2152,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     VkFormatProperties format_properties;
@@ -2196,7 +2196,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     TEST_DESCRIPTION("Test VkBindBufferMemoryDeviceGroupInfo.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
@@ -2301,7 +2301,7 @@ TEST_F(NegativeMemory, MemoryPriorityOutOfRange) {
     TEST_DESCRIPTION("Allocate memory with invalid priority.");
 
     AddRequiredExtensions(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
     priority.priority = 2.0f;

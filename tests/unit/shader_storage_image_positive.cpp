@@ -19,7 +19,7 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }
@@ -100,7 +100,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components for Unknown for OpTypeImage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }
@@ -193,7 +193,7 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }
@@ -289,8 +289,8 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     TEST_DESCRIPTION("Test writing to image unknown format with less components, but in unused Entrypoint.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // The vertex and fragment shader are just a passthrough

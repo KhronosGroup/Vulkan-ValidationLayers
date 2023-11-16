@@ -17,7 +17,7 @@ void ShaderObjectTest::InitBasicShaderObject(void *pNextFeatures, APIVersion tar
     SetTargetApiVersion(targetApiVersion);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
@@ -39,7 +39,7 @@ void ShaderObjectTest::InitBasicMeshShaderObject(void *pNextFeatures, APIVersion
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
@@ -151,7 +151,7 @@ void ShaderObjectTest::SetDefaultDynamicStates(const std::vector<VkDynamicState>
 TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
     TEST_DESCRIPTION("Create and destroy shader object.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -170,7 +170,7 @@ TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
 TEST_F(PositiveShaderObject, BindShaderObject) {
     TEST_DESCRIPTION("Use graphics shaders with unsupported command pool.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
     const vkt::Shader vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl));
@@ -183,7 +183,7 @@ TEST_F(PositiveShaderObject, BindShaderObject) {
 TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
     TEST_DESCRIPTION("Draw with only vertex and fragment shader objects bound.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -204,7 +204,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
 TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
     TEST_DESCRIPTION("Draw with binary vertex and fragment shader objects bound.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -241,7 +241,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
 TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
     TEST_DESCRIPTION("Create linked vertex and fragment shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -274,7 +274,7 @@ TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
 TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
     TEST_DESCRIPTION("Create linked vertex and fragment shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto tesc_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
@@ -335,7 +335,7 @@ TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
 TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
     TEST_DESCRIPTION("Draw with shaders without setting depth bias enable.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -355,7 +355,7 @@ TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
 TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     TEST_DESCRIPTION("Test drawing with a vertex and fragment shader");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     static const char vert_src[] = R"glsl(
         #version 460
@@ -488,7 +488,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
 TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     TEST_DESCRIPTION("Test drawing using all graphics shader");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
     if (!features.tessellationShader || !features.geometryShader) {
@@ -655,7 +655,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
 TEST_F(PositiveShaderObject, ComputeShader) {
     TEST_DESCRIPTION("Test dispatching with compute shader");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     static const char comp_src[] = R"glsl(
         #version 450
@@ -876,7 +876,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
 TEST_F(PositiveShaderObject, FailCreateShaders) {
     TEST_DESCRIPTION("Test failing to create shaders");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -999,7 +999,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false))
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false));
 
     InitDynamicRenderTarget();
 
@@ -1049,7 +1049,7 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false))
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false));
 
     InitDynamicRenderTarget();
 
@@ -1080,7 +1080,7 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
 TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     TEST_DESCRIPTION("Draw with shaders using multiple descriptor sets.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     OneOffDescriptorSet vert_descriptor_set(m_device,
@@ -1292,7 +1292,7 @@ TEST_F(PositiveGpuAssistedShaderObject, SelectInstrumentedShaders) {
 TEST_F(PositiveShaderObject, MultiplePushConstants) {
     TEST_DESCRIPTION("Draw with shaders using multiple push constants.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     static const char vert_src[] = R"glsl(
@@ -1368,7 +1368,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
 TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
     TEST_DESCRIPTION("Draw with shaders using multiple specialization constants.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     static const char vert_src[] = R"glsl(
@@ -1442,7 +1442,7 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
 TEST_F(PositiveShaderObject, IndirectDraw) {
     TEST_DESCRIPTION("Draw with all 5 shaders stages using indirect draw and seconary command buffers.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     static const char vert_src[] = R"glsl(
@@ -1543,7 +1543,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Draw in secondary command buffers.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1576,7 +1576,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
 TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     TEST_DESCRIPTION("Draw with fragment shader writing to multiple attachments.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1636,7 +1636,7 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
 TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
     TEST_DESCRIPTION("Draw with shader objects to an attachment format that does not support blending.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkFormatProperties props;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_R32_UINT, &props);
@@ -1666,7 +1666,7 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
     TEST_DESCRIPTION("Draw in secondary command buffers with render pass continue flag.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3))
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3));
 
     InitDynamicRenderTarget();
 
@@ -1720,7 +1720,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
 TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     TEST_DESCRIPTION("Draw after rebinding only some shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3))
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3));
 
     InitDynamicRenderTarget();
 
@@ -1769,7 +1769,7 @@ TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
     TEST_DESCRIPTION("Test vertex inputs.");
 
     VkPhysicalDeviceVulkanMemoryModelFeatures vulkanMemoryModelFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&vulkanMemoryModelFeatures))
+    RETURN_IF_SKIP(InitBasicShaderObject(&vulkanMemoryModelFeatures));
     if (!vulkanMemoryModelFeatures.vulkanMemoryModel || !vulkanMemoryModelFeatures.vulkanMemoryModelDeviceScope) {
         GTEST_SKIP() << "vulkanMemoryModel or vulkanMemoryModelDeviceScope not supported.";
     }
@@ -1817,7 +1817,7 @@ TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
 TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
     TEST_DESCRIPTION("Draw using binary shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -1879,7 +1879,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
 TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
     TEST_DESCRIPTION("Draw without setting depth bounds.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1901,7 +1901,7 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
 TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
     TEST_DESCRIPTION("Create and draw with some linked and some unlinked shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3))
+    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3));
 
     InitDynamicRenderTarget();
 

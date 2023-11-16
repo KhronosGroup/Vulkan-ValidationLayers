@@ -19,7 +19,7 @@
 TEST_F(NegativeVertexInput, AttributeFormat) {
     TEST_DESCRIPTION("Test that pipeline validation catches invalid vertex attribute formats");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -50,7 +50,7 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
@@ -132,7 +132,7 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     vadf.vertexAttributeInstanceRateDivisor = VK_FALSE;
@@ -173,7 +173,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
@@ -208,7 +208,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
         "Test VUID-VkVertexInputBindingDescription-binding-00618: binding must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputBindings");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Test when binding is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings.
@@ -227,7 +227,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindingStride) {
         "Test VUID-VkVertexInputBindingDescription-stride-00619: stride must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputBindingStride");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Test when stride is greater than VkPhysicalDeviceLimits::maxVertexInputBindingStride.
@@ -246,7 +246,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
         "Test VUID-VkVertexInputAttributeDescription-location-00620: location must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputAttributes");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Test when location is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputAttributes.
@@ -268,7 +268,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
         "Test VUID-VkVertexInputAttributeDescription-binding-00621: binding must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputBindings");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Test when binding is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings.
@@ -290,7 +290,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
@@ -298,7 +298,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
     if (maxVertexInputAttributeOffset == 0xFFFFFFFF) {
         GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkVertexInputBindingDescription vertex_input_binding_description{};
@@ -324,7 +324,7 @@ TEST_F(NegativeVertexInput, BindingDescriptions) {
         "1) count of vertex bindings exceeds device's maxVertexInputBindings limit"
         "2) requested bindings include a duplicate binding value");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const uint32_t binding_count = m_device->phy().limits_.maxVertexInputBindings + 1;
@@ -362,7 +362,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
         "2) requested location include a duplicate location value"
         "3) binding used by one attribute is not defined by a binding description");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding;
@@ -398,7 +398,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
 TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     TEST_DESCRIPTION("Test using VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't enable provokingVertexLast.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -419,7 +419,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(provoking_vertex_properties);
@@ -431,7 +431,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     provoking_vertex_features.provokingVertexLast = VK_TRUE;
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&provoking_vertex_features);
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     CreatePipelineHelper pipe1(*this);
@@ -474,7 +474,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
 TEST_F(NegativeVertexInput, VertextBinding) {
     TEST_DESCRIPTION("Verify if VkPipelineVertexInputStateCreateInfo matches vkCmdBindVertexBuffers");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     vkt::Buffer vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -517,7 +517,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
 TEST_F(NegativeVertexInput, AttributeAlignment) {
     TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const vkt::PipelineLayout pipeline_layout(*m_device);
@@ -618,7 +618,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
 TEST_F(NegativeVertexInput, BindVertexOffset) {
     TEST_DESCRIPTION("set the pOffset in vkCmdBindVertexBuffers to 3 and use R16");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -651,7 +651,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
 TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -675,7 +675,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
         "Test that a warning is produced for a location mismatch on vertex attributes. This flushes out bad behavior in the "
         "interface walker");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -698,7 +698,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
 TEST_F(NegativeVertexInput, AttributeNotProvided) {
     TEST_DESCRIPTION("Test that an error is produced for a vertex shader input which is not provided by a vertex attribute");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -721,7 +721,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
         "Test that an error is produced for a mismatch between the fundamental type (float/int/uint) of an attribute and the "
         "vertex shader input that consumes it");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -752,7 +752,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
 TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct but doesn't match");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -807,7 +807,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
 TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct but doesn't match for location given");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -862,7 +862,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
 TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -916,7 +916,7 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a vertex attribute setup where multiple bindings provide the same location");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     /* Two binding descriptions for binding 0 */
@@ -950,7 +950,7 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
 TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
     TEST_DESCRIPTION("InputAttribute has 64-bit, but shader reads 32-bit");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {
@@ -989,7 +989,7 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
 TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     TEST_DESCRIPTION("InputAttribute has 32-bit, but shader reads 64-bit");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {
@@ -1029,7 +1029,7 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
 TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
     TEST_DESCRIPTION("Shader uses f64vec2, but only provides first component with R64");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {
@@ -1069,7 +1069,7 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
 TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location with 64-bit Vertex format");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {

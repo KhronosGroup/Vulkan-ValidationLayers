@@ -16,7 +16,7 @@
 TEST_F(NegativeDeviceQueue, FamilyIndex) {
     TEST_DESCRIPTION("Create device queue with invalid queue family index.");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     uint32_t queue_family_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
@@ -51,7 +51,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     VkBufferCreateInfo buffCI = vku::InitStructHelper();
     buffCI.size = 1024;
@@ -129,7 +129,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
     TEST_DESCRIPTION("Vulkan 1.0 unique queue detection");
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     // use first queue family with at least 2 queues in it
     bool found_queue = false;
@@ -184,7 +184,7 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     uint32_t queue_family_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
@@ -238,7 +238,7 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
 TEST_F(NegativeDeviceQueue, QueueCount) {
     TEST_DESCRIPTION("Create device queue with too high of a queueCount.");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     uint32_t queue_family_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
@@ -270,7 +270,7 @@ TEST_F(NegativeDeviceQueue, QueueCount) {
 TEST_F(NegativeDeviceQueue, QueuePriorities) {
     TEST_DESCRIPTION("Create device queue with invalid QueuePriorities");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     uint32_t queue_family_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
@@ -305,7 +305,7 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
 
 TEST_F(NegativeDeviceQueue, BindPipeline) {
     TEST_DESCRIPTION("vkCmdPipelineBarrier with command pool with wrong queues");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
@@ -345,7 +345,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
 
 TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     TEST_DESCRIPTION("vkCreateCommandPool with bad queue");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const size_t queue_count = m_device->phy().queue_properties_.size();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     vkt::CommandPool commandPool(*m_device, queue_count + 1);
@@ -354,7 +354,7 @@ TEST_F(NegativeDeviceQueue, CreateCommandPool) {
 
 TEST_F(NegativeDeviceQueue, Robustness2WithoutRobustness) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     float priority = 1.0f;
     VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
