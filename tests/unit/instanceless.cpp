@@ -234,7 +234,7 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
 // TODO - Currently can not be ran with Profile layer
 TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     if (!IsPlatformMockICD()) {
         // This test leaks a device (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";

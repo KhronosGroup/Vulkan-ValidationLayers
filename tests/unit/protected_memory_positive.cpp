@@ -20,7 +20,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     // Needed for both protected memory and vkGetDeviceQueue2
 

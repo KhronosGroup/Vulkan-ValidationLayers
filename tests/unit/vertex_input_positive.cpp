@@ -18,7 +18,7 @@
 TEST_F(PositiveVertexInput, AttributeMatrixType) {
     TEST_DESCRIPTION("Test that pipeline validation accepts matrices passed as vertex attributes");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding;
@@ -57,7 +57,7 @@ TEST_F(PositiveVertexInput, AttributeMatrixType) {
 TEST_F(PositiveVertexInput, AttributeArrayType) {
     TEST_DESCRIPTION("Input in OpTypeArray");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding;
@@ -95,7 +95,7 @@ TEST_F(PositiveVertexInput, AttributeArrayType) {
 TEST_F(PositiveVertexInput, AttributeStructType) {
     TEST_DESCRIPTION("Input is OpTypeStruct");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 32, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -144,7 +144,7 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
 TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     TEST_DESCRIPTION("Input is OpTypeStruct that has an OpTypeArray. Locations are not in order netiher");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 48, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -205,7 +205,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
 TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct with 2 locations");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -258,7 +258,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
 TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
@@ -313,7 +313,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
         "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
         "location outputs");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (!m_device->phy().features().independentBlend) {
         GTEST_SKIP() << "independentBlend not supported";
@@ -405,8 +405,8 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");
 
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {
@@ -461,7 +461,7 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
 TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     TEST_DESCRIPTION("Use 64-bit Vertex format");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {
@@ -500,7 +500,7 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
 TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location with 64-bit Vertex format");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {
@@ -565,7 +565,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
 TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
     TEST_DESCRIPTION("Shader uses f64vec2, but provides too many component with R64G64B64A64, which is valid");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!m_device->phy().features().shaderFloat64) {

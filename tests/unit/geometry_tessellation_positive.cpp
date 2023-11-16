@@ -22,7 +22,7 @@ TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
@@ -106,7 +106,7 @@ TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
     TEST_DESCRIPTION("Create pipeline with tessellation evaluation shader using point mode");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
         VkPhysicalDeviceFeatures2 features2;
@@ -117,7 +117,7 @@ TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
         if (!portability_subset_features.tessellationPointMode) {
             GTEST_SKIP() << "tessellationPointMode not supported";
         }
-        RETURN_IF_SKIP(InitState(nullptr, &features2))
+        RETURN_IF_SKIP(InitState(nullptr, &features2));
     } else {
         VkPhysicalDeviceFeatures features;
         GetPhysicalDeviceFeatures(&features);

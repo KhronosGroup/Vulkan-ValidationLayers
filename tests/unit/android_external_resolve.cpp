@@ -18,7 +18,7 @@
 
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionSample) {
     TEST_DESCRIPTION("invalid samples for VkSubpassDescription");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -76,7 +76,7 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionSample) {
 
 TEST_F(NegativeAndroidExternalResolve, AttachmentDescriptionZeroExternalFormat) {
     TEST_DESCRIPTION("invalid samples for VkSubpassDescription");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -137,7 +137,7 @@ TEST_F(NegativeAndroidExternalResolve, AttachmentDescriptionZeroExternalFormat) 
 
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionViewMask) {
     TEST_DESCRIPTION("invalid ViewMask for VkSubpassDescription");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -195,7 +195,7 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionViewMask) {
 
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionColorAttachmentCount) {
     TEST_DESCRIPTION("invalid colorAttachmentCount for VkSubpassDescription");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -254,7 +254,7 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionColorAttachmentCount) {
 
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionMultiPlaneInput) {
     TEST_DESCRIPTION("invalid use of multiplanar for input attachments");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -313,7 +313,7 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionMultiPlaneInput) {
 
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionNullColorProperty) {
     TEST_DESCRIPTION("Setting UNUSED depending on nullColorAttachmentWithExternalFormatResolve");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, 64, 64);
     if (!ahb.handle()) {
@@ -371,7 +371,7 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionNullColorProperty) {
 }
 
 TEST_F(NegativeAndroidExternalResolve, Framebuffer) {
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -484,7 +484,7 @@ TEST_F(NegativeAndroidExternalResolve, Framebuffer) {
 
 TEST_F(NegativeAndroidExternalResolve, ImagelessFramebuffer) {
     VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&imageless_framebuffer))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&imageless_framebuffer));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -634,7 +634,7 @@ TEST_F(NegativeAndroidExternalResolve, ImagelessFramebuffer) {
 TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -731,7 +731,7 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
 TEST_F(NegativeAndroidExternalResolve, DynamicRenderingResolveModeNonNullColor) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -820,7 +820,7 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRenderingResolveModeNonNullColor) 
 }
 
 TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamples) {
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -889,7 +889,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamples) {
 TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamplesDynamicRendering) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -923,7 +923,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamplesDynamicRender
 TEST_F(NegativeAndroidExternalResolve, ClearAttachment) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -1013,7 +1013,7 @@ TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper(&extended_dynamic_state3_features);
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
 
     if (!extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples) {
         GTEST_SKIP() << "extendedDynamicState3RasterizationSamples not supported";
@@ -1117,7 +1117,7 @@ TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
 TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&synchronization2))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&synchronization2));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";

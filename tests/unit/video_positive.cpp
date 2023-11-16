@@ -16,7 +16,7 @@ class VkPositiveVideoLayerTest : public VkVideoLayerTest {};
 TEST_F(VkPositiveVideoLayerTest, VideoCodingScope) {
     TEST_DESCRIPTION("Tests calling functions inside/outside video coding scope");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig();
     if (!config) {
@@ -38,7 +38,7 @@ TEST_F(VkPositiveVideoLayerTest, VideoCodingScope) {
 TEST_F(VkPositiveVideoLayerTest, MultipleCmdBufs) {
     TEST_DESCRIPTION("Tests submit-time validation with multiple command buffers submitted at once");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsDecode()));
     if (!config) {
@@ -77,7 +77,7 @@ TEST_F(VkPositiveVideoLayerTest, MultipleCmdBufs) {
 TEST_F(VkPositiveVideoLayerTest, VideoDecodeH264) {
     TEST_DESCRIPTION("Tests basic H.264/AVC video decode use case for framework verification purposes");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfigDecodeH264();
     if (!config) {
@@ -128,7 +128,7 @@ TEST_F(VkPositiveVideoLayerTest, VideoDecodeH264) {
 TEST_F(VkPositiveVideoLayerTest, VideoDecodeH264Interlaced) {
     TEST_DESCRIPTION("Tests basic H.264/AVC interlaced video decode use case for framework verification purposes");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfigDecodeH264Interlaced();
     if (!config) {
@@ -179,7 +179,7 @@ TEST_F(VkPositiveVideoLayerTest, VideoDecodeH264Interlaced) {
 TEST_F(VkPositiveVideoLayerTest, VideoDecodeH265) {
     TEST_DESCRIPTION("Tests basic H.265/HEVC video decode use case for framework verification purposes");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfigDecodeH265();
     if (!config) {

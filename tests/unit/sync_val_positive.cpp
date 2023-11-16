@@ -151,7 +151,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
 TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     TEST_DESCRIPTION("Perform image transition then copy to image from buffer");
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     constexpr uint32_t width = 256;
     constexpr uint32_t height = 128;
@@ -371,7 +371,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
 TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     TEST_DESCRIPTION("Shader references a descriptor set that was not bound. SyncVal should not crash if core checks are disabled");
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     const char vs_source[] = R"glsl(
@@ -496,7 +496,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncValFramework(true));
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }

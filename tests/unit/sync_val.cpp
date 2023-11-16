@@ -919,7 +919,7 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
@@ -1038,7 +1038,7 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
 
 TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1109,7 +1109,7 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
@@ -1224,7 +1224,7 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
 
 TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -1357,7 +1357,7 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
 
 TEST_F(NegativeSyncVal, BlitImageHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1404,7 +1404,7 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
 
 TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     const VkSubpassDependency external_subpass_dependency = {VK_SUBPASS_EXTERNAL,
                                                              0,
                                                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -2399,7 +2399,7 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
 TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     AddOptionalExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     const bool load_store_op_none = IsExtensionsEnabled(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
 
@@ -2492,7 +2492,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
 
 TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2920,7 +2920,7 @@ struct SyncTestPipeline {
 
 TEST_F(NegativeSyncVal, LayoutTransition) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     CreateRenderPassHelper rp_helper(m_device);
     rp_helper.Init();
@@ -3006,7 +3006,7 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
 
 TEST_F(NegativeSyncVal, SubpassMultiDep) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     CreateRenderPassHelper rp_helper_positive(m_device);
 
@@ -3145,7 +3145,7 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
 
 TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     // overall set up:
     // subpass 0:
@@ -3848,8 +3848,8 @@ TEST_F(NegativeSyncVal, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
 
@@ -3876,9 +3876,9 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
@@ -3958,7 +3958,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     if (!indexing_features.descriptorBindingPartiallyBound) {
         GTEST_SKIP() << "Partially bound bindings not supported, skipping test\n";
     }
@@ -4163,7 +4163,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     TEST_DESCRIPTION("Test write after write hazard with invalid external subpass dependency");
 
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkSubpassDependency subpass_dependency = {};
     subpass_dependency.srcSubpass = 0;
@@ -5391,7 +5391,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
 
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
     std::vector<VkImage> images;
@@ -5643,7 +5643,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     TEST_DESCRIPTION("Present does not specify semaphore to wait for submit.");
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncValFramework(true));
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }

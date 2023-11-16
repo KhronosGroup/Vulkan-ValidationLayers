@@ -18,7 +18,7 @@
 TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
@@ -45,7 +45,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
 TEST_F(NegativeShaderCompute, SharedMemoryBooleanOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize with booleans");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
@@ -76,13 +76,13 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
         "VK_KHR_workgroup_memory_explicit_layout");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
 
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR explicit_layout_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(explicit_layout_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported";
@@ -124,7 +124,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
 TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
     TEST_DESCRIPTION("Validate shared memory exceed maxComputeSharedMemorySize limit with spec constants default");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
@@ -151,7 +151,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
 TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
     TEST_DESCRIPTION("Validate shared memory exceed maxComputeSharedMemorySize limit with spec constants set");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
@@ -192,7 +192,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
 TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeWorkGroupSize");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const VkPhysicalDeviceLimits limits = m_device->phy().limits_;
 
     // Make sure compute pipeline has a compute shader stage set
@@ -243,7 +243,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
 TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
     TEST_DESCRIPTION("Make sure constant are applied for maxComputeWorkGroupSize using WorkgroupSize");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
@@ -282,7 +282,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
 TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
     TEST_DESCRIPTION("Make sure spec constant are applied for maxComputeWorkGroupSize using WorkgroupSize");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
@@ -323,7 +323,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
@@ -364,7 +364,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants default");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
@@ -410,7 +410,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
@@ -467,11 +467,11 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION("Test VK_KHR_workgroup_memory_explicit_layout");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const bool support_8_bit = (float16int8_features.shaderInt8 == VK_TRUE);
     const bool support_16_bit = (float16int8_features.shaderFloat16 == VK_TRUE) && (features2.features.shaderInt16 == VK_TRUE);
@@ -641,11 +641,11 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader");
 
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&zero_initialize_work_group_memory_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const char *spv_source = R"(
                OpCapability Shader
@@ -680,7 +680,7 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
     TEST_DESCRIPTION("Test LocalSizeId spirv execution mode");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (DeviceValidationVersion() != VK_API_VERSION_1_3) {
         GTEST_SKIP() << "Test requires Vulkan exactly 1.3";
     }
@@ -716,8 +716,8 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
@@ -841,8 +841,8 @@ TEST_F(NegativeShaderCompute, DispatchBaseFlag) {
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();

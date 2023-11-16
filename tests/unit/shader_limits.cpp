@@ -19,7 +19,7 @@
 TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
@@ -32,7 +32,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
     props.limits.maxSampleMaskWords = 3;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // Valid input of sample mask
@@ -90,7 +90,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
 TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelGatherOffset and greather than maxTexelGatherOffset");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     if (m_device->phy().limits_.minTexelGatherOffset <= -100 || m_device->phy().limits_.maxTexelGatherOffset >= 100) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
@@ -172,7 +172,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
 TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelOffset and greather than maxTexelOffset");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (m_device->phy().limits_.minTexelOffset <= -100 || m_device->phy().limits_.maxTexelOffset >= 100) {
@@ -260,7 +260,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
     TEST_DESCRIPTION("Test drawing with dual source blending with too many fragment output attachments.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
@@ -269,7 +269,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
         GTEST_SKIP() << "dualSrcBlend feature is not available";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     InitRenderTarget(count);
 
@@ -319,7 +319,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
 

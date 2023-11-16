@@ -78,7 +78,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
 
 TEST_F(PositiveImage, UncompressedToCompressedImageCopy) {
     TEST_DESCRIPTION("Image copies between compressed and uncompressed images");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // Verify format support
     // Size-compatible (64-bit) formats. Uncompressed is 64 bits per texel, compressed is 64 bits per 4x4 block (or 4bpt).
@@ -142,7 +142,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     TEST_DESCRIPTION(
         "Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the same memory to it");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     auto buffer = std::unique_ptr<vkt::Buffer>(new vkt::Buffer());
     VkDeviceSize buff_size = 256;
@@ -196,7 +196,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
 TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) {
     TEST_DESCRIPTION("Verify that creating an ImageView with valid usage does not generate validation errors.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                  nullptr,
@@ -222,7 +222,7 @@ TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) 
 TEST_F(PositiveImage, BasicUsage) {
     TEST_DESCRIPTION("Verify that creating an image view from an image with valid usage doesn't generate validation errors");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // Verify that we can create a view with usage INPUT_ATTACHMENT
     VkImageObj image(m_device);
@@ -243,7 +243,7 @@ TEST_F(PositiveImage, BasicUsage) {
 TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
     TEST_DESCRIPTION("Ensure barriers' new and old VkImageLayout are compatible with their images' VkImageUsageFlags");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     InitRenderTarget();
 
@@ -336,9 +336,9 @@ TEST_F(PositiveImage, FormatCompatibility) {
 
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     VkFormat format = VK_FORMAT_R12X4G12X4_UNORM_2PACK16;
 
@@ -371,7 +371,7 @@ TEST_F(PositiveImage, MultpilePNext) {
         "DispatchGetPhysicalDeviceImageFormatProperties2 pass them along");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const VkFormat view_format = VK_FORMAT_R8G8B8A8_UINT;
 
@@ -403,8 +403,8 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
     TEST_DESCRIPTION("Validate creating a framebuffer from a 3D image.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -446,7 +446,7 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
 }
 
 TEST_F(PositiveImage, SubresourceLayout) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -491,7 +491,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures =
         vku::InitStructHelper();
@@ -635,7 +635,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     TEST_DESCRIPTION("Create views with different formats of an image with extended usage");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags =
@@ -697,7 +697,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceImageCompressionControlFeaturesEXT image_compression_control = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(image_compression_control);
     if (!image_compression_control.imageCompressionControl) {
@@ -778,7 +778,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 TEST_F(PositiveImage, Create3DImageView) {
     TEST_DESCRIPTION("Create a 3D image view");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     VkImageCreateInfo ci = vku::InitStructHelper();
@@ -811,7 +811,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     {
         VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT slice_feature = vku::InitStructHelper();
@@ -925,7 +925,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
 }
 
 TEST_F(PositiveImage, CopyImageSubresource) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkImageUsageFlags usage =
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -1006,7 +1006,7 @@ TEST_F(PositiveImage, CopyImageSubresource) {
 
 TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1133,7 +1133,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
 TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     TEST_DESCRIPTION("Verify renderpass layout transitions for a 2d ImageView created from a 3d Image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1332,7 +1332,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
 TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));

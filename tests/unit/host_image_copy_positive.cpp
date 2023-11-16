@@ -23,7 +23,7 @@ bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &sr
 void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     // Assumes VK_KHR_sampler_ycbcr_conversion and VK_EXT_separate_stencil_usage,
 
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features = vku::InitStructHelper();
@@ -75,7 +75,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_TILING_OPTIMAL);
-    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci))
+    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Positive host image copy test requires a driver that can copy.";
@@ -215,7 +215,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
         width, height, 4, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_TILING_OPTIMAL);
-    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci))
+    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
     VkImageObj image(m_device);

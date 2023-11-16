@@ -20,7 +20,7 @@ TEST_F(PositiveAtomic, ImageInt64) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
@@ -30,7 +30,7 @@ TEST_F(PositiveAtomic, ImageInt64) {
         GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // clang-format off
     std::string cs_image_base = R"glsl(
@@ -91,7 +91,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
@@ -104,7 +104,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     } else if (!image_atomic_int64_features.sparseImageInt64Atomics) {
         GTEST_SKIP() << "sparseImageInt64Atomics feature not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const char *cs_source = R"glsl(
         #version 450
@@ -164,11 +164,11 @@ TEST_F(PositiveAtomic, Float) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // clang-format off
     std::string cs_32_base = R"glsl(
@@ -411,14 +411,14 @@ TEST_F(PositiveAtomic, Float2) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT atomic_float2_features = vku::InitStructHelper(&atomic_float_features);
     VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper(&atomic_float2_features);
     VkPhysicalDevice16BitStorageFeatures storage_16_bit_features = vku::InitStructHelper(&float16int8_features);
     auto features2 = GetPhysicalDeviceFeatures2(storage_16_bit_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // clang-format off
     std::string cs_16_base = R"glsl(
@@ -686,7 +686,7 @@ TEST_F(PositiveAtomic, Float2) {
 TEST_F(PositiveAtomic, PhysicalPointer) {
     TEST_DESCRIPTION("Make sure atomic validation handles if from a OpConvertUToPtr (physical pointer)");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
@@ -694,7 +694,7 @@ TEST_F(PositiveAtomic, PhysicalPointer) {
         GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const char *spv_source = R"(
                OpCapability Int64
@@ -763,7 +763,7 @@ TEST_F(PositiveAtomic, Int64) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderAtomicInt64Features atomic_int64_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_int64_features);
@@ -777,7 +777,7 @@ TEST_F(PositiveAtomic, Int64) {
             << "shaderBufferInt64Atomics feature is required for VK_KHR_shader_atomic_int64 but not expose, likely driver bug";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     std::string cs_base = R"glsl(
         #version 450
@@ -834,7 +834,7 @@ TEST_F(PositiveAtomic, Int64) {
 TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     TEST_DESCRIPTION("Have a OpImageTexelPointer without an actual OpAtomic* accessing it");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;
     // Need to have VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT

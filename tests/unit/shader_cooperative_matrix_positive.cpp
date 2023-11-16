@@ -53,7 +53,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features = vku::InitStructHelper(&float16_features);
@@ -121,7 +121,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
     VkPhysicalDevice16BitStorageFeatures storage16_features = vku::InitStructHelper(&float16_features);

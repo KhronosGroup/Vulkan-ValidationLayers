@@ -40,7 +40,7 @@ void AndroidExternalResolveTest::InitBasicAndroidExternalResolve(void* pNextFeat
 
 TEST_F(PositiveAndroidExternalResolve, NoResolve) {
     TEST_DESCRIPTION("Make sure enabling the feature doesn't break normal usage of API.");
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -49,7 +49,7 @@ TEST_F(PositiveAndroidExternalResolve, NoResolve) {
 }
 
 TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve())
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -164,7 +164,7 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
 
 TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&imageless_framebuffer))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&imageless_framebuffer));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -311,7 +311,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
 TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features))
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";

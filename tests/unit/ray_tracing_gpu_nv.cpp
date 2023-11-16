@@ -25,12 +25,12 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -105,12 +105,12 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -194,12 +194,12 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;
@@ -303,12 +303,12 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
     vkt::Buffer ibo;

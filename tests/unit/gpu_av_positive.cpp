@@ -42,8 +42,8 @@ VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetGpuAvValidationFeatures() {
 
 TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
@@ -136,8 +136,8 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
 TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdPushDescriptorSetKHR instead of vkUpdateDescriptorSets");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
@@ -230,7 +230,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     TEST_DESCRIPTION("Makes sure that writing to a buffer that was created after command buffer record doesn't get OOB error");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
     if (!features2.features.shaderInt64) {
@@ -335,7 +335,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
 TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     TEST_DESCRIPTION("Get counter value from the semaphore signaled by queue submit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper(&sync2_features);
@@ -364,7 +364,7 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
 TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
@@ -487,8 +487,8 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
 
 TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
     TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
 
     auto desc_indexing_props = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
     auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&desc_indexing_props);
@@ -501,8 +501,8 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
 TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
     TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitGpuAvFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
 
     auto vk12_props = vku::InitStruct<VkPhysicalDeviceVulkan12Properties>();
     auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&vk12_props);
@@ -517,7 +517,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     auto maintenance4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
     maintenance4_features.maintenance4 = true;
@@ -758,7 +758,7 @@ TEST_F(PositiveGpuAssistedLayer, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework())
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);

@@ -17,7 +17,7 @@
 
 TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false))
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
 
     VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rtnv_props);
@@ -25,7 +25,7 @@ TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
         GTEST_SKIP() << "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures < 1";
     }
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
 
     auto ignore_update = [](RayTracingPipelineHelper &helper) {};
     RayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);

@@ -19,9 +19,9 @@ TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
     // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled
     TEST_DESCRIPTION("Create a shader that uses SPV_KHR_non_semantic_info.");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // compute shader using a non-semantic extended instruction set.
@@ -47,8 +47,8 @@ TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
 
 TEST_F(PositiveShaderSpirv, GroupDecorations) {
     TEST_DESCRIPTION("Test shader validation support for group decorations.");
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     const std::string spv_source = R"(
@@ -178,8 +178,8 @@ TEST_F(PositiveShaderSpirv, CapabilityExtension1of2) {
     TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 1 of 2");
 
     AddRequiredExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     // These tests require that the device support multiViewport
     if (!m_device->phy().features().multiViewport) {
@@ -211,8 +211,8 @@ TEST_F(PositiveShaderSpirv, CapabilityExtension2of2) {
 
     // Need to use SPV_EXT_shader_viewport_index_layer
     AddRequiredExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
 
     // These tests require that the device support multiViewport
     if (!m_device->phy().features().multiViewport) {
@@ -242,8 +242,8 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature) {
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
         GTEST_SKIP() << "requires Vulkan 1.0 exactly";
@@ -273,9 +273,9 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature11) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -301,7 +301,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
     // use 1.2 to get the feature bit in VkPhysicalDeviceVulkan11Features
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
     features11.shaderDrawParameters = VK_TRUE;
@@ -314,7 +314,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
         return;
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -342,7 +342,7 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
     AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceUniformBufferStandardLayoutFeatures uniform_buffer_standard_layout_features = vku::InitStructHelper();
     VkPhysicalDeviceScalarBlockLayoutFeatures scalar_block_layout_features =
@@ -400,7 +400,7 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
@@ -456,7 +456,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     // require to make enable logic simpler
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16int8_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
@@ -464,7 +464,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
         GTEST_SKIP() << "shaderInt8 feature not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     if (IsPlatformMockICD()) {
@@ -632,7 +632,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
 TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
     TEST_DESCRIPTION("Create a shader using 1.3 spirv environment");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
 }
@@ -640,7 +640,7 @@ TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
 TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
     TEST_DESCRIPTION("Make sure spec constants for a OpTypeArray doesn't assert");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -742,7 +742,7 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
 TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
     TEST_DESCRIPTION("Make sure variables with a OpTypeStruct can handle a runtime array inside");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     // %float = OpTypeFloat 32
     // %ra = OpTypeRuntimeArray %float
@@ -859,7 +859,7 @@ TEST_F(PositiveShaderSpirv, GeometryShaderPassthroughNV) {
     TEST_DESCRIPTION("Test to validate VK_NV_geometry_shader_passthrough");
 
     AddRequiredExtensions(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFeatures available_features = {};
     GetPhysicalDeviceFeatures(&available_features);
@@ -868,7 +868,7 @@ TEST_F(PositiveShaderSpirv, GeometryShaderPassthroughNV) {
         GTEST_SKIP() << "VkPhysicalDeviceFeatures::geometryShader is not supported";
     }
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     const char vs_src[] = R"glsl(
@@ -941,7 +941,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt8) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16int8_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
@@ -949,7 +949,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt8) {
         GTEST_SKIP() << "shaderInt8 feature not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -1000,14 +1000,14 @@ TEST_F(PositiveShaderSpirv, SpecializeInt16) {
     TEST_DESCRIPTION("Test int16 specialization.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
     if (features2.features.shaderInt16 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt16 feature not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -1057,7 +1057,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt16) {
 TEST_F(PositiveShaderSpirv, SpecializeInt32) {
     TEST_DESCRIPTION("Test int32 specialization.");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -1107,7 +1107,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
     TEST_DESCRIPTION("Test int64 specialization.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
@@ -1115,7 +1115,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -1165,7 +1165,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
 TEST_F(PositiveShaderSpirv, SpecializationUnused) {
     TEST_DESCRIPTION("Make sure an unused spec constant is valid to us");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // layout (constant_id = 2) const int a = 3;
@@ -1223,9 +1223,9 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
-    RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkPhysicalDeviceFloatControlsProperties shader_float_control = vku::InitStructHelper();
@@ -1356,7 +1356,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
     bool support_8_bit = IsExtensionsEnabled(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     bool support_16_bit = IsExtensionsEnabled(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
 
@@ -1368,7 +1368,7 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
     VkPhysicalDevice16BitStorageFeaturesKHR storage_16_bit_features = vku::InitStructHelper(&storage_8_bit_features);
     VkPhysicalDeviceShaderFloat16Int8Features float_16_int_8_features = vku::InitStructHelper(&storage_16_bit_features);
     auto features2 = GetPhysicalDeviceFeatures2(float_16_int_8_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // 8 bit int test (not 8 bit float support in Vulkan)
@@ -1639,7 +1639,7 @@ TEST_F(PositiveShaderSpirv, ReadShaderClock) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(shader_clock_features);
@@ -1648,7 +1648,7 @@ TEST_F(PositiveShaderSpirv, ReadShaderClock) {
         GTEST_SKIP() << "no support for shaderDeviceClock or shaderSubgroupClock";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     // Device scope using GL_EXT_shader_realtime_clock
@@ -1693,7 +1693,7 @@ TEST_F(PositiveShaderSpirv, PhysicalStorageBufferStructRecursion) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
@@ -1701,7 +1701,7 @@ TEST_F(PositiveShaderSpirv, PhysicalStorageBufferStructRecursion) {
         GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     const char *cs_src = R"glsl(
@@ -1734,7 +1734,7 @@ TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
     // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
@@ -1742,7 +1742,7 @@ TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
         GTEST_SKIP()
             << "VkPhysicalDeviceVulkan12Features::shaderStorageTexelBufferArrayNonUniformIndexing not supported and is required";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     const char *vertex_source = R"glsl(
@@ -1788,7 +1788,7 @@ void main() {
 
 TEST_F(PositiveShaderSpirv, SpecConstantTextureArrayTessellation) {
     TEST_DESCRIPTION("Reproduces https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6370");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const char *source = R"glsl(
 #version 440
 layout(triangles, equal_spacing, cw) in;
@@ -1816,7 +1816,7 @@ void main() {
 
 TEST_F(PositiveShaderSpirv, SpecConstantTextureArrayVertex) {
     TEST_DESCRIPTION("Reproduces https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6370");
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     const char *source = R"glsl(
 #version 450
 layout(constant_id = 0) const int MAX_NUM_DESCRIPTOR_IMAGES = 100;
@@ -1915,7 +1915,7 @@ TEST_F(PositiveShaderSpirv, SpecConstantTextureIndexValue) {
 }
 
 TEST_F(PositiveShaderSpirv, DescriptorCountSpecConstant) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(

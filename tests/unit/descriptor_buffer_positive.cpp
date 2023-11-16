@@ -14,7 +14,7 @@
 void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptor_buffer_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(descriptor_buffer_features);
@@ -27,7 +27,7 @@ void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
 
 TEST_F(PositiveDescriptorBuffer, BasicUsage) {
     TEST_DESCRIPTION("Create VkBuffer with extension.");
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer())
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     // *descriptorBufferAddressSpaceSize properties are guaranteed to be 2^27
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -54,7 +54,7 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     TEST_DESCRIPTION("Bind descriptor buffer and set descriptor offset.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features))
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features));
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;

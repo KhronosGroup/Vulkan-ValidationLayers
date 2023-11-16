@@ -19,7 +19,7 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
     if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
     }

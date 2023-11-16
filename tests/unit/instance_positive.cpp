@@ -17,7 +17,7 @@
 TEST_F(PositiveInstance, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
@@ -41,7 +41,7 @@ TEST_F(PositiveInstance, TwoInstances) {
 }
 
 TEST_F(PositiveInstance, ValidationInstanceExtensions) {
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     std::string layer_name = "VK_LAYER_KHRONOS_validation";
     std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
@@ -67,8 +67,8 @@ TEST_F(PositiveInstance, ValidationInstanceExtensions) {
 TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     TEST_DESCRIPTION("Call a VkPhysicalDevice query API that uses an enum that is only valid with a promoted extension");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework())
-    // RETURN_IF_SKIP(InitState())
+    RETURN_IF_SKIP(InitFramework());
+    // RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
