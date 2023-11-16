@@ -76,13 +76,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
-      - run: python3 -m pip install jsonschema pyparsing
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
