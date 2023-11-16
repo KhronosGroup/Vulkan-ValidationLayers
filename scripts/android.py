@@ -77,7 +77,7 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
 #
 # As a result CMake will need to be run multiple times to create a complete test APK that can be run on any Android device.
 def main():
-    configs = ['Release', 'Debug']
+    configs = ['Release', 'Debug', 'MinSizeRel']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, choices=configs, default=configs[0])
@@ -169,6 +169,8 @@ def main():
         common_ci.RunShellCmd(build_cmd)
 
         install_cmd = f'cmake --install {build_dir} --prefix {cmake_install_dir}'
+        if cmake_config in ['Release', 'MinSizeRel']:
+            install_cmd += f' --strip'
         common_ci.RunShellCmd(install_cmd)
 
     if create_apk:
