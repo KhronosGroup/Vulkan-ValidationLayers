@@ -3330,31 +3330,31 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             }
         }
 
-        auto rendering_fragment_shading_rate_attachment_info =
-            vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
-        if (rendering_fragment_shading_rate_attachment_info &&
-            (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
-            if (!(pipeline->create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
-                                            cb_state.activeRenderPass->renderPass());
-                skip |= LogError(vuid.dynamic_rendering_fsr_06183, objlist, loc,
-                                 "Currently bound graphics pipeline %s must have been created with "
-                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                                 FormatHandle(*pipeline).c_str());
+        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
+            auto rendering_fragment_shading_rate_attachment_info =
+                vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
+            if (rendering_fragment_shading_rate_attachment_info &&
+                (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
+                if (!(pipeline->create_flags & VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
+                    skip |= LogError(vuid.dynamic_rendering_fsr_06183, objlist, loc,
+                                     "Currently bound graphics pipeline %s must have been created with "
+                                     "VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                                     FormatHandle(*pipeline).c_str());
+                }
             }
-        }
 
-        auto rendering_fragment_shading_rate_density_map =
-            vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
-        if (rendering_fragment_shading_rate_density_map &&
-            (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
-            if (!(pipeline->create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-                const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
-                                            cb_state.activeRenderPass->renderPass());
-                skip |= LogError(vuid.dynamic_rendering_fdm_06184, objlist, loc,
-                                 "Currently bound graphics pipeline %s must have been created with "
-                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                                 FormatHandle(*pipeline).c_str());
+            auto rendering_fragment_shading_rate_density_map =
+                vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
+            if (rendering_fragment_shading_rate_density_map &&
+                (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
+                if (!(pipeline->create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
+                    skip |= LogError(vuid.dynamic_rendering_fdm_06184, objlist, loc,
+                                     "Currently bound graphics pipeline %s must have been created with "
+                                     "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
+                                     FormatHandle(*pipeline).c_str());
+                }
             }
         }
 
