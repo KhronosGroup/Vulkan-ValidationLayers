@@ -26,7 +26,7 @@
 
 #include "containers/custom_containers.h"
 #include "spirv_grammar_helper.h"
-#include "state_tracker/shader_instruction.h"
+#include "spirv/spv_instruction.h"
 
 // All information related to each SPIR-V opcode instruction
 struct InstructionInfo {

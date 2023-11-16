@@ -96,6 +96,8 @@ elseif(MSVC)
     )
 endif()
 
+add_subdirectory(spirv)
+
 add_library(vvl MODULE)
 
 target_sources(vvl PRIVATE
@@ -237,8 +239,6 @@ target_sources(vvl PRIVATE
     state_tracker/render_pass_state.cpp
     state_tracker/render_pass_state.h
     state_tracker/sampler_state.h
-    state_tracker/shader_instruction.cpp
-    state_tracker/shader_instruction.h
     state_tracker/shader_module.cpp
     state_tracker/shader_module.h
     state_tracker/shader_object_state.cpp
@@ -325,6 +325,7 @@ target_link_libraries(vvl PRIVATE
     SPIRV-Headers::SPIRV-Headers
     SPIRV-Tools-opt
     SPIRV-Tools-link
+    vvl_spirv
     VkLayer_utils
 )
 

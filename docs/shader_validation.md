@@ -31,8 +31,9 @@ Currently these are
 
 The code is currently split up into the following main sections
 
-- `layers/shader_instruction.cpp`
-    - This contains information about each SPIR-V instruction.
+- `layers/spirv/*`
+    - SPIR-V specific logic, contains no Vulkan or layer concepts at all.
+    - Useful for handling the definition of each SPIR-V instruction.
 - `layers/shader_module.cpp`
     - This contains information about the `VkShaderModule` object
 - `layers/shader_validation.cpp`

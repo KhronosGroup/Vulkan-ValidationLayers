@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "state_tracker/shader_instruction.h"
-#include "state_tracker/shader_module.h"
+#include "spv_instruction.h"
 #include "generated/spirv_grammar_helper.h"
+#include <sstream>
 
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
     words_.emplace_back(*it++);
@@ -102,25 +102,6 @@ uint32_t Instruction::GetBitWidth() const {
             break;
     }
     return bit_width;
-}
-
-AtomicInstructionInfo Instruction::GetAtomicInfo(const SPIRV_MODULE_STATE& module_state) const {
-    AtomicInstructionInfo info;
-
-    // All atomics have a pointer referenced
-    const uint32_t pointer_index = Opcode() == spv::OpAtomicStore ? 1 : 3;
-    const Instruction* access = module_state.FindDef(Word(pointer_index));
-
-    // spirv-val will catch if not OpTypePointer
-    const Instruction* pointer = module_state.FindDef(access->Word(1));
-    info.storage_class = pointer->Word(2);
-
-    const Instruction* data_type = module_state.FindDef(pointer->Word(3));
-    info.type = data_type->Opcode();
-
-    info.bit_width = data_type->GetBitWidth();
-
-    return info;
 }
 
 spv::BuiltIn Instruction::GetBuiltIn() const {

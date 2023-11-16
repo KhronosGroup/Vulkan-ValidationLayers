@@ -23,7 +23,7 @@
 #include "generated/state_tracker_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/shader_module.h"
-#include "state_tracker/shader_instruction.h"
+#include "spirv/spv_instruction.h"
 
 spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
     if (api_version >= VK_API_VERSION_1_3) {

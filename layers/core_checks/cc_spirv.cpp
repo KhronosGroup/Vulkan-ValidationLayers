@@ -888,7 +888,7 @@ bool CoreChecks::ValidateAtomicsTypes(const SPIRV_MODULE_STATE &module_state, co
     // clang-format on
 
     for (const Instruction *atomic_def : module_state.static_data_.atomic_inst) {
-        const AtomicInstructionInfo &atomic = atomic_def->GetAtomicInfo(module_state);
+        const AtomicInstructionInfo &atomic = module_state.GetAtomicInfo(*atomic_def);
         const uint32_t opcode = atomic_def->Opcode();
 
         if ((atomic.bit_width == 64) && (atomic.type == spv::OpTypeInt)) {
