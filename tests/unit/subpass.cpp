@@ -644,12 +644,13 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     }
 
     {  // Binds input attachment
-        char const *fsSource =
-            "#version 450\n"
-            "layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;\n"
-            "void main() {\n"
-            "   vec4 color = subpassLoad(x);\n"
-            "}\n";
+        char const *fsSource = R"glsl(
+            #version 450
+            layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+            void main() {
+               vec4 color = subpassLoad(x);
+            }
+            )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
