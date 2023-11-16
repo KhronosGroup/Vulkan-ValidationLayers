@@ -63,20 +63,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}, {c: "-fsanitize=thread", ld: "-fsanitize=thread"}]
+        sanitize: [ address, thread ]
         config: [debug, release]
+        robin_hood: [ "ON" ]
         include:
           # Test clang support
           - compiler: {cc: clang, cxx: clang++}
             config: release
-            robin_hood: "ON"
           # Test with Robin Hood disabled
           # Chromium build, and some package managers don't use it.
           - compiler: {cc: clang, cxx: clang++}
             config: release
             robin_hood: "OFF"
-            flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}]
-
+            sanitize: address
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -85,17 +84,16 @@ jobs:
           python-version: '3.10'
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.flags.c }}-${{ matrix.flags.ld }}-${{matrix.robin_hood}}
+          key: ${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
       - run: python3 -m pip install jsonschema pyparsing
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Build
-        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
           CC: ${{ matrix.compiler.cc }}
           CXX: ${{ matrix.compiler.cxx }}
-          CFLAGS: ${{ matrix.flags.c }}
-          CXXFLAGS: ${{ matrix.flags.c }}
-          LDFLAGS: ${{ matrix.flags.ld }}
+          CFLAGS: -fsanitize=${{ matrix.sanitize }}
+          CXXFLAGS: -fsanitize=${{ matrix.sanitize }}
+          LDFLAGS: -fsanitize=${{ matrix.sanitize }}
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
