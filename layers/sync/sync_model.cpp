@@ -965,6 +965,58 @@ HazardResult::HazardState::HazardState(const ResourceAccessState *access_state_,
     }
 }
 
+SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param,
+                                     const VkPipelineStageFlags2KHR disabled_feature_mask) {
+    SyncExecScope result;
+    result.mask_param = mask_param;
+    result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
+    result.exec_scope = sync_utils::WithEarlierPipelineStages(result.expanded_mask);
+    result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.expanded_mask);
+    return result;
+}
+
+SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param) {
+    SyncExecScope result;
+    result.mask_param = mask_param;
+    result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
+    result.exec_scope = sync_utils::WithLaterPipelineStages(result.expanded_mask);
+    result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.expanded_mask);
+    return result;
+}
+
+SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst)
+    : src_exec_scope(src), src_access_scope(0), dst_exec_scope(dst), dst_access_scope(0) {}
+
+SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const SyncBarrier::AllAccess &)
+    : src_exec_scope(src), src_access_scope(src.valid_accesses), dst_exec_scope(dst), dst_access_scope(dst.valid_accesses) {}
+
+SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
+    const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(subpass.pNext);
+    if (barrier) {
+        auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
+        src_exec_scope = src;
+        src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, barrier->srcAccessMask);
+
+        auto dst = SyncExecScope::MakeDst(queue_flags, barrier->dstStageMask);
+        dst_exec_scope = dst;
+        dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier->dstAccessMask);
+
+    } else {
+        auto src = SyncExecScope::MakeSrc(queue_flags, subpass.srcStageMask);
+        src_exec_scope = src;
+        src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, subpass.srcAccessMask);
+
+        auto dst = SyncExecScope::MakeDst(queue_flags, subpass.dstStageMask);
+        dst_exec_scope = dst;
+        dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, subpass.dstAccessMask);
+    }
+}
+
+SyncBarrier::SyncBarrier(const std::vector<SyncBarrier> &barriers) : SyncBarrier() {
+    for (const auto &barrier : barriers) {
+        Merge(barrier);
+    }
+}
 const char *string_SyncHazard(SyncHazard hazard) {
     switch (hazard) {
         case SyncHazard::NONE:
