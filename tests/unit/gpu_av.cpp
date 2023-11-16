@@ -945,7 +945,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6980
+TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
