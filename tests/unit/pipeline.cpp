@@ -3760,3 +3760,40 @@ TEST_F(NegativePipeline, VertexPointOutputConservativeRasterization) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
+    TEST_DESCRIPTION("Test VK_EXT_pipeline_creation_cache_control with VkPipelineCreateFlags2");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = vku::InitStructHelper();
+    cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    if (maintenance5_features.maintenance5 == VK_FALSE) {
+        GTEST_SKIP() << "maintenance5 not supported";
+    }
+    maintenance5_features.pNext = &cache_control_features;
+    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+
+    const auto set_graphics_flags = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.pNext = &flags2;
+        flags2.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_graphics_flags, kErrorBit,
+                                      "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
+
+    const auto set_compute_flags = [&](CreateComputePipelineHelper &helper) {
+        helper.cp_ci_.pNext = &flags2;
+        flags2.flags = VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR;
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
+                                             "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
+}
