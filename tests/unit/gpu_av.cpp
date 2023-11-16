@@ -203,101 +203,110 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     // Shader programs for array OOB test in vertex stage:
     // - The vertex shader fetches the invalid index from the uniform buffer and uses it to make an invalid index into another
     // array.
-    char const *vsSource_vert =
-        "#version 450\n"
-        "\n"
-        "layout(std140, set = 0, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[6];\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));\n"
-        "}\n";
-    char const *fsSource_vert =
-        "#version 450\n"
-        "\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[6];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[0], vec2(0, 0));\n"
-        "}\n";
+    char const *vsSource_vert = R"glsl(
+        #version 450
+
+        layout(std140, set = 0, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));
+        }
+        )glsl";
+    char const *fsSource_vert = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = texture(tex[0], vec2(0, 0));
+        }
+        )glsl";
 
     // Shader programs for array OOB test in fragment stage:
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
-    char const *vsSource_frag =
-        "#version 450\n"
-        "\n"
-        "layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
-        "layout(location = 0) out flat uint index;\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   index = uniform_index_buffer.tex_index[0];\n"
-        "}\n";
-    char const *fsSource_frag =
-        "#version 450\n"
-        "\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[6];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[index], vec2(0, 0));\n"
-        "}\n";
-    char const *fsSource_frag_runtime =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n"
-        "\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[index], vec2(0, 0));\n"
-        "}\n";
-    char const *fsSource_buffer =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n "
-        "\n"
-        "layout(set = 0, binding = 1) buffer foo { vec4 val; } colors[];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = colors[index].val;\n"
-        "}\n";
-    char const *gsSource =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n "
-        "layout(triangles) in;\n"
-        "layout(triangle_strip, max_vertices=3) out;\n"
-        "layout(location=0) in VertexData { vec4 x; } gs_in[];\n"
-        "layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;\n"
-        "layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];\n"
-        "void main() {\n"
-        "   gl_Position = gs_in[0].x + adds[uniform_index_buffer.index].val.x;\n"
-        "   EmitVertex();\n"
-        "}\n";
+    char const *vsSource_frag = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+        )glsl";
+    char const *fsSource_frag = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+        )glsl";
+    char const *fsSource_frag_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+        )glsl";
+    char const *fsSource_buffer = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable\
+
+        layout(set = 0, binding = 1) buffer foo { vec4 val; } colors[];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = colors[index].val;
+        }
+        )glsl";
+    char const *gsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable\
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices=3) out;
+        layout(location=0) in VertexData { vec4 x; } gs_in[];
+        layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
+        layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
+        void main() {
+           gl_Position = gs_in[0].x + adds[uniform_index_buffer.index].val.x;
+           EmitVertex();
+        }
+        )glsl";
     static const char vsSourceForGS[] = R"glsl(
         #version 450
         layout(location=0) out foo {vec4 val;} gs_out[3];
         void main() {
            gs_out[0].val = vec4(0);
            gl_Position = vec4(1);
-        })glsl";
-    static const char *tesSource =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n "
-        "layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;\n"
-        "layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];\n"
-        "layout(triangles, equal_spacing, cw) in;\n"
-        "void main() {\n"
-        "    gl_Position = adds[uniform_index_buffer.index].val;\n"
-        "}\n";
+        }
+        )glsl";
+    static const char *tesSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable\
+        layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
+        layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
+        layout(triangles, equal_spacing, cw) in;
+        void main() {
+            gl_Position = adds[uniform_index_buffer.index].val;
+        }
+        )glsl";
 
     struct TestCase {
         char const *vertex_source;
@@ -422,16 +431,17 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         return;
     }
     if (descriptor_indexing) {
-        char const *csSource =
-            "#version 450\n"
-            "#extension GL_EXT_nonuniform_qualifier : enable\n "
-            "layout(set = 0, binding = 0) uniform ufoo { uint index; } u_index;"
-            "layout(set = 0, binding = 1) buffer StorageBuffer {\n"
-            "    uint data;\n"
-            "} Data[];\n"
-            "void main() {\n"
-            "   Data[(u_index.index - 1)].data = Data[u_index.index].data;\n"
-            "}\n";
+        char const *csSource = R"glsl(
+            #version 450
+            #extension GL_EXT_nonuniform_qualifier : enable\
+            layout(set = 0, binding = 0) uniform ufoo { uint index; } u_inde
+            layout(set = 0, binding = 1) buffer StorageBuffer {
+                uint data;
+            } Data[];
+            void main() {
+               Data[(u_index.index - 1)].data = Data[u_index.index].data;
+            }
+            )glsl";
 
         VkShaderObj shader_module(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
@@ -595,29 +605,31 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
-    char const *vsSource_frag =
-        "#version 450\n"
-        "\n"
-        "layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
-        "layout(location = 0) out flat uint index;\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   index = uniform_index_buffer.tex_index[0];\n"
-        "}\n";
-    char const *fsSource_frag_runtime =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n"
-        "\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[index], vec2(0, 0));\n"
-        "}\n";
+    char const *vsSource_frag = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+        )glsl";
+    char const *fsSource_frag_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+        )glsl";
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;
@@ -785,29 +797,31 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
-    char const *vsSource_frag =
-        "#version 450\n"
-        "\n"
-        "layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
-        "layout(location = 0) out flat uint index;\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   index = uniform_index_buffer.tex_index[0];\n"
-        "}\n";
-    char const *fsSource_frag_runtime =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n"
-        "\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[index], vec2(0, 0));\n"
-        "}\n";
+    char const *vsSource_frag = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+         )glsl";
+    char const *fsSource_frag_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+         )glsl";
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;
@@ -995,32 +1009,33 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
     descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] =
-        "#version 450\n"
-        "layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;\n"      // index[1]
-        "layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;\n"  // data[4]
-        "layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;\n"     // VK_NULL_HANDLE
-        "layout(set = 0, binding = 3) uniform samplerBuffer u_buffer;\n"              // texel_buffer[4]
-        "layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;\n"          // texel_buffer[4]
-        "void main() {\n"
-        "    vec4 x;\n"
-        "    if (u_index.index[0] == 8)\n"
-        "        Data.data[u_index.index[0]] = 0xdeadca71;\n"
-        "    else if (u_index.index[0] == 0)\n"
-        "        Data.data[0] = u_index.index[4];\n"
-        "    else if (u_index.index[0] == 1)\n"
-        "        Data.data[0] = Null.data[40];\n"  // No error
-        "    else if (u_index.index[0] == 2)\n"
-        "        x = texelFetch(u_buffer, 5);\n"
-        "    else if (u_index.index[0] == 3)\n"
-        "        x = imageLoad(s_buffer, 5);\n"
-        "    else if (u_index.index[0] == 4)\n"
-        "        imageStore(s_buffer, 5, x);\n"
-        "    else if (u_index.index[0] == 5)\n"  // No Error
-        "        imageStore(s_buffer, 0, x);\n"
-        "    else if (u_index.index[0] == 6)\n"  // No Error
-        "        x = imageLoad(s_buffer, 0);\n"
-        "}\n";
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
+        layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;  // data[4]
+        layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
+        layout(set = 0, binding = 3) uniform samplerBuffer u_buffer;              // texel_buffer[4]
+        layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
+        void main() {
+            vec4 x;
+            if (u_index.index[0] == 8)
+                Data.data[u_index.index[0]] = 0xdeadca71;
+            else if (u_index.index[0] == 0)
+                Data.data[0] = u_index.index[4];
+            else if (u_index.index[0] == 1)
+                Data.data[0] = Null.data[40];  // No error
+            else if (u_index.index[0] == 2)
+                x = texelFetch(u_buffer, 5);
+            else if (u_index.index[0] == 3)
+                x = imageLoad(s_buffer, 5);
+            else if (u_index.index[0] == 4)
+                imageStore(s_buffer, 5, x);
+            else if (u_index.index[0] == 5)  // No Error
+                imageStore(s_buffer, 0, x);
+            else if (u_index.index[0] == 6)  // No Error
+                x = imageLoad(s_buffer, 0);
+        }
+        )glsl";
 
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
@@ -1169,15 +1184,16 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
-    char const *vsSource =
-        "#version 450\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "      gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+              gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+        )glsl";
 
     vkt::Shader *vso = nullptr;
     vkt::Shader *fso = nullptr;
@@ -1235,14 +1251,15 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
-        "void main(){\n"
-        "   x = vec4(bar.x, bar.y, 0, 1);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;
+        void main(){
+           x = vec4(bar.x, bar.y, 0, 1);
+        }
+        )glsl";
 
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
@@ -1254,14 +1271,15 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0, binding=0) buffer readonly foo { int x; int y; } bar;\n"
-        "void main(){\n"
-        "   x = vec4(bar.x, bar.y, 0, 1);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) buffer readonly foo { int x; int y; } bar;
+        void main(){
+           x = vec4(bar.x, bar.y, 0, 1);
+        }
+        )glsl";
 
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
@@ -1275,17 +1293,18 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses array in block "
         "definition.");
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0, binding=0) uniform readonly foo { int x[17]; } bar;\n"
-        "void main(){\n"
-        "   int y = 0;\n"
-        "   for (int i = 0; i < 17; i++)\n"
-        "       y += bar.x[i];\n"
-        "   x = vec4(y, 0, 0, 1);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) uniform readonly foo { int x[17]; } bar;
+        void main(){
+           int y = 0;
+           for (int i = 0; i < 17; i++)
+               y += bar.x[i];
+           x = vec4(y, 0, 0, 1);
+        }
+        )glsl";
 
     ShaderBufferSizeTest(64,  // buffer size
                          0,   // binding offset
@@ -1299,18 +1318,19 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
         "definition.");
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "struct S {\n"
-        "    int x;\n"
-        "    int y;\n"
-        "};\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0, binding=0) uniform readonly foo { int a; S b; } bar;\n"
-        "void main(){\n"
-        "   x = vec4(bar.a, bar.b.x, bar.b.y, 1);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+
+        struct S {
+            int x;
+            int y;
+        };
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) uniform readonly foo { int a; S b; } bar;
+        void main(){
+           x = vec4(bar.a, bar.b.x, bar.b.y, 1);
+        }
+        )glsl";
 
     ShaderBufferSizeTest(8,  // buffer size
                          0,  // binding offset
@@ -2005,15 +2025,16 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
 
-    char const *csSource =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n "
-        "layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;"
-        "layout(set = 0, binding = 1) uniform inlineubodef { ivec4 dummy; int val; } inlineubo;\n"
+    char const *csSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
+        layout(set = 0, binding = 1) uniform inlineubodef { ivec4 dummy; int val; } inlineubo;
 
-        "void main() {\n"
-        "    u_index.index = inlineubo.val;\n"
-        "}\n";
+        void main() {
+            u_index.index = inlineubo.val;
+        }
+        )glsl";
 
     VkShaderObj shader_module(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
@@ -2730,14 +2751,15 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderObjectUniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
-        "void main(){\n"
-        "   x = vec4(bar.x, bar.y, 0, 1);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;
+        void main(){
+           x = vec4(bar.x, bar.y, 0, 1);
+        }
+        )glsl";
 
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
@@ -2872,12 +2894,13 @@ TEST_F(VkGpuAssistedLayerTest, SelectInstrumentedShaders) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] =
-        "#version 450\n"
-        "layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;\n"
-        "void main() {\n"
-        "        Data.data[4] = 0xdeadca71;\n"
-        "}\n";
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
+        void main() {
+                Data.data[4] = 0xdeadca71;
+        }
+        )glsl";
 
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
@@ -3040,29 +3063,31 @@ TEST_F(VkGpuAssistedLayerTest, ImageArrayDynamicIndexing) {
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
-    char const *vsSource_frag =
-        "#version 450\n"
-        "\n"
-        "layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
-        "layout(location = 0) out flat uint index;\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   index = uniform_index_buffer.tex_index[0];\n"
-        "}\n";
-    char const *fsSource_frag_runtime =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n"
-        "\n"
-        "layout(set = 0, binding = 1) uniform sampler2D tex[];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[index], vec2(0, 0));\n"
-        "}\n";
+    char const *vsSource_frag = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+        )glsl";
+    char const *fsSource_frag_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+        )glsl";
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;

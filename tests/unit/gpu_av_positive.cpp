@@ -618,29 +618,31 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
-    char const *vsSource_frag =
-        "#version 450\n"
-        "\n"
-        "layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
-        "layout(location = 0) out flat uint index;\n"
-        "vec2 vertices[3];\n"
-        "void main(){\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   index = uniform_index_buffer.tex_index[0];\n"
-        "}\n";
-    char const *fsSource_frag_runtime =
-        "#version 450\n"
-        "#extension GL_EXT_nonuniform_qualifier : enable\n"
-        "\n"
-        "layout(set = 0, binding = 2) uniform sampler2D tex[];\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "layout(location = 0) in flat uint index;\n"
-        "void main(){\n"
-        "   uFragColor = texture(tex[index], vec2(0, 0));\n"
-        "}\n";
+    char const *vsSource_frag = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+    )glsl";
+    char const *fsSource_frag_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 2) uniform sampler2D tex[];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+    )glsl";
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;
@@ -715,13 +717,13 @@ TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] =
-        "#version 450\n"
-        "layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;\n"
-        "void main() {\n"
-        "        Data.data[4] = 0xdeadca71;\n"
-        "}\n";
-
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
+        void main() {
+                Data.data[4] = 0xdeadca71;
+        }
+    )glsl";
     // Don't instrument buggy vertex shader
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
     // Instrument non-buggy fragment shader
