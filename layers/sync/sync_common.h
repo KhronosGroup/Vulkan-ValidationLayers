@@ -21,6 +21,9 @@
 #include "generated/sync_validation_types.h"
 #include "state_tracker/image_state.h"
 
+class BUFFER_STATE;
+class BUFFER_VIEW_STATE;
+struct BufferBinding;
 class HazardResult;
 class SyncValidator;
 
@@ -37,6 +40,23 @@ constexpr static ResourceUsageTag kMaxIndex = std::numeric_limits<ResourceUsageT
 constexpr static ResourceUsageTag kInvalidTag = kMaxIndex;
 
 using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
+using ResourceAddress = VkDeviceSize;
+using ResourceAccessRange = sparse_container::range<ResourceAddress>;
+
+template <typename T>
+ResourceAccessRange MakeRange(const T &has_offset_and_size) {
+    return ResourceAccessRange(has_offset_and_size.offset, (has_offset_and_size.offset + has_offset_and_size.size));
+}
+ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
+ResourceAccessRange MakeRange(const BUFFER_STATE &buffer, VkDeviceSize offset, VkDeviceSize size);
+ResourceAccessRange MakeRange(const BUFFER_VIEW_STATE &buf_view_state);
+ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride);
+ResourceAccessRange MakeRange(const BufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
+                              uint32_t stride);
+
+#ifndef SYNCVAL_COMMON_DEFS
+extern const ResourceAccessRange kFullRange;
+#endif
 
 class SyncValidationInfo {
   public:

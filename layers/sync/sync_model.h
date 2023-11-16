@@ -507,12 +507,8 @@ class ResourceAccessState : public SyncStageAccess {
     static OrderingBarriers kOrderingRules;
 };
 using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
-
-using ResourceAddress = VkDeviceSize;
 using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
-using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
-static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
 // Apply the memory barrier without updating the existing barriers.  The execution barrier
 // changes the "chaining" state, but to keep barriers independent, we defer this until all barriers
@@ -624,4 +620,22 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
         }
     }
     return all_clear;
+}
+
+template <typename Barrier>
+SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst)
+    : src_exec_scope(src),
+      src_access_scope(SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask)),
+      dst_exec_scope(dst),
+      dst_access_scope(SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask)) {}
+
+template <typename Barrier>
+SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier) {
+    auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
+    src_exec_scope = src.exec_scope;
+    src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask);
+
+    auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
+    dst_exec_scope = dst.exec_scope;
+    dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask);
 }

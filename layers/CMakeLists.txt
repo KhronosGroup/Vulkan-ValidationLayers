@@ -268,11 +268,14 @@ target_sources(vvl PRIVATE
     stateless/stateless_validation.h
     sync/sync_access_context.cpp
     sync/sync_access_context.h
+    sync/sync_common.cpp
     sync/sync_common.h
     sync/sync_validation.cpp
     sync/sync_validation.h
     sync/sync_model.cpp
     sync/sync_model.h
+    sync/sync_sync_op.cpp
+    sync/sync_sync_op.h
     sync/sync_utils.cpp
     sync/sync_utils.h
     sync/sync_vuid_maps.cpp
