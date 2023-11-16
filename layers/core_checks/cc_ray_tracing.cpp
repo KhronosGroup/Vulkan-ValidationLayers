@@ -1465,7 +1465,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
             skip |= LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828", pipeline,
                              error_obj.location.dot(Field::pipeline),
                              "was created with %s, but the pipelineLibraryGroupHandles feature was not enabled.",
-                             string_VkPipelineCreateFlags(pipeline_state.create_flags).c_str());
+                             string_VkPipelineCreateFlags2KHR(pipeline_state.create_flags).c_str());
         }
     }
     if (dataSize < (phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleSize * groupCount)) {

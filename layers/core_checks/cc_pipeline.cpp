@@ -25,45 +25,46 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
-bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, const Location &loc, const char *vuid) const {
+bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2KHR flags, const Location &loc, const char *vuid) const {
     bool skip = false;
     if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
-            VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT;
+            VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR | VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR;
         if ((flags & invalid_flags) != 0) {
             skip |= LogError(vuid, device, loc, "is %s but pipelineCreationCacheControl feature was not enabled.",
-                             string_VkPipelineCreateFlags(flags).c_str());
+                             string_VkPipelineCreateFlags2KHR(flags).c_str());
         }
     }
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags flags, const Location &loc, const char *vuid) const {
+bool CoreChecks::ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags2KHR flags, const Location &loc,
+                                                       const char *vuid) const {
     bool skip = false;
     if (enabled_features.deviceGeneratedComputePipelines == VK_FALSE) {
-        if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
+        if ((flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_NV) != 0) {
             skip |= LogError(vuid, device, loc, "is %s but deviceGeneratedComputePipelines feature was not enabled.",
-                             string_VkPipelineCreateFlags(flags).c_str());
+                             string_VkPipelineCreateFlags2KHR(flags).c_str());
         }
     }
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, const Location &loc) const {
+bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2KHR flags, const Location &loc) const {
     bool skip = false;
     if (enabled_features.pipelineProtectedAccess == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
-            VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+            VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT;
         if ((flags & invalid_flags) != 0) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368", device, loc,
                              "is %s, but pipelineProtectedAccess feature was not enabled.",
-                             string_VkPipelineCreateFlags(flags).c_str());
+                             string_VkPipelineCreateFlags2KHR(flags).c_str());
         }
     }
-    if ((flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) && (flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
+    if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07369", device, loc,
                          "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
-                         string_VkPipelineCreateFlags(flags).c_str());
+                         string_VkPipelineCreateFlags2KHR(flags).c_str());
     }
     return skip;
 }
@@ -617,12 +618,13 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Lo
                                      "struct in the pNext chain but the shaderModuleIdentifier feature was not enabled. (stage %s)",
                                      string_VkShaderStageFlagBits(stage_ci.stage));
                 }
-                if (!(pipeline.create_flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
-                    skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851", pipeline.Handle(),
-                                     loc.pNext(Struct::VkPipelineShaderStageModuleIdentifierCreateInfoEXT, Field::identifierSize),
-                                     "(%" PRIu32 "), but the pipeline was created with %s. (stage %s)",
-                                     module_identifier->identifierSize, string_VkPipelineCreateFlags(pipeline.create_flags).c_str(),
-                                     string_VkShaderStageFlagBits(stage_ci.stage));
+                if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
+                    skip |=
+                        LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851", pipeline.Handle(),
+                                 loc.pNext(Struct::VkPipelineShaderStageModuleIdentifierCreateInfoEXT, Field::identifierSize),
+                                 "(%" PRIu32 "), but the pipeline was created with %s. (stage %s)",
+                                 module_identifier->identifierSize, string_VkPipelineCreateFlags2KHR(pipeline.create_flags).c_str(),
+                                 string_VkShaderStageFlagBits(stage_ci.stage));
                 }
                 if (module_identifier->identifierSize > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT) {
                     skip |=
