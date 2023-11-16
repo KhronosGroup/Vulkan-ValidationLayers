@@ -60,6 +60,7 @@ jobs:
 
   linux:
     runs-on: ubuntu-22.04
+    name: "linux (${{matrix.sanitize}} sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
     strategy:
       fail-fast: false
       matrix:
