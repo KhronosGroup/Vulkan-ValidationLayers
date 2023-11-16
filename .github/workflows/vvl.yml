@@ -67,13 +67,9 @@ jobs:
         config: [debug, release]
         robin_hood: [ "ON" ]
         include:
-          # Test clang support
-          - compiler: {cc: clang, cxx: clang++}
-            config: release
           # Test with Robin Hood disabled
           # Chromium build, and some package managers don't use it.
-          - compiler: {cc: clang, cxx: clang++}
-            config: release
+          - config: release
             robin_hood: "OFF"
             sanitize: address
     steps:
@@ -84,13 +80,11 @@ jobs:
           python-version: '3.10'
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
+          key: ${{ matrix.config }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
       - run: python3 -m pip install jsonschema pyparsing
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
-          CC: ${{ matrix.compiler.cc }}
-          CXX: ${{ matrix.compiler.cxx }}
           CFLAGS: -fsanitize=${{ matrix.sanitize }}
           CXXFLAGS: -fsanitize=${{ matrix.sanitize }}
           LDFLAGS: -fsanitize=${{ matrix.sanitize }}
