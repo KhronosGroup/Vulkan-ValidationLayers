@@ -135,7 +135,7 @@ class PIPELINE_STATE : public BASE_NODE {
     const VkPipelineLibraryCreateInfoKHR *library_create_info = nullptr;
     VkGraphicsPipelineLibraryFlagsEXT graphics_lib_type = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
     VkPipelineBindPoint pipeline_type;
-    VkPipelineCreateFlags create_flags;
+    VkPipelineCreateFlags2KHR create_flags;
     vvl::span<const safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
     const safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
     // If using a shader module identifier, the module itself is not validated, but the shader stage is still known
