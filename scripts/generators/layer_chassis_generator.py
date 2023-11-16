@@ -1968,9 +1968,9 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
 
                 // Fill in the function pointers if our version is at least capable of having the structure contain them.
                 if (pVersionStruct->loaderLayerInterfaceVersion >= 2) {
-                    pVersionStruct->pfnGetInstanceProcAddr = vkGetInstanceProcAddr;
-                    pVersionStruct->pfnGetDeviceProcAddr = vkGetDeviceProcAddr;
-                    pVersionStruct->pfnGetPhysicalDeviceProcAddr = vk_layerGetPhysicalDeviceProcAddr;
+                    pVersionStruct->pfnGetInstanceProcAddr = vulkan_layer_chassis::GetInstanceProcAddr;
+                    pVersionStruct->pfnGetDeviceProcAddr = vulkan_layer_chassis::GetDeviceProcAddr;
+                    pVersionStruct->pfnGetPhysicalDeviceProcAddr = vulkan_layer_chassis::GetPhysicalDeviceProcAddr;
                 }
 
                 return VK_SUCCESS;
