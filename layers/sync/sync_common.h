@@ -58,6 +58,10 @@ ResourceAccessRange MakeRange(const BufferBinding &binding, uint32_t first_index
 extern const ResourceAccessRange kFullRange;
 #endif
 
+constexpr VkImageAspectFlags kColorAspects =
+    VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
 class SyncValidationInfo {
   public:
     SyncValidationInfo(const SyncValidator* sync_validator) : sync_state_(sync_validator) {}
