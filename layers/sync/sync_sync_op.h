@@ -15,9 +15,104 @@
  * limitations under the License.
  */
 #pragma once
-#include "sync/sync_validation.h"
+
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/cmd_buffer_state.h"
+
+#include "sync/sync_access_context.h"
+
+class CommandBufferAccessContext;
+class CommandExecutionContext;
+class RenderPassAccessContext;
+class ReplayState;
 
 using SyncMemoryBarrier = SyncBarrier;
+
+struct SyncEventState {
+    enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
+    using EventPointer = std::shared_ptr<const EVENT_STATE>;
+    EventPointer event;
+    vvl::Func last_command;             // Only Event commands are valid here.
+    ResourceUsageTag last_command_tag;  // Needed to filter replay validation
+    vvl::Func unsynchronized_set;
+    VkPipelineStageFlags2KHR barriers;
+    SyncExecScope scope;
+    ResourceUsageTag first_scope_tag;
+    bool destroyed;
+    std::shared_ptr<const AccessContext> first_scope;
+
+    SyncEventState()
+        : event(),
+          last_command(vvl::Func::Empty),
+          last_command_tag(0),
+          unsynchronized_set(vvl::Func::Empty),
+          barriers(0U),
+          scope(),
+          first_scope_tag(),
+          destroyed(true) {}
+
+    SyncEventState(const SyncEventState &) = default;
+    SyncEventState(SyncEventState &&) = default;
+
+    SyncEventState(const SyncEventState::EventPointer &event_state) : SyncEventState() {
+        event = event_state;
+        destroyed = (event.get() == nullptr) || event_state->Destroyed();
+    }
+
+    void ResetFirstScope();
+    const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessStateMap(); }
+    IgnoreReason IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2KHR srcStageMask) const;
+    bool HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope) const;
+    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
+};
+
+class SyncEventsContext {
+  public:
+    using Map = vvl::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
+    using iterator = Map::iterator;
+    using const_iterator = Map::const_iterator;
+
+    SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
+        const auto find_it = map_.find(event_state.get());
+        if (find_it == map_.end()) {
+            if (!event_state.get()) return nullptr;
+
+            const auto *event_plain_ptr = event_state.get();
+            auto sync_state = std::make_shared<SyncEventState>(event_state);
+            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
+            return insert_pair.first->second.get();
+        }
+        return find_it->second.get();
+    }
+
+    const SyncEventState *Get(const EVENT_STATE *event_state) const {
+        const auto find_it = map_.find(event_state);
+        if (find_it == map_.end()) {
+            return nullptr;
+        }
+        return find_it->second.get();
+    }
+    const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
+
+    void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag);
+    void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);
+
+    void Destroy(const EVENT_STATE *event_state) {
+        auto sync_it = map_.find(event_state);
+        if (sync_it != map_.end()) {
+            sync_it->second->destroyed = true;
+            map_.erase(sync_it);
+        }
+    }
+    void Clear() { map_.clear(); }
+
+    SyncEventsContext &DeepCopy(const SyncEventsContext &from);
+    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
+
+  private:
+    Map map_;
+};
+
 struct SyncBufferMemoryBarrier {
     using Buffer = std::shared_ptr<const BUFFER_STATE>;
     Buffer buffer;

@@ -17,6 +17,7 @@
 
 #include "sync/sync_commandbuffer.h"
 #include "sync/sync_sync_op.h"
+#include "sync/sync_validation.h"
 
 SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
                                                              const ResourceInterfaceVariable &variable,
@@ -43,6 +44,20 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     } else {
         return stage_accesses.storage_read;
     }
+}
+
+ResourceUsageRange CommandExecutionContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
+    // The execution references ensure lifespan for the referenced child CB's...
+    ResourceUsageRange tag_range(GetTagLimit(), 0);
+    InsertRecordedAccessLogEntries(recorded_context);
+    tag_range.end = GetTagLimit();
+    return tag_range;
+}
+
+bool CommandExecutionContext::ValidForSyncOps() const {
+    const bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
+    assert(valid);
+    return valid;
 }
 
 CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator *sync_validator)
@@ -934,3 +949,142 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
             SyncOrdering::kDepthStencilAttachment, subresource_range, clear_info.offset, clear_info.extent, tag);
     }
 }
+
+static bool IsHazardVsRead(SyncHazard hazard) {
+    bool vs_read = false;
+    switch (hazard) {
+        case SyncHazard::WRITE_AFTER_READ:
+            vs_read = true;
+            break;
+        case SyncHazard::WRITE_RACING_READ:
+            vs_read = true;
+            break;
+        case SyncHazard::PRESENT_AFTER_READ:
+            vs_read = true;
+            break;
+        default:
+            break;
+    }
+    return vs_read;
+}
+
+static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAccessFlags flags) {
+    // Return the info for the first bit found
+    const SyncStageAccessInfoType *info = nullptr;
+    for (size_t i = 0; i < flags.size(); i++) {
+        if (flags.test(i)) {
+            info = &syncStageAccessInfoByStageAccessIndex()[i];
+            break;
+        }
+    }
+    return info;
+}
+
+static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags, const char *sep = "|") {
+    std::string out_str;
+    if (flags.none()) {
+        out_str = "0";
+    } else {
+        for (size_t i = 0; i < syncStageAccessInfoByStageAccessIndex().size(); i++) {
+            const auto &info = syncStageAccessInfoByStageAccessIndex()[i];
+            if ((flags & info.stage_access_bit).any()) {
+                if (!out_str.empty()) {
+                    out_str.append(sep);
+                }
+                out_str.append(info.name);
+            }
+        }
+        if (out_str.length() == 0) {
+            out_str.append("Unhandled SyncStageAccess");
+        }
+    }
+    return out_str;
+}
+
+std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) {
+    if (formatter.label) {
+        out << formatter.label << ": ";
+    }
+    if (formatter.node) {
+        out << formatter.report_data->FormatHandle(*formatter.node).c_str();
+        if (formatter.node->Destroyed()) {
+            out << " (destroyed)";
+        }
+    } else {
+        out << "null handle";
+    }
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const NamedHandle::FormatterState &formatter) {
+    const NamedHandle &handle = formatter.that;
+    bool labeled = false;
+    if (!handle.name.empty()) {
+        out << handle.name;
+        labeled = true;
+    }
+    if (handle.IsIndexed()) {
+        out << "[" << handle.index << "]";
+        labeled = true;
+    }
+    if (labeled) {
+        out << ": ";
+    }
+    out << formatter.state.FormatHandle(handle.handle);
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter) {
+    const ResourceUsageRecord &record = formatter.record;
+    if (record.alt_usage) {
+        out << record.alt_usage.Formatter(formatter.sync_state);
+    } else {
+        out << "command: " << vvl::String(record.command);
+        out << ", seq_no: " << record.seq_num;
+        if (record.sub_command != 0) {
+            out << ", subcmd: " << record.sub_command;
+        }
+        // Note: ex_cb_state set to null forces output of record.cb_state
+        if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
+            out << ", " << SyncNodeFormatter(formatter.sync_state, record.cb_state);
+        }
+        for (const auto &named_handle : record.handles) {
+            out << "," << named_handle.Formatter(formatter.sync_state);
+        }
+        out << ", reset_no: " << std::to_string(record.reset_count);
+    }
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &hazard) {
+    assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
+    const auto &usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.usage_index];
+    const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
+    const char *stage_access_name = info ? info->name : "INVALID_STAGE_ACCESS";
+    out << "(";
+    if (!hazard.recorded_access.get()) {
+        // if we have a recorded usage the usage is reported from the recorded contexts point of view
+        out << "usage: " << usage_info.name << ", ";
+    }
+    out << "prior_usage: " << stage_access_name;
+    if (IsHazardVsRead(hazard.hazard)) {
+        const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access);
+        out << ", read_barriers: " << string_VkPipelineStageFlags2(barriers);
+    } else {
+        SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
+        out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
+    }
+    return out;
+}
+
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state)
+    : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
+
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const IMAGE_STATE *image)
+    : report_data(sync_state.report_data), node(image), label("image") {}
+
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
+    : report_data(sync_state.report_data), node(q_state), label("queue") {}
+
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_)
+    : report_data(sync_state.report_data), node(base_node), label(label_) {}

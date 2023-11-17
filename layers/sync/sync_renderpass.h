@@ -21,6 +21,7 @@
 
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
+#include "sync/sync_sync_op.h"
 
 class CommandExecutionContext;
 struct ClearAttachmentInfo;
@@ -61,6 +62,13 @@ struct DynamicRenderingInfo {
     std::vector<Attachment> attachments;  // All attachments (with internal typing)
 };
 
+struct BeginRenderingCmdState {
+    BeginRenderingCmdState(std::shared_ptr<const syncval_state::CommandBuffer> &&cb_state_) : cb_state(std::move(cb_state_)) {}
+    void AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
+    const DynamicRenderingInfo &GetRenderingInfo() const;
+    std::shared_ptr<const CommandBuffer> cb_state;
+    std::unique_ptr<DynamicRenderingInfo> info;
+};
 }  // namespace syncval_state
 
 void InitSubpassContexts(VkQueueFlags queue_flags, const RENDER_PASS_STATE &rp_state, const AccessContext *external_context,
