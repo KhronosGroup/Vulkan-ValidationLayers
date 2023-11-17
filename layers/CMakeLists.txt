@@ -268,6 +268,8 @@ target_sources(vvl PRIVATE
     stateless/stateless_validation.h
     sync/sync_access_context.cpp
     sync/sync_access_context.h
+    sync/sync_commandbuffer.cpp
+    sync/sync_commandbuffer.h
     sync/sync_common.cpp
     sync/sync_common.h
     sync/sync_validation.cpp
