@@ -42,6 +42,8 @@ static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubres
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info, const VkImageSubresourceRange &range);
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
                                                   const VkImageViewCreateInfo &view_create_info);
+VkImageSubresourceRange NormalizeSubresourceRangeWithAspect(const VkImageCreateInfo &image_create_info,
+                                                            const VkImageSubresourceRange &range);
 
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
@@ -224,6 +226,10 @@ class IMAGE_STATE : public BINDABLE {
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
         return ::NormalizeSubresourceRange(createInfo, range);
+    }
+
+    VkImageSubresourceRange NormalizeSubresourceRangeWithAspect(const VkImageSubresourceRange &range) const {
+        return ::NormalizeSubresourceRangeWithAspect(createInfo, range);
     }
 
     void SetInitialLayoutMap();

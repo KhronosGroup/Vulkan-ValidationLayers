@@ -83,6 +83,21 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
     return NormalizeSubresourceRange(image_create_info, subres_range);
 }
 
+VkImageSubresourceRange NormalizeSubresourceRangeWithAspect(const VkImageCreateInfo &image_create_info,
+                                                            const VkImageSubresourceRange &range) {
+    VkImageSubresourceRange subres_range = NormalizeSubresourceRange(image_create_info, range);
+    if ((subres_range.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && !vkuFormatIsColor(image_create_info.format)) {
+        subres_range.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    if ((subres_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0 && !vkuFormatHasDepth(image_create_info.format)) {
+        subres_range.aspectMask &= ~VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    if ((subres_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0 && !vkuFormatHasStencil(image_create_info.format)) {
+        subres_range.aspectMask &= ~VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    return subres_range;
+}
+
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo *pCreateInfo) {
     const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;

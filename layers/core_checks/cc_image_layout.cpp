@@ -923,7 +923,7 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     if (!image_state) {
         return;
     }
-    auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
+    auto normalized_isr = image_state->NormalizeSubresourceRangeWithAspect(mem_barrier.subresourceRange);
 
     VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
