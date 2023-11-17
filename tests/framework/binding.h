@@ -384,6 +384,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     Semaphore() = default;
     Semaphore(const Device &dev) { init(dev, vku::InitStruct<VkSemaphoreCreateInfo>()); }
     Semaphore(const Device &dev, const VkSemaphoreCreateInfo &info) { init(dev, info); }
+    Semaphore(Semaphore &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     ~Semaphore() noexcept;
     void destroy() noexcept;
 
@@ -961,6 +962,14 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     explicit CommandBuffer(Device *device, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                            Queue *queue = nullptr) {
         Init(device, pool, level, queue);
+    }
+    CommandBuffer(CommandBuffer &&rhs) noexcept : Handle(std::move(rhs)) {
+        dev_handle_ = rhs.dev_handle_;
+        rhs.dev_handle_ = VK_NULL_HANDLE;
+        cmd_pool_ = rhs.cmd_pool_;
+        rhs.cmd_pool_ = VK_NULL_HANDLE;
+        m_queue = rhs.m_queue;
+        rhs.m_queue = nullptr;
     }
 
     // vkAllocateCommandBuffers()

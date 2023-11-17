@@ -543,6 +543,134 @@ TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
     m_default_queue->wait();
 }
 
+TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
+    TEST_DESCRIPTION("Acquire fence can be used to determine that submission from previous frame finished.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    std::vector<vkt::CommandBuffer> command_buffers;
+    std::vector<vkt::Semaphore> submit_semaphores;
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        command_buffers.emplace_back(m_device, m_commandPool);
+        submit_semaphores.emplace_back(*m_device);
+    }
+    const vkt::Fence acquire_fence(*m_device);
+
+    const int frame_count = 10;
+    for (int i = 0; i < frame_count; i++) {
+        uint32_t image_index = 0;
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
+
+        // 1) wait on the fence -> image was acquired
+        // 2) image was acquired -> image was presented in one of the previous frames
+        //    (except for the first few frames, where the image is presented for the first time)
+        // 3) image was presented -> corresponding present waited on the submit semaphore
+        // 4) submit semaphore was waited -> corresponding submit finished execution and signaled semaphore
+        //
+        // In summary: waiting on the acquire fence (with specific frame setup) means that one of the
+        // previous submission has finished execution and it should be safe to re-use corresponding command buffer.
+        vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
+        vk::ResetFences(device(), 1, &acquire_fence.handle());
+
+        // There should not be in-use errors when we re-use command buffer that corresponds to the acquired image index.
+        command_buffers[image_index].begin();
+        command_buffers[image_index].end();
+
+        VkSubmitInfo submit = vku::InitStructHelper();
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &command_buffers[image_index].handle();
+        submit.signalSemaphoreCount = 1;
+        submit.pSignalSemaphores = &submit_semaphores[image_index].handle();
+        vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+
+        VkPresentInfoKHR present = vku::InitStructHelper();
+        present.waitSemaphoreCount = 1;
+        present.pWaitSemaphores = &submit_semaphores[image_index].handle();
+        present.swapchainCount = 1;
+        present.pSwapchains = &m_swapchain;
+        present.pImageIndices = &image_index;
+        vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    }
+    vk::QueueWaitIdle(m_default_queue->handle());
+}
+
+TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
+    TEST_DESCRIPTION("Test that retiring submission using acquire fence works correctly after swapchain was changed.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    std::vector<vkt::CommandBuffer> command_buffers;
+    std::vector<vkt::Semaphore> submit_semaphores;
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        command_buffers.emplace_back(m_device, m_commandPool);
+        submit_semaphores.emplace_back(*m_device);
+    }
+    const vkt::Fence acquire_fence(*m_device);
+
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
+    vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
+    vk::ResetFences(device(), 1, &acquire_fence.handle());
+    command_buffers[image_index].begin();
+    command_buffers[image_index].end();
+
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &command_buffers[image_index].handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &submit_semaphores[image_index].handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &submit_semaphores[image_index].handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+
+    // Here the application decides to destroy swapchain (e.g. resize event)
+    vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
+    m_swapchain = VK_NULL_HANDLE;
+
+    // At this point there's a pending frame we need to sync with.
+    // WaitForFences(acquire_fence) logic can't be used, because swapchain was destroyed and its acquire
+    // fence can't be waited on. Application can use arbitrary logic to sync with the previous frames.
+    // After swapchain is re-created we can continue to use WaitForFences(acquire_fence) sync model.
+    //
+    // Here we just wait on the queue.
+    // If this line is removed we can get in-use error when begin command buffer.
+    m_default_queue->wait();
+
+    // Create new swapchain.
+    CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, m_swapchain);
+
+    // The following Acquire will detect that fence's PresentSync belongs to the old swapchain and will invalidate it.
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
+
+    vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
+    vk::ResetFences(device(), 1, &acquire_fence.handle());
+
+    command_buffers[image_index].begin();
+    command_buffers[image_index].end();
+
+    vk::QueueWaitIdle(m_default_queue->handle());
+}
+
 TEST_F(PositiveWsi, SwapchainImageLayout) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
