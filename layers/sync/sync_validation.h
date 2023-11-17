@@ -26,10 +26,10 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 
-//#include "sync/sync_model.h"
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_renderpass.h"
+#include "sync/sync_commandbuffer.h"
 
 class AccessContext;
 struct ClearAttachmentInfo;
@@ -49,165 +49,8 @@ class SyncOpBase;
 class SyncOpBeginRenderPass;
 class SyncValidator;
 
-namespace syncval_state {
-struct DynamicRenderingInfo;
-
-struct BeginRenderingCmdState {
-    BeginRenderingCmdState(std::shared_ptr<const syncval_state::CommandBuffer> &&cb_state_) : cb_state(std::move(cb_state_)) {}
-    void AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
-    const DynamicRenderingInfo &GetRenderingInfo() const;
-    std::shared_ptr<const CommandBuffer> cb_state;
-    std::unique_ptr<DynamicRenderingInfo> info;
-};
-
-}  // namespace syncval_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, IMAGE_VIEW_STATE)
-
-
-class AlternateResourceUsage {
-  public:
-    struct RecordBase;
-    struct RecordBase {
-        using Record = std::unique_ptr<RecordBase>;
-        virtual Record MakeRecord() const = 0;
-        virtual std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const = 0;
-        virtual ~RecordBase() {}
-    };
-
-    struct FormatterState {
-        FormatterState(const SyncValidator &sync_state_, const AlternateResourceUsage &usage_)
-            : sync_state(sync_state_), usage(usage_) {}
-        const SyncValidator &sync_state;
-        const AlternateResourceUsage &usage;
-    };
-
-    FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); };
-
-    std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const { return record_->Format(out, sync_state); };
-    AlternateResourceUsage() = default;
-    AlternateResourceUsage(const RecordBase &record) : record_(record.MakeRecord()) {}
-    AlternateResourceUsage(const AlternateResourceUsage &other) : record_() {
-        if (bool(other.record_)) {
-            record_ = other.record_->MakeRecord();
-        }
-    }
-    AlternateResourceUsage &operator=(const AlternateResourceUsage &other) {
-        if (bool(other.record_)) {
-            record_ = other.record_->MakeRecord();
-        } else {
-            record_.reset();
-        }
-        return *this;
-    }
-
-    operator bool() const { return bool(record_); }
-
-  private:
-    RecordBase::Record record_;
-};
-
-inline std::ostream &operator<<(std::ostream &out, const AlternateResourceUsage::FormatterState &formatter) {
-    formatter.usage.Format(out, formatter.sync_state);
-    return out;
-}
-
-template <typename State, typename T>
-struct FormatterImpl {
-    using That = T;
-    friend T;
-    const State &state;
-    const That &that;
-
-  private:
-    // Only intended to be invoke with from That method
-    FormatterImpl(const State &state_, const That &that_) : state(state_), that(that_) {}
-};
-
-struct NamedHandle {
-    const static size_t kInvalidIndex = std::numeric_limits<size_t>::max();
-    std::string name;
-    VulkanTypedHandle handle;
-    size_t index = kInvalidIndex;
-
-    using FormatterState = FormatterImpl<SyncValidator, NamedHandle>;
-    // NOTE: CRTP could DRY this
-    FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); }
-
-    NamedHandle() = default;
-    NamedHandle(const NamedHandle &other) = default;
-    NamedHandle(NamedHandle &&other) = default;
-    NamedHandle(const std::string &name_, const VulkanTypedHandle &handle_, size_t index_ = kInvalidIndex)
-        : name(name_), handle(handle_), index(index_) {}
-    NamedHandle(const char *name_, const VulkanTypedHandle &handle_, size_t index_ = kInvalidIndex)
-        : name(name_), handle(handle_), index(index_) {}
-    NamedHandle(const VulkanTypedHandle &handle_) : name(), handle(handle_) {}
-    NamedHandle &operator=(const NamedHandle &other) = default;
-    NamedHandle &operator=(NamedHandle &&other) = default;
-
-    operator bool() const { return (handle.handle != 0U) && (handle.type != VulkanObjectType::kVulkanObjectTypeUnknown); }
-    bool IsIndexed() const { return index != kInvalidIndex; }
-};
-
-struct ResourceCmdUsageRecord {
-    using TagIndex = ResourceUsageTag;
-    using Count = uint32_t;
-    constexpr static TagIndex kMaxIndex = std::numeric_limits<TagIndex>::max();
-
-    enum class SubcommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
-
-    ResourceCmdUsageRecord() = default;
-    ResourceCmdUsageRecord(vvl::Func command_, Count seq_num_, SubcommandType sub_type_, Count sub_command_,
-                           const CMD_BUFFER_STATE *cb_state_, Count reset_count_)
-        : command(command_),
-          seq_num(seq_num_),
-          sub_command_type(sub_type_),
-          sub_command(sub_command_),
-          cb_state(cb_state_),
-          reset_count(reset_count_) {}
-
-    // NamedHandle must be constructable from args
-    template <class... Args>
-    void AddHandle(Args &&...args) {
-        handles.emplace_back(std::forward<Args>(args)...);
-    }
-
-    vvl::Func command = vvl::Func::Empty;
-    Count seq_num = 0U;
-    SubcommandType sub_command_type = SubcommandType::kNone;
-    Count sub_command = 0U;
-
-    // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
-    // from different command buffers and resets.
-    // plain pointer as a shared pointer is held by the context storing this record
-    const CMD_BUFFER_STATE *cb_state = nullptr;
-    Count reset_count;
-    small_vector<NamedHandle, 1> handles;
-};
-
-struct ResourceUsageRecord : public ResourceCmdUsageRecord {
-    struct FormatterState {
-        FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_, const CMD_BUFFER_STATE *cb_state_)
-            : sync_state(sync_state_), record(record_), ex_cb_state(cb_state_) {}
-        const SyncValidator &sync_state;
-        const ResourceUsageRecord &record;
-        const CMD_BUFFER_STATE *ex_cb_state;
-    };
-    FormatterState Formatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *ex_cb_state) const {
-        return FormatterState(sync_state, *this, ex_cb_state);
-    }
-
-    AlternateResourceUsage alt_usage;
-
-    ResourceUsageRecord() = default;
-    ResourceUsageRecord(vvl::Func command_, Count seq_num_, SubcommandType sub_type_, Count sub_command_,
-                        const CMD_BUFFER_STATE *cb_state_, Count reset_count_)
-        : ResourceCmdUsageRecord(command_, seq_num_, sub_type_, sub_command_, cb_state_, reset_count_) {}
-
-    ResourceUsageRecord(const AlternateResourceUsage &other) : ResourceCmdUsageRecord(), alt_usage(other) {}
-    ResourceUsageRecord(const ResourceUsageRecord &other) : ResourceCmdUsageRecord(other), alt_usage(other.alt_usage) {}
-    ResourceUsageRecord &operator=(const ResourceUsageRecord &other) = default;
-};
 
 struct AcquiredImage {
     std::shared_ptr<const syncval_state::ImageState> image;
@@ -291,133 +134,11 @@ struct FenceSyncState {
 };
 
 
-struct SyncEventState {
-    enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
-    using EventPointer = std::shared_ptr<const EVENT_STATE>;
-    EventPointer event;
-    vvl::Func last_command;             // Only Event commands are valid here.
-    ResourceUsageTag last_command_tag;  // Needed to filter replay validation
-    vvl::Func unsynchronized_set;
-    VkPipelineStageFlags2KHR barriers;
-    SyncExecScope scope;
-    ResourceUsageTag first_scope_tag;
-    bool destroyed;
-    std::shared_ptr<const AccessContext> first_scope;
-
-    SyncEventState()
-        : event(),
-          last_command(vvl::Func::Empty),
-          last_command_tag(0),
-          unsynchronized_set(vvl::Func::Empty),
-          barriers(0U),
-          scope(),
-          first_scope_tag(),
-          destroyed(true) {}
-
-    SyncEventState(const SyncEventState &) = default;
-    SyncEventState(SyncEventState &&) = default;
-
-    SyncEventState(const SyncEventState::EventPointer &event_state) : SyncEventState() {
-        event = event_state;
-        destroyed = (event.get() == nullptr) || event_state->Destroyed();
-    }
-
-    void ResetFirstScope();
-    const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessStateMap(); }
-    IgnoreReason IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2KHR srcStageMask) const;
-    bool HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope) const;
-    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
-};
-
-class SyncEventsContext {
-  public:
-    using Map = vvl::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
-    using iterator = Map::iterator;
-    using const_iterator = Map::const_iterator;
-
-    SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
-        const auto find_it = map_.find(event_state.get());
-        if (find_it == map_.end()) {
-            if (!event_state.get()) return nullptr;
-
-            const auto *event_plain_ptr = event_state.get();
-            auto sync_state = std::make_shared<SyncEventState>(event_state);
-            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
-            return insert_pair.first->second.get();
-        }
-        return find_it->second.get();
-    }
-
-    const SyncEventState *Get(const EVENT_STATE *event_state) const {
-        const auto find_it = map_.find(event_state);
-        if (find_it == map_.end()) {
-            return nullptr;
-        }
-        return find_it->second.get();
-    }
-    const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
-
-    void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag);
-    void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);
-
-    void Destroy(const EVENT_STATE *event_state) {
-        auto sync_it = map_.find(event_state);
-        if (sync_it != map_.end()) {
-            sync_it->second->destroyed = true;
-            map_.erase(sync_it);
-        }
-    }
-    void Clear() { map_.clear(); }
-
-    SyncEventsContext &DeepCopy(const SyncEventsContext &from);
-    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
-
-  private:
-    Map map_;
-};
-
 // Command execution context is the base class for command buffer and queue contexts
 // Preventing unintented leakage of subclass specific state, storing enough information
 // for message logging.
 // TODO: determine where to draw the design split for tag tracking (is there anything command to Queues and CB's)
 
-class CommandExecutionContext : public SyncValidationInfo {
-  public:
-    using AccessLog = std::vector<ResourceUsageRecord>;
-    using CommandBufferSet = vvl::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>>;
-    CommandExecutionContext() : SyncValidationInfo(nullptr) {}
-    CommandExecutionContext(const SyncValidator *sync_validator) : SyncValidationInfo(sync_validator) {}
-    virtual ~CommandExecutionContext() = default;
-    virtual AccessContext *GetCurrentAccessContext() = 0;
-    virtual SyncEventsContext *GetCurrentEventsContext() = 0;
-    virtual const AccessContext *GetCurrentAccessContext() const = 0;
-    virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
-    virtual QueueId GetQueueId() const = 0;
-
-
-    ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
-
-    virtual ResourceUsageTag GetTagLimit() const = 0;
-    virtual VulkanTypedHandle Handle() const = 0;
-    virtual void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) = 0;
-
-    virtual void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) {
-        // Must override if use by derived type is valid
-        assert(false);
-    }
-
-    virtual void NextSubpassReplaySetup(ReplayState &replay) {
-        // Must override if use by derived type is valid
-        assert(false);
-    }
-
-    virtual void EndRenderPassReplayCleanup(ReplayState &replay) {
-        // Must override if use by derived type is valid
-        assert(false);
-    }
-
-    bool ValidForSyncOps() const;
-};
 
 // Allow keep track of the exec contexts replay state
 class ReplayState {
@@ -1283,23 +1004,3 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                              VkImage *pSwapchainImages, const RecordObject &record_obj) override;
 };
 
-// Message Creation Helpers
-struct SyncNodeFormatter {
-    const debug_report_data *report_data;
-    const BASE_NODE *node;
-    const char *label;
-
-    SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state)
-        : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
-    SyncNodeFormatter(const SyncValidator &sync_state, const IMAGE_STATE *image)
-        : report_data(sync_state.report_data), node(image), label("image") {}
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
-        : report_data(sync_state.report_data), node(q_state), label("queue") {}
-    SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_ = nullptr)
-        : report_data(sync_state.report_data), node(base_node), label(label_) {}
-};
-
-std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter);
-std::ostream &operator<<(std::ostream &out, const NamedHandle::FormatterState &formatter);
-std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter);
-std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &hazard);

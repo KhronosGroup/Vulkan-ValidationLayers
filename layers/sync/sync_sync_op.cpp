@@ -17,7 +17,10 @@
 
 #include "sync/sync_sync_op.h"
 #include "sync/sync_renderpass.h"
+#include "sync/sync_access_context.h"
 #include "sync/sync_commandbuffer.h"
+
+#include "sync/sync_validation.h"
 
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
 //
