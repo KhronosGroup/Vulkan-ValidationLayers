@@ -419,163 +419,6 @@ class CommandExecutionContext : public SyncValidationInfo {
     bool ValidForSyncOps() const;
 };
 
-class CommandBufferAccessContext : public CommandExecutionContext {
-  public:
-    using SyncOpPointer = std::shared_ptr<SyncOpBase>;
-    constexpr static SyncStageAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
-    constexpr static SyncStageAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
-    constexpr static SyncOrdering kResolveOrder = SyncOrdering::kColorAttachment;
-    constexpr static SyncOrdering kStoreOrder = SyncOrdering::kRaster;
-
-    struct SyncOpEntry {
-        ResourceUsageTag tag;
-        SyncOpPointer sync_op;
-        SyncOpEntry(ResourceUsageTag tag_, SyncOpPointer &&sync_op_) : tag(tag_), sync_op(std::move(sync_op_)) {}
-        SyncOpEntry() = default;
-        SyncOpEntry(const SyncOpEntry &other) = default;
-    };
-
-    CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr);
-    CommandBufferAccessContext(SyncValidator &sync_validator, CMD_BUFFER_STATE *cb_state)
-        : CommandBufferAccessContext(&sync_validator) {
-        cb_state_ = cb_state;
-    }
-
-    struct AsProxyContext {};
-    CommandBufferAccessContext(const CommandBufferAccessContext &real_context, AsProxyContext dummy);
-
-    // NOTE: because this class is encapsulated in syncval_state::CommandBuffer, it isn't safe
-    // to use shared_from_this from the constructor.
-    void SetSelfReference() { cbs_referenced_->insert(cb_state_->shared_from_this()); }
-
-    ~CommandBufferAccessContext() override = default;
-    const CommandExecutionContext &GetExecutionContext() const { return *this; }
-
-    void Destroy() {
-        // the cb self reference must be cleared or the command buffer reference count will never go to 0
-        cbs_referenced_.reset();
-        cb_state_ = nullptr;
-    }
-
-    void Reset();
-
-    std::string FormatUsage(ResourceUsageTag tag) const override;
-    std::string FormatUsage(const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
-    AccessContext *GetCurrentAccessContext() override { return current_context_; }
-    SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
-    const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
-    const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
-    QueueId GetQueueId() const override;
-
-    RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
-    const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
-    ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                           const std::vector<const syncval_state::ImageViewState *> &attachment_views);
-
-    bool ValidateBeginRendering(const ErrorObject &error_obj, syncval_state::BeginRenderingCmdState &cmd_state) const;
-    void RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const RecordObject &record_obj);
-    bool ValidateEndRendering(const ErrorObject &error_obj) const;
-    void RecordEndRendering(const RecordObject &record_obj);
-    bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
-    void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
-    bool ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, const Location &loc) const;
-    void RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
-    bool ValidateDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, const Location &loc) const;
-    void RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, ResourceUsageTag tag);
-    bool ValidateDrawAttachment(const Location &loc) const;
-    bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
-    void RecordDrawAttachment(ResourceUsageTag tag);
-    void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
-    ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
-    bool ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
-    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment &clear_attachment, const VkClearRect &rect);
-
-    ResourceUsageTag RecordNextSubpass(vvl::Func command);
-    ResourceUsageTag RecordEndRenderPass(vvl::Func command);
-    void RecordDestroyEvent(EVENT_STATE *event_state);
-
-    void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
-    void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
-
-    VkQueueFlags GetQueueFlags() const { return cb_state_ ? cb_state_->GetQueueFlags() : 0; }
-
-    ResourceUsageTag NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand);
-    ResourceUsageTag NextSubcommandTag(vvl::Func command, NamedHandle &&handle, ResourceUsageRecord::SubcommandType subcommand);
-
-    ResourceUsageTag GetTagLimit() const override { return access_log_->size(); }
-    VulkanTypedHandle Handle() const override {
-        if (cb_state_) {
-            return cb_state_->Handle();
-        }
-        return VulkanTypedHandle(static_cast<VkCommandBuffer>(VK_NULL_HANDLE), kVulkanObjectTypeCommandBuffer);
-    }
-
-    ResourceUsageTag NextCommandTag(vvl::Func command, NamedHandle &&handle,
-                                    ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
-
-    ResourceUsageTag NextCommandTag(vvl::Func command,
-                                    ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
-    ResourceUsageTag NextIndexedCommandTag(vvl::Func command, uint32_t index);
-
-    // NamedHandle must be constructable from args
-    template <class... Args>
-    void AddHandle(ResourceUsageTag tag, Args &&...args) {
-        assert(tag < access_log_->size());
-        if (tag < access_log_->size()) {
-            (*access_log_)[tag].AddHandle(std::forward<Args>(args)...);
-        }
-    }
-
-    std::shared_ptr<const CMD_BUFFER_STATE> GetCBStateShared() const { return cb_state_->shared_from_this(); }
-
-    const CMD_BUFFER_STATE &GetCBState() const {
-        assert(cb_state_);
-        return *cb_state_;
-    }
-
-    template <class T, class... Args>
-    void RecordSyncOp(Args &&...args) {
-        // T must be as derived from SyncOpBase or the compiler will flag the next line as an error.
-        SyncOpPointer sync_op(std::make_shared<T>(std::forward<Args>(args)...));
-        RecordSyncOp(std::move(sync_op));  // Call the non-template version
-    }
-    std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
-    std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
-    void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
-    const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
-
-  private:
-    // As this is passing around a shared pointer to record, move to avoid needless atomics.
-    void RecordSyncOp(SyncOpPointer &&sync_op);
-
-    bool ValidateClearAttachment(const Location &loc, const ClearAttachmentInfo &info) const;
-    void RecordClearAttachment(ResourceUsageTag tag, const ClearAttachmentInfo &clear_info);
-
-    // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
-    // a reference count is not needed here.
-    CMD_BUFFER_STATE *cb_state_;
-
-    std::shared_ptr<AccessLog> access_log_;
-    std::shared_ptr<CommandBufferSet> cbs_referenced_;
-    uint32_t command_number_;
-    uint32_t subcommand_number_;
-    uint32_t reset_count_;
-    small_vector<NamedHandle, 1> command_handles_;
-
-    AccessContext cb_access_context_;
-    AccessContext *current_context_;
-    SyncEventsContext events_context_;
-
-    // Don't need the following for an active proxy cb context
-    std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
-    RenderPassAccessContext *current_renderpass_context_;
-    std::vector<SyncOpEntry> sync_ops_;
-
-    // State during dynamic rendering (dynamic rendering rendering passes must be
-    // contained within a single command buffer)
-    std::unique_ptr<syncval_state::DynamicRenderingInfo> dynamic_rendering_info_;
-};
-
 // Allow keep track of the exec contexts replay state
 class ReplayState {
   public:
@@ -634,24 +477,11 @@ class ReplayState {
     RenderPassReplayState rp_replay_;
 };
 
-namespace syncval_state {
-class CommandBuffer : public CMD_BUFFER_STATE {
-  public:
-    CommandBufferAccessContext access_context;
 
-    CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const COMMAND_POOL_STATE *pool);
-    ~CommandBuffer() { Destroy(); }
-
-    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
-
-    void Destroy() override;
-    void Reset() override;
-};
-}  // namespace syncval_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE)
 
 class QueueSyncState;
+class CommandBufferAccessContext;
 
 // Store references to ResourceUsageRecords with global tag range within a batch
 class BatchAccessLog {
@@ -686,9 +516,7 @@ class BatchAccessLog {
         CBSubmitLog(const BatchRecord &batch, std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs,
                     std::shared_ptr<const CommandExecutionContext::AccessLog> log)
             : batch_(batch), cbs_(cbs), log_(log) {}
-        CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb)
-            : CBSubmitLog(batch, cb.GetCBReferencesShared(), cb.GetAccessLogShared()) {}
-
+        CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb);
         size_t Size() const { return log_->size(); }
         AccessRecord operator[](ResourceUsageTag tag) const;
 
@@ -1454,3 +1282,24 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                              VkImage *pSwapchainImages, const RecordObject &record_obj) override;
 };
+
+// Message Creation Helpers
+struct SyncNodeFormatter {
+    const debug_report_data *report_data;
+    const BASE_NODE *node;
+    const char *label;
+
+    SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state)
+        : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
+    SyncNodeFormatter(const SyncValidator &sync_state, const IMAGE_STATE *image)
+        : report_data(sync_state.report_data), node(image), label("image") {}
+    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
+        : report_data(sync_state.report_data), node(q_state), label("queue") {}
+    SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_ = nullptr)
+        : report_data(sync_state.report_data), node(base_node), label(label_) {}
+};
+
+std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter);
+std::ostream &operator<<(std::ostream &out, const NamedHandle::FormatterState &formatter);
+std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter);
+std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &hazard);
