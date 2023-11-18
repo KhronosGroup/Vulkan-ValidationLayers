@@ -56,20 +56,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 1024;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer0.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
-    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     // Make another buffer to populate the buffer array to be indexed
-    vkt::Buffer buffer1;
-    buffer1.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
     void *layout_pnext = nullptr;
     void *allocate_pnext = nullptr;
@@ -267,7 +258,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         )glsl";
     char const *fsSource_buffer = R"glsl(
         #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable\
+        #extension GL_EXT_nonuniform_qualifier : enable
 
         layout(set = 0, binding = 1) buffer foo { vec4 val; } colors[];
         layout(location = 0) out vec4 uFragColor;
@@ -278,7 +269,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         )glsl";
     char const *gsSource = R"glsl(
         #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable\
+        #extension GL_EXT_nonuniform_qualifier : enable
         layout(triangles) in;
         layout(triangle_strip, max_vertices=3) out;
         layout(location=0) in VertexData { vec4 x; } gs_in[];
@@ -299,7 +290,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         )glsl";
     static const char *tesSource = R"glsl(
         #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable\
+        #extension GL_EXT_nonuniform_qualifier : enable
         layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
         layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
         layout(triangles, equal_spacing, cw) in;
@@ -433,8 +424,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     if (descriptor_indexing) {
         char const *csSource = R"glsl(
             #version 450
-            #extension GL_EXT_nonuniform_qualifier : enable\
-            layout(set = 0, binding = 0) uniform ufoo { uint index; } u_inde
+            #extension GL_EXT_nonuniform_qualifier : enable
+            layout(set = 0, binding = 0) uniform ufoo { uint index; } u_index;
             layout(set = 0, binding = 1) buffer StorageBuffer {
                 uint data;
             } Data[];
@@ -520,20 +511,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStruct<VkBufferCreateInfo>();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 1024;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer0.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
-    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     // Make another buffer to populate the buffer array to be indexed
-    vkt::Buffer buffer1;
-    buffer1.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
     void *layout_pnext = nullptr;
     void *allocate_pnext = nullptr;
@@ -712,20 +694,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStruct<VkBufferCreateInfo>();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 1024;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer0.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
-    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     // Make another buffer to populate the buffer array to be indexed
-    vkt::Buffer buffer1;
-    buffer1.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
     void *layout_pnext = nullptr;
     void *allocate_pnext = nullptr;
@@ -979,15 +952,8 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
     vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
     vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    uint32_t queue_family_index = 0;
-    buffer_create_info.size = 16;
-    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    vkt::Buffer uniform_texel_buffer(*m_device, buffer_create_info, reqs);
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    vkt::Buffer storage_texel_buffer(*m_device, buffer_create_info, reqs);
+    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, reqs);
+    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, reqs);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -1161,14 +1127,9 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
 
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-                                                                     : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    bci.size = buffer_size;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer(*m_device, bci);
+    vkt::Buffer buffer(*m_device, buffer_size,
+                       (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                                                                              : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffer_info;
     buffer_info.buffer = buffer.handle();
@@ -1362,22 +1323,15 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferDeviceAddressOOB) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 12;  // 64 bit pointer + int
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer0.init(*m_device, bci, mem_props);
+    // 64 bit pointer + int
+    vkt::Buffer buffer0(*m_device, 12, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
     // Make another buffer to write to
-    bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
-    bci.size = 64;  // Buffer should be 16*4 = 64 bytes
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
+    // Buffer should be 16*4 = 64 bytes
+    vkt::Buffer buffer1(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
 
     // Get device address of buffer to write to
     auto pBuffer = buffer1.address();
@@ -1621,19 +1575,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     RETURN_IF_SKIP(InitState(nullptr, features13.dynamicRendering ? (void *)&features13 : nullptr));
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 2 * sizeof(VkDrawIndirectCommand);
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer draw_buffer(*m_device, buffer_create_info,
+    vkt::Buffer draw_buffer(*m_device, 2 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
     memset(draw_ptr, 0, 2 * sizeof(VkDrawIndirectCommand));
     draw_buffer.memory().unmap();
 
-    VkBufferCreateInfo count_buffer_create_info = vku::InitStructHelper();
-    count_buffer_create_info.size = sizeof(uint32_t);
-    count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer count_buffer(*m_device, count_buffer_create_info,
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
@@ -1706,19 +1654,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 2 * sizeof(VkDrawIndexedIndirectCommand);
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer draw_buffer(*m_device, buffer_create_info,
+    vkt::Buffer draw_buffer(*m_device, 2 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndexedIndirectCommand *draw_ptr = static_cast<VkDrawIndexedIndirectCommand *>(draw_buffer.memory().map());
     memset(draw_ptr, 0, 2 * sizeof(VkDrawIndexedIndirectCommand));
     draw_buffer.memory().unmap();
 
-    VkBufferCreateInfo count_buffer_create_info = vku::InitStructHelper();
-    count_buffer_create_info.size = sizeof(uint32_t);
-    count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer count_buffer(*m_device, count_buffer_create_info,
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
@@ -1761,10 +1703,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = sizeof(VkDrawIndirectCommand);
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer draw_buffer(*m_device, buffer_create_info,
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
     draw_ptr->firstInstance = 0;
@@ -1773,10 +1712,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     draw_ptr->vertexCount = 3;
     draw_buffer.memory().unmap();
 
-    VkBufferCreateInfo count_buffer_create_info = vku::InitStructHelper();
-    count_buffer_create_info.size = sizeof(uint32_t);
-    count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer count_buffer(*m_device, count_buffer_create_info,
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
@@ -1821,8 +1757,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
-    buffer_create_info.size = sizeof(VkDrawIndexedIndirectCommand);
-    vkt::Buffer indexed_draw_buffer(*m_device, buffer_create_info,
+    vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
     indexed_draw_ptr->indexCount = 3;
@@ -1838,10 +1773,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
-    index_buffer_create_info.size = 3 * sizeof(uint32_t);
-    index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
@@ -1881,10 +1813,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 4 * sizeof(VkDrawIndirectCommand);
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer draw_buffer(*m_device, buffer_create_info,
+    vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
     for (uint32_t i = 0; i < 4; i++) {
@@ -1918,8 +1847,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
 
     // Now with an offset and indexed draw
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
-    buffer_create_info.size = 4 * sizeof(VkDrawIndexedIndirectCommand);
-    vkt::Buffer indexed_draw_buffer(*m_device, buffer_create_info,
+    vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
     for (uint32_t i = 0; i < 4; i++) {
@@ -1935,10 +1863,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
-    index_buffer_create_info.size = 3 * sizeof(uint32_t);
-    index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
                                sizeof(VkDrawIndexedIndirectCommand));
@@ -1971,15 +1896,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         GTEST_SKIP() << "Compute not supported";
     }
 
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    bci.size = 4;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer0.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer0(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
@@ -2313,11 +2231,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
 
     RETURN_IF_SKIP(InitState());
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-
-    vkt::Buffer indirect_buffer(*m_device, buffer_create_info,
+    vkt::Buffer indirect_buffer(*m_device, 5 * sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.memory().map());
     // VkDispatchIndirectCommand[0]
@@ -2417,15 +2331,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
     vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    uint32_t queue_family_index = 0;
-    buffer_create_info.size = 16;
-    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    vkt::Buffer uniform_texel_buffer(*m_device, buffer_create_info, reqs);
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    vkt::Buffer storage_texel_buffer(*m_device, buffer_create_info, reqs);
+    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, reqs);
+    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, reqs);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -2586,15 +2493,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
     vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    uint32_t queue_family_index = 0;
-    buffer_create_info.size = 16;
-    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    vkt::Buffer uniform_texel_buffer(*m_device, buffer_create_info, reqs);
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    vkt::Buffer storage_texel_buffer(*m_device, buffer_create_info, reqs);
+    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, reqs);
+    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, reqs);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -2789,11 +2689,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-
-    vkt::Buffer indirect_buffer(*m_device, buffer_create_info,
+    vkt::Buffer indirect_buffer(*m_device, 5 * sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.memory().map());
     // VkDispatchIndirectCommand[0]
@@ -2975,20 +2871,11 @@ TEST_F(VkGpuAssistedLayerTest, ImageArrayDynamicIndexing) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStruct<VkBufferCreateInfo>();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 1024;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer0.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
-    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     // Make another buffer to populate the buffer array to be indexed
-    vkt::Buffer buffer1;
-    buffer1.init(*m_device, bci, mem_props);
+    vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
     void *layout_pnext = nullptr;
     void *allocate_pnext = nullptr;
@@ -3793,11 +3680,8 @@ TEST_F(VkGpuAssistedLayerTest, UpdateAfterBind) {
     VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 1024;
-    buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     VkDescriptorBufferInfo buffInfo[2] = {};
     buffInfo[0].buffer = dynamic_uniform_buffer.handle();
