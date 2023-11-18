@@ -32,6 +32,9 @@ void NegativeDebugPrintf::InitDebugPrintfFramework() {
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Currently disabled for Portability";
+    }
 }
 
 TEST_F(NegativeDebugPrintf, BasicCompute) {
