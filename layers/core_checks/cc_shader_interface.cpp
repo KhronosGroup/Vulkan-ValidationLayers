@@ -768,6 +768,40 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_
     return skip;
 }
 
+bool CoreChecks::ValidatePipelineTessellationStages(const SPIRV_MODULE_STATE &tesc_module_state, const EntryPoint &tesc_entrypoint,
+                                                    const SPIRV_MODULE_STATE &tese_module_state, const EntryPoint &tese_entrypoint,
+                                                    const Location &create_info_loc) const {
+    bool skip = false;
+
+    const auto tesc_subdivision = tesc_entrypoint.execution_mode.tessellation_subdivision;
+    const auto tese_subdivision = tese_entrypoint.execution_mode.tessellation_subdivision;
+    const auto tesc_patch_size = tesc_entrypoint.execution_mode.output_vertices;
+    const auto tese_patch_size = tese_entrypoint.execution_mode.output_vertices;
+    if (tesc_subdivision == 0 && tese_subdivision == 0) {
+        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00732", objlist, create_info_loc,
+                         "Subdivision type is not specified in either of tessellation stages");
+    } else if (tesc_subdivision != 0 && tese_subdivision != 0 && tesc_subdivision != tese_subdivision) {
+        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00733", objlist, create_info_loc,
+                         "Subdivision type specified in tessellation control shader is %s, but subdivison type specified in "
+                         "tessellation evaluation shader is %s",
+                         string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
+    }
+    if (tesc_patch_size == 0 && tese_patch_size == 0) {
+        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00734", objlist, create_info_loc,
+                         "Output patch size is not specified in either of tessellation stages");
+    } else if (tesc_patch_size != 0 && tese_patch_size != 0 && tesc_patch_size != tese_patch_size) {
+        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00735", objlist, create_info_loc,
+                         "Output patch size specified in tessellation control shader is %" PRIu32
+                         ", but subdivison type specified in tessellation evaluation shader is %" PRIu32,
+                         tesc_patch_size, tese_patch_size);
+    }
+    return skip;
+}
+
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
 bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
@@ -778,7 +812,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         return skip;
     }
 
-    const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
+    const PipelineStageState *vertex_stage = nullptr, *tesc_stage = nullptr, *tese_stage = nullptr, *fragment_stage = nullptr;
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
         auto &stage_state = pipeline.stage_states[i];
         const VkShaderStageFlagBits stage = stage_state.GetStage();
@@ -789,8 +823,11 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         }
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage_state;
-        }
-        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        } else if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+            tesc_stage = &stage_state;
+        } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+            tese_stage = &stage_state;
+        } else if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
             fragment_stage = &stage_state;
         }
     }
@@ -836,5 +873,12 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
                                                        pipeline.Subpass(), create_info_loc);
         }
     }
+
+    if (tesc_stage && tesc_stage->spirv_state && tesc_stage->entrypoint && tese_stage && tese_stage->spirv_state &&
+        tese_stage->entrypoint) {
+        skip |= ValidatePipelineTessellationStages(*tesc_stage->spirv_state, *tesc_stage->entrypoint, *tese_stage->spirv_state,
+                                                   *tese_stage->entrypoint, create_info_loc);
+    }
+
     return skip;
 }
