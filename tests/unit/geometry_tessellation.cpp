@@ -1369,3 +1369,202 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
+    TEST_DESCRIPTION("Test mismatched tessellation shaders execution modes");
+
+    RETURN_IF_SKIP(InitFramework());
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+        auto features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!portability_subset_features.tessellationPointMode) {
+            GTEST_SKIP() << "tessellationPointMode not supported";
+        }
+        if (features2.features.tessellationShader == VK_FALSE) {
+            GTEST_SKIP() << "geometryShader not supported";
+        }
+        features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+        RETURN_IF_SKIP(InitState(nullptr, &features2));
+    } else {
+        VkPhysicalDeviceFeatures features{};
+        vk::GetPhysicalDeviceFeatures(gpu(), &features);
+        if (features.tessellationShader == VK_FALSE) {
+            GTEST_SKIP() << "geometryShader not supported";
+        }
+        features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+        RETURN_IF_SKIP(InitState(&features));
+    }
+    if (m_device->phy().limits_.maxTessellationPatchSize == 0) {
+        GTEST_SKIP() << "Tessellation shaders not supported";
+    }
+    InitRenderTarget();
+
+    std::string vuids[4] = {
+        "VUID-VkGraphicsPipelineCreateInfo-pStages-00732",
+        "VUID-VkGraphicsPipelineCreateInfo-pStages-00733",
+        "VUID-VkGraphicsPipelineCreateInfo-pStages-00734",
+        "VUID-VkGraphicsPipelineCreateInfo-pStages-00735",
+    };
+
+    std::string tesc_subdivision[4] = {
+        "",
+        "OpExecutionMode %main Quads",
+        "",
+        "",
+    };
+
+    std::string tese_subdivision[4] = {
+        "",
+        "OpExecutionMode %main Triangles",
+        "OpExecutionMode %main Triangles",
+        "OpExecutionMode %main Triangles",
+    };
+
+    std::string tesc_output_vertices[4] = {
+        "OpExecutionMode %main OutputVertices 4",
+        "OpExecutionMode %main OutputVertices 4",
+        "",
+        "OpExecutionMode %main OutputVertices 4",
+    };
+
+    std::string tese_output_vertices[4] = {
+        "",
+        "",
+        "",
+        "OpExecutionMode %main OutputVertices 3",
+    };
+
+    for (uint32_t i = 0; i < 4; ++i) {
+        std::string tesc_source = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
+)";
+        tesc_source += tesc_output_vertices[i];
+        tesc_source += R"(
+)";
+        tesc_source += tesc_subdivision[i];
+        tesc_source += R"(
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %11
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %24
+
+               ; Annotations
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %float_1 = OpConstant %float 1
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_2
+               OpStore %18 %float_1
+         %19 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_1
+               OpStore %19 %float_1
+         %20 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_0
+               OpStore %20 %float_1
+         %25 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %int_0
+               OpStore %25 %float_1
+               OpReturn
+               OpFunctionEnd)";
+
+        std::string tese_source = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_
+)";
+        tese_source += tese_output_vertices[i];
+        tese_source += R"(
+)";
+        tese_source += tese_subdivision[i];
+        tese_source += R"(
+               OpExecutionMode %main SpacingEqual
+               OpExecutionMode %main VertexOrderCw
+               OpExecutionMode %main PointMode
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %19 %17
+               OpReturn
+               OpFunctionEnd)";
+
+        VkShaderObj tesc(this, tesc_source.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+        VkShaderObj tese(this, tese_source.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, SPV_ENV_VULKAN_1_0,
+                         SPV_SOURCE_ASM);
+
+        VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
+        tess_ci.patchControlPoints = 4u;
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        pipe.tess_ci_ = tess_ci;
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tesc.GetStageCreateInfo(), tese.GetStageCreateInfo(),
+                               pipe.fs_->GetStageCreateInfo()};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuids[i]);
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
