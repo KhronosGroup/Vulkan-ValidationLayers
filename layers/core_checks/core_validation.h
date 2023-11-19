@@ -741,6 +741,9 @@ class CoreChecks : public ValidationStateTracker {
                                             const Location& create_info_loc) const;
     bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                                             const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidatePipelineTessellationStages(const SPIRV_MODULE_STATE& tesc_module_state, const EntryPoint& tesc_entrypoint,
+                                            const SPIRV_MODULE_STATE& tese_module_state, const EntryPoint& tese_entrypoint,
+                                            const Location& create_info_loc) const;
     bool ValidateVariables(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
     bool ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE& module_state, const StageCreateInfo& stage_create_info,
                                           const EntryPoint& entrypoint, const Location& loc) const;
