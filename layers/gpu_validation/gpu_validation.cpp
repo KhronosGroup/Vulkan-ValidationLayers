@@ -927,7 +927,7 @@ void gpuav::Validator::AllocateValidationResources(const VkCommandBuffer cmd_buf
     PreDispatchResources dispatch_resources = {};
     PreTraceRaysResources trace_rays_resources = {};
 
-    if (gpuav_settings.validate_draw_indirect &&
+    if (gpuav_settings.validate_indirect_buffer &&
         ((command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
           command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR) ||
          ((command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) &&
@@ -1016,7 +1016,7 @@ void gpuav::Validator::AllocateValidationResources(const VkCommandBuffer cmd_buf
 
         // Restore the previous graphics pipeline state.
         restorable_state.Restore(cmd_buffer);
-    } else if (gpuav_settings.validate_dispatch_indirect && command == Func::vkCmdDispatchIndirect) {
+    } else if (gpuav_settings.validate_indirect_buffer && command == Func::vkCmdDispatchIndirect) {
         // Insert a dispatch that can examine some device memory right before the dispatch we're validating
         //
         // NOTE that this validation does not attempt to abort invalid api calls as most other validation does. A crash
@@ -1053,7 +1053,7 @@ void gpuav::Validator::AllocateValidationResources(const VkCommandBuffer cmd_buf
 
         // Restore the previous compute pipeline state.
         restorable_state.Restore(cmd_buffer);
-    } else if (gpuav_settings.validate_trace_rays_indirect &&
+    } else if (gpuav_settings.validate_indirect_buffer &&
                (command == Func::vkCmdTraceRaysIndirectKHR /*|| command == Func::vkCmdTraceRaysIndirect2KHR */)) {
         AllocatePreTraceRaysValidationResources(output_block, indirect_state, trace_rays_resources);
         if (aborted) return;

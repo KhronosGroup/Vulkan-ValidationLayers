@@ -56,8 +56,7 @@ const char *SETTING_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 const char *SETTING_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
 const char *SETTING_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
-const char *SETTING_GPUAV_VALIDATE_DRAW_INDIRECT = "validate_draw_indirect";
-const char *SETTING_GPUAV_VALIDATE_DISPATCH_INDIRECT = "validate_dispatch_indirect";
+const char *SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER = "validate_indirect_buffer";
 const char *SETTING_GPUAV_VMA_LINEAR_OUTPUT = "vma_linear_output";
 const char *SETTING_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
 const char *SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
@@ -399,14 +398,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                 settings_data->gpuav_settings->validate_descriptors);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_DRAW_INDIRECT)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_DRAW_INDIRECT,
-                                settings_data->gpuav_settings->validate_draw_indirect);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_DISPATCH_INDIRECT)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_DISPATCH_INDIRECT,
-                                settings_data->gpuav_settings->validate_dispatch_indirect);
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER,
+                                settings_data->gpuav_settings->validate_indirect_buffer);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT)) {

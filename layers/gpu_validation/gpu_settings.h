@@ -14,13 +14,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 #pragma once
 typedef struct {
     bool validate_descriptors;
-    bool validate_draw_indirect;
-    bool validate_dispatch_indirect;
-    bool validate_trace_rays_indirect;
+    bool validate_indirect_buffer;
     bool vma_linear_output;
     bool warn_on_robust_oob;
     bool cache_instrumented_shaders;
