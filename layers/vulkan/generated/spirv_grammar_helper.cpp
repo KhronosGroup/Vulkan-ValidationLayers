@@ -26,7 +26,6 @@
 
 #include "containers/custom_containers.h"
 #include "spirv_grammar_helper.h"
-#include "state_tracker/shader_instruction.h"
 
 // All information related to each SPIR-V opcode instruction
 struct InstructionInfo {
@@ -604,25 +603,6 @@ bool GroupOperation(uint32_t opcode) {
             break;
     }
     return found;
-}
-
-spv::StorageClass Instruction::StorageClass() const {
-    spv::StorageClass storage_class = spv::StorageClassMax;
-    switch (Opcode()) {
-        case spv::OpTypePointer:
-            storage_class = static_cast<spv::StorageClass>(Word(2));
-            break;
-        case spv::OpTypeForwardPointer:
-            storage_class = static_cast<spv::StorageClass>(Word(2));
-            break;
-        case spv::OpVariable:
-            storage_class = static_cast<spv::StorageClass>(Word(3));
-            break;
-
-        default:
-            break;
-    }
-    return storage_class;
 }
 
 bool ImageGatherOperation(uint32_t opcode) {

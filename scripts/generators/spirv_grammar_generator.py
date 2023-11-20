@@ -122,7 +122,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     'memoryScopePosition' : 0,
                     'executionScopePosition' : 0,
                     'imageOperandsPosition' : 0,
-                    'storageClassPosition' : 0,
 
                     'imageRefPosition' : 0,
                     'sampledImageRefPosition' : 0,
@@ -158,8 +157,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                                 sys.exit(1)
                         if operand['kind'] == 'ImageOperands':
                             self.opcodes[opcode]['imageOperandsPosition'] = index + 1
-                        if operand['kind'] == 'StorageClass':
-                            self.opcodes[opcode]['storageClassPosition'] = index + 1
                         if operand['kind'] == 'IdRef':
                             if operand['name'] == '\'Image\'':
                                 self.opcodes[opcode]['imageRefPosition'] = index + 1
@@ -257,7 +254,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         out.append('''
             #include "containers/custom_containers.h"
             #include "spirv_grammar_helper.h"
-            #include "state_tracker/shader_instruction.h"
 
             // All information related to each SPIR-V opcode instruction
             struct InstructionInfo {
@@ -320,23 +316,6 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
                 }}
                 return found;
             }}
-            ''')
-
-        out.append('''
-            spv::StorageClass Instruction::StorageClass() const {
-                spv::StorageClass storage_class = spv::StorageClassMax;
-                switch (Opcode()) {
-            ''')
-        for info in [x for x in self.opcodes.values() if x['storageClassPosition'] != 0]:
-            out.append(f'        case spv::{info["name"]}:\n')
-            out.append(f'            storage_class = static_cast<spv::StorageClass>(Word({info["storageClassPosition"]}));\n')
-            out.append('            break;\n')
-        out.append('''
-                    default:
-                        break;
-                }
-                return storage_class;
-            }
             ''')
 
         imageGatherOpsCase = "\n".join([f"        case spv::{f}:" for f in self.imageGatherOps])
