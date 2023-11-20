@@ -890,49 +890,9 @@
                                             ]
                                         },
                                         {
-                                            "key": "validate_draw_indirect",
-                                            "label": "Check Draw Indirect Count Buffers and firstInstance values",
-                                            "description": "Enable draw indirect checking",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "validate_dispatch_indirect",
-                                            "label": "Check Dispatch Indirect group count values",
-                                            "description": "Enable dispatch indirect checking",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "validate_trace_rays_indirect",
-                                            "label": "Check Trace Rays Indirect group count values",
-                                            "description": "Enable trace rays indirect checking",
+                                            "key": "validate_indirect_buffer",
+                                            "label": "Check Draw/Dispatch/TraceRays Indirect buffers",
+                                            "description": "Enable draw/dispatch/traceRays indirect checking",
                                             "type": "BOOL",
                                             "default": true,
                                             "platforms": [
