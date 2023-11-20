@@ -2221,3 +2221,22 @@ uint32_t SPIRV_MODULE_STATE::GetFlattenArraySize(const Instruction& insn) const 
     }
     return array_size;
 }
+
+AtomicInstructionInfo SPIRV_MODULE_STATE::GetAtomicInfo(const Instruction& insn) const {
+    AtomicInstructionInfo info;
+
+    // All atomics have a pointer referenced
+    const uint32_t pointer_index = insn.Opcode() == spv::OpAtomicStore ? 1 : 3;
+    const Instruction* access = FindDef(insn.Word(pointer_index));
+
+    // spirv-val will catch if not OpTypePointer
+    const Instruction* pointer = FindDef(access->Word(1));
+    info.storage_class = pointer->Word(2);
+
+    const Instruction* data_type = FindDef(pointer->Word(3));
+    info.type = data_type->Opcode();
+
+    info.bit_width = data_type->GetBitWidth();
+
+    return info;
+}

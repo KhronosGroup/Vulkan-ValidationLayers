@@ -31,6 +31,7 @@
 
 class PIPELINE_STATE;
 struct EntryPoint;
+struct SPIRV_MODULE_STATE;
 
 static constexpr uint32_t kInvalidSpirvValue = std::numeric_limits<uint32_t>::max();
 
@@ -141,6 +142,12 @@ struct ExecutionModeSet {
 
     void Add(const Instruction &insn);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
+};
+
+struct AtomicInstructionInfo {
+    uint32_t storage_class;
+    uint32_t bit_width;
+    uint32_t type;  // ex. OpTypeInt
 };
 
 // This info *could* be found/saved in TypeStructInfo, but since
@@ -636,6 +643,7 @@ struct SPIRV_MODULE_STATE {
     uint32_t GetTypeId(uint32_t id) const;
     uint32_t GetTexelComponentCount(const Instruction &insn) const;
     uint32_t GetFlattenArraySize(const Instruction &insn) const;
+    AtomicInstructionInfo GetAtomicInfo(const Instruction &insn) const;
 
     bool HasCapability(spv::Capability find_capability) const {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),

@@ -104,25 +104,6 @@ uint32_t Instruction::GetBitWidth() const {
     return bit_width;
 }
 
-AtomicInstructionInfo Instruction::GetAtomicInfo(const SPIRV_MODULE_STATE& module_state) const {
-    AtomicInstructionInfo info;
-
-    // All atomics have a pointer referenced
-    const uint32_t pointer_index = Opcode() == spv::OpAtomicStore ? 1 : 3;
-    const Instruction* access = module_state.FindDef(Word(pointer_index));
-
-    // spirv-val will catch if not OpTypePointer
-    const Instruction* pointer = module_state.FindDef(access->Word(1));
-    info.storage_class = pointer->Word(2);
-
-    const Instruction* data_type = module_state.FindDef(pointer->Word(3));
-    info.type = data_type->Opcode();
-
-    info.bit_width = data_type->GetBitWidth();
-
-    return info;
-}
-
 spv::BuiltIn Instruction::GetBuiltIn() const {
     if (Opcode() == spv::OpDecorate) {
         return static_cast<spv::BuiltIn>(Word(3));
@@ -143,4 +124,23 @@ bool Instruction::IsImageArray() const { return (Opcode() == spv::OpTypeImage) &
 bool Instruction::IsImageMultisampled() const {
     // spirv-val makes sure that the MS operand is only non-zero when possible to be Multisampled
     return (Opcode() == spv::OpTypeImage) && (Word(6) != 0);
+}
+
+spv::StorageClass Instruction::StorageClass() const {
+    spv::StorageClass storage_class = spv::StorageClassMax;
+    switch (Opcode()) {
+        case spv::OpTypePointer:
+            storage_class = static_cast<spv::StorageClass>(Word(2));
+            break;
+        case spv::OpTypeForwardPointer:
+            storage_class = static_cast<spv::StorageClass>(Word(2));
+            break;
+        case spv::OpVariable:
+            storage_class = static_cast<spv::StorageClass>(Word(3));
+            break;
+
+        default:
+            break;
+    }
+    return storage_class;
 }
