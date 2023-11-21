@@ -278,6 +278,8 @@ target_sources(vvl PRIVATE
     sync/sync_model.h
     sync/sync_renderpass.cpp
     sync/sync_renderpass.h
+    sync/sync_submit.cpp
+    sync/sync_submit.h
     sync/sync_sync_op.cpp
     sync/sync_sync_op.h
     sync/sync_utils.cpp

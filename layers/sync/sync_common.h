@@ -201,4 +201,28 @@ class ImageViewState : public IMAGE_VIEW_STATE {
     const ImageRangeGen view_range_gen;
 };
 
+// Utilities to DRY up Get... calls
+template <typename Map, typename Key = typename Map::key_type, typename RetVal = std::optional<typename Map::mapped_type>>
+RetVal GetMappedOptional(const Map &map, const Key &key) {
+    RetVal ret_val;
+    auto it = map.find(key);
+    if (it != map.cend()) {
+        ret_val.emplace(it->second);
+    }
+    return ret_val;
+}
+template <typename Map, typename Fn>
+typename Map::mapped_type GetMapped(const Map &map, const typename Map::key_type &key, Fn &&default_factory) {
+    auto value = GetMappedOptional(map, key);
+    return (value) ? *value : default_factory();
+}
+
+template <typename Map, typename Key = typename Map::key_type, typename Mapped = typename Map::mapped_type,
+          typename Value = typename Mapped::element_type>
+Value *GetMappedPlainFromShared(const Map &map, const Key &key) {
+    auto value = GetMappedOptional<Map, Key>(map, key);
+    if (value) return value->get();
+    return nullptr;
+}
+
 }  // namespace syncval_state

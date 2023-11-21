@@ -373,3 +373,57 @@ struct WaitEventBarrierOp {
     }
     void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_ops, barrier, layout_transition); }
 };
+
+// Allow keep track of the exec contexts replay state
+class ReplayState {
+  public:
+    struct RenderPassReplayState {
+        // A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
+        // first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
+        RenderPassReplayState() { Reset(); }
+        AccessContext *Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
+                             const AccessContext &external_context);
+        AccessContext *Next();
+        void End(AccessContext &external_context);
+
+        const SyncOpBeginRenderPass *begin_op = nullptr;
+        const AccessContext *replay_context = nullptr;
+        uint32_t subpass = VK_SUBPASS_EXTERNAL;
+        std::vector<AccessContext> subpass_contexts;
+        void Reset() {
+            begin_op = nullptr;
+            replay_context = nullptr;
+            subpass = VK_SUBPASS_EXTERNAL;
+            subpass_contexts.clear();
+        }
+        operator bool() const { return begin_op != nullptr; }
+    };
+
+    bool ValidateFirstUse();
+    bool DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const;
+
+    ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
+                const ErrorObject &error_object, uint32_t index);
+
+    CommandExecutionContext &GetExecutionContext() const { return exec_context_; }
+    ResourceUsageTag GetBaseTag() const { return base_tag_; }
+
+    void BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op);
+    void NextSubpassReplaySetup();
+    void EndRenderPassReplayCleanup();
+
+    AccessContext *ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
+                                              const AccessContext &external_context);
+    AccessContext *ReplayStateRenderPassNext();
+    void ReplayStateRenderPassEnd(AccessContext &external_context);
+
+  protected:
+    const AccessContext *GetRecordedAccessContext() const;
+
+    CommandExecutionContext &exec_context_;
+    const CommandBufferAccessContext &recorded_context_;
+    const ErrorObject &error_obj_;
+    const uint32_t index_;
+    const ResourceUsageTag base_tag_;
+    RenderPassReplayState rp_replay_;
+};
