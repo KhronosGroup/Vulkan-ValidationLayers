@@ -573,24 +573,7 @@ void gpuav::Validator::CreateAccelerationStructureBuildValidationState(const VkD
     }
 }
 
-// Free the device memory and descriptor set(s) associated with a command buffer.
-void gpuav::Validator::DestroyBuffer(CommandInfo &cmd_info) {
-    vmaDestroyBuffer(vmaAllocator, cmd_info.output_mem_block.buffer, cmd_info.output_mem_block.allocation);
-    if (cmd_info.desc_set != VK_NULL_HANDLE) {
-        desc_set_manager->PutBackDescriptorSet(cmd_info.desc_pool, cmd_info.desc_set);
-    }
-    if (cmd_info.draw_resources.desc_set != VK_NULL_HANDLE) {
-        desc_set_manager->PutBackDescriptorSet(cmd_info.draw_resources.desc_pool, cmd_info.draw_resources.desc_set);
-    }
-    if (cmd_info.dispatch_resources.desc_set != VK_NULL_HANDLE) {
-        desc_set_manager->PutBackDescriptorSet(cmd_info.dispatch_resources.desc_pool, cmd_info.dispatch_resources.desc_set);
-    }
-    if (cmd_info.trace_rays_resources.desc_set != VK_NULL_HANDLE) {
-        desc_set_manager->PutBackDescriptorSet(cmd_info.trace_rays_resources.desc_pool, cmd_info.trace_rays_resources.desc_set);
-    }
-}
-
-void gpuav::Validator::DestroyBuffer(AccelerationStructureBuildValidationInfo &as_validation_info) {
+void gpuav::Validator::Destroy(AccelerationStructureBuildValidationInfo &as_validation_info) {
     vmaDestroyBuffer(vmaAllocator, as_validation_info.buffer, as_validation_info.buffer_allocation);
 
     if (as_validation_info.descriptor_set != VK_NULL_HANDLE) {
@@ -755,4 +738,46 @@ void gpuav::RestorablePipelineState::Restore(VkCommandBuffer command_buffer) con
             }
         }
     }
+}
+
+void gpuav::CommandResources::Destroy(gpuav::Validator &validator) {
+    if (output_mem_block.buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(validator.vmaAllocator, output_mem_block.buffer, output_mem_block.allocation);
+    }
+    if (output_buffer_desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(output_buffer_desc_pool, output_buffer_desc_set);
+    }
+    output_mem_block.buffer = VK_NULL_HANDLE;
+    output_mem_block.allocation = VK_NULL_HANDLE;
+    output_buffer_desc_set = VK_NULL_HANDLE;
+}
+
+void gpuav::PreDrawResources::Destroy(gpuav::Validator &validator) {
+    if (buffer_desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, buffer_desc_set);
+        buffer_desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
+}
+
+void gpuav::PreDispatchResources::Destroy(gpuav::Validator &validator) {
+    if (indirect_buffer_desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, indirect_buffer_desc_set);
+        indirect_buffer_desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
+}
+
+void gpuav::PreTraceRaysResources::Destroy(gpuav::Validator &validator) {
+    if (desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
+        desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
 }

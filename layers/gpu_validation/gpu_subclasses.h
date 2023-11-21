@@ -51,35 +51,6 @@ struct DescBindingInfo {
     std::vector<DescSetState> descriptor_set_buffers;
 };
 
-// State tracking needed to insert a "pre" draw call aimed at validating buffer data used to perform an indirect draw call
-struct PreDrawResources {
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
-    VkBuffer indirect_buffer = VK_NULL_HANDLE;
-    VkDeviceSize indirect_buffer_offset = 0;
-    uint32_t indirect_buffer_stride = 0;
-    VkDeviceSize indirect_buffer_size = 0;
-    static constexpr uint32_t push_constant_words = 4;
-};
-
-// State tracking needed to insert a "pre" dispatch call aimed at validating buffer data used to perform an indirect dispatch call
-struct PreDispatchResources {
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
-    VkBuffer indirect_buffer = VK_NULL_HANDLE;
-    VkDeviceSize indirect_buffer_offset = 0;
-    static constexpr uint32_t push_constant_words = 4;
-};
-
-// State tracking needed to insert a "pre" trace rays call aimed at validating buffer data used to perform an indirect trace rays
-// call
-struct PreTraceRaysResources {
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
-    VkDeviceAddress indirect_device_address = 0;
-    static constexpr uint32_t push_constant_words = 5;
-};
-
 struct CommonDrawResources {
     // some resources can be used each time so only to need to create once
     bool initialized = false;
@@ -148,32 +119,6 @@ struct CmdIndirectState {
     VkDeviceAddress indirectDeviceAddress;
 };
 
-struct CommandInfo {
-    DeviceMemoryBlock output_mem_block;
-    PreDrawResources draw_resources;
-    PreDispatchResources dispatch_resources;
-    PreTraceRaysResources trace_rays_resources;
-    VkDescriptorSet desc_set;
-    VkDescriptorPool desc_pool;
-    VkPipelineBindPoint pipeline_bind_point;
-    bool uses_robustness;
-    vvl::Func command;
-    uint32_t desc_binding_index;
-    CommandInfo(DeviceMemoryBlock output_mem_block, PreDrawResources draw_resources, PreDispatchResources dispatch_resources,
-                PreTraceRaysResources trace_rays_resources, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
-                VkPipelineBindPoint pipeline_bind_point, bool uses_robustness, vvl::Func command, uint32_t desc_binding_index)
-        : output_mem_block(output_mem_block),
-          draw_resources(draw_resources),
-          dispatch_resources(dispatch_resources),
-          trace_rays_resources(trace_rays_resources),
-          desc_set(desc_set),
-          desc_pool(desc_pool),
-          pipeline_bind_point(pipeline_bind_point),
-          uses_robustness(uses_robustness),
-          command(command),
-          desc_binding_index(desc_binding_index){};
-};
-
 struct AccelerationStructureBuildValidationInfo {
     // The acceleration structure that is being built.
     VkAccelerationStructureNV acceleration_structure = VK_NULL_HANDLE;
@@ -188,10 +133,86 @@ struct AccelerationStructureBuildValidationInfo {
     VmaAllocation buffer_allocation = VK_NULL_HANDLE;
 };
 
+class Validator;
+
+// Every recorded command need the validation resources listed in this function
+// If adding validation for a new command reveals the need to allocate specific resources for it, create a new class that derives
+// from this one
+class CommandResources {
+  public:
+    virtual ~CommandResources() {}
+    virtual void Destroy(gpuav::Validator &validator);
+    CommandResources() = default;
+    CommandResources(const CommandResources &) = default;
+    CommandResources &operator=(const CommandResources &) = default;
+
+    void LogErrorIfAny(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
+    // Return true iff an error has been logged
+    virtual bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                      const uint32_t *debug_record, const uint32_t operation_index, const LogObjectList &objlist);
+
+    DeviceMemoryBlock output_mem_block;
+   
+    VkDescriptorSet output_buffer_desc_set = VK_NULL_HANDLE;  
+    VkDescriptorPool output_buffer_desc_pool = VK_NULL_HANDLE;
+    VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
+    bool uses_robustness = false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
+    vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
+    uint32_t desc_binding_index = vvl::kU32Max;// desc_binding is only used to help generate an error message
+    std::vector<DescBindingInfo> *desc_binding_list = nullptr;
+};
+
+class PreDrawResources : public CommandResources {
+  public:
+    ~PreDrawResources() {}
+
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    // Store a descriptor for the indirect buffer or count buffer
+    VkDescriptorSet buffer_desc_set = VK_NULL_HANDLE;
+    VkBuffer indirect_buffer = VK_NULL_HANDLE;
+    VkDeviceSize indirect_buffer_offset = 0;
+    uint32_t indirect_buffer_stride = 0;
+    VkDeviceSize indirect_buffer_size = 0;
+    static constexpr uint32_t push_constant_words = 4;
+
+    void Destroy(gpuav::Validator &validator) final;
+    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+                              const uint32_t operation_index, const LogObjectList &objlist);
+};
+
+class PreDispatchResources : public CommandResources {
+  public:
+    ~PreDispatchResources() {}
+
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    VkDescriptorSet indirect_buffer_desc_set = VK_NULL_HANDLE;
+    VkBuffer indirect_buffer = VK_NULL_HANDLE;
+    VkDeviceSize indirect_buffer_offset = 0;
+    static constexpr uint32_t push_constant_words = 4;
+
+    void Destroy(gpuav::Validator &validator) final;
+    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+                              const uint32_t operation_index, const LogObjectList &objlist);
+};
+
+class PreTraceRaysResources : public CommandResources {
+  public:
+    ~PreTraceRaysResources() {}
+
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    VkDescriptorSet desc_set = VK_NULL_HANDLE;
+    VkDeviceAddress indirect_data_address = 0;
+    static constexpr uint32_t push_constant_words = 5;
+
+    void Destroy(gpuav::Validator &validator) final;
+    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+                              const uint32_t operation_index, const LogObjectList &objlist);
+};
+
 class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
-    // per draw/dispatch command state
-    std::vector<CommandInfo> per_draw_command_infos;
+    // per validated command state
+    std::vector<std::unique_ptr<CommandResources>> per_command_resources;
     // per vkCmdBindDescriptorSet() state
     std::vector<DescBindingInfo> di_input_buffer_list;
     std::vector<AccelerationStructureBuildValidationInfo> as_validation_buffers;
@@ -201,7 +222,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
                   const COMMAND_POOL_STATE *pool);
     ~CommandBuffer();
 
-    bool NeedsProcessing() const final { return !per_draw_command_infos.empty() || has_build_as_cmd; }
+    bool NeedsProcessing() const final { return !per_command_resources.empty() || has_build_as_cmd; }
     void Process(VkQueue queue, const Location &loc) final;
 
     void Destroy() final;
