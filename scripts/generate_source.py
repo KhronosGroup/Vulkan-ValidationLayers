@@ -28,6 +28,7 @@ import difflib
 import json
 import common_ci
 from xml.etree import ElementTree
+from generate_spec_error_message import GenerateSpecErrorMessage
 
 def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFile: str, targetFilter: str):
 
@@ -403,16 +404,11 @@ def main(argv):
     grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
     RunGenerators(args.api, registry, grammar, gen_dir, styleFile, args.target)
 
-    # Generate vk_validation_error_messages.h
-    try:
-        cmd = [repo_relative("scripts/vk_validation_stats.py"),
-               os.path.abspath(os.path.join(args.registry, "validusage.json")),
-              '-export_header']
-        print(' '.join(cmd))
-        subprocess.check_call([sys.executable] + cmd, cwd=gen_dir)
-    except Exception as e:
-        print('ERROR:', str(e))
-        return 1
+    # Generate vk_validation_error_messages.h (ignore if targeting a single generator)
+    if (not args.target):
+        valid_usage_file = os.path.abspath(os.path.join(args.registry, "validusage.json"))
+        error_message_file = os.path.join(gen_dir, 'vk_validation_error_messages.h')
+        GenerateSpecErrorMessage(args.api, valid_usage_file, error_message_file)
 
     # optional post-generation steps
     if args.verify:
