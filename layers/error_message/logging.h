@@ -210,7 +210,9 @@ typedef struct _debug_report_data {
         }
     }
 
-    std::string DebugReportGetUtilsObjectName(const uint64_t object) const {
+    // NoLock suffix means that the function itself does not hold debug_output_mutex lock,
+    // and it's **mandatory responsibility** of the caller to hold this lock.
+    std::string DebugReportGetUtilsObjectNameNoLock(const uint64_t object) const {
         std::string label = "";
         const auto utils_name_iter = debugUtilsObjectNameMap.find(object);
         if (utils_name_iter != debugUtilsObjectNameMap.end()) {
@@ -219,7 +221,9 @@ typedef struct _debug_report_data {
         return label;
     }
 
-    std::string DebugReportGetMarkerObjectName(const uint64_t object) const {
+    // NoLock suffix means that the function itself does not hold debug_output_mutex lock,
+    // and it's **mandatory responsibility** of the caller to hold this lock.
+    std::string DebugReportGetMarkerObjectNameNoLock(const uint64_t object) const {
         std::string label = "";
         const auto marker_name_iter = debugObjectNameMap.find(object);
         if (marker_name_iter != debugObjectNameMap.end()) {
@@ -230,9 +234,9 @@ typedef struct _debug_report_data {
 
     std::string FormatHandle(const char *handle_type_name, uint64_t handle) const {
         std::unique_lock<std::mutex> lock(debug_output_mutex);
-        std::string handle_name = DebugReportGetUtilsObjectName(handle);
+        std::string handle_name = DebugReportGetUtilsObjectNameNoLock(handle);
         if (handle_name.empty()) {
-            handle_name = DebugReportGetMarkerObjectName(handle);
+            handle_name = DebugReportGetMarkerObjectNameNoLock(handle);
         }
 
         std::ostringstream str;
