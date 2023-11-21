@@ -523,3 +523,52 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
 // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
 // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
 ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ == kInvalidTag) ? context_->StartTag() : tag_; }
+
+AttachmentViewGen::AttachmentViewGen(const syncval_state::ImageViewState *image_view, const VkOffset3D &offset,
+                                     const VkExtent3D &extent)
+    : view_(image_view), view_mask_(image_view->normalized_subresource_range.aspectMask), gen_store_() {
+    gen_store_[Gen::kViewSubresource].emplace(image_view->GetFullViewImageRangeGen());
+    gen_store_[Gen::kRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent));
+
+    const auto depth = view_mask_ & VK_IMAGE_ASPECT_DEPTH_BIT;
+    if (depth && (depth != view_mask_)) {
+        gen_store_[Gen::kDepthOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, depth));
+    }
+    const auto stencil = view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT;
+    if (stencil && (stencil != view_mask_)) {
+        gen_store_[Gen::kStencilOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, stencil));
+    }
+}
+
+const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type) const {
+    static_assert(Gen::kGenSize == 4, "Function written with this assumption");
+    // If the view is a depth only view, then the depth only portion of the render area is simply the render area.
+    // If the view is a depth stencil view, then the depth only portion of the render area will be a subset,
+    // and thus needs the generator function that will produce the address ranges of that subset
+    const bool depth_only = (type == kDepthOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT);
+    const bool stencil_only = (type == kStencilOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT);
+    if (depth_only || stencil_only) {
+        type = Gen::kRenderArea;
+    }
+    return gen_store_[type];
+}
+
+AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const {
+    assert(IsValid());
+    assert(view_mask_ & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+    if (depth_op) {
+        assert(view_mask_ & VK_IMAGE_ASPECT_DEPTH_BIT);
+        if (stencil_op) {
+            assert(view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT);
+            return kRenderArea;
+        }
+        return kDepthOnlyRenderArea;
+    }
+    if (stencil_op) {
+        assert(view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT);
+        return kStencilOnlyRenderArea;
+    }
+
+    assert(depth_op || stencil_op);
+    return kRenderArea;
+}
