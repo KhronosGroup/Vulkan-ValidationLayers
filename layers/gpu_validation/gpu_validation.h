@@ -73,7 +73,7 @@ class Validator : public gpu_tracker::Validator {
 
     // gpu_validation.cpp
     // ------------------
-
+  public:
     VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer) const;
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
@@ -86,22 +86,43 @@ class Validator : public gpu_tracker::Validator {
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
 
-    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, Func command,
-                                     const CmdIndirectState* indirect_state = nullptr);
-    void AllocatePreDrawValidationResources(const DeviceMemoryBlock& output_block, const VkRenderPass render_pass,
-                                            const bool use_shader_objects, VkPipeline* pPipeline,
-                                            const CmdIndirectState* indirect_state, PreDrawResources& out_draw_resources);
-    void AllocatePreDispatchValidationResources(const DeviceMemoryBlock& output_block, const CmdIndirectState* indirect_state,
-                                                const bool use_shader_objects, PreDispatchResources& out_dispatch_resources);
-    void AllocatePreTraceRaysValidationResources(const DeviceMemoryBlock& output_block, const CmdIndirectState* indirect_state,
-                                                 PreTraceRaysResources& out_trace_rays_resources);
-    void AnalyzeAndGenerateMessages(CommandBuffer& command_buffer, VkQueue queue, CommandInfo& cmd_info, uint32_t operation_index,
-                                    uint32_t* const debug_output_buffer, const std::vector<DescSetState>& descriptor_sets,
-                                    const Location& loc);
+    // Allocate per command validation resources
+    [[nodiscard]] CommandResources AllocateCommandResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
+                                                            Func command, const CmdIndirectState* indirect_state = nullptr);
+    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDrawIndirectValidationResources(
+        vvl::Func command, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
+        VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
+    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDispatchIndirectValidationResources(vvl::Func command,
+                                                                                                   VkCommandBuffer cmd_buffer,
+                                                                                                   VkBuffer indirect_buffer,
+                                                                                                   VkDeviceSize indirect_offset);
+    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreTraceRaysValidationResources(vvl::Func command,
+                                                                                            VkCommandBuffer cmd_buffer,
+                                                                                            VkDeviceAddress indirect_data_address);
+
+  private:
+    void AllocateSharedTraceRaysValidationResources();
+    void AllocateSharedDrawIndirectValidationResources(bool use_shader_objects);
+    void AllocateSharedDispatchIndirectValidationResources(bool use_shader_objects);
+    void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources);
+
+    // gpu_error_message.cpp
+    // ---------------------
+  public:
+    // Return true iff a error has been found in the internal call to GenerateValidationMessage
+    bool AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources& cmd_resources,
+                                    uint32_t operation_index, uint32_t* const debug_output_buffer,
+                                    const std::vector<DescSetState>& descriptor_sets, const Location& loc);
+
+  private:
+    // Return true iff an error has been found in debug_record, among the list of errors this function manages
+    bool GenerateValidationMessage(const uint32_t* debug_record, const CommandResources& cmd_resources,
+                                   const std::vector<DescSetState>& descriptor_sets, std::string& out_error_msg,
+                                   std::string& out_vuid_msg, bool& out_oob_access) const;
 
     // gpu_setup.cpp
     // -------------
-
+  public:
     std::shared_ptr<BUFFER_STATE> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
     std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<BUFFER_STATE>& bf, VkBufferView bv,
                                                              const VkBufferViewCreateInfo* ci,
@@ -124,12 +145,11 @@ class Validator : public gpu_tracker::Validator {
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) final;
     void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo);
 
-    void DestroyBuffer(CommandInfo& cmd_info);
-    void DestroyBuffer(AccelerationStructureBuildValidationInfo& as_validation_info);
+    void Destroy(AccelerationStructureBuildValidationInfo& as_validation_info);
 
     // gpu_record.cpp
     // --------------
-
+  public:
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
@@ -409,9 +429,6 @@ class Validator : public gpu_tracker::Validator {
   private:
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
     VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
-    bool GenerateValidationMessage(const uint32_t* debug_record, const CommandInfo& cmd_info,
-                                   const std::vector<DescSetState>& descriptor_sets, std::string& out_error_msg,
-                                   std::string& out_vuid_msg, bool& out_oob_access) const;
 
     template <typename RangeFactory>
     bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,

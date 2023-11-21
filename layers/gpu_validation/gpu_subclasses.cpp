@@ -135,10 +135,11 @@ void gpuav::CommandBuffer::Reset() {
 void gpuav::CommandBuffer::ResetCBState() {
     auto gpuav = static_cast<Validator *>(dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
-    for (auto &cmd_info : per_draw_command_infos) {
-        gpuav->DestroyBuffer(cmd_info);
+
+    for (auto &cmd_info : per_command_resources) {
+        cmd_info->Destroy(*gpuav);
     }
-    per_draw_command_infos.clear();
+    per_command_resources.clear();
 
     for (auto &buffer_info : di_input_buffer_list) {
         vmaDestroyBuffer(gpuav->vmaAllocator, buffer_info.bindless_state_buffer, buffer_info.bindless_state_buffer_allocation);
@@ -147,7 +148,7 @@ void gpuav::CommandBuffer::ResetCBState() {
     current_bindless_buffer = VK_NULL_HANDLE;
 
     for (auto &as_validation_buffer_info : as_validation_buffers) {
-        gpuav->DestroyBuffer(as_validation_buffer_info);
+        gpuav->Destroy(as_validation_buffer_info);
     }
     as_validation_buffers.clear();
 }
@@ -160,35 +161,20 @@ void gpuav::CommandBuffer::Process(VkQueue queue, const Location &loc) {
         uint32_t compute_index = 0;
         uint32_t ray_trace_index = 0;
 
-        for (auto &cmd_info : per_draw_command_infos) {
-            char *data;
-            DescBindingInfo *di_info = nullptr;
-            if (cmd_info.desc_binding_index != vvl::kU32Max) {
-                di_info = &di_input_buffer_list[cmd_info.desc_binding_index];
-            }
-            std::vector<DescSetState> empty;
-
+        for (auto &cmd_info : per_command_resources) {
             uint32_t operation_index = 0;
-            if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                operation_index = draw_index;
-                draw_index++;
-            } else if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                operation_index = compute_index;
-                compute_index++;
-            } else if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-                operation_index = ray_trace_index;
-                ray_trace_index++;
+            if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                operation_index = draw_index++;
+            } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                operation_index = compute_index++;
+            } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+                operation_index = ray_trace_index++;
             } else {
                 assert(false);
             }
-
-            VkResult result = vmaMapMemory(device_state->vmaAllocator, cmd_info.output_mem_block.allocation, (void **)&data);
-            if (result == VK_SUCCESS) {
-                device_state->AnalyzeAndGenerateMessages(*this, queue, cmd_info, operation_index, (uint32_t *)data,
-                                                         di_info ? di_info->descriptor_set_buffers : empty, loc);
-                vmaUnmapMemory(device_state->vmaAllocator, cmd_info.output_mem_block.allocation);
-            }
+            cmd_info->LogErrorIfAny(*device_state, queue, commandBuffer(), operation_index);
         }
+
         // For each vkCmdBindDescriptorSets()...
         // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
         // checking them multiple times.
