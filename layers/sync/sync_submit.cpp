@@ -900,6 +900,9 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsa
     return AccessRecord{&batch_, &(*log_)[index]};
 }
 
+BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb)
+    : CBSubmitLog(batch, cb.GetCBReferencesShared(), cb.GetAccessLogShared()) {}
+
 PresentedImage::PresentedImage(const SyncValidator& sync_state, const std::shared_ptr<QueueBatchContext> batch_,
                                VkSwapchainKHR swapchain, uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)
     : PresentedImageRecord{tag_, image_index_, present_index_, sync_state.Get<syncval_state::Swapchain>(swapchain), {}},

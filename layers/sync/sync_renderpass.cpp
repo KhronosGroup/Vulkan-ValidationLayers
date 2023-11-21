@@ -947,6 +947,14 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     }
 }
 
+void syncval_state::BeginRenderingCmdState::AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info) {
+    info = std::make_unique<DynamicRenderingInfo>(state, rendering_info);
+}
+
+const syncval_state::DynamicRenderingInfo &syncval_state::BeginRenderingCmdState::GetRenderingInfo() const {
+    assert(info);
+    return *info;
+}
 syncval_state::DynamicRenderingInfo::DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info)
     : info(&rendering_info) {
     uint32_t attachment_count = info.colorAttachmentCount + (info.pDepthAttachment ? 1 : 0) + (info.pStencilAttachment ? 1 : 0);

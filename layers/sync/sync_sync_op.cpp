@@ -1204,6 +1204,7 @@ const AccessContext *ReplayState::GetRecordedAccessContext() const {
     }
     return recorded_context_.GetCurrentAccessContext();
 }
+
 bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const {
     bool skip = false;
     if (first_use_range.non_empty()) {
@@ -1251,4 +1252,117 @@ bool ReplayState::ValidateFirstUse() {
     skip |= DetectFirstUseHazard(first_use_range);
 
     return skip;
+}
+AccessContext *ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
+                                                         const AccessContext &external_context) {
+    Reset();
+
+    begin_op = &begin_op_;
+    subpass = 0;
+
+    const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
+    assert(rp_context);
+    replay_context = &rp_context->GetContexts()[0];
+
+    InitSubpassContexts(queue_flags, *rp_context->GetRenderPassState(), &external_context, subpass_contexts);
+
+    // Replace the Async contexts with the the async context of the "external" context
+    // For replay we don't care about async subpasses, just async queue batches
+    for (auto &context : subpass_contexts) {
+        context.ClearAsyncContexts();
+        context.ImportAsyncContexts(external_context);
+    }
+
+    return &subpass_contexts[0];
+}
+
+AccessContext *ReplayState::RenderPassReplayState::Next() {
+    subpass++;
+
+    const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
+
+    replay_context = &rp_context->GetContexts()[subpass];
+    return &subpass_contexts[subpass];
+}
+
+void ReplayState::RenderPassReplayState::End(AccessContext &external_context) {
+    external_context.ResolveChildContexts(subpass_contexts);
+    Reset();
+}
+
+void SyncEventsContext::ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag) {
+    const bool all_commands_bit = 0 != (src.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    for (auto &event_pair : map_) {
+        assert(event_pair.second);  // Shouldn't be storing empty
+        auto &sync_event = *event_pair.second;
+        // Events don't happen at a stage, so we need to check and store the unexpanded ALL_COMMANDS if set for inter-event-calls
+        // But only if occuring before the tag
+        if (((sync_event.barriers & src.exec_scope) || all_commands_bit) && (sync_event.last_command_tag <= tag)) {
+            sync_event.barriers |= dst.exec_scope;
+            sync_event.barriers |= dst.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        }
+    }
+}
+
+void SyncEventsContext::ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag) {
+    const SyncExecScope src_scope =
+        SyncExecScope::MakeSrc(queue_flags, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_2_HOST_BIT);
+    const SyncExecScope dst_scope = SyncExecScope::MakeDst(queue_flags, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
+    ApplyBarrier(src_scope, dst_scope, tag);
+}
+
+SyncEventsContext &SyncEventsContext::DeepCopy(const SyncEventsContext &from) {
+    // We need a deep copy of the const context to update during validation phase
+    for (const auto &event : from.map_) {
+        map_.emplace(event.first, std::make_shared<SyncEventState>(*event.second));
+    }
+    return *this;
+}
+
+void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet &referenced) const {
+    for (const auto &event : map_) {
+        const std::shared_ptr<const SyncEventState> &event_state = event.second;
+        if (event_state) {
+            event_state->AddReferencedTags(referenced);
+        }
+    }
+}
+void SyncEventState::ResetFirstScope() {
+    first_scope.reset();
+    scope = SyncExecScope();
+    first_scope_tag = 0;
+}
+
+// Keep the "ignore this event" logic in same place for ValidateWait and RecordWait to use
+SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2KHR srcStageMask) const {
+    IgnoreReason reason = NotIgnored;
+
+    if ((vvl::Func::vkCmdWaitEvents2KHR == command || vvl::Func::vkCmdWaitEvents2 == command) &&
+        (vvl::Func::vkCmdSetEvent == last_command)) {
+        reason = SetVsWait2;
+    } else if ((last_command == vvl::Func::vkCmdResetEvent || last_command == vvl::Func::vkCmdResetEvent2KHR) &&
+               !HasBarrier(0U, 0U)) {
+        reason = (last_command == vvl::Func::vkCmdResetEvent) ? ResetWaitRace : Reset2WaitRace;
+    } else if (unsynchronized_set != vvl::Func::Empty) {
+        reason = SetRace;
+    } else if (first_scope) {
+        const VkPipelineStageFlags2KHR missing_bits = scope.mask_param & ~srcStageMask;
+        // Note it is the "not missing bits" path that is the only "NotIgnored" path
+        if (missing_bits) reason = MissingStageBits;
+    } else {
+        reason = MissingSetEvent;
+    }
+
+    return reason;
+}
+
+bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope_arg) const {
+    return (last_command == vvl::Func::Empty) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (barriers & exec_scope_arg) ||
+           (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+}
+
+void SyncEventState::AddReferencedTags(ResourceUsageTagSet &referenced) const {
+    if (first_scope) {
+        first_scope->AddReferencedTags(referenced);
+    }
 }
