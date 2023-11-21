@@ -111,9 +111,10 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
 
         std::string object_label = {};
         // Look for any debug utils or marker names to use for this object
-        object_label = debug_data->DebugReportGetUtilsObjectName(objects.object_list[i].handle);
+        // NOTE: the lock (debug_output_mutex) is held by the caller (LogMsg)
+        object_label = debug_data->DebugReportGetUtilsObjectNameNoLock(objects.object_list[i].handle);
         if (object_label.empty()) {
-            object_label = debug_data->DebugReportGetMarkerObjectName(objects.object_list[i].handle);
+            object_label = debug_data->DebugReportGetMarkerObjectNameNoLock(objects.object_list[i].handle);
         }
         if (!object_label.empty()) {
             object_labels.push_back(std::move(object_label));

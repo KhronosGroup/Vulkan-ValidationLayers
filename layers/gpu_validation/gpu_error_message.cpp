@@ -93,8 +93,11 @@ void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg) {
     msg = strm.str();
 }
 
-static std::string LookupDebugUtilsName(const debug_report_data *report_data, const uint64_t object) {
-    auto object_label = report_data->DebugReportGetUtilsObjectName(object);
+// The lock (debug_output_mutex) is held by the caller (UtilGenerateCommonMessage),
+// because the latter has code paths that make multiple calls of this function,
+// and all such calls have to access the same debug reporting state to ensure consistency of output information.
+static std::string LookupDebugUtilsNameNoLock(const debug_report_data *report_data, const uint64_t object) {
+    auto object_label = report_data->DebugReportGetUtilsObjectNameNoLock(object);
     if (object_label != "") {
         object_label = "(" + object_label + ")";
     }
@@ -109,12 +112,16 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
     using namespace spvtools;
     std::ostringstream strm;
     if (shader_module_handle == VK_NULL_HANDLE && shader_object_handle == VK_NULL_HANDLE) {
+        std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
         strm << std::hex << std::showbase << "Internal Error: Unable to locate information for shader used in command buffer "
-             << LookupDebugUtilsName(report_data, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer) << "). ";
+             << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
+             << "). ";
         assert(true);
     } else {
-        strm << std::hex << std::showbase << "Command buffer " << LookupDebugUtilsName(report_data, HandleToUint64(commandBuffer))
-             << "(" << HandleToUint64(commandBuffer) << "). ";
+        std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+        strm << std::hex << std::showbase << "Command buffer "
+             << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
+             << "). ";
         if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             strm << "Draw ";
         } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
@@ -127,13 +134,13 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
         }
         if (shader_module_handle) {
             strm << "Index " << operation_index << ". "
-                 << "Pipeline " << LookupDebugUtilsName(report_data, HandleToUint64(pipeline_handle)) << "("
+                 << "Pipeline " << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(pipeline_handle)) << "("
                  << HandleToUint64(pipeline_handle) << "). "
-                 << "Shader Module " << LookupDebugUtilsName(report_data, HandleToUint64(shader_module_handle)) << "("
+                 << "Shader Module " << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(shader_module_handle)) << "("
                  << HandleToUint64(shader_module_handle) << "). ";
         } else {
             strm << "Index " << operation_index << ". "
-                 << "Shader Object " << LookupDebugUtilsName(report_data, HandleToUint64(shader_object_handle)) << "("
+                 << "Shader Object " << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(shader_object_handle)) << "("
                  << HandleToUint64(shader_object_handle) << "). ";
         }
     }
