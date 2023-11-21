@@ -1172,3 +1172,83 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag r
 }
 
 void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {}
+
+ReplayState::ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
+                         const ErrorObject &error_obj, uint32_t index)
+    : exec_context_(exec_context),
+      recorded_context_(recorded_context),
+      error_obj_(error_obj),
+      index_(index),
+      base_tag_(exec_context.GetTagLimit()) {}
+
+void ReplayState::BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op) {
+    exec_context_.BeginRenderPassReplaySetup(*this, begin_op);
+}
+
+void ReplayState::NextSubpassReplaySetup() { exec_context_.NextSubpassReplaySetup(*this); }
+
+void ReplayState::EndRenderPassReplayCleanup() { exec_context_.EndRenderPassReplayCleanup(*this); }
+
+AccessContext *ReplayState::ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
+                                                       const AccessContext &external_context) {
+    return rp_replay_.Begin(queue_flags, begin_op, external_context);
+}
+
+AccessContext *ReplayState::ReplayStateRenderPassNext() { return rp_replay_.Next(); }
+
+void ReplayState::ReplayStateRenderPassEnd(AccessContext &external_context) { rp_replay_.End(external_context); }
+
+const AccessContext *ReplayState::GetRecordedAccessContext() const {
+    if (rp_replay_) {
+        return rp_replay_.replay_context;
+    }
+    return recorded_context_.GetCurrentAccessContext();
+}
+bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const {
+    bool skip = false;
+    if (first_use_range.non_empty()) {
+        HazardResult hazard;
+        // We're allowing for the Replay(Validate|Record) to modify the exec_context (e.g. for Renderpass operations), so
+        // we need to fetch the current access context each time
+        hazard = GetRecordedAccessContext()->DetectFirstUseHazard(exec_context_.GetQueueId(), first_use_range,
+                                                                  *exec_context_.GetCurrentAccessContext());
+
+        if (hazard.IsHazard()) {
+            const SyncValidator &sync_state = exec_context_.GetSyncState();
+            const auto handle = exec_context_.Handle();
+            const auto recorded_handle = recorded_context_.GetCBState().commandBuffer();
+            skip = sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), handle, error_obj_.location,
+                                       "Hazard %s for entry %" PRIu32 ", %s, Recorded access info %s. Access info %s.",
+                                       string_SyncHazard(hazard.Hazard()), index_, sync_state.FormatHandle(recorded_handle).c_str(),
+                                       recorded_context_.FormatUsage(*hazard.RecordedAccess()).c_str(),
+                                       recorded_context_.FormatHazard(hazard).c_str());
+        }
+    }
+    return skip;
+}
+
+bool ReplayState::ValidateFirstUse() {
+    if (!exec_context_.ValidForSyncOps()) return false;
+
+    bool skip = false;
+    ResourceUsageRange first_use_range = {0, 0};
+
+    for (const auto &sync_op : recorded_context_.GetSyncOps()) {
+        // Set the range to cover all accesses until the next sync_op, and validate
+        first_use_range.end = sync_op.tag;
+        skip |= DetectFirstUseHazard(first_use_range);
+
+        // Call to replay validate support for syncop with non-trivial replay
+        skip |= sync_op.sync_op->ReplayValidate(*this, sync_op.tag);
+
+        // Record the barrier into the proxy context.
+        sync_op.sync_op->ReplayRecord(exec_context_, base_tag_ + sync_op.tag);
+        first_use_range.begin = sync_op.tag + 1;
+    }
+
+    // and anything after the last syncop
+    first_use_range.end = ResourceUsageRecord::kMaxIndex;
+    skip |= DetectFirstUseHazard(first_use_range);
+
+    return skip;
+}

@@ -164,6 +164,10 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     ResourceUsageRecord &operator=(const ResourceUsageRecord &other) = default;
 };
 
+// Command execution context is the base class for command buffer and queue contexts
+// Preventing unintented leakage of subclass specific state, storing enough information
+// for message logging.
+// TODO: determine where to draw the design split for tag tracking (is there anything command to Queues and CB's)
 class CommandExecutionContext : public SyncValidationInfo {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
