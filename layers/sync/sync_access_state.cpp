@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 #include "sync/sync_utils.h"
-#include "sync/sync_model.h"
+#include "sync/sync_access_state.h"
 
 ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
     {{VK_PIPELINE_STAGE_2_NONE_KHR, SyncStageAccessFlags()},

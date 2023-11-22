@@ -19,7 +19,7 @@
 
 #include "state_tracker/render_pass_state.h"
 #include "sync/sync_common.h"
-#include "sync/sync_model.h"
+#include "sync/sync_access_state.h"
 
 class BUFFER_STATE;
 namespace syncval_state {

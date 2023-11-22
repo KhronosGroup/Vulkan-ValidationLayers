@@ -21,7 +21,7 @@
 
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
-#include "sync/sync_sync_op.h"
+#include "sync/sync_op.h"
 
 class CommandExecutionContext;
 struct ClearAttachmentInfo;
