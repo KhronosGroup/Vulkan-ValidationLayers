@@ -202,7 +202,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_format_info.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
     image_format_info.flags = 0;
-    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
 }
 
 TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {

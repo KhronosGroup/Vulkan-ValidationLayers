@@ -1003,14 +1003,14 @@ class RenderPass : public internal::NonDispHandle<VkRenderPass> {
     // vkCreateRenderPass()
     RenderPass(const Device &dev, const VkRenderPassCreateInfo &info) { init(dev, info); }
     // vkCreateRenderPass2()
-    RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr = false) { init(dev, info, khr); }
+    RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info) { init(dev, info); }
     ~RenderPass() noexcept;
     void destroy() noexcept;
 
     // vkCreateRenderPass()
     void init(const Device &dev, const VkRenderPassCreateInfo &info);
     // vkCreateRenderPass2()
-    void init(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr = false);
+    void init(const Device &dev, const VkRenderPassCreateInfo2 &info);
 };
 
 
@@ -1028,21 +1028,19 @@ class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
 class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConversion> {
   public:
     SamplerYcbcrConversion() = default;
-    SamplerYcbcrConversion(const Device &dev, VkFormat format, bool khr = false) : khr_(khr) {
-        init(dev, DefaultConversionInfo(format), khr);
+    SamplerYcbcrConversion(const Device &dev, VkFormat format) {
+        init(dev, DefaultConversionInfo(format));
     }
-    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr = false) : khr_(khr) {
-        init(dev, info, khr);
+    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info) {
+        init(dev, info);
     }
     ~SamplerYcbcrConversion() noexcept;
     void destroy() noexcept;
 
-    void init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr);
+    void init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info);
     VkSamplerYcbcrConversionInfo ConversionInfo();
 
     static VkSamplerYcbcrConversionCreateInfo DefaultConversionInfo(VkFormat format);
-
-    bool khr_ = false;
 };
 
 inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,

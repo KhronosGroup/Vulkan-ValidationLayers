@@ -3768,7 +3768,7 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework())
+    RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = vku::InitStructHelper();
     cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off

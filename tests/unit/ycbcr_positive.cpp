@@ -17,26 +17,17 @@
 #include "generated/vk_extension_helper.h"
 
 void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
-    // VK_KHR_sampler_ycbcr_conversion was added in 1.2
-    const bool use_12 = m_attempted_api_version >= VK_API_VERSION_1_2;
-    if (!use_12) {
-        AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper(pNextFeatures);
     VkPhysicalDeviceFeatures2 features2;
-    if (use_12) {
-        features2 = GetPhysicalDeviceFeatures2(features11);
-        if (features11.samplerYcbcrConversion != VK_TRUE) {
-            GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
-        }
-    } else {
-        features2 = GetPhysicalDeviceFeatures2(ycbcr_features);
-        if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
-            GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
-        }
+    features2 = GetPhysicalDeviceFeatures2(ycbcr_features);
+    if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
+        GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
     }
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));

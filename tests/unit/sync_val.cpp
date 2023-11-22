@@ -1656,10 +1656,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
     const bool has_khr_indirect = IsExtensionsEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    if (has_khr_indirect) {
-        if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-            features12.drawIndirectCount = VK_TRUE;
-        }
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
+        features12.drawIndirectCount = VK_TRUE;
     }
     RETURN_IF_SKIP(InitState(nullptr, &features12));
     InitRenderTarget();

@@ -1519,7 +1519,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper();

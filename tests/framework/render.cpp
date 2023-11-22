@@ -199,18 +199,10 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
     const auto ExtensionIncludedInTargetVersion = [this](const char *extension) {
-        if (!m_target_api_version.Valid()) return false;
-
-        const auto promotion_info_map = InstanceExtensions::get_promotion_info_map();
-        for (const auto &version_it : promotion_info_map) {
-            if (m_target_api_version >= version_it.first) {
-                const auto promoted_exts = version_it.second.second;
-                if (promoted_exts.find(extension) != promoted_exts.end()) {
-                    // Replicate the core entry points into the extension entry points
-                    vk::InitExtensionFromCore(extension);
-                    return true;
-                }
-            }
+        if (IsPromotedInstanceExtension(extension)) {
+            // Replicate the core entry points into the extension entry points
+            vk::InitExtensionFromCore(extension);
+            return true;
         }
         return false;
     };
@@ -255,6 +247,7 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     // Remove promoted extensions from both the instance and required extension lists
     if (!allow_promoted_extensions_) {
         RemoveIf(m_required_extensions, ExtensionIncludedInTargetVersion);
+        RemoveIf(m_optional_extensions, ExtensionIncludedInTargetVersion);
         RemoveIf(m_instance_extension_names, ExtensionIncludedInTargetVersion);
     }
 
@@ -443,8 +436,25 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     return true;
 }
 
+bool VkRenderFramework::IsPromotedInstanceExtension(const char *inst_ext_name) const {
+    if (!m_target_api_version.Valid()) return false;
+
+    const auto promotion_info_map = InstanceExtensions::get_promotion_info_map();
+    for (const auto &version_it : promotion_info_map) {
+        if (m_target_api_version >= version_it.first) {
+            const auto promoted_exts = version_it.second.second;
+            if (promoted_exts.find(inst_ext_name) != promoted_exts.end()) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool VkRenderFramework::CanEnableInstanceExtension(const std::string &inst_ext_name) const {
-    return std::any_of(m_instance_extension_names.cbegin(), m_instance_extension_names.cend(),
+    return (!allow_promoted_extensions_ && IsPromotedInstanceExtension(inst_ext_name.c_str())) ||
+           std::any_of(m_instance_extension_names.cbegin(), m_instance_extension_names.cend(),
                        [&inst_ext_name](const char *ext) { return inst_ext_name == ext; });
 }
 
@@ -475,8 +485,26 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     return true;
 }
 
+bool VkRenderFramework::IsPromotedDeviceExtension(const char *dev_ext_name) const {
+    auto device_version = std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));
+    if (!device_version.Valid()) return false;
+
+    const auto promotion_info_map = DeviceExtensions::get_promotion_info_map();
+    for (const auto &version_it : promotion_info_map) {
+        if (device_version >= version_it.first) {
+            const auto promoted_exts = version_it.second.second;
+            if (promoted_exts.find(dev_ext_name) != promoted_exts.end()) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool VkRenderFramework::CanEnableDeviceExtension(const std::string &dev_ext_name) const {
-    return std::any_of(m_device_extension_names.cbegin(), m_device_extension_names.cend(),
+    return (!allow_promoted_extensions_ && IsPromotedDeviceExtension(dev_ext_name.c_str())) ||
+           std::any_of(m_device_extension_names.cbegin(), m_device_extension_names.cend(),
                        [&dev_ext_name](const char *ext) { return dev_ext_name == ext; });
 }
 
@@ -560,20 +588,46 @@ VkFormat VkRenderFramework::GetRenderTargetFormat() {
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
-    const auto ExtensionIncludedInDeviceApiVersion = [this](const char *extension) {
-        auto device_version = std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));
-        if (!device_version.Valid()) return false;
+    VkPhysicalDeviceVulkan12Features vk12_features = vku::InitStructHelper();
+    const auto ExtensionIncludedInDeviceApiVersion = [&](const char *extension) {
+        if (IsPromotedDeviceExtension(extension)) {
+            // Replicate the core entry points into the extension entry points
+            vk::InitExtensionFromCore(extension);
 
-        const auto promotion_info_map = DeviceExtensions::get_promotion_info_map();
-        for (const auto &version_it : promotion_info_map) {
-            if (device_version >= version_it.first) {
-                const auto promoted_exts = version_it.second.second;
-                if (promoted_exts.find(extension) != promoted_exts.end()) {
-                    // Replicate the core entry points into the extension entry points
-                    vk::InitExtensionFromCore(extension);
-                    return true;
+            // Handle special cases which did not have a feature flag in the extension
+            // but do have one in their core promoted form
+            static const std::unordered_map<std::string, std::vector<size_t>> vk12_ext_feature_offsets = {
+                {
+                    VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
+                    { offsetof(VkPhysicalDeviceVulkan12Features, drawIndirectCount) }
+                },
+                {
+                    VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
+                    { offsetof(VkPhysicalDeviceVulkan12Features, samplerFilterMinmax) }
+                },
+                {
+                    VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+                    {
+                        offsetof(VkPhysicalDeviceVulkan12Features, shaderOutputViewportIndex),
+                        offsetof(VkPhysicalDeviceVulkan12Features, shaderOutputLayer)
+                    }
+                }
+            };
+            auto it = vk12_ext_feature_offsets.find(extension);
+            if (it != vk12_ext_feature_offsets.end()) {
+                auto vk12_features_ptr = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(create_device_pnext);
+                if (vk12_features_ptr == nullptr) {
+                    vk12_features_ptr = &vk12_features;
+                    vk12_features.pNext = create_device_pnext;
+                    create_device_pnext = vk12_features_ptr;
+                }
+                const VkBool32 enabled = VK_TRUE;
+                for (const auto offset : it->second) {
+                    std::memcpy(((uint8_t *)vk12_features_ptr) + offset, &enabled, sizeof(enabled));
                 }
             }
+
+            return true;
         }
         return false;
     };
@@ -590,6 +644,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     // Remove promoted extensions from both the instance and required extension lists
     if (!allow_promoted_extensions_) {
         RemoveIf(m_required_extensions, ExtensionIncludedInDeviceApiVersion);
+        RemoveIf(m_optional_extensions, ExtensionIncludedInDeviceApiVersion);
         RemoveIf(m_device_extension_names, ExtensionIncludedInDeviceApiVersion);
     }
 

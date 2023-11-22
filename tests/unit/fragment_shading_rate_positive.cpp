@@ -133,7 +133,7 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);

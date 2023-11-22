@@ -254,7 +254,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     // Create a valid conversion with guaranteed support
     sycci.format = mp_format;
     sycci.components = identity;
-    vkt::SamplerYcbcrConversion conversion(*m_device, sycci, false);
+    vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -652,8 +652,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
         VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                            VK_COMPONENT_SWIZZLE_IDENTITY},
         VK_CHROMA_LOCATION_COSITED_EVEN, VK_CHROMA_LOCATION_COSITED_EVEN, VK_FILTER_NEAREST, VK_FALSE);
-    bool khr = (DeviceValidationVersion() < VK_API_VERSION_1_1);
-    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, khr);
+    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -1272,7 +1271,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     sampler_conversion_ci.chromaFilter = VK_FILTER_NEAREST;
     sampler_conversion_ci.forceExplicitReconstruction = false;
 
-    vkt::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci, false);
+    vkt::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci);
 
     VkSamplerYcbcrConversionInfo sampler_ycbcr_conversion_info = vku::InitStructHelper();
     sampler_ycbcr_conversion_info.conversion = sampler_conversion.handle();
@@ -1519,7 +1518,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
 
-    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
+    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion.handle();

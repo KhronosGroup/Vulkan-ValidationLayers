@@ -409,7 +409,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp(*m_device, rpci, true /*khr*/);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(image.ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -433,7 +433,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
 
     // Set viewMask to non-zero - requires multiview
     subpass.viewMask = 0x10;
-    vkt::RenderPass rp_mv(*m_device, rpci, true /*khr*/);
+    vkt::RenderPass rp_mv(*m_device, rpci);
 
     fb_info.renderPass = rp_mv.handle();
 
@@ -905,7 +905,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
@@ -977,7 +977,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
@@ -1022,7 +1022,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
         m_errorMonitor->VerifyFound();
 
         subpass.viewMask = 0x4;
-        vkt::RenderPass rp2(*m_device, rpci, true);
+        vkt::RenderPass rp2(*m_device, rpci);
         ASSERT_TRUE(rp2.initialized());
         subpass.viewMask = 0;
 
@@ -1189,7 +1189,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rcpi_no_fsr.subpassCount = 1;
     rcpi_no_fsr.pSubpasses = &subpass_no_fsr;
 
-    vkt::RenderPass rp_no_fsr(*m_device, rcpi_no_fsr, true);
+    vkt::RenderPass rp_no_fsr(*m_device, rcpi_no_fsr);
 
     // Create 2 render passes with fragment shading rate attachments with
     // differing shadingRateAttachmentTexelSize values
@@ -1228,7 +1228,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rpci_fsr_1.attachmentCount = 1;
     rpci_fsr_1.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp_fsr_1(*m_device, rpci_fsr_1, true);
+    vkt::RenderPass rp_fsr_1(*m_device, rpci_fsr_1);
     ASSERT_TRUE(rp_fsr_1.initialized());
 
     VkRenderPassCreateInfo2KHR rpci_fsr_2 = vku::InitStructHelper();
@@ -1237,7 +1237,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rpci_fsr_2.attachmentCount = 1;
     rpci_fsr_2.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp_fsr_2(*m_device, rpci_fsr_2, true);
+    vkt::RenderPass rp_fsr_2(*m_device, rpci_fsr_2);
     ASSERT_TRUE(rp_fsr_2.initialized());
 
     VkImageObj image(m_device);
@@ -1930,10 +1930,10 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
 
     // Create rp2[0] without Multiview (zero viewMask), rp2[1] with Multiview
     vkt::RenderPass rp2[2];
-    rp2[0].init(*m_device, rpci, true);
+    rp2[0].init(*m_device, rpci);
 
     subpass.viewMask = 0x3u;
-    rp2[1].init(*m_device, rpci, true);
+    rp2[1].init(*m_device, rpci);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;

@@ -465,7 +465,7 @@ TEST_F(PositivePipeline, TessellationDomainOrigin) {
         "VkPipelineTessellationDomainOriginStateCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

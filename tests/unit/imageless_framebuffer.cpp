@@ -859,7 +859,7 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpassDescription;
     renderPassCreateInfo.pAttachments = attachmentDescriptions;
-    vkt::RenderPass render_pass(*m_device, renderPassCreateInfo, true);
+    vkt::RenderPass render_pass(*m_device, renderPassCreateInfo);
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[2] = {};
     // Depth/stencil attachment
@@ -956,7 +956,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     VkFormat viewFormat = VK_FORMAT_R8_UINT;
@@ -1035,7 +1035,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vkt::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkFormat viewFormat = VK_FORMAT_R8_UINT;
     VkFramebufferAttachmentImageInfo fbai_info = vku::InitStructHelper();
@@ -1087,7 +1087,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
     if (fsr_properties.layeredShadingRateAttachments && mv_features.multiview) {
         subpass.viewMask = 0x4;
-        vkt::RenderPass rp2(*m_device, rpci, true);
+        vkt::RenderPass rp2(*m_device, rpci);
         ASSERT_TRUE(rp2.initialized());
         subpass.viewMask = 0;
 

@@ -136,6 +136,9 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
 TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
     TEST_DESCRIPTION("Create a device with a deprecated extension.");
 
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -2377,7 +2380,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     TEST_DESCRIPTION("Set only a part of push constants in middle of as struct");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
     VkPhysicalDevice8BitStorageFeatures storage_8_bit_features = vku::InitStructHelper();

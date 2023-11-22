@@ -979,7 +979,7 @@ TEST_F(NegativeRenderPass, AttachmentReferenceSync2Layout) {
         safe_VkRenderPassCreateInfo2 rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference2-synchronization2-06910");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06922");
-        vkt::RenderPass rp2_core(*m_device, *rpci2.ptr(), false);
+        vkt::RenderPass rp2_core(*m_device, *rpci2.ptr());
         m_errorMonitor->VerifyFound();
     }
 
@@ -1712,7 +1712,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpassDescription;
     rpci.pAttachments = attachmentDescriptions;
-    vkt::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     // Depth resolve attachment, mismatched image usage
@@ -3900,7 +3900,7 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayout) {
 TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutMaintenance2) {
     TEST_DESCRIPTION("Invalid attachment reference layout, Maintenance2 enabled");
 
-    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -4155,14 +4155,14 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
         {
             depth_stencil_ref.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06251");
-            vkt::RenderPass rp2(*m_device, rpci2, true);
+            vkt::RenderPass rp2(*m_device, rpci2);
             m_errorMonitor->VerifyFound();
         }
 
         {
             depth_stencil_ref.layout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06251");
-            vkt::RenderPass rp2(*m_device, rpci2, true);
+            vkt::RenderPass rp2(*m_device, rpci2);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -4319,7 +4319,7 @@ TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionDSLayout) {
 TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionColorLayout) {
     TEST_DESCRIPTION("Invalid final layout for color attachment");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState());
 

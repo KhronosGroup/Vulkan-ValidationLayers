@@ -1492,8 +1492,6 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
 TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     TEST_DESCRIPTION("Checks that features are enabled if extension is passed in for promoted extensions with requirement.");
 
-    // targets  each possible version
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -1572,14 +1570,17 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
 TEST_F(VkLayerTest, FeaturesVariablePointer) {
     TEST_DESCRIPTION("Checks VK_KHR_variable_pointers features.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     std::vector<const char *> device_extensions;
-    device_extensions.push_back(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
-    device_extensions.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        device_extensions.push_back(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
+        device_extensions.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+    }
 
     // Create a device that enables variablePointers but not variablePointersStorageBuffer
     VkPhysicalDeviceVariablePointersFeatures variable_features = vku::InitStructHelper();
@@ -2778,23 +2779,13 @@ TEST_F(VkLayerTest, InvalidExtEnum) {
 TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
-
-    // Require YCbCr dependencies extensions except VK_KHR_GET_MEMORY_REQUIREMENTS_2 -- to create the needed error
-    std::vector<const char *> required_device_extensions = {
-        VK_KHR_MAINTENANCE_1_EXTENSION_NAME, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME};
-    for (auto dev_ext : required_device_extensions) {
-        if (DeviceExtensionSupported(dev_ext)) {
-            m_device_extension_names.push_back(dev_ext);
-        } else {
-            // Need to get out of the test now so that the subsequent code doesn't try to use an extension that isn't enabled.
-            GTEST_SKIP() << "Did not find required device extension: " << dev_ext;
-        }
-    }
-
-    // Need to ignore this error to get to the one we're testing
-    m_errorMonitor->SetUnexpectedError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
     RETURN_IF_SKIP(InitState());
 
     // The feature bit samplerYcbcrConversion prevents the function from being called even in Vulkan 1.0
