@@ -929,8 +929,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6980
-TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
+TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -1003,7 +1003,8 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
         }
         )glsl";
 
-    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+    // need SPIR-V 1.6 so u_buffer is not using a Dim of buffer as some compilers don't like it
+    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
