@@ -185,7 +185,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
-        vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), (VkFormat)fmt, &fmt_props);
 
         const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
         const bool has_read_without_format =
@@ -342,7 +342,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
-        vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), (VkFormat)fmt, &fmt_props);
 
         const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
         const bool has_write_without_format =

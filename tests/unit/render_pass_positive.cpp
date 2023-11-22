@@ -1257,7 +1257,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
         "Test no false overlap is reported with multi attachment framebuffer (attachments are slices of a 3D image). Multiple "
         "subpasses that draw to a single slice of a 3D image");
 
-    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     constexpr unsigned depth_count = 2u;
@@ -1353,7 +1353,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
         "Test that transitioning the layout of a mip level of a 3D image using a view of one of its slice applies to the entire 3D "
         "image: all views referencing different slices of the same mip level should also see their layout transitioned");
 
-    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
@@ -1667,7 +1667,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     rp2.pSubpasses = &sub;
     rp2.attachmentCount = 1;
     rp2.pAttachments = &desc;
-    vkt::RenderPass render_pass_separate(*m_device, rp2, true);
+    vkt::RenderPass render_pass_separate(*m_device, rp2);
 
     desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     desc.finalLayout = desc.initialLayout;
@@ -1675,7 +1675,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     desc.pNext = nullptr;
     att.layout = desc.initialLayout;
     att.pNext = nullptr;
-    vkt::RenderPass render_pass_combined(*m_device, rp2, true);
+    vkt::RenderPass render_pass_combined(*m_device, rp2);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = render_pass_separate.handle();

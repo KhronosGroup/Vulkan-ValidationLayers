@@ -554,9 +554,9 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
     vkt::SamplerYcbcrConversion conversions[2];
-    conversions[0].init(*m_device, ycbcr_create_info, false);
+    conversions[0].init(*m_device, ycbcr_create_info);
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
-    conversions[1].init(*m_device, ycbcr_create_info, false);
+    conversions[1].init(*m_device, ycbcr_create_info);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversions[0].handle();

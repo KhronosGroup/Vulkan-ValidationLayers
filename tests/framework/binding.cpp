@@ -1284,14 +1284,11 @@ void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }
 
-void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr) {
-    if (!khr) {
-        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2, dev, &info);
+void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info) {
+    if (vk::CreateRenderPass2KHR) {
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2KHR, dev, &info);
     } else {
-        auto vkCreateRenderPass2KHR =
-            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(dev.handle(), "vkCreateRenderPass2KHR"));
-        ASSERT_NE(vkCreateRenderPass2KHR, nullptr);
-        NON_DISPATCHABLE_HANDLE_INIT(vkCreateRenderPass2KHR, dev, &info);
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2, dev, &info);
     }
 }
 
@@ -1303,14 +1300,11 @@ void Framebuffer::init(const Device &dev, const VkFramebufferCreateInfo &info) {
 
 NON_DISPATCHABLE_HANDLE_DTOR(Framebuffer, vk::DestroyFramebuffer)
 
-void SamplerYcbcrConversion::init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr) {
-    if (!khr) {
-        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSamplerYcbcrConversion, dev, &info);
+void SamplerYcbcrConversion::init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info) {
+    if (vk::CreateSamplerYcbcrConversionKHR) {
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSamplerYcbcrConversionKHR, dev, &info);
     } else {
-        auto vkCreateSamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
-            vk::GetDeviceProcAddr(dev.handle(), "vkCreateSamplerYcbcrConversionKHR"));
-        ASSERT_NE(vkCreateSamplerYcbcrConversionKHR, nullptr);
-        NON_DISPATCHABLE_HANDLE_INIT(vkCreateSamplerYcbcrConversionKHR, dev, &info);
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSamplerYcbcrConversion, dev, &info);
     }
 }
 
@@ -1339,15 +1333,13 @@ void SamplerYcbcrConversion::destroy() noexcept {
     if (!initialized()) {
         return;
     }
-    if (!khr_) {
-        vk::DestroySamplerYcbcrConversion(device(), handle(), nullptr);
+    if (vk::DestroySamplerYcbcrConversionKHR) {
+        vk::DestroySamplerYcbcrConversionKHR(device(), handle(), nullptr);
     } else {
-        auto vkDestroySamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
-            vk::GetDeviceProcAddr(device(), "vkDestroySamplerYcbcrConversionKHR"));
-        assert(vkDestroySamplerYcbcrConversionKHR != nullptr);
-        vkDestroySamplerYcbcrConversionKHR(device(), handle(), nullptr);
+        vk::DestroySamplerYcbcrConversion(device(), handle(), nullptr);
     }
     handle_ = VK_NULL_HANDLE;
+    internal::NonDispHandle<decltype(handle_)>::destroy();
 }
 
 SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { destroy(); }

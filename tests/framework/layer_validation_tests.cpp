@@ -209,24 +209,9 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device
 
     if (rp2_supported && rp2_vuid) {
         safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
-
-        const auto vkCreateRenderPass2KHR =
-            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
-        // For API version < 1.2 where the extension was not enabled
-        if (vkCreateRenderPass2KHR) {
-            error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-            vkt::RenderPass rp2_khr(device, *create_info2.ptr(), true);
-            error_monitor->VerifyFound();
-        }
-
-        const auto vkCreateRenderPass2 =
-            reinterpret_cast<PFN_vkCreateRenderPass2>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2"));
-        // For API version >= 1.2, try core entrypoint
-        if (vkCreateRenderPass2) {
-            error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-            vkt::RenderPass rp2_core(device, *create_info2.ptr(), false);
-            error_monitor->VerifyFound();
-        }
+        error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+        vkt::RenderPass rp2(device, *create_info2.ptr());
+        error_monitor->VerifyFound();
     }
 }
 
@@ -234,12 +219,12 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device
                                   bool rp2_supported) {
     vkt::RenderPass rp(device, create_info);
     if (rp2_supported) {
-        vkt::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr(), true);
+        vkt::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr());
     }
 }
 
 void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info) {
-    vkt::RenderPass rp(device, create_info, true);
+    vkt::RenderPass rp(device, create_info);
 }
 
 void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
@@ -247,7 +232,7 @@ void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &de
     for (auto vuid : vuids) {
         error_monitor.SetDesiredFailureMsg(kErrorBit, vuid);
     }
-    vkt::RenderPass rp(device, create_info, true);
+    vkt::RenderPass rp(device, create_info);
     error_monitor.VerifyFound();
 }
 

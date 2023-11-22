@@ -2828,6 +2828,8 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
 
 TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
     TEST_DESCRIPTION("Passing bad image subrange to CreateImageView");
+
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     const bool maintenance1 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
 
@@ -3170,6 +3172,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
             if (device_features.sparseBinding) {
                 VkImageObj sparse_image(m_device);
                 image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+                m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
                 sparse_image.Init(image_ci, 0, false);
                 sparse_image_view_ci.image = sparse_image.handle();
 
@@ -3185,6 +3188,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
                 VkImageObj sparse_image(m_device);
                 image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
                 m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-00987");
+                m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
                 sparse_image.Init(image_ci, 0, false);
                 sparse_image_view_ci.image = sparse_image.handle();
 
@@ -3200,6 +3204,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
                 VkImageObj sparse_image(m_device);
                 image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT |
                                  VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+                m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
                 sparse_image.Init(image_ci, 0, false);
                 sparse_image_view_ci.image = sparse_image.handle();
 
@@ -4202,7 +4207,7 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
     TEST_DESCRIPTION("Tests for VK_KHR_image_format_list with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT");
 
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework());
 
@@ -4245,7 +4250,7 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
 
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
     TEST_DESCRIPTION("VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT");
-    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -4265,7 +4270,7 @@ TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
 
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFlag) {
     TEST_DESCRIPTION("VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT");
-    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -4716,11 +4721,12 @@ TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
+    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcrFeatures = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(ycbcrFeatures);
+    if (ycbcrFeatures.samplerYcbcrConversion != VK_TRUE) {
         printf("samplerYcbcrConversion not supported, skipping test\n");
         return;
     }

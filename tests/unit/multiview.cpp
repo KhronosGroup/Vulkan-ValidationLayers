@@ -746,11 +746,14 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 TEST_F(NegativeMultiview, Features) {
     TEST_DESCRIPTION("Checks VK_KHR_multiview features.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     std::vector<const char *> device_extensions;
-    device_extensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        device_extensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    }
 
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
@@ -972,13 +975,13 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     // Create rp2[0] with Multiview, rp2[1] without Multiview (zero viewMask), rp2[2] with Multiview but another viewMask
     std::array<vkt::RenderPass, 3> rp2;
     if (rp2Supported) {
-        rp2[0].init(*m_device, rpci2, true);
+        rp2[0].init(*m_device, rpci2);
         subpass2.viewMask = 0x0u;
         rpci2.pSubpasses = &subpass2;
-        rp2[1].init(*m_device, rpci2, true);
+        rp2[1].init(*m_device, rpci2);
         subpass2.viewMask = 0x1u;
         rpci2.pSubpasses = &subpass2;
-        rp2[2].init(*m_device, rpci2, true);
+        rp2[2].init(*m_device, rpci2);
     }
 
     // Create image view

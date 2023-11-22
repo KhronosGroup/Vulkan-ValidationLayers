@@ -229,6 +229,8 @@ TEST_F(NegativeSyncObject, Barriers) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     // Make sure extensions for multi-planar and separate depth stencil images are enabled if possible
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);

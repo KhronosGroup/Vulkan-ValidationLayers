@@ -248,17 +248,25 @@ class VkRenderFramework : public VkTestFramework {
     // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance
     // extension.
     bool AddRequestedInstanceExtensions(const char *ext_name);
+    // Returns true if the instance extension is promoted to core in the target API version requested using SetTargetApiVersion().
+    bool IsPromotedInstanceExtension(const char *inst_ext_name) const;
     // Returns true if the instance extension inst_ext_name is enabled. This call is only valid _after_ previous
     // `AddRequired*Extensions` calls and InitFramework has been called. `inst_ext_name` must be an instance extension name; false
     // is returned for all device extension names.
+    // This function also returns true if the instance extension is implicitly supported in the target API version
+    // requested using SetTargetApiVersion().
     bool CanEnableInstanceExtension(const std::string &inst_ext_name) const;
     // Add dev_ext_name, then names of _device_ extensions required by dev_ext_name, and return true if dev_ext_name is supported.
     // If the extension is not supported, no extension names are added for device creation. This function has no effect if
     // dev_ext_name refers to an instance extension.
     bool AddRequestedDeviceExtensions(const char *dev_ext_name);
+    // Returns true if the device extension is promoted to core in the API version supported by the device.
+    bool IsPromotedDeviceExtension(const char *dev_ext_name) const;
     // Returns true if the device extension is enabled. This call is only valid _after_ previous `AddRequired*Extensions` calls and
     // InitFramework has been called.
     // `dev_ext_name` must be an instance extension name; false is returned for all instance extension names.
+    // This function also returns true if the device extension is implicitly supported by the API version supported
+    // by the device, as queriable using DeviceValidationVersion().
     bool CanEnableDeviceExtension(const std::string &dev_ext_name) const;
 };
 
