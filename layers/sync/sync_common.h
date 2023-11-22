@@ -54,9 +54,7 @@ ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_
 ResourceAccessRange MakeRange(const BufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
                               uint32_t stride);
 
-#ifndef SYNCVAL_COMMON_DEFS
 extern const ResourceAccessRange kFullRange;
-#endif
 
 constexpr VkImageAspectFlags kColorAspects =
     VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;

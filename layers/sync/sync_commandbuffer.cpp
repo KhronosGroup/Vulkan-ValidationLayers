@@ -16,7 +16,7 @@
  */
 
 #include "sync/sync_commandbuffer.h"
-#include "sync/sync_sync_op.h"
+#include "sync/sync_op.h"
 #include "sync/sync_validation.h"
 
 SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
