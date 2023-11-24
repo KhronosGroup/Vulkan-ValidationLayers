@@ -965,10 +965,22 @@ int main(int argc, char **argv) {
     int result;
 
 #if defined(_WIN32)
-    // Disable message box for: "Errors, unrecoverable problems, and issues that require immediate attention."
-    // This does not include asserts. GTest does similar configuration for asserts.
-    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+    // --gtest_break_on_failure disables gtest suppression of debug message boxes.
+    // If this flag is set, then limit the VVL test framework in how it configures CRT
+    // in order not to change expected gtest behavior (with regard to --gtest_break_on_failure).
+    bool break_on_failure = false;
+    for (int i = 1; i < argc; i++) {
+        if (std::string_view(argv[i]) == "--gtest_break_on_failure") {
+            break_on_failure = true;
+            break;
+        }
+    }
+    if (!break_on_failure) {
+        // Disable message box for: "Errors, unrecoverable problems, and issues that require immediate attention."
+        // This does not include asserts. GTest does similar configuration for asserts.
+        _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+        _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+    }
 #endif
 
     ::testing::InitGoogleTest(&argc, argv);
