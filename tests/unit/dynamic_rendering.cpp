@@ -1089,7 +1089,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats2) {
+TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
     TEST_DESCRIPTION(
         "Draw with Dynamic Rendering with attachment specified as VK_NULL_HANDLE in VkRenderingInfoKHR, but with corresponding "
         "format in VkPipelineRenderingCreateInfoKHR not set to VK_FORMAT_UNDEFINED");
@@ -1179,7 +1179,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats2) {
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08916");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08913");
         vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_commandBuffer->EndRendering();
