@@ -1086,7 +1086,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         m_commandBuffer->EndRendering();
 
         // Matching depth format
-        depth_stencil_attachment.imageView = depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        const vkt::ImageView depth_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
+        depth_stencil_attachment.imageView = depth_view.handle();
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
@@ -1106,7 +1107,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         m_commandBuffer->EndRendering();
 
         // Matching stencil format
-        depth_stencil_attachment.imageView = depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_STENCIL_BIT);
+        const vkt::ImageView stencil_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_STENCIL_BIT));
+        depth_stencil_attachment.imageView = stencil_view.handle();
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
