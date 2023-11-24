@@ -3246,7 +3246,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
                         skip |=
-                            LogError(vuid.dynamic_rendering_undefined_depth_format_08916, objlist, loc,
+                            LogError(vuid.dynamic_rendering_undefined_depth_format_08913, objlist, loc,
                                      "VkRenderingInfo::pDepthAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
                                      "VkPipelineRenderingCreateInfo::depthAttachmentFormat is %s.",
                                      string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
