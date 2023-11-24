@@ -2511,11 +2511,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
 
     if (cb_state.activeRenderPass->UsesDynamicRendering()) {
         if (pipeline) {
-            ValidatePipelineDynamicRenderpassDraw(last_bound_state, loc);
+            skip |= ValidatePipelineDynamicRenderpassDraw(last_bound_state, loc);
         }
     } else {
         if (pipeline) {
-            ValidatePipelineRenderpassDraw(last_bound_state, loc);
+            skip |= ValidatePipelineRenderpassDraw(last_bound_state, loc);
         } else if (last_bound_state.HasShaderObjects()) {
             skip |= LogError(vuid.render_pass_began_08876, cb_state.commandBuffer(), loc,
                              "Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.",
