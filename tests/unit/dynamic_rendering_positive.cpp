@@ -1169,6 +1169,9 @@ TEST_F(PositiveDynamicRendering, ColorAttachmentMismatch) {
     RETURN_IF_SKIP(InitBasicDynamicRendering(&extended_dynamic_state3_features));
     InitRenderTarget();
 
+    if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
+        GTEST_SKIP() << "extendedDynamicState2LogicOp not supported";
+    }
     if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
         GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
     }
