@@ -841,6 +841,9 @@ TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
     RETURN_IF_SKIP(InitBasicExtendedDynamicState3(extended_dynamic_state3_features));
     InitRenderTarget();
 
+    if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
+        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
+    }
     if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
         GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
     }
