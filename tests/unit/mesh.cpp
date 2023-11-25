@@ -1331,9 +1331,15 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     if (mesh_shader_properties.maxMeshWorkGroupCount[0] == mesh_shader_properties.maxMeshWorkGroupTotalCount) {
         vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07302");
     }
-    CreatePipelineHelper::OneshotTest(*this, mesh_tasks_x, kErrorBit, vuids);
-    CreatePipelineHelper::OneshotTest(*this, mesh_tasks_y, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07300");
-    CreatePipelineHelper::OneshotTest(*this, mesh_tasks_z, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07301");
+    if (mesh_shader_properties.maxMeshWorkGroupCount[0] != std::numeric_limits<uint32_t>::max()) {
+        CreatePipelineHelper::OneshotTest(*this, mesh_tasks_x, kErrorBit, vuids);
+    }
+    if (mesh_shader_properties.maxMeshWorkGroupCount[1] != std::numeric_limits<uint32_t>::max()) {
+        CreatePipelineHelper::OneshotTest(*this, mesh_tasks_y, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07300");
+    }
+    if (mesh_shader_properties.maxMeshWorkGroupCount[2] != std::numeric_limits<uint32_t>::max()) {
+        CreatePipelineHelper::OneshotTest(*this, mesh_tasks_z, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07301");
+    }
 }
 
 TEST_F(NegativeMesh, MeshShaderConservativeRasterization) {
