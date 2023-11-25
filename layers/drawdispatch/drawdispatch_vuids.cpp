@@ -314,6 +314,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDraw-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDraw-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -610,6 +611,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawMultiEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMultiEXT-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -907,6 +909,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawIndexed-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexed-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -1204,6 +1207,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawMultiIndexedEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMultiIndexedEXT-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -1502,6 +1506,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawIndirect-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndirect-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -1801,6 +1806,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawIndexedIndirect-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexedIndirect-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -2192,6 +2198,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawIndirectCount-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndirectCount-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -2494,6 +2501,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawIndexedIndirectCount-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexedIndirectCount-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -2957,6 +2965,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksNV-None-07075";
         rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksNV-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksNV-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -3243,6 +3252,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07075";
         rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectNV-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -3532,6 +3542,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07075";
         rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -3815,6 +3826,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksEXT-None-07075";
         rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksEXT-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -4101,6 +4113,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07075";
         rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectEXT-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -4390,6 +4403,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07075";
         rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
@@ -4688,6 +4702,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         sample_locations_enable_07487            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07487";
         rasterization_samples_09211              = "VUID-vkCmdDrawIndirectByteCountEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndirectByteCountEXT-dynamicRenderingUnusedAttachments-08913";
+        primitives_generated_query_07481         = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
     }
 };
 
