@@ -790,6 +790,27 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
         }
     }
 
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT) &&
+        !enabled_features.primitivesGeneratedQueryWithNonZeroStreams &&
+        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT] &&
+        cb_state.dynamic_state_value.rasterization_stream != 0) {
+        bool pgq_active = false;
+        for (const auto& active_query : cb_state.activeQueries) {
+            auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
+            if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                pgq_active = true;
+                break;
+            }
+        }
+        if (pgq_active) {
+            skip |= LogError(
+                vuid.primitives_generated_query_07481, cb_state.commandBuffer(), loc,
+                "Query with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active and primitivesGeneratedQueryWithNonZeroStreams "
+                "feature is not enabled, but rasterizationStreams set with vkCmdSetRasterizationStreamEXT() was %" PRIu32,
+                cb_state.dynamic_state_value.rasterization_stream);
+        }
+    }
+
     // VK_EXT_shader_tile_image
     {
         const bool dyn_depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);

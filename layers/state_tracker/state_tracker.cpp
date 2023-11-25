@@ -5021,6 +5021,7 @@ void ValidationStateTracker::PostCallRecordCmdSetRasterizationStreamEXT(VkComman
                                                                         const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT);
+    cb_state->dynamic_state_value.rasterization_stream = rasterizationStream;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetConservativeRasterizationModeEXT(

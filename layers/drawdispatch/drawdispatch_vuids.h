@@ -311,6 +311,7 @@ struct DrawDispatchVuid {
     const char* pg_queries_07075 = kVUIDUndefined;
     const char* rasterization_samples_09211 = kVUIDUndefined;
     const char* dynamic_rendering_undefined_depth_format_08913 = kVUIDUndefined;
+    const char* primitives_generated_query_07481 = kVUIDUndefined;
 };
 
 const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);

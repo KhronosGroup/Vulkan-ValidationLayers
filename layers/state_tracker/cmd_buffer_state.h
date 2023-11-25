@@ -229,6 +229,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         VkPolygonMode polygon_mode;
         // VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT
         VkSampleCountFlagBits rasterization_samples;
+        // VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT
+        uint32_t rasterization_stream;
         // VK_DYNAMIC_STATE_SAMPLE_MASK_EXT
         VkSampleCountFlagBits samples_mask_samples;
         // VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT
