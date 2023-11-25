@@ -5334,7 +5334,7 @@ TEST_F(NegativeDynamicState, SampleLocationsEnable) {
     pipe_ms_state_ci.minSampleShading = 1.0;
     pipe_ms_state_ci.pSampleMask = NULL;
 
-    sample_location_state.sampleLocationsInfo.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width - 1u;
+    sample_location_state.sampleLocationsInfo.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width + 1u;
 
     CreatePipelineHelper pipe1(*this);
     pipe1.InitState();
@@ -5343,7 +5343,7 @@ TEST_F(NegativeDynamicState, SampleLocationsEnable) {
     pipe1.CreateGraphicsPipeline();
 
     sample_location_state.sampleLocationsInfo.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width;
-    sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height - 1;
+    sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height + 1;
 
     CreatePipelineHelper pipe2(*this);
     pipe2.InitState();
