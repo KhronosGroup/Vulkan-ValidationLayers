@@ -87,4 +87,12 @@ class Instruction {
     small_vector<uint32_t, word_vector_length, uint32_t> words_;
     uint32_t result_id_index_ = 0;
     uint32_t type_id_index_ = 0;
+
+#ifndef NDEBUG
+    // Helping values to make debugging what is happening in a instruction easier
+    std::string opcode_;
+    // helps people new to using SPIR-V spec to understand Word()
+    uint32_t length_;
+    uint32_t words_debug_[12];
+#endif
 };

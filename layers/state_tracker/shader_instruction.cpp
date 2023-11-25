@@ -33,6 +33,14 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
     } else if (has_result) {
         result_id_index_ = 1;
     }
+
+#ifndef NDEBUG
+    opcode_ = std::string(string_SpvOpcode(Opcode()));
+    length_ = Length();
+    for (uint32_t i = 0; i < length_ && i < 12; i++) {
+        words_debug_[i] = words_[i];
+    }
+#endif
 }
 
 std::string Instruction::Describe() const {
