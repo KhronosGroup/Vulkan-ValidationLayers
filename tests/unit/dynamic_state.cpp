@@ -5682,15 +5682,18 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsGridSize) {
     vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
     vk::CmdSetSampleLocationsEnableEXT(m_commandBuffer->handle(), VK_TRUE);
 
-    sample_locations_info.sampleLocationsCount = 12u;
-    sample_locations_info.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width - 1u;
+    sample_locations_info.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width + 1u;
+    sample_locations_info.sampleLocationsCount =
+        sample_locations_info.sampleLocationGridSize.width * sample_locations_info.sampleLocationGridSize.height;
     vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-07485");
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
     sample_locations_info.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width;
-    sample_locations_info.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height - 1u;
+    sample_locations_info.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height + 1u;
+    sample_locations_info.sampleLocationsCount =
+        sample_locations_info.sampleLocationGridSize.width * sample_locations_info.sampleLocationGridSize.height;
     vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-07486");
