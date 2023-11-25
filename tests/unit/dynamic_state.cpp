@@ -5833,3 +5833,52 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamplesWithMSRTSS) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
+    TEST_DESCRIPTION("Use primitives generated query with dynamic rasterization stream");
+
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT xfb_features = vku::InitStructHelper();
+    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper(&xfb_features);
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper(&primitives_generated_features);
+    auto features2 = GetPhysicalDeviceFeatures2(eds3_features);
+    if (xfb_features.transformFeedback == VK_FALSE) {
+        GTEST_SKIP() << "transformFeedback not supported";
+    }
+    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
+        GTEST_SKIP() << "primitivesGeneratedQuery not supported";
+    }
+    if (eds3_features.extendedDynamicState3RasterizationStream == VK_FALSE) {
+        GTEST_SKIP() << "extendedDynamicState3RasterizationStream not supported";
+    }
+
+    primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams = VK_FALSE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    InitRenderTarget();
+
+    VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
+    qpci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
+    qpci.queryCount = 1;
+    vkt::QueryPool pg_query_pool(*m_device, qpci);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), pg_query_pool.handle(), 0u, 0u);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetRasterizationStreamEXT(m_commandBuffer->handle(), 1u);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-07481");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    vk::CmdEndQuery(m_commandBuffer->handle(), pg_query_pool.handle(), 0u);
+    m_commandBuffer->end();
+}
