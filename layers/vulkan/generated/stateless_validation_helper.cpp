@@ -18518,8 +18518,7 @@ bool StatelessValidation::PreCallValidateCreateCuModuleNVX(VkDevice device, cons
                                     "VUID-VkCuModuleCreateInfoNVX-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= ValidateArray(pCreateInfo_loc.dot(Field::dataSize), pCreateInfo_loc.dot(Field::pData), pCreateInfo->dataSize,
-                              &pCreateInfo->pData, true, true, "VUID-VkCuModuleCreateInfoNVX-dataSize-arraylength",
-                              "VUID-VkCuModuleCreateInfoNVX-pData-parameter");
+                              &pCreateInfo->pData, false, true, kVUIDUndefined, "VUID-VkCuModuleCreateInfoNVX-pData-parameter");
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -25111,15 +25110,13 @@ bool StatelessValidation::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkS
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+bool StatelessValidation::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                              VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, "VK_NV_low_latency2");
     skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
-    skip |=
-        ValidateRequiredPointer(loc.dot(Field::pTimingCount), pTimingCount, "VUID-vkGetLatencyTimingsNV-pTimingCount-parameter");
     skip |=
         ValidateStructType(loc.dot(Field::pLatencyMarkerInfo), "VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV", pLatencyMarkerInfo,
                            VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV, true,

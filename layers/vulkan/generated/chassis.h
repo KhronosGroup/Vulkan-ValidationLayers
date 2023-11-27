@@ -2000,7 +2000,7 @@ VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR sw
 VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
                                               const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo);
 
-VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo);
 
 VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo);
@@ -4395,9 +4395,9 @@ class ValidationObject {
         virtual bool PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {};
-        virtual bool PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const ErrorObject& error_obj) const { return false; };
-        virtual void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {};
-        virtual void PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {};
         virtual bool PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo, const RecordObject& record_obj) {};

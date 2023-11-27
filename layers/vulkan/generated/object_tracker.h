@@ -1346,8 +1346,8 @@ bool PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, co
 bool PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
                                        const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                        const ErrorObject& error_obj) const override;
-bool PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
-                                        VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                        const ErrorObject& error_obj) const override;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

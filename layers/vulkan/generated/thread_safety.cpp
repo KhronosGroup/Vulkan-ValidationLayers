@@ -7624,13 +7624,13 @@ void ThreadSafety::PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchain
     FinishReadObject(swapchain, record_obj.location);
 }
 
-void ThreadSafety::PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+void ThreadSafety::PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                     VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
     StartReadObject(swapchain, record_obj.location);
 }
 
-void ThreadSafety::PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+void ThreadSafety::PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                      VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(swapchain, record_obj.location);

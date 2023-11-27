@@ -339,6 +339,9 @@ static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvE
     {"SPV_KHR_cooperative_matrix", {0, nullptr, &DeviceExtensions::vk_khr_cooperative_matrix, ""}},
     {"SPV_ARM_core_builtins", {0, nullptr, &DeviceExtensions::vk_arm_shader_core_builtins, ""}},
     {"SPV_AMDX_shader_enqueue", {0, nullptr, &DeviceExtensions::vk_amdx_shader_enqueue, ""}},
+    {"SPV_HUAWEI_cluster_culling_shader", {0, nullptr, &DeviceExtensions::vk_huawei_cluster_culling_shader, ""}},
+    {"SPV_HUAWEI_subpass_shading", {0, nullptr, &DeviceExtensions::vk_huawei_subpass_shading, ""}},
+    {"SPV_NV_ray_tracing_motion_blur", {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing_motion_blur, ""}},
 };
 // clang-format on
 
@@ -961,6 +964,9 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_cooperative_matrix", "VK_KHR_cooperative_matrix"},
     {"SPV_ARM_core_builtins", "VK_ARM_shader_core_builtins"},
     {"SPV_AMDX_shader_enqueue", "VK_AMDX_shader_enqueue"},
+    {"SPV_HUAWEI_cluster_culling_shader", "VK_HUAWEI_cluster_culling_shader"},
+    {"SPV_HUAWEI_subpass_shading", "VK_HUAWEI_subpass_shading"},
+    {"SPV_NV_ray_tracing_motion_blur", "VK_NV_ray_tracing_motion_blur"},
     };
 
     // VUs before catch unknown extensions
