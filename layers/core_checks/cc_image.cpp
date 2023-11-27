@@ -1017,8 +1017,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         if (subpass_desc->pResolveAttachments) {
                             const uint32_t resolve_attachment =
                                 subpass_desc->pResolveAttachments[clear_desc->colorAttachment].attachment;
-                            external_format_resolve =
-                                GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0;
+                            if (resolve_attachment != VK_ATTACHMENT_UNUSED) {
+                                external_format_resolve =
+                                    GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0;
+                            }
                         }
                     }
                 }
