@@ -1,0 +1,59 @@
+// Copyright (c) 2023 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_ray_tracing : require
+
+#include "gpu_shaders_constants.h"
+
+layout(set = 0, binding = 0, std430) buffer inst_OutputBuffer {
+    uint flags;
+    uint written_count;
+    uint data[];
+} inst_output_buffer;
+
+// OpTraceRayKHR
+bool inst_op_trace_ray(const uint inst_num, const uvec4 stage_info, const uint ray_flags, const vec3 ray_origin,
+                       const float ray_tmin, const vec3 ray_direction, const float ray_tmax) {
+
+    bool valid = true;
+    uint error_operand;
+    uint error_code;
+    if (ray_tmin < 0) {
+        error_operand = uint(ray_tmin);
+        error_code = kInstErrorRayTracingRayTmin;
+        valid = false;
+    } else if (ray_tmax < 0) {
+        error_operand = uint(ray_tmax);
+        error_code = kInstErrorRayTracingRayTmax;
+        valid = false;
+    }
+
+    if (!valid) {
+        // Only touch buffer if need to write to it
+        uint rec_len = 9u;
+        uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
+        inst_output_buffer.data[write_pos + 0u] = rec_len;
+        inst_output_buffer.data[write_pos + 1u] = kLinkShaderId;
+        inst_output_buffer.data[write_pos + 2u] = inst_num;
+        inst_output_buffer.data[write_pos + 3u] = stage_info.x;
+        inst_output_buffer.data[write_pos + 4u] = stage_info.y;
+        inst_output_buffer.data[write_pos + 5u] = stage_info.z;
+        inst_output_buffer.data[write_pos + 6u] = stage_info.w;
+        inst_output_buffer.data[write_pos + 7u] = error_code;
+        inst_output_buffer.data[write_pos + 8u] = error_operand;
+    }
+    return valid;
+}

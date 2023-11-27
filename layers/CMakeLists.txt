@@ -96,6 +96,8 @@ elseif(MSVC)
     )
 endif()
 
+add_subdirectory(gpu_validation/spirv)
+
 add_library(vvl MODULE)
 
 target_sources(vvl PRIVATE
@@ -341,6 +343,7 @@ target_link_libraries(vvl PRIVATE
     SPIRV-Headers::SPIRV-Headers
     SPIRV-Tools-opt
     SPIRV-Tools-link
+    gpu_av_spirv
     VkLayer_utils
 )
 

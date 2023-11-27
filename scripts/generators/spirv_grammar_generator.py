@@ -29,11 +29,14 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         BaseGenerator.__init__(self)
 
         self.opcodes = dict()
+        self.debugOps = []
+        self.annotationOps = []
         self.atomicsOps = []
         self.groupOps = []
         self.imageGatherOps = []
         self.imageSampleOps = []
         self.imageFetchOps = []
+        self.typeOps = [] # OpType*
         self.storageClassList = [] # list of storage classes
         self.executionModelList = []
         self.executionModeList = []
@@ -127,6 +130,12 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     'sampledImageRefPosition' : 0,
                 }
 
+                if instruction['class'] == 'Debug':
+                    self.debugOps.append(opname)
+                if instruction['class'] == 'Annotation':
+                    # Google extensions are aliased now
+                    if opname not in ['OpDecorateStringGOOGLE', 'OpMemberDecorateStringGOOGLE']:
+                        self.annotationOps.append(opname)
                 if instruction['class'] == 'Atomic':
                     self.atomicsOps.append(opname)
                 if instruction['class'] == 'Non-Uniform':
@@ -137,6 +146,10 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     self.imageFetchOps.append(opname)
                 if re.search("OpImageSample.*", opname) is not None:
                     self.imageSampleOps.append(opname)
+                if re.search("OpType.*", opname) is not None:
+                    # Skip alias types
+                    if opname not in ['OpTypeAccelerationStructureNV']:
+                        self.typeOps.append(opname)
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
                         if operand['kind'] == 'IdResultType':
@@ -221,6 +234,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             #include <string>
             #include <spirv/unified1/spirv.hpp>
 
+            bool DebugOperation(uint32_t opcode);
+            bool AnnotationOperation(uint32_t opcode);
             bool AtomicOperation(uint32_t opcode);
             bool GroupOperation(uint32_t opcode);
 
@@ -246,7 +261,15 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             const char* string_SpvBuiltIn(uint32_t built_in);
             const char* string_SpvDim(uint32_t dim);
             std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
+
+            // All valid OpType*
+            enum class SpvType {
+                Empty = 0,
             ''')
+        for type in self.typeOps:
+            out.append(f'k{type[6:]},\n')
+        out.append("};")
+        out.append('SpvType GetSpvType(uint32_t opcode);')
         self.write("".join(out))
 
     def generateSource(self):
@@ -288,9 +311,35 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
         out.append('// clang-format on\n')
 
         # \n is not allowed in f-string until 3.12
+        debugCase = "\n".join([f"        case spv::{f}:" for f in self.debugOps])
+        annotationCase = "\n".join([f"        case spv::{f}:" for f in self.annotationOps])
         atomicCase = "\n".join([f"        case spv::{f}:" for f in self.atomicsOps])
         groupCase = "\n".join([f"        case spv::{f}:" for f in self.groupOps])
         out.append(f'''
+            bool DebugOperation(uint32_t opcode) {{
+                bool found = false;
+                switch (opcode) {{
+            {debugCase}
+                        found = true;
+                        break;
+                    default:
+                        break;
+                }}
+                return found;
+            }}
+
+            bool AnnotationOperation(uint32_t opcode) {{
+                bool found = false;
+                switch (opcode) {{
+            {annotationCase}
+                        found = true;
+                        break;
+                    default:
+                        break;
+                }}
+                return found;
+            }}
+
             // Any non supported operation will be covered with VUID 01090
             bool AtomicOperation(uint32_t opcode) {{
                 bool found = false;
@@ -549,4 +598,18 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
                 return ret;
             }}
             ''')
+
+        typeCase = "\n".join([f"case spv::{f}: type = SpvType::k{f[6:]};break;" for f in self.typeOps])
+        out.append(f'''
+            SpvType GetSpvType(uint32_t opcode) {{
+                SpvType type = SpvType::Empty;
+                switch (opcode) {{
+                    {typeCase}
+                    default:
+                        break;
+                }}
+                return type;
+            }}
+            ''')
+
         self.write("".join(out))

@@ -32,6 +32,11 @@ const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u*4u;
 
 #endif
 
+// Instead of having to create a variable and pass it in each time for every function call made, we use these values to map
+// constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime. (Similar to
+// Specialization Constant)
+const uint kLinkShaderId = 0x0DEAD001;
+
 // Common Stream Record Offsets
 //
 // The following are offsets to fields which are common to all records written
@@ -168,7 +173,10 @@ const int kInstErrorPreDrawValidate = 5;
 const int kInstErrorPreDispatchValidate = 6;
 const int kInstErrorBindlessDestroyed = 7;
 const int kInstErrorPreTraceRaysKhrValidate = 8;
-const int kInstErrorMax = 8;
+const int kInstErrorRayTracingRayTmin = 9;
+const int kInstErrorRayTracingRayTmax = 10;
+const int kInstErrorRayTracingHitKind = 11;
+const int kInstErrorMax = 11;
 
 // Direct Input Buffer Offsets
 //

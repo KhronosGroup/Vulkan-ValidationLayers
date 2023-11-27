@@ -528,6 +528,45 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
 };
 // clang-format on
 
+bool DebugOperation(uint32_t opcode) {
+    bool found = false;
+    switch (opcode) {
+        case spv::OpSourceContinued:
+        case spv::OpSource:
+        case spv::OpSourceExtension:
+        case spv::OpName:
+        case spv::OpMemberName:
+        case spv::OpString:
+        case spv::OpLine:
+        case spv::OpNoLine:
+        case spv::OpModuleProcessed:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
+
+bool AnnotationOperation(uint32_t opcode) {
+    bool found = false;
+    switch (opcode) {
+        case spv::OpDecorate:
+        case spv::OpMemberDecorate:
+        case spv::OpDecorationGroup:
+        case spv::OpGroupDecorate:
+        case spv::OpGroupMemberDecorate:
+        case spv::OpDecorateId:
+        case spv::OpDecorateString:
+        case spv::OpMemberDecorateString:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
+
 // Any non supported operation will be covered with VUID 01090
 bool AtomicOperation(uint32_t opcode) {
     bool found = false;
@@ -1640,6 +1679,84 @@ std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
     }
     if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
     return ret;
+}
+
+SpvType GetSpvType(uint32_t opcode) {
+    SpvType type = SpvType::Empty;
+    switch (opcode) {
+        case spv::OpTypeVoid:
+            type = SpvType::kVoid;
+            break;
+        case spv::OpTypeBool:
+            type = SpvType::kBool;
+            break;
+        case spv::OpTypeInt:
+            type = SpvType::kInt;
+            break;
+        case spv::OpTypeFloat:
+            type = SpvType::kFloat;
+            break;
+        case spv::OpTypeVector:
+            type = SpvType::kVector;
+            break;
+        case spv::OpTypeMatrix:
+            type = SpvType::kMatrix;
+            break;
+        case spv::OpTypeImage:
+            type = SpvType::kImage;
+            break;
+        case spv::OpTypeSampler:
+            type = SpvType::kSampler;
+            break;
+        case spv::OpTypeSampledImage:
+            type = SpvType::kSampledImage;
+            break;
+        case spv::OpTypeArray:
+            type = SpvType::kArray;
+            break;
+        case spv::OpTypeRuntimeArray:
+            type = SpvType::kRuntimeArray;
+            break;
+        case spv::OpTypeStruct:
+            type = SpvType::kStruct;
+            break;
+        case spv::OpTypePointer:
+            type = SpvType::kPointer;
+            break;
+        case spv::OpTypeFunction:
+            type = SpvType::kFunction;
+            break;
+        case spv::OpTypeForwardPointer:
+            type = SpvType::kForwardPointer;
+            break;
+        case spv::OpTypePipeStorage:
+            type = SpvType::kPipeStorage;
+            break;
+        case spv::OpTypeCooperativeMatrixKHR:
+            type = SpvType::kCooperativeMatrixKHR;
+            break;
+        case spv::OpTypeRayQueryKHR:
+            type = SpvType::kRayQueryKHR;
+            break;
+        case spv::OpTypeHitObjectNV:
+            type = SpvType::kHitObjectNV;
+            break;
+        case spv::OpTypeAccelerationStructureKHR:
+            type = SpvType::kAccelerationStructureKHR;
+            break;
+        case spv::OpTypeCooperativeMatrixNV:
+            type = SpvType::kCooperativeMatrixNV;
+            break;
+        case spv::OpTypeBufferSurfaceINTEL:
+            type = SpvType::kBufferSurfaceINTEL;
+            break;
+        case spv::OpTypeStructContinuedINTEL:
+            type = SpvType::kStructContinuedINTEL;
+            break;
+        default:
+            break;
+    }
+    return type;
 }
 
 // NOLINTEND

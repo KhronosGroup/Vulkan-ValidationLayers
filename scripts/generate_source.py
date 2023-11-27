@@ -343,6 +343,8 @@ def main(argv):
         'gpu_pre_draw_vert.h',
         'gpu_pre_trace_rays_rgen.h',
         'inst_functions_comp.h',
+        'inst_ray_tracing_runtime_rgen.h',
+        'inst_ray_tracing_runtime_rint.h',
         'gpu_inst_shader_hash.h'
     ]
 

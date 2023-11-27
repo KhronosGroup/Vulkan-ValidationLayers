@@ -29,6 +29,7 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
+#include "spirv/module.h"
 // Generated shaders
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
@@ -188,6 +189,22 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
             return false;
         }
     }
+
+    if (gpuav_settings.validate_ray_tracing_spirv) {
+        gpuav::spirv::Module module(new_pgm, unique_shader_id, desc_set_bind_index);
+
+        // currently only pass
+        module.RunPassRayTracingRuntime();
+
+        if (module.IsModified()) {
+            for (const auto info : module.link_info_) {
+                module.LinkFunction(info);
+            }
+            new_pgm.clear();
+            module.ToBinary(new_pgm);
+        }
+    }
+
     // (Maybe) validate the instrumented and linked shader
     if (validate_instrumented_shaders) {
         std::string instrumented_error;
@@ -691,7 +708,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     uint32_t push_constants[PreDrawResources::push_constant_words] = {};
     if (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
-        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR || 
+        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR ||
         command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV) {
         // Validate count buffer
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {

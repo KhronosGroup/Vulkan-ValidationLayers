@@ -57,6 +57,7 @@ const char *SETTING_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
 const char *SETTING_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
 const char *SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER = "validate_indirect_buffer";
+const char *SETTING_GPUAV_VALIDATE_RAY_TRACING_SPIRV = "validate_ray_tracing_spirv";
 const char *SETTING_GPUAV_VMA_LINEAR_OUTPUT = "vma_linear_output";
 const char *SETTING_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
 const char *SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
@@ -401,6 +402,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER)) {
         vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER,
                                 settings_data->gpuav_settings->validate_indirect_buffer);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_RAY_TRACING_SPIRV)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_RAY_TRACING_SPIRV,
+                                settings_data->gpuav_settings->validate_ray_tracing_spirv);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT)) {

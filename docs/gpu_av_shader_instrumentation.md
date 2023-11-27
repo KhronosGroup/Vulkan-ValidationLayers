@@ -3,6 +3,16 @@
 Shader instrumentation is the process of taking an existing SPIR-V file from the application and injecting additional SPIR-V instructions.
 When we can't statically determine the value that will be used in a shader, GPU-AV adds logic to detect the value and if it catches an invalid instruction, it will not actually execute it.
 
+## Expected behavior during error
+
+When we find an error in the SPIR-V at runtime there are 3 possible behaviour the layer can take
+
+1. Still execute the instruction as normal (chance it will crash/hang everything)
+2. Don't execute the instruction (works well if there is not return value to worry about)
+3. Try and call a "safe default" version of the instruction
+
+For things such as ray tracing, we decided to go with `2` as it would have the least side effects. The main goal is to make sure we get the error message to the user.
+
 ## How Descriptor Indexing is instrumented
 
 As an exaxmple, if the incoming shader was
@@ -103,9 +113,37 @@ The first step will be adding logic to wrap every call of this instruction to lo
 ```glsl
 if (inst_ray_query_initialize(/* copy of arguments */)) {
     rayQueryInitializeEXT(/* original arguments */)
-} else {
-    rayQueryInitializeEXT(/* safe arguments */); // fall-back default call
 }
 ```
 
 From here, we will use the same `spirv-link` flow to add the logic and link in where needed
+
+The SPIR-V before and after adding the conditional check looks like
+
+```swift
+// before
+// traceRayEXT(a, b, c)
+%L1 = OpLabel
+%value = OpLoad %x
+OpRayQueryInitializeKHR %value %param
+OpReturn
+
+
+// after
+// if (IsValid(a, b, c)) {
+//   traceRayEXT(a, b, c)
+// }
+
+%L1 = OpLabel
+%value = OpLoad %x // for simplicity, can stay hoisted out
+%compare = OpSomeCompareInstruction
+OpSelectionMerge %L3 None
+OpBranchConditional %compare %L2 %L3
+
+    %L2 = OpLabel
+    OpRayQueryInitializeKHR %value %param
+    OpBranch %L3
+
+%L3 = OpLabel
+OpReturn
+```

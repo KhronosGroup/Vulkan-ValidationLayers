@@ -435,6 +435,26 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
                     assert(false);
             }
         } break;
+
+        case kInstErrorRayTracingRayTmin: {
+            const uint32_t operand_value = debug_record[8];
+            strm << "OpTraceRayKHR operand RayTmin is " << float(operand_value) << ". ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06356";
+            error_found = true;
+        } break;
+        case kInstErrorRayTracingRayTmax: {
+            const uint32_t operand_value = debug_record[8];
+            strm << "OpTraceRayKHR operand RayTmax is " << float(operand_value) << ". ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06356";
+            error_found = true;
+        } break;
+        case kInstErrorRayTracingHitKind: {
+            const uint32_t operand_value = debug_record[8];
+            strm << "OpReportIntersectionKHR operand Hit Kind is " << operand_value << ". ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpReportIntersectionKHR-06998";
+            error_found = true;
+        } break;
+
 #if 0
         default: {
             strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";

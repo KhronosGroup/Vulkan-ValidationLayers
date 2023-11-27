@@ -1,7 +1,4 @@
-
-/* Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+/* Copyright (c) 2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +13,27 @@
  * limitations under the License.
  */
 #pragma once
-typedef struct {
-    bool validate_descriptors;
-    bool validate_indirect_buffer;
-    bool validate_ray_tracing_spirv;
-    bool vma_linear_output;
-    bool warn_on_robust_oob;
-    bool cache_instrumented_shaders;
-    bool select_instrumented_shaders;
-    uint32_t gpuav_max_buffer_device_addresses;
-} GpuAVSettings;
+
+#include <stdint.h>
+
+namespace gpuav {
+namespace spirv {
+
+// Functions name match those found in the GLSL for ease of searching
+enum class LinkFunctions {
+    inst_op_trace_ray,
+    inst_op_report_intersection,
+};
+
+struct LinkInfo {
+    // SPIR-V module to link in
+    const uint32_t* words;
+    const uint32_t word_count;
+
+    // Information about the function it has
+    LinkFunctions function;
+    uint32_t function_id;
+};
+
+}  // namespace spirv
+}  // namespace gpuav

@@ -29,6 +29,8 @@
 #include <string>
 #include <spirv/unified1/spirv.hpp>
 
+bool DebugOperation(uint32_t opcode);
+bool AnnotationOperation(uint32_t opcode);
 bool AtomicOperation(uint32_t opcode);
 bool GroupOperation(uint32_t opcode);
 
@@ -55,4 +57,32 @@ const char* string_SpvBuiltIn(uint32_t built_in);
 const char* string_SpvDim(uint32_t dim);
 std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
 
+// All valid OpType*
+enum class SpvType {
+    Empty = 0,
+    kVoid,
+    kBool,
+    kInt,
+    kFloat,
+    kVector,
+    kMatrix,
+    kImage,
+    kSampler,
+    kSampledImage,
+    kArray,
+    kRuntimeArray,
+    kStruct,
+    kPointer,
+    kFunction,
+    kForwardPointer,
+    kPipeStorage,
+    kCooperativeMatrixKHR,
+    kRayQueryKHR,
+    kHitObjectNV,
+    kAccelerationStructureKHR,
+    kCooperativeMatrixNV,
+    kBufferSurfaceINTEL,
+    kStructContinuedINTEL,
+};
+SpvType GetSpvType(uint32_t opcode);
 // NOLINTEND

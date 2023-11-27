@@ -86,6 +86,12 @@ khronos_validation.enables =
 # Enable draw/dispatch/traceRays indirect checking
 #khronos_validation.validate_indirect_buffer = true
 
+# Validate SPV_KHR_ray_tracing runtime values
+# =====================
+# <LayerIdentifier>.validate_ray_tracing_spirv
+# Does spirv-val style check on instruction operands that variables are not known until runtime
+#khronos_validation.validate_ray_tracing_spirv = true
+
 # Cache instrumented shaders rather than instrumenting them on every run
 # =====================
 # <LayerIdentifier>.use_instrumented_shader_cache

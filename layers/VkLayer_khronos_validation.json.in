@@ -910,6 +910,26 @@
                                             }
                                         },
                                         {
+                                            "key": "validate_ray_tracing_spirv",
+                                            "label": "Validate SPV_KHR_ray_tracing runtime values",
+                                            "description": "Does spirv-val style check on instruction operands that variables are not known until runtime",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
                                             "key": "use_instrumented_shader_cache",
                                             "label": "Cache instrumented shaders rather than instrumenting them on every run",
                                             "description": "Enable instrumented shader caching",
