@@ -215,7 +215,7 @@ used to make it obvious).
 VkImageSubresource subresource{};
 subresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
 VkSubresourceLayout layout{};
-m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-02271");
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-09433");
 vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
 m_errorMonitor->VerifyFound();
 ```

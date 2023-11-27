@@ -2238,7 +2238,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
         if ((aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
             (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
             const char *vuid =
-                is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-tiling-02271" : "VUID-vkGetImageSubresourceLayout-tiling-02271";
+                is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-tiling-09435" : "VUID-vkGetImageSubresourceLayout-tiling-09433";
             skip |=
                 LogError(vuid, image_state.image(), subresource_loc.dot(Field::aspectMask),
                          "(%s) must be VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.", string_VkImageAspectFlags(aspect_mask).c_str());
@@ -2279,7 +2279,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
 
             if (!is_valid) {
                 const char *vuid =
-                    is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-tiling-02271" : "VUID-vkGetImageSubresourceLayout-tiling-02271";
+                    is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-tiling-09435" : "VUID-vkGetImageSubresourceLayout-tiling-09433";
                 skip |= LogError(vuid, image_state.image(), subresource_loc.dot(Field::aspectMask),
                                  "is %s for image format %s, but drmFormatModifierPlaneCount is %" PRIu32 " (drmFormatModifier = %" PRIu64 ").",
                                  string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_state.createInfo.format),
@@ -2290,7 +2290,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
 
     if (image_state.IsExternalBuffer() && image_state.GetBoundMemoryStates().empty()) {
         const char *vuid =
-            is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-image-01895" : "VUID-vkGetImageSubresourceLayout-image-01895";
+            is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-image-09434" : "VUID-vkGetImageSubresourceLayout-image-09432";
         skip |= LogError(vuid, image_state.image(), subresource_loc,
                          "Attempt to query layout from an image created with "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType which has not yet been "
