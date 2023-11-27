@@ -1554,11 +1554,19 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);  // instead of enabling feature
+    AddOptionalExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper(&mesh_shader_features);
+    bool mesh_shader_enabled = false;
     if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
-        GetPhysicalDeviceFeatures2(features13);
+        GetPhysicalDeviceFeatures2(mesh_shader_features);
+        mesh_shader_enabled = IsExtensionsEnabled(VK_EXT_MESH_SHADER_EXTENSION_NAME) && features13.maintenance4;
+        if (mesh_shader_enabled) {
+            mesh_shader_features.multiviewMeshShader = VK_FALSE;
+            mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+        }
     }
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -1572,7 +1580,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     props.limits.maxDrawIndirectCount = 1;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState(nullptr, features13.dynamicRendering ? (void *)&features13 : nullptr));
+    RETURN_IF_SKIP(InitState(nullptr, (features13.dynamicRendering || mesh_shader_enabled) ? (void *)&features13 : nullptr));
     InitRenderTarget();
 
     vkt::Buffer draw_buffer(*m_device, 2 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -1624,6 +1632,49 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         m_commandBuffer->end();
         m_commandBuffer->QueueCommandBuffer();
         ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (mesh_shader_enabled) {
+        char const *mesh_shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3, max_primitives = 1) out;
+        layout(triangles) out;
+        struct Task {
+          uint baseID;
+        };
+        taskPayloadSharedEXT Task IN;
+        void main() {})glsl";
+        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
+                                nullptr, "main", true);
+        CreatePipelineHelper mesh_pipe(*this);
+        mesh_pipe.InitState();
+        mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+        mesh_pipe.CreateGraphicsPipeline();
+        vkt::Buffer mesh_draw_buffer(*m_device, 2 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        VkDrawMeshTasksIndirectCommandEXT *mesh_draw_ptr =
+            static_cast<VkDrawMeshTasksIndirectCommandEXT *>(mesh_draw_buffer.memory().map());
+        mesh_draw_ptr->groupCountX = 0;
+        mesh_draw_ptr->groupCountY = 0;
+        mesh_draw_ptr->groupCountZ = 0;
+        mesh_draw_buffer.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717");
+        count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+        *count_ptr = 2;
+        count_buffer.memory().unmap();
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
+        vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), mesh_draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                             sizeof(VkDrawMeshTasksIndirectCommandEXT));
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_default_queue);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1698,9 +1749,23 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     TEST_DESCRIPTION("GPU validation: Validate Draw*IndirectCount countBuffer contents");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper(&mesh_shader_features);
+    bool mesh_shader_enabled = false;
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        GetPhysicalDeviceFeatures2(mesh_shader_features);
+        mesh_shader_enabled = IsExtensionsEnabled(VK_EXT_MESH_SHADER_EXTENSION_NAME) && features13.maintenance4;
+        if (mesh_shader_enabled) {
+            mesh_shader_features.multiviewMeshShader = VK_FALSE;
+            mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+        }
+    }
+    RETURN_IF_SKIP(InitState(nullptr, mesh_shader_enabled ? &features13 : nullptr));
     InitRenderTarget();
 
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -1799,6 +1864,63 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
+    if (mesh_shader_enabled) {
+        char const *mesh_shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3, max_primitives = 1) out;
+        layout(triangles) out;
+        struct Task {
+          uint baseID;
+        };
+        taskPayloadSharedEXT Task IN;
+        void main() {})glsl";
+        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
+                                nullptr, "main", +true);
+        CreatePipelineHelper mesh_pipe(*this);
+        mesh_pipe.InitState();
+        mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+        mesh_pipe.CreateGraphicsPipeline();
+        vkt::Buffer mesh_draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        VkDrawMeshTasksIndirectCommandEXT *mesh_draw_ptr =
+            +static_cast<VkDrawMeshTasksIndirectCommandEXT *>(mesh_draw_buffer.memory().map());
+        mesh_draw_ptr->groupCountX = 0;
+        mesh_draw_ptr->groupCountY = 0;
+        mesh_draw_ptr->groupCountZ = 0;
+        mesh_draw_buffer.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07098");
+        count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+        *count_ptr = 1;
+        count_buffer.memory().unmap();
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
+        vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), mesh_draw_buffer.handle(), 8, count_buffer.handle(), 0, 1,
+                                             sizeof(VkDrawMeshTasksIndirectCommandEXT));
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_default_queue);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099");
+        count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+        *count_ptr = 2;
+        count_buffer.memory().unmap();
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
+        vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), mesh_draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
+                                             sizeof(VkDrawMeshTasksIndirectCommandEXT));
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_default_queue);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
