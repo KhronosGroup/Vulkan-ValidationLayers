@@ -161,10 +161,6 @@ elseif(MSVC)
     add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
 endif()
 
-if (BUILD_LAYER_SUPPORT_FILES)
-    message(WARNING "BUILD_LAYER_SUPPORT_FILES is deprecated! See https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/18")
-endif()
-
 add_subdirectory(layers)
 
 option(BUILD_TESTS "Build the tests")
