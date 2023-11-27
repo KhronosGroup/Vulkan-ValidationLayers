@@ -167,11 +167,10 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         initiator << core->FormatHandle(other_queue);
                         objlist.add(other_queue);
                     }
-                    skip |= core->LogError(kVUID_Core_DrawState_QueueForwardProgress, objlist, signal_semaphore_loc,
-                                           "is signaling %s (%s) that was previously "
-                                           "signaled by %s but has not since been waited on by any queue.",
-                                           core->FormatHandle(queue).c_str(), core->FormatHandle(semaphore).c_str(),
-                                           initiator.str().c_str());
+                    skip |= core->LogError(
+                        kVUID_Core_DrawState_QueueForwardProgress, objlist, signal_semaphore_loc,
+                        "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
+                        core->FormatHandle(semaphore).c_str(), core->FormatHandle(queue).c_str(), initiator.str().c_str());
                 } else {
                     binary_signaling_state[semaphore] = true;
                 }
