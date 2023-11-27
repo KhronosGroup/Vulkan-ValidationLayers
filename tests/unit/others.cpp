@@ -2270,13 +2270,13 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
 
-    {
+    if (DeviceExtensionSupported(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME)) {
         VkDevice testDevice;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04896");
         vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
         m_errorMonitor->VerifyFound();
     }
-    {
+    if (DeviceExtensionSupported(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)) {
         pd_features2.pNext = &shader_atomic_float_feature;
 
         VkDevice testDevice;
@@ -2285,7 +2285,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
         vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
         m_errorMonitor->VerifyFound();
     }
-    {
+    if (DeviceExtensionSupported(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME)) {
         pd_features2.pNext = &shader_atomic_float_feature2;
 
         VkDevice testDevice;
