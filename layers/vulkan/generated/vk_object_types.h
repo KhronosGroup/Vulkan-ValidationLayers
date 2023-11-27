@@ -181,8 +181,8 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,   // kVulkanObjectTypeAccelerationStructureNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypePerformanceConfigurationINTEL
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectCommandsLayoutNV
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeCudaModuleNV
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeCudaFunctionNV
+    VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_MODULE_NV_EXT,              // kVulkanObjectTypeCudaModuleNV
+    VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV_EXT,            // kVulkanObjectTypeCudaFunctionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,  // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeMicromapEXT
@@ -482,6 +482,10 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
             return VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV:
             return VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT;
+        case VK_OBJECT_TYPE_CUDA_MODULE_NV:
+            return VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_MODULE_NV_EXT;
+        case VK_OBJECT_TYPE_CUDA_FUNCTION_NV:
+            return VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV_EXT;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
             return VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT;
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA:
@@ -1038,7 +1042,7 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectCommandsLayoutNV> {
 template <>
 struct VkHandleInfo<VkCudaModuleNV> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeCudaModuleNV;
-    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_MODULE_NV_EXT;
     static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_CUDA_MODULE_NV;
     static const char* Typename() { return "VkCudaModuleNV"; }
 };
@@ -1050,7 +1054,7 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeCudaModuleNV> {
 template <>
 struct VkHandleInfo<VkCudaFunctionNV> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeCudaFunctionNV;
-    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV_EXT;
     static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_CUDA_FUNCTION_NV;
     static const char* Typename() { return "VkCudaFunctionNV"; }
 };

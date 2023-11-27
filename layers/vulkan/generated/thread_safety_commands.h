@@ -3901,11 +3901,11 @@ void PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, 
 void PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                       const RecordObject& record_obj) override;
 
-void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
-                                      VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) override;
+void PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                      const RecordObject& record_obj) override;
 
-void PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
-                                       VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) override;
+void PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
+                                       const RecordObject& record_obj) override;
 
 void PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                          const RecordObject& record_obj) override;

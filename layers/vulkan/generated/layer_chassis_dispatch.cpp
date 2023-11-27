@@ -8530,13 +8530,11 @@ void DispatchSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const
     layer_data->device_dispatch_table.SetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
 }
 
-void DispatchGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
-                                 VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+void DispatchGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
     { swapchain = layer_data->Unwrap(swapchain); }
-    layer_data->device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+    layer_data->device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
 }
 
 void DispatchQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {

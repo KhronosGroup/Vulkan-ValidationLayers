@@ -13510,58 +13510,87 @@ void safe_VkLatencyTimingsFrameReportNV::initialize(const safe_VkLatencyTimingsF
 
 safe_VkGetLatencyMarkerInfoNV::safe_VkGetLatencyMarkerInfoNV(const VkGetLatencyMarkerInfoNV* in_struct,
                                                              [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
-    : sType(in_struct->sType), pTimings(nullptr) {
+    : sType(in_struct->sType), timingCount(in_struct->timingCount), pTimings(nullptr) {
     if (copy_pnext) {
         pNext = SafePnextCopy(in_struct->pNext, copy_state);
     }
-    if (in_struct->pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(in_struct->pTimings);
+    if (timingCount && in_struct->pTimings) {
+        pTimings = new safe_VkLatencyTimingsFrameReportNV[timingCount];
+        for (uint32_t i = 0; i < timingCount; ++i) {
+            pTimings[i].initialize(&in_struct->pTimings[i]);
+        }
+    }
 }
 
 safe_VkGetLatencyMarkerInfoNV::safe_VkGetLatencyMarkerInfoNV()
-    : sType(VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV), pNext(nullptr), pTimings(nullptr) {}
+    : sType(VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV), pNext(nullptr), timingCount(), pTimings(nullptr) {}
 
 safe_VkGetLatencyMarkerInfoNV::safe_VkGetLatencyMarkerInfoNV(const safe_VkGetLatencyMarkerInfoNV& copy_src) {
     sType = copy_src.sType;
+    timingCount = copy_src.timingCount;
     pTimings = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(*copy_src.pTimings);
+    if (timingCount && copy_src.pTimings) {
+        pTimings = new safe_VkLatencyTimingsFrameReportNV[timingCount];
+        for (uint32_t i = 0; i < timingCount; ++i) {
+            pTimings[i].initialize(&copy_src.pTimings[i]);
+        }
+    }
 }
 
 safe_VkGetLatencyMarkerInfoNV& safe_VkGetLatencyMarkerInfoNV::operator=(const safe_VkGetLatencyMarkerInfoNV& copy_src) {
     if (&copy_src == this) return *this;
 
-    if (pTimings) delete pTimings;
+    if (pTimings) delete[] pTimings;
     FreePnextChain(pNext);
 
     sType = copy_src.sType;
+    timingCount = copy_src.timingCount;
     pTimings = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(*copy_src.pTimings);
+    if (timingCount && copy_src.pTimings) {
+        pTimings = new safe_VkLatencyTimingsFrameReportNV[timingCount];
+        for (uint32_t i = 0; i < timingCount; ++i) {
+            pTimings[i].initialize(&copy_src.pTimings[i]);
+        }
+    }
 
     return *this;
 }
 
 safe_VkGetLatencyMarkerInfoNV::~safe_VkGetLatencyMarkerInfoNV() {
-    if (pTimings) delete pTimings;
+    if (pTimings) delete[] pTimings;
     FreePnextChain(pNext);
 }
 
 void safe_VkGetLatencyMarkerInfoNV::initialize(const VkGetLatencyMarkerInfoNV* in_struct,
                                                [[maybe_unused]] PNextCopyState* copy_state) {
-    if (pTimings) delete pTimings;
+    if (pTimings) delete[] pTimings;
     FreePnextChain(pNext);
     sType = in_struct->sType;
+    timingCount = in_struct->timingCount;
     pTimings = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
-    if (in_struct->pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(in_struct->pTimings);
+    if (timingCount && in_struct->pTimings) {
+        pTimings = new safe_VkLatencyTimingsFrameReportNV[timingCount];
+        for (uint32_t i = 0; i < timingCount; ++i) {
+            pTimings[i].initialize(&in_struct->pTimings[i]);
+        }
+    }
 }
 
 void safe_VkGetLatencyMarkerInfoNV::initialize(const safe_VkGetLatencyMarkerInfoNV* copy_src,
                                                [[maybe_unused]] PNextCopyState* copy_state) {
     sType = copy_src->sType;
+    timingCount = copy_src->timingCount;
     pTimings = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
-    if (copy_src->pTimings) pTimings = new safe_VkLatencyTimingsFrameReportNV(*copy_src->pTimings);
+    if (timingCount && copy_src->pTimings) {
+        pTimings = new safe_VkLatencyTimingsFrameReportNV[timingCount];
+        for (uint32_t i = 0; i < timingCount; ++i) {
+            pTimings[i].initialize(&copy_src->pTimings[i]);
+        }
+    }
 }
 
 safe_VkLatencySubmissionPresentIdNV::safe_VkLatencySubmissionPresentIdNV(const VkLatencySubmissionPresentIdNV* in_struct,

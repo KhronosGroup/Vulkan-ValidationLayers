@@ -3402,7 +3402,6 @@ const char* String(Field field) {
     {"pTimes", 7},
     {"pTimestampInfos", 16},
     {"pTimestamps", 12},
-    {"pTimingCount", 13},
     {"pTimings", 9},
     {"pTokens", 8},
     {"pToolCount", 11},
@@ -4119,6 +4118,7 @@ const char* String(Field field) {
     {"timestampCount", 15},
     {"timestampPeriod", 16},
     {"timestampValidBits", 19},
+    {"timingCount", 12},
     {"tokenCount", 11},
     {"tokenType", 10},
     {"topology", 9},
@@ -4712,7 +4712,6 @@ bool IsFieldPointer(Field field) {
     case Field::pTimes:
     case Field::pTimestampInfos:
     case Field::pTimestamps:
-    case Field::pTimingCount:
     case Field::pTimings:
     case Field::pTokens:
     case Field::pToolCount:

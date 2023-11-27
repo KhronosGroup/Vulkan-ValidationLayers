@@ -1657,7 +1657,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubLatencySleepNV(VkDevice device, VkSwap
 }
 static VKAPI_ATTR void VKAPI_CALL StubSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
                                                          const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
-static VKAPI_ATTR void VKAPI_CALL StubGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+static VKAPI_ATTR void VKAPI_CALL StubGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                           VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {}
 static VKAPI_ATTR void VKAPI_CALL StubQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,

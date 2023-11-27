@@ -16033,25 +16033,25 @@ VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR sw
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetLatencyTimingsNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetLatencyTimingsNV]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, error_obj);
+        skip |= intercept->PreCallValidateGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo, error_obj);
         if (skip) return;
     }
     RecordObject record_obj(vvl::Func::vkGetLatencyTimingsNV);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetLatencyTimingsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, record_obj);
+        intercept->PreCallRecordGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
-    DispatchGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo);
+    DispatchGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetLatencyTimingsNV]) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordGetLatencyTimingsNV(device, swapchain, pTimingCount, pLatencyMarkerInfo, record_obj);
+        intercept->PostCallRecordGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
 }
 

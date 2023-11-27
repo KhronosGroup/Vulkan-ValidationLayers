@@ -7150,7 +7150,7 @@ bool ObjectLifetimes::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapc
     return skip;
 }
 
-bool ObjectLifetimes::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
+bool ObjectLifetimes::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                          VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
