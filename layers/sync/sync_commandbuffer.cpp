@@ -127,10 +127,10 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
     return out.str();
 }
 
-std::string CommandBufferAccessContext::FormatUsage(const ResourceFirstAccess &access) const {
+std::string CommandBufferAccessContext::FormatUsage(const char *usage_string, const ResourceFirstAccess &access) const {
     std::stringstream out;
     assert(access.usage_info);
-    out << "(recorded_usage: " << access.usage_info->name;
+    out << "(" << usage_string << ": " << access.usage_info->name;
     out << ", " << FormatUsage(access.tag) << ")";
     return out.str();
 }
@@ -1040,13 +1040,13 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         out << record.alt_usage.Formatter(formatter.sync_state);
     } else {
         out << "command: " << vvl::String(record.command);
-        out << ", seq_no: " << record.seq_num;
-        if (record.sub_command != 0) {
-            out << ", subcmd: " << record.sub_command;
-        }
         // Note: ex_cb_state set to null forces output of record.cb_state
         if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
             out << ", " << SyncNodeFormatter(formatter.sync_state, record.cb_state);
+        }
+        out << ", seq_no: " << record.seq_num;
+        if (record.sub_command != 0) {
+            out << ", subcmd: " << record.sub_command;
         }
         for (const auto &named_handle : record.handles) {
             out << "," << named_handle.Formatter(formatter.sync_state);

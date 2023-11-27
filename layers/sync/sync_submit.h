@@ -254,6 +254,7 @@ class QueueBatchContext : public CommandExecutionContext {
     const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
     VkQueueFlags GetQueueFlags() const;
     QueueId GetQueueId() const override;
+    ExecutionType Type() const override { return kSubmitted; }
 
     void SetupBatchTags(const ResourceUsageRange &tag_range);
     void SetupBatchTags();

@@ -175,6 +175,24 @@ class CommandExecutionContext : public SyncValidationInfo {
     CommandExecutionContext() : SyncValidationInfo(nullptr) {}
     CommandExecutionContext(const SyncValidator *sync_validator) : SyncValidationInfo(sync_validator) {}
     virtual ~CommandExecutionContext() = default;
+
+    // Are imported command buffers Submitted (QueueBatchContext), or Executed (CommandBufferAccessContext)
+    enum ExecutionType : int {
+        kExecuted = 0,  // Recorded contexts are integrated into context during vkCmdExecuteCommands
+        kSubmitted = 1  // Recorded contexts are integrated into context during vkQueueSubmit (etc.)
+    };
+
+    virtual ExecutionType Type() const = 0;
+
+    const char *ExecutionTypeString() {
+        const char *type_string[] = {"Executed", "Submitted"};
+        return type_string[Type()];
+    }
+    const char *ExecutionUsageString() {
+        const char *usage_string[] = {"executed_usage", "submitted_usage"};
+        return usage_string[Type()];
+    }
+
     virtual AccessContext *GetCurrentAccessContext() = 0;
     virtual SyncEventsContext *GetCurrentEventsContext() = 0;
     virtual const AccessContext *GetCurrentAccessContext() const = 0;
@@ -246,7 +264,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void Reset();
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
-    std::string FormatUsage(const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
+    std::string FormatUsage(const char *usage_string,
+                            const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
@@ -288,6 +307,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     ResourceUsageTag NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand);
     ResourceUsageTag NextSubcommandTag(vvl::Func command, NamedHandle &&handle, ResourceUsageRecord::SubcommandType subcommand);
 
+    ExecutionType Type() const override { return kExecuted; }
     ResourceUsageTag GetTagLimit() const override { return access_log_->size(); }
     VulkanTypedHandle Handle() const override {
         if (cb_state_) {
