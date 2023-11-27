@@ -1218,11 +1218,12 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range
             const SyncValidator &sync_state = exec_context_.GetSyncState();
             const auto handle = exec_context_.Handle();
             const auto recorded_handle = recorded_context_.GetCBState().commandBuffer();
-            skip = sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), handle, error_obj_.location,
-                                       "Hazard %s for entry %" PRIu32 ", %s, Recorded access info %s. Access info %s.",
-                                       string_SyncHazard(hazard.Hazard()), index_, sync_state.FormatHandle(recorded_handle).c_str(),
-                                       recorded_context_.FormatUsage(*hazard.RecordedAccess()).c_str(),
-                                       recorded_context_.FormatHazard(hazard).c_str());
+            skip = sync_state.LogError(
+                string_SyncHazardVUID(hazard.Hazard()), handle, error_obj_.location,
+                "Hazard %s for entry %" PRIu32 ", %s, %s access info %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                index_, sync_state.FormatHandle(recorded_handle).c_str(), exec_context_.ExecutionTypeString(),
+                recorded_context_.FormatUsage(exec_context_.ExecutionUsageString(), *hazard.RecordedAccess()).c_str(),
+                exec_context_.FormatHazard(hazard).c_str());
         }
     }
     return skip;
