@@ -1435,7 +1435,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     }
 
     const auto *pipe = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
-    if (!pipe) {
+    if (!pipe && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-06233", commandBuffer, error_obj.location,
                          "No graphics pipeline has been bound yet.");
     } else if (pipe->pre_raster_state) {

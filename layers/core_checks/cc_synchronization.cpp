@@ -561,7 +561,7 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
     bool skip = false;
     if (sema_node) {
         skip |= ValidateObjectNotInUse(sema_node.get(), error_obj.location.dot(Field::semaphore),
-                                       "VUID-vkDestroySemaphore-semaphore-01137");
+                                       "VUID-vkDestroySemaphore-semaphore-05149");
     }
     return skip;
 }

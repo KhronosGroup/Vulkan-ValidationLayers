@@ -143,7 +143,7 @@ TEST_F(NegativeAndroidHardwareBuffer, FetchUnboundImageInfo) {
     VkImageSubresource sub_rsrc = {};
     sub_rsrc.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     VkSubresourceLayout sub_layout = {};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-image-01895");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-image-09432");
     vk::GetImageSubresourceLayout(device(), image.handle(), &sub_rsrc, &sub_layout);
     m_errorMonitor->VerifyFound();
 

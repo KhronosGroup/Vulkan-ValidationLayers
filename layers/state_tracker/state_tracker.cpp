@@ -1238,7 +1238,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                 auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (image_state) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
-                    // See: VUID-vkGetImageSubresourceLayout-image-01895
+                    // See: VUID-vkGetImageSubresourceLayout-image-09432
                     if (!image_state->fragment_encoder) {
                         image_state->fragment_encoder =
                             std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
@@ -1258,7 +1258,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                 auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (image_state) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
-                    // See: VUID-vkGetImageSubresourceLayout-image-01895
+                    // See: VUID-vkGetImageSubresourceLayout-image-09432
                     if (!image_state->fragment_encoder) {
                         image_state->fragment_encoder =
                             std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
@@ -3190,7 +3190,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
     auto image_state = Get<IMAGE_STATE>(bindInfo.image);
     if (image_state) {
         // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
-        // See: VUID-vkGetImageSubresourceLayout-image-01895
+        // See: VUID-vkGetImageSubresourceLayout-image-09432
         image_state->fragment_encoder =
             std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
         const auto swapchain_info = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
