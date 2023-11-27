@@ -4974,6 +4974,7 @@ TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
     TEST_DESCRIPTION("Try to copy a descriptor set where the src and dst have different update after bind flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();

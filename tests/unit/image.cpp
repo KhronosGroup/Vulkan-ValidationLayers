@@ -5084,6 +5084,7 @@ TEST_F(NegativeImage, ImageViewMinLod) {
 
 TEST_F(NegativeImage, ImageViewMinLodFeature) {
     TEST_DESCRIPTION("Checks for image view minimum level of detail feature enabled.");
+    AddRequiredExtensions(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkImageObj image(m_device);
     // Initialize image with transfer source usage

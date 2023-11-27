@@ -100,6 +100,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components for Unknown for OpTypeImage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
         GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";

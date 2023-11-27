@@ -1440,6 +1440,7 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
 TEST_F(NegativeSampler, BorderColorSwizzle) {
     TEST_DESCRIPTION("Validate vkCreateSampler with VkSamplerBorderColorComponentMappingCreateInfoEXT");
 
+    AddRequiredExtensions(VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState());
 
