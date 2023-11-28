@@ -1908,3 +1908,98 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits2) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7024
+    TEST_DESCRIPTION("Ownership transfer from transfer to graphics queue");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is needed";
+    }
+    vkt::CommandPool transfer_cmd_pool(*m_device, transfer_queue->family_index);
+    vkt::CommandBuffer transfer_command_buffer(*m_device, transfer_cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // Tranfer queue: copy to image and issue release operation
+    {
+        VkBufferImageCopy2 region = vku::InitStructHelper();
+        region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        region.imageExtent = {64, 64, 1};
+
+        VkCopyBufferToImageInfo2 copy_info = vku::InitStructHelper();
+        copy_info.srcBuffer = buffer;
+        copy_info.dstImage = image;
+        copy_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        copy_info.regionCount = 1;
+        copy_info.pRegions = &region;
+
+        VkImageMemoryBarrier2 release_barrier = vku::InitStructHelper();
+        release_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+        release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+
+        // Not needed, use semaphore to estabish execution dependency
+        release_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+
+        // Visibility operation is not performed for release operation
+        release_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+
+        release_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        release_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        release_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+        release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+        release_barrier.image = image;
+        release_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+        VkDependencyInfo release_dependency = vku::InitStructHelper();
+        release_dependency.imageMemoryBarrierCount = 1;
+        release_dependency.pImageMemoryBarriers = &release_barrier;
+
+        transfer_command_buffer.begin();
+        vk::CmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
+        vk::CmdPipelineBarrier2(transfer_command_buffer, &release_dependency);
+        transfer_command_buffer.end();
+
+        transfer_queue->Submit2(transfer_command_buffer, vkt::Signal(semaphore));
+    }
+
+    // Graphics queue: wait for transfer queue and issue acquire operation
+    {
+        VkImageMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+        // Not needed, use semaphore to estabish execution dependency
+        acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+
+        // Availability operation is not performed for release operation
+        acquire_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+
+        acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        acquire_barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+        acquire_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        acquire_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        acquire_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+        acquire_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+        acquire_barrier.image = image;
+        acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+        VkDependencyInfo acquire_dependency = vku::InitStructHelper();
+        acquire_dependency.imageMemoryBarrierCount = 1;
+        acquire_dependency.pImageMemoryBarriers = &acquire_barrier;
+
+        m_command_buffer.begin();
+        vk::CmdPipelineBarrier2(m_command_buffer, &acquire_dependency);
+        m_command_buffer.end();
+
+        m_default_queue->Submit2(m_command_buffer, vkt::Wait(semaphore));
+    }
+    m_device->Wait();
+}
