@@ -5403,6 +5403,9 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     if (!eds3_features.extendedDynamicState3SampleMask) {
         GTEST_SKIP() << "extendedDynamicState3SampleMask not supported";
     }
+    if (!eds3_features.extendedDynamicState3RasterizationSamples) {
+        GTEST_SKIP() << "extendedDynamicState3RasterizationSamples not supported";
+    }
     RETURN_IF_SKIP(InitState(nullptr, &eds3_features));
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
