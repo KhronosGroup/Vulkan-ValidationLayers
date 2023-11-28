@@ -559,6 +559,10 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
 
         for (uint32_t i = 0; i < descriptor_buffer_properties.maxDescriptorBufferBindings + 1; i++) {
             binding_infos.push_back(dbbi);
+            if (descriptor_buffer_properties.bufferlessPushDescriptors == VK_FALSE && i > 0) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                     "VUID-VkDescriptorBufferBindingInfoEXT-bufferlessPushDescriptors-08056");
+            }
         }
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -593,10 +597,17 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     vkt::Buffer d_buffer2(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
     if (descriptor_buffer_properties.descriptorBufferOffsetAlignment != 1) {
+        VkDescriptorBufferBindingPushDescriptorBufferHandleEXT dbbpdbh = vku::InitStructHelper();
+        dbbpdbh.buffer = d_buffer2.handle();
+
         VkDescriptorBufferBindingInfoEXT dbbi2 = vku::InitStructHelper();
         dbbi2.address = d_buffer2.address() + 1;  // make alignment bad
         dbbi2.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        if (descriptor_buffer_properties.bufferlessPushDescriptors == VK_FALSE) {
+            dbbi2.usage |= VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+            dbbi2.pNext = &dbbpdbh;
+        }
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-address-08057");
         vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
@@ -623,6 +634,10 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         m_errorMonitor->VerifyFound();
 
         dbbi2.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+        if (descriptor_buffer_properties.bufferlessPushDescriptors == VK_FALSE) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-VkDescriptorBufferBindingInfoEXT-bufferlessPushDescriptors-08056");
+        }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08124");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
         vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
