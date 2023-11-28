@@ -409,6 +409,75 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                  "all swapchain images must have the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and "
                                  "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT flags both set.");
             }
+            if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+                skip |= LogError(vuid, device, create_info_loc.dot(Field::imageType), "must be VK_IMAGE_TYPE_2D.");
+            }
+            if (pCreateInfo->format != swapchain_state->createInfo.imageFormat) {
+                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                 "was created with format %s which doesn't match pCreateInfo->format %s.",
+                                 string_VkFormat(swapchain_state->createInfo.imageFormat), string_VkFormat(pCreateInfo->format));
+            }
+            if (pCreateInfo->extent.width != swapchain_state->createInfo.imageExtent.width ||
+                pCreateInfo->extent.height != swapchain_state->createInfo.imageExtent.height || pCreateInfo->extent.depth != 1u) {
+                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                 "was created with extent (%" PRIu32 ", %" PRIu32
+                                 ", 1) which doesn't match pCreateInfo->extent (%" PRIu32 ", %" PRIu32 ", 1).",
+                                 swapchain_state->createInfo.imageExtent.width, swapchain_state->createInfo.imageExtent.height,
+                                 pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->extent.depth);
+            }
+            if (pCreateInfo->mipLevels != 1u) {
+                skip |= LogError(vuid, device, create_info_loc.dot(Field::mipLevels), "must be 1.");
+            }
+            if (pCreateInfo->arrayLayers != swapchain_state->createInfo.imageArrayLayers) {
+                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                 "was created with imageArrayLayers %" PRIu32
+                                 " which doesn't match pCreateInfo->arrayLayers %" PRIu32 ".",
+                                 swapchain_state->createInfo.imageArrayLayers, pCreateInfo->arrayLayers);
+            }
+            if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError(vuid, device, create_info_loc.dot(Field::samples), "must be VK_SAMPLE_COUNT_1_BIT.");
+            }
+            if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
+                skip |= LogError(vuid, device, create_info_loc.dot(Field::tiling), "must be VK_IMAGE_TILING_OPTIMAL.");
+            }
+            if (pCreateInfo->usage != swapchain_state->createInfo.imageUsage) {
+                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                 "was created with imageUsage %s which doesn't match pCreateInfo->usage %s.",
+                                 string_VkImageUsageFlags(swapchain_state->createInfo.imageUsage).c_str(),
+                                 string_VkImageUsageFlags(pCreateInfo->usage).c_str());
+            }
+            if (pCreateInfo->sharingMode != swapchain_state->createInfo.imageSharingMode) {
+                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                 "was created with imageSharingMode %s which doesn't match pCreateInfo->sharingMode %s.",
+                                 string_VkSharingMode(swapchain_state->createInfo.imageSharingMode),
+                                 string_VkSharingMode(pCreateInfo->sharingMode));
+            }
+            if (pCreateInfo->queueFamilyIndexCount != swapchain_state->createInfo.queueFamilyIndexCount) {
+                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                 "was created with queueFamilyIndexCount %" PRIu32
+                                 " which doesn't match pCreateInfo->queueFamilyIndexCount %" PRIu32 ".",
+                                 swapchain_state->createInfo.queueFamilyIndexCount, pCreateInfo->queueFamilyIndexCount);
+            } else {
+                for (uint32_t i = 0; i < pCreateInfo->queueFamilyIndexCount; ++i) {
+                    bool found = false;
+                    for (uint32_t j = 0; j < pCreateInfo->queueFamilyIndexCount; ++j) {
+                        if (i != j && pCreateInfo->pQueueFamilyIndices[j] == swapchain_state->createInfo.pQueueFamilyIndices[i]) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        skip |=
+                            LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                     "was created with pQueueFamilyIndices containing index %" PRIu32
+                                     " which is not included in pCreateInfo->pQueueFamilyIndices.",
+                                     i);
+                    }
+                }
+            }
+            if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+                skip |= LogError(vuid, device, create_info_loc.dot(Field::layout), "must be VK_IMAGE_LAYOUT_UNDEFINED.");
+            }
         }
     }
 
