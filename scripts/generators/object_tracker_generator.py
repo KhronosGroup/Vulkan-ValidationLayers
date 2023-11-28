@@ -30,21 +30,6 @@ from generators.base_generator import BaseGenerator
 # interfaces or their use in the generator script will have downstream effects and thus
 # should be avoided unless absolutely necessary.
 class APISpecific:
-    # Returns VUIDs to report when detecting undestroyed objects
-    @staticmethod
-    def getUndestroyedObjectVUID(targetApiName: str, scope: str) -> str:
-        match targetApiName:
-
-            # Vulkan specific undestroyed object VUIDs
-            case 'vulkan':
-                per_scope = {
-                    'instance': 'VUID-vkDestroyInstance-instance-00629',
-                    'device': 'VUID-vkDestroyDevice-device-05137'
-                }
-
-        return per_scope[scope]
-
-
     # Tells whether an object handle type is implicitly destroyed because it does not have
     # destroy APIs or its parent object type does not have destroy APIs
     @staticmethod
@@ -418,8 +403,8 @@ WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_o
 // ObjectTracker undestroyed objects validation function
 bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const Location& loc) const {
     bool skip = false;
-    const std::string error_code = "%s";
-''' % APISpecific.getUndestroyedObjectVUID(self.targetApiName, 'instance'))
+    const std::string error_code = "VUID-vkDestroyInstance-instance-00629";
+''')
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and not self.isParentDevice(x)]:
             comment_prefix = ''
             if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
@@ -431,8 +416,8 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, cons
         out.append('''
 bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Location& loc) const {
     bool skip = false;
-    const std::string error_code = "%s";
-''' % APISpecific.getUndestroyedObjectVUID(self.targetApiName, 'device'))
+    const std::string error_code = "VUID-vkDestroyDevice-device-05137";
+''')
 
         comment_prefix = ''
         if APISpecific.IsImplicitlyDestroyed(self.targetApiName, 'VkCommandBuffer'):

@@ -808,12 +808,16 @@ class LayerChassisOutputGenerator(BaseGenerator):
         out.append('\n')
 
         out.append('// Extension exposed by the validation layer\n')
-        out.append('static constexpr std::array kInstanceExtensions = {\n')
-        for ext in [x.upper() for x in APISpecific.getInstanceExtensionList(self.targetApiName)]:
+
+        instance_exts = APISpecific.getInstanceExtensionList(self.targetApiName)
+        out.append(f'static constexpr std::array<VkExtensionProperties, {len(instance_exts)}> kInstanceExtensions = {{\n')
+        for ext in [x.upper() for x in instance_exts]:
             out.append(f'    VkExtensionProperties{{{ext}_EXTENSION_NAME, {ext}_SPEC_VERSION}},\n')
         out.append('};\n')
-        out.append('static constexpr std::array kDeviceExtensions = {\n')
-        for ext in [x.upper() for x in APISpecific.getDeviceExtensionList(self.targetApiName)]:
+
+        device_exts = APISpecific.getDeviceExtensionList(self.targetApiName)
+        out.append(f'static constexpr std::array<VkExtensionProperties, {len(device_exts)}> kDeviceExtensions = {{\n')
+        for ext in [x.upper() for x in device_exts]:
             out.append(f'    VkExtensionProperties{{{ext}_EXTENSION_NAME, {ext}_SPEC_VERSION}},\n')
         out.append('};\n')
 
