@@ -710,10 +710,9 @@ void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer c
                                                                uint32_t drawCount, uint32_t stride,
                                                                const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
-    CommandResources cmd_resources =
-        AllocateCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
-    auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
-    StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr));
+    auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location.function, commandBuffer, buffer, offset,
+                                                                     drawCount, VK_NULL_HANDLE, 0, stride);
+    StoreCommandResources(commandBuffer, std::move(draw_resources));
 }
 
 void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -740,10 +739,9 @@ void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer 
                                                                 uint32_t drawCount, uint32_t stride,
                                                                 const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
-    CommandResources cmd_resources =
-        AllocateCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
-    auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
-    StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr));
+    auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location.function, commandBuffer, buffer, offset,
+                                                                     drawCount, VK_NULL_HANDLE, 0, stride);
+    StoreCommandResources(commandBuffer, std::move(draw_resources));
 }
 
 void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,

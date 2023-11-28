@@ -24,11 +24,12 @@ layout(set = 0, binding = 0) buffer OutputBuffer {
     uint output_buffer[];
 };
 
-void gpuavLogError(uint action_code, uint error, uint count) {
+void gpuavLogError(uint action_code, uint error, uint count, uint draw_number) {
     uint vo_idx = atomicAdd(output_buffer_count, ERROR_RECORD_WORDS_COUNT);
     if (vo_idx + ERROR_RECORD_WORDS_COUNT > output_buffer.length()) return;
 
     output_buffer[vo_idx + kInstValidationOutError] = action_code;
     output_buffer[vo_idx + kInstValidationOutError + 1] = error;
     output_buffer[vo_idx + kInstValidationOutError + 2] = count;
+    output_buffer[vo_idx + kInstValidationOutError + 3] = draw_number;
 }

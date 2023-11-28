@@ -36,6 +36,14 @@ struct GpuVuid {
     const char* group_exceeds_device_limit_x = kVUIDUndefined;
     const char* group_exceeds_device_limit_y = kVUIDUndefined;
     const char* group_exceeds_device_limit_z = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_x = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_y = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_z = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_total = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_x = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_y = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_z = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_total = kVUIDUndefined;
     // vkCmdTraceRaysIndirectKHR
     const char* trace_rays_width_exceeds_device_limit = kVUIDUndefined;
     const char* trace_rays_height_exceeds_device_limit = kVUIDUndefined;

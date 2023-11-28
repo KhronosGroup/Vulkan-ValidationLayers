@@ -234,10 +234,16 @@ const int pre_dispatch_count_exceeds_limit_z_error = 3;
 const int pre_trace_rays_query_dimensions_exceeds_width_limit = 1;
 const int pre_trace_rays_query_dimensions_exceeds_height_limit = 2;
 const int pre_trace_rays_query_dimensions_exceeds_depth_limit = 3;
+const int pre_draw_group_count_exceeds_limit_x_error = 4;
+const int pre_draw_group_count_exceeds_limit_y_error = 5;
+const int pre_draw_group_count_exceeds_limit_z_error = 6;
+const int pre_draw_group_count_exceeds_total_error = 7;
 
 // These values select which pre-draw validation will be performed
 const int pre_draw_select_count_buffer = 1;
 const int pre_draw_select_draw_buffer = 2;
+const int pre_draw_select_mesh_count_buffer = 3;
+const int pre_draw_select_mesh_no_count = 4;
 
 #ifdef __cplusplus
 }  // namespace glsl
