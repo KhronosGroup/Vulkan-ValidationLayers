@@ -421,7 +421,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 pCreateInfo->extent.height != swapchain_state->createInfo.imageExtent.height || pCreateInfo->extent.depth != 1u) {
                 skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
                                  "was created with extent (%" PRIu32 ", %" PRIu32
-                                 ", 1) which doesn't match pCreateInfo->extent (%" PRIu32 ", %" PRIu32 ", 1).",
+                                 ", 1) which doesn't match pCreateInfo->extent (%" PRIu32 ", %" PRIu32 ", %" PRIu32 ").",
                                  swapchain_state->createInfo.imageExtent.width, swapchain_state->createInfo.imageExtent.height,
                                  pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->extent.depth);
             }

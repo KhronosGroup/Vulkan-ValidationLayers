@@ -3615,3 +3615,39 @@ TEST_F(NegativeWsi, PresentDuplicatedSwapchain) {
     vk::QueuePresentKHR(m_default_queue, &present_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, IncompatibleImageWithSwapchain) {
+    TEST_DESCRIPTION("Use VkImageSwapchainCreateInfoKHR with an image which doesnt match swapchain create parameters");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    RETURN_IF_SKIP(InitState());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
+    image_swapchain_create_info.swapchain = m_swapchain;
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_swapchain_create_info);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = m_surface_formats[0].format;
+    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995");
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
