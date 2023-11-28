@@ -148,6 +148,33 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : gpuav::GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectCountNV() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08612";
         storage_access_oob = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08613";
+        count_exceeds_bufsize_1 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02191";
+        count_exceeds_bufsize = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02192";
+        count_exceeds_device_limit = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02717";
+    }
+};
+
+struct GpuVuidsCmdDrawMeshTasksEXT : gpuav::GpuVuid {
+    GpuVuidsCmdDrawMeshTasksEXT() : GpuVuid() {
+        uniform_access_oob = "VUID-vkCmdDrawMeshTasksEXT-None-08612";
+        storage_access_oob = "VUID-vkCmdDrawMeshTasksEXT-None-08613";
+    }
+};
+
+struct GpuVuidsCmdDrawMeshTasksIndirectEXT : gpuav::GpuVuid {
+    GpuVuidsCmdDrawMeshTasksIndirectEXT() : GpuVuid() {
+        uniform_access_oob = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08612";
+        storage_access_oob = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08613";
+    }
+};
+
+struct GpuVuidsCmdDrawMeshTasksIndirectCountEXT : gpuav::GpuVuid {
+    GpuVuidsCmdDrawMeshTasksIndirectCountEXT() : GpuVuid() {
+        uniform_access_oob = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08612";
+        storage_access_oob = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08613";
+        count_exceeds_bufsize_1 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07098";
+        count_exceeds_bufsize = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099";
+        count_exceeds_device_limit = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717";
     }
 };
 
@@ -187,6 +214,9 @@ static const std::map<Func, gpuav::GpuVuid> gpu_vuid = {
     {Func::vkCmdDrawMeshTasksNV, GpuVuidsCmdDrawMeshTasksNV()},
     {Func::vkCmdDrawMeshTasksIndirectNV, GpuVuidsCmdDrawMeshTasksIndirectNV()},
     {Func::vkCmdDrawMeshTasksIndirectCountNV, GpuVuidsCmdDrawMeshTasksIndirectCountNV()},
+    {Func::vkCmdDrawMeshTasksEXT, GpuVuidsCmdDrawMeshTasksEXT()},
+    {Func::vkCmdDrawMeshTasksIndirectEXT, GpuVuidsCmdDrawMeshTasksIndirectEXT()},
+    {Func::vkCmdDrawMeshTasksIndirectCountEXT, GpuVuidsCmdDrawMeshTasksIndirectCountEXT()},
     {Func::vkCmdDrawIndirectByteCountEXT, GpuVuidsCmdDrawIndirectByteCountEXT()},
     {Func::vkCmdDispatchBase, GpuVuidsCmdDispatchBase()},
     {Func::vkCmdDispatchBaseKHR, GpuVuidsCmdDispatchBase()},
