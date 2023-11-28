@@ -170,6 +170,14 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
                    "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
     }
+
+    if (gpuav_settings.validate_indirect_buffer && (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(uint32_t))) {
+        gpuav_settings.validate_indirect_buffer = false;
+        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
+                   "Device does not support the minimum range of push constants (32 bytes).  No indirect buffer checking will be "
+                   "attempted");
+    }
+
     if (gpuav_settings.validate_descriptors) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);

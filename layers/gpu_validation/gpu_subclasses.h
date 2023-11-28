@@ -173,7 +173,8 @@ class PreDrawResources : public CommandResources {
     VkDeviceSize indirect_buffer_offset = 0;
     uint32_t indirect_buffer_stride = 0;
     VkDeviceSize indirect_buffer_size = 0;
-    static constexpr uint32_t push_constant_words = 4;
+    static constexpr uint32_t push_constant_words = 11;
+    bool emit_task_error = false;  // Used to decide between mesh error and task error
 
     void Destroy(gpuav::Validator &validator) final;
     bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,

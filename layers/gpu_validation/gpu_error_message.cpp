@@ -538,6 +538,7 @@ void gpuav::CommandResources::LogErrorIfAny(gpuav::Validator &validator, VkQueue
             const LogObjectList objlist(queue, cmd_buffer);
             LogValidationMessage(validator, queue, cmd_buffer, debug_record, operation_index, objlist);
         }
+        debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
         vmaUnmapMemory(validator.vmaAllocator, output_mem_block.allocation);
     }
 }
@@ -572,46 +573,104 @@ bool gpuav::PreDrawResources::LogValidationMessage(gpuav::Validator &validator, 
     using namespace glsl;
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorPreDrawValidate: {
-            // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
-            if (debug_record[kPreValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
-                const uint32_t count = debug_record[kPreValidateSubError + 1];
-                const uint32_t stride = indirect_buffer_stride;
-                const uint32_t offset =
-                    static_cast<uint32_t>(indirect_buffer_offset);  // TODO: why cast to uin32_t? If it is changed, think about
-                                                                    // also doing it in the error message
-                const uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
+            switch (debug_record[kPreValidateSubError]) {
+                case pre_draw_count_exceeds_bufsize_error: {
+                    // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
+                    const uint32_t count = debug_record[kPreValidateSubError + 1];
+                    const uint32_t stride = indirect_buffer_stride;
+                    const uint32_t offset =
+                        static_cast<uint32_t>(indirect_buffer_offset);  // TODO: why cast to uin32_t? If it is changed, think about
+                                                                        // also doing it in the error message
+                    const uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
 
-                const char *vuid = nullptr;
-                const GpuVuid &vuids = GetGpuVuid(command);
-                if (count == 1) {
-                    vuid = vuids.count_exceeds_bufsize_1;
-                } else {
-                    vuid = vuids.count_exceeds_bufsize;
+                    const char *vuid = nullptr;
+                    const GpuVuid &vuids = GetGpuVuid(command);
+                    if (count == 1) {
+                        vuid = vuids.count_exceeds_bufsize_1;
+                    } else {
+                        vuid = vuids.count_exceeds_bufsize;
+                    }
+                    validator.LogError(objlist, vuid,
+                                       "Indirect draw count of %" PRIu32 " would exceed buffer size %" PRIu64
+                                       " of buffer %s "
+                                       "stride = %" PRIu32 " offset = %" PRIu32
+                                       " (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand)) = %" PRIu32 ".",
+                                       count, indirect_buffer_size, validator.FormatHandle(indirect_buffer).c_str(), stride, offset,
+                                       draw_size);
+                    error_logged = true;
+                    break;
                 }
-                validator.LogError(objlist, vuid,
-                                   "Indirect draw count of %" PRIu32 " would exceed buffer size %" PRIu64
-                                   " of buffer %s "
-                                   "stride = %" PRIu32 " offset = %" PRIu32
-                                   " (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand)) = %" PRIu32 ".",
-                                   count, indirect_buffer_size, validator.FormatHandle(indirect_buffer).c_str(), stride, offset,
-                                   draw_size);
-                error_logged = true;
-            } else if (debug_record[kPreValidateSubError] == pre_draw_count_exceeds_limit_error) {
-                const uint32_t count = debug_record[kPreValidateSubError + 1];
-                const GpuVuid &vuids = GetGpuVuid(command);
-                validator.LogError(objlist, vuids.count_exceeds_device_limit,
-                                   "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".",
-                                   count, validator.phys_dev_props.limits.maxDrawIndirectCount);
-                error_logged = true;
-            } else if (debug_record[kPreValidateSubError] == pre_draw_first_instance_error) {
-                const uint32_t index = debug_record[kPreValidateSubError + 1];
-                const GpuVuid &vuids = GetGpuVuid(command);
-                validator.LogError(
-                    objlist, vuids.first_instance_not_zero,
-                    "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
-                    "index %" PRIu32 " is not zero.",
-                    command == vvl::Func::vkCmdDrawIndirect ? "VkDrawIndirectCommand" : "VkDrawIndexedIndirectCommand", index);
-                error_logged = true;
+                case pre_draw_count_exceeds_limit_error: {
+                    const uint32_t count = debug_record[kPreValidateSubError + 1];
+                    const GpuVuid &vuids = GetGpuVuid(command);
+                    validator.LogError(objlist, vuids.count_exceeds_device_limit,
+                                       "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".",
+                                       count, validator.phys_dev_props.limits.maxDrawIndirectCount);
+                    error_logged = true;
+                    break;
+                }
+                case pre_draw_first_instance_error: {
+                    const uint32_t index = debug_record[kPreValidateSubError + 1];
+                    const GpuVuid &vuids = GetGpuVuid(command);
+                    validator.LogError(
+                        objlist, vuids.first_instance_not_zero,
+                        "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
+                        "index %" PRIu32 " is not zero.",
+                        command == vvl::Func::vkCmdDrawIndirect ? "VkDrawIndirectCommand" : "VkDrawIndexedIndirectCommand", index);
+                    error_logged = true;
+                    break;
+                }
+                case pre_draw_group_count_exceeds_limit_x_error:
+                case pre_draw_group_count_exceeds_limit_y_error:
+                case pre_draw_group_count_exceeds_limit_z_error: {
+                    const uint32_t group_count = debug_record[kPreValidateSubError + 1];
+                    const uint32_t draw_number = debug_record[kPreValidateSubError + 2];
+                    const GpuVuid &vuids = GetGpuVuid(command);
+                    const char *count_label;
+                    uint32_t index;
+                    uint32_t limit;
+                    const char *vuid;
+                    if (debug_record[kPreValidateSubError] == pre_draw_group_count_exceeds_limit_x_error) {
+                        count_label = "groupCountX";
+                        index = 0;
+                        vuid = emit_task_error ? vuids.task_group_count_exceeds_max_x : vuids.mesh_group_count_exceeds_max_x;
+                        limit = validator.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
+                    } else if (debug_record[kPreValidateSubError] == pre_draw_group_count_exceeds_limit_y_error) {
+                        count_label = "groupCountY";
+                        index = 1;
+                        vuid = emit_task_error ? vuids.task_group_count_exceeds_max_y : vuids.mesh_group_count_exceeds_max_y;
+                        limit = validator.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
+                    } else {
+                        assert(debug_record[kPreValidateSubError] == pre_draw_group_count_exceeds_limit_z_error);
+                        count_label = "groupCountZ";
+                        index = 2;
+                        vuid = emit_task_error ? vuids.task_group_count_exceeds_max_z : vuids.mesh_group_count_exceeds_max_z;
+                        limit = validator.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
+                    }
+                    validator.LogError(
+                        objlist, vuid,
+                        "In draw %" PRIu32 ", %s is %" PRIu32
+                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[%" PRIu32 "] (%" PRIu32 ").",
+                        draw_number, count_label, group_count, index, limit);
+                    error_logged = true;
+                    break;
+                }
+                case pre_draw_group_count_exceeds_total_error: {
+                    const uint32_t total_count = debug_record[kPreValidateSubError + 1];
+                    const uint32_t draw_number = debug_record[kPreValidateSubError + 2];
+                    const GpuVuid &vuids = GetGpuVuid(command);
+                    auto vuid =
+                        emit_task_error ? vuids.task_group_count_exceeds_max_total : vuids.mesh_group_count_exceeds_max_total;
+                    validator.LogError(
+                        objlist, vuid,
+                        "In draw %" PRIu32 ", The product of groupCountX, groupCountY and groupCountZ (%" PRIu32
+                        ") is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupTotalCount (%" PRIu32 ").",
+                        draw_number, total_count, validator.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount);
+                    error_logged = true;
+                    break;
+                }
+                default:
+                    break;
             }
         } break;
         default:

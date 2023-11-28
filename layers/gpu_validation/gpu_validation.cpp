@@ -658,21 +658,18 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         return std::make_unique<PreDrawResources>();
     }
 
-    const uint32_t buffer_count = 2;
+    const uint32_t buffer_count = 3;
     VkDescriptorBufferInfo buffer_infos[buffer_count] = {};
     // Error output buffer
     buffer_infos[0].buffer = draw_resources->output_mem_block.buffer;
     buffer_infos[0].offset = 0;
     buffer_infos[0].range = VK_WHOLE_SIZE;
-    if (count_buffer) {
-        // Count buffer
-        buffer_infos[1].buffer = count_buffer;
-    } else {
-        // Draw Buffer
-        buffer_infos[1].buffer = indirect_buffer;
-    }
+    buffer_infos[1].buffer = count_buffer;
     buffer_infos[1].offset = 0;
     buffer_infos[1].range = VK_WHOLE_SIZE;
+    buffer_infos[2].buffer = indirect_buffer;
+    buffer_infos[2].offset = 0;
+    buffer_infos[2].range = VK_WHOLE_SIZE;
 
     VkWriteDescriptorSet desc_writes[buffer_count] = {};
     for (uint32_t i = 0; i < buffer_count; i++) {
@@ -692,11 +689,17 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     // Save current graphics pipeline state
     RestorablePipelineState restorable_state(cb_node.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const bool is_mesh_call =
+        (command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
+         command == Func::vkCmdDrawMeshTasksIndirectEXT || command == Func::vkCmdDrawMeshTasksIndirectNV);
+
+    const bool is_count_call =
+        (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
+         command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR ||
+         command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV);
 
     uint32_t push_constants[PreDrawResources::push_constant_words] = {};
-    if (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
-        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR ||
-        command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV) {
+    if (is_count_call) {
         // Validate count buffer
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
             ReportSetupProblem(device, "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV");
@@ -726,11 +729,12 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         draw_resources->indirect_buffer_size = bufsize;
 
         assert(phys_dev_props.limits.maxDrawIndirectCount > 0);
-        push_constants[0] = glsl::pre_draw_select_count_buffer;
+        push_constants[0] =
+            (is_mesh_call) ? gpuav::glsl::pre_draw_select_mesh_count_buffer : gpuav::glsl::pre_draw_select_count_buffer;
         push_constants[1] = phys_dev_props.limits.maxDrawIndirectCount;
         push_constants[2] = max_count;
         push_constants[3] = static_cast<uint32_t>((count_buffer_offset / sizeof(uint32_t)));
-    } else {
+    } else if (command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) {
         // Validate buffer for firstInstance check instead of count buffer check
         push_constants[0] = glsl::pre_draw_select_draw_buffer;
         push_constants[1] = draw_count;
@@ -745,6 +749,28 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         push_constants[3] = stride / sizeof(uint32_t);
     }
 
+    if (is_mesh_call && phys_dev_props.limits.maxPushConstantsSize >= PreDrawResources::push_constant_words * sizeof(uint32_t)) {
+        if (!is_count_call) {
+            // Select was set in count check for count call
+            push_constants[0] = gpuav::glsl::pre_draw_select_mesh_no_count;
+        }
+        const VkShaderStageFlags stages = pipeline_state->create_info_shaders;
+        push_constants[4] = static_cast<uint32_t>(indirect_offset / sizeof(uint32_t));
+        push_constants[5] = is_count_call ? 0 : draw_count;
+        push_constants[6] = stride / sizeof(uint32_t);
+        if (stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
+            draw_resources->emit_task_error = true;
+            push_constants[7] = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0];
+            push_constants[8] = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1];
+            push_constants[9] = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2];
+            push_constants[10] = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount;
+        } else {
+            push_constants[7] = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
+            push_constants[8] = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
+            push_constants[9] = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
+            push_constants[10] = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
+        }
+    }
     // Insert diagnostic draw
     if (use_shader_objects) {
         VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -753,7 +779,9 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
     }
     DispatchCmdPushConstants(cmd_buffer, common_draw_resources.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                             sizeof(push_constants), push_constants);
+                             static_cast<uint32_t>(std::min(static_cast<uint32_t>(sizeof(push_constants)),
+                                                            (phys_dev_props.limits.maxPushConstantsSize))),
+                             push_constants);
     DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, common_draw_resources.pipeline_layout, 0, 1,
                                   &draw_resources->buffer_desc_set, 0, nullptr);
     DispatchCmdDraw(cmd_buffer, 3, 1, 0, 0);
@@ -1102,7 +1130,8 @@ void gpuav::Validator::AllocateSharedDrawIndirectValidationResources(bool use_sh
     if (!common_draw_resources.initialized) {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},  // output buffer
-            {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},  // count/draws buffer
+            {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},  // count buffer
+            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},  // draw buffer
         };
 
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
