@@ -235,6 +235,10 @@ const int pre_trace_rays_query_dimensions_exceeds_width_limit = 1;
 const int pre_trace_rays_query_dimensions_exceeds_height_limit = 2;
 const int pre_trace_rays_query_dimensions_exceeds_depth_limit = 3;
 
+// These values select which pre-draw validation will be performed
+const int pre_draw_select_count_buffer = 1;
+const int pre_draw_select_draw_buffer = 2;
+
 #ifdef __cplusplus
 }  // namespace glsl
 }  // namespace gpuav
