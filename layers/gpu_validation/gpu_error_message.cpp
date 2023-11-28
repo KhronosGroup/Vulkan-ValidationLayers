@@ -581,24 +581,13 @@ bool gpuav::PreDrawResources::LogValidationMessage(gpuav::Validator &validator, 
                                                                     // also doing it in the error message
                 const uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
 
-                // TODO: this is not an improvement
                 const char *vuid = nullptr;
-                if (command == vvl::Func::vkCmdDrawIndirectCount || command == vvl::Func::vkCmdDrawIndirectCountKHR) {
-                    if (count == 1) {
-                        vuid = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
-                    } else {
-                        vuid = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
-                    }
-                } else if (command == vvl::Func::vkCmdDrawIndexedIndirectCount ||
-                           command == vvl::Func::vkCmdDrawIndexedIndirectCountKHR) {
-                    if (count == 1) {
-                        vuid = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153";
-                    } else {
-                        vuid = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154";
-                    }
+                const GpuVuid &vuids = GetGpuVuid(command);
+                if (count == 1) {
+                    vuid = vuids.count_exceeds_bufsize_1;
+                } else {
+                    vuid = vuids.count_exceeds_bufsize;
                 }
-                assert(vuid);
-
                 validator.LogError(objlist, vuid,
                                    "Indirect draw count of %" PRIu32 " would exceed buffer size %" PRIu64
                                    " of buffer %s "
@@ -609,30 +598,16 @@ bool gpuav::PreDrawResources::LogValidationMessage(gpuav::Validator &validator, 
                 error_logged = true;
             } else if (debug_record[kPreValidateSubError] == pre_draw_count_exceeds_limit_error) {
                 const uint32_t count = debug_record[kPreValidateSubError + 1];
-                const char *vuid = nullptr;
-                if (command == vvl::Func::vkCmdDrawIndirectCount || command == vvl::Func::vkCmdDrawIndirectCountKHR) {
-                    vuid = "VUID-vkCmdDrawIndirectCount-countBuffer-02717";
-                } else if (command == vvl::Func::vkCmdDrawIndexedIndirectCount ||
-                           command == vvl::Func::vkCmdDrawIndexedIndirectCountKHR) {
-                    vuid = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717";
-                }
-                assert(vuid);
-                validator.LogError(objlist, vuid,
+                const GpuVuid &vuids = GetGpuVuid(command);
+                validator.LogError(objlist, vuids.count_exceeds_device_limit,
                                    "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".",
                                    count, validator.phys_dev_props.limits.maxDrawIndirectCount);
                 error_logged = true;
             } else if (debug_record[kPreValidateSubError] == pre_draw_first_instance_error) {
                 const uint32_t index = debug_record[kPreValidateSubError + 1];
-                const char *vuid = nullptr;
-                if (command == vvl::Func::vkCmdDrawIndirect) {
-                    vuid = "VUID-VkDrawIndirectCommand-firstInstance-00501";
-                } else if (command == vvl::Func::vkCmdDrawIndexedIndirect) {
-                    vuid = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
-                } else {
-                    assert(false);
-                }
+                const GpuVuid &vuids = GetGpuVuid(command);
                 validator.LogError(
-                    objlist, vuid,
+                    objlist, vuids.first_instance_not_zero,
                     "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
                     "index %" PRIu32 " is not zero.",
                     command == vvl::Func::vkCmdDrawIndirect ? "VkDrawIndirectCommand" : "VkDrawIndexedIndirectCommand", index);
