@@ -691,7 +691,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     uint32_t push_constants[PreDrawResources::push_constant_words] = {};
     if (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
-        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR) {
+        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR || 
+        command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV) {
         // Validate count buffer
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
             ReportSetupProblem(device, "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV");
@@ -703,9 +704,11 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         uint32_t struct_size;
         if (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR) {
             struct_size = sizeof(VkDrawIndirectCommand);
-        } else {
-            assert(command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR);
+        } else if (command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR) {
             struct_size = sizeof(VkDrawIndexedIndirectCommand);
+        } else {
+            assert(command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV);
+            struct_size = sizeof(VkDrawMeshTasksIndirectCommandEXT);
         }
         auto buffer_state = Get<BUFFER_STATE>(indirect_buffer);
         uint32_t max_count;
