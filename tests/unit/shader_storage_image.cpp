@@ -465,7 +465,9 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
                                   0, 1, &ds.set_, 0, nullptr);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-OpTypeImage-07027");
+        if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-OpTypeImage-07027");
+        }
         vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
         m_commandBuffer->end();
 
