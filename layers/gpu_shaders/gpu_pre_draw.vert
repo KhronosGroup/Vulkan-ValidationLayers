@@ -18,10 +18,12 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "gpu_pre_action.h"
 
+#define validation_select push_constant_word_0
+
 // used when testing count buffer
-#define count_limit push_constant_word_0
-#define max_writes push_constant_word_1
-#define count_offset push_constant_word_2
+#define count_limit push_constant_word_1
+#define max_writes push_constant_word_2
+#define count_offset push_constant_word_3
 
 // used when testing draw buffer
 #define draw_count push_constant_word_1
@@ -43,7 +45,7 @@ layout(push_constant) uniform UniformInfo {
 
 void main() {
     if (gl_VertexIndex == 0) {
-        if (u_info.count_limit > 0) {
+        if (u_info.validation_select == pre_draw_select_count_buffer) {
             // Validate count buffer
             uint count_in = count_buffer[u_info.count_offset];
             if (count_in > u_info.max_writes) {
@@ -52,7 +54,7 @@ void main() {
             else if (count_in > u_info.count_limit) {
                 gpuavLogError(kInstErrorPreDrawValidate, pre_draw_count_exceeds_limit_error, count_in);
             }
-        } else {
+        } else if (u_info.validation_select == pre_draw_select_draw_buffer) {
             // Validate firstInstances
             uint fi_index = u_info.first_instance_offset;
             for (uint i = 0; i < u_info.draw_count; i++) {
