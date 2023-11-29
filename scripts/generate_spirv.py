@@ -36,25 +36,46 @@ def identifierize(s):
     # translate leading digits
     return re.sub("^[^a-zA-Z_]+", "_", s)
 
-def compile(filename, glslang_validator, target_env):
+def compile(filename, glslang_validator, spirv_opt, target_env):
     tmpfile = os.path.basename(filename) + '.tmp'
 
     # invoke glslangValidator
     try:
         args = [glslang_validator]
-        
-        if not target_env: 
+
+        if not target_env:
             requires_vulkan_1_2 = ['rgen']
             if filename.split(".")[-1] in requires_vulkan_1_2:
                 target_env = "vulkan1.2"
-        if target_env:        
+        if target_env:
             args += ["--target-env", target_env]
         # functions called by the SPIRV-Tools instrumentation require special options
         if tmpfile.startswith("inst_"):
-            args += ["--no-link", "--target-env", "vulkan1.0"]
+            args += ["--no-link", "--target-env"]
+            if filename.endswith(".rgen"):
+                args += ["vulkan1.2"]
+            else:
+                args += ["vulkan1.0"]
         else:
             args += ["-V"]
         args += ["-o", tmpfile, filename]
+        subprocess.check_output(args, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        raise Exception(e.output)
+
+    # invoke spirv-opt
+    try:
+        args = [spirv_opt, tmpfile, '-o', tmpfile]
+
+        # gpu_shaders_constants.h adds many constants not needed and it slows down linking time
+        args += ['--eliminate-dead-const']
+        # Runs some basic optimizations that don't touch CFG for goal of making linking functions smaller (and faster)
+        args += ['--eliminate-local-single-block']
+        args += ['--eliminate-local-single-store']
+        args += ['--vector-dce']
+        args += ['--simplify-instructions']
+        args += ['--eliminate-dead-code-aggressive']
+
         subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         raise Exception(e.output)
@@ -111,6 +132,7 @@ def write(words, filename, apiname, outdir = None):
 *
 ****************************************************************************/
 
+// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
 static const uint32_t %s[%d] = {
 %s
 };
@@ -185,6 +207,7 @@ def main():
                         help='Specify API name to generate')
     parser.add_argument('--shader', action='store', type=str, help='Input Filename')
     parser.add_argument('--glslang', action='store', type=str, help='Path to glslangValidator to use')
+    parser.add_argument('--spirv-opt', action='store', dest='spirv_opt', type=str, help='Path to glslangValidator to use')
     parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory')
     parser.add_argument('--targetenv', action='store', type=str, help='Optional --target-env argument passed down to glslangValidator')
     args = parser.parse_args()
@@ -209,8 +232,15 @@ def main():
     if not os.path.isfile(glslang_validator):
         sys.exit("Cannot find glslangValidator " + glslang_validator)
 
+    # default spirv-opt path
+    spirv_opt =  common_ci.RepoRelative('external/SPIRV-Tools/build/install/bin/spirv-opt')
+    if args.spirv_opt:
+        spirv_opt = args.spirv_opt
+    if not os.path.isfile(spirv_opt):
+        sys.exit("Cannot find spirv-opt " + spirv_opt)
+
     for shader in generate_shaders:
-        words = compile(shader, glslang_validator, args.targetenv)
+        words = compile(shader, glslang_validator, spirv_opt, args.targetenv)
         write(words, shader, args.api, args.outdir)
     write_inst_hash(args.outdir)
 
