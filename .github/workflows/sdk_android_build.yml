@@ -79,8 +79,8 @@ jobs:
     - name: Get sdk version string
       id: get_sdk_version
       run: |
-        sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 2`
-        echo "::set-output name=sdk_version::$sdk_version"
+        sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
+        echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
@@ -116,30 +116,30 @@ jobs:
             name: "Upload Android Release Tar Gzip Artifact",
             artifact: "vvl-android",
             command: "tar czf",
-            suffix: "android.tar.gz",
+            suffix: "tar.gz",
             type: "application/x-gtar"
           }
         - {
             name: "Upload Android Release Zip Artifact",
             artifact: "vvl-android",
             command: "zip -r",
-            suffix: "android.zip",
+            suffix: "zip",
             type: "application/zip"
           }
     steps:
-    - name: Get tag name
-      id: get_tag_name
+    - name: Get sdk version string
+      id: get_sdk_version
       run: |
-        tag_name=`echo "${{ github.ref }}" | cut -d "/" -f 3`
-        echo "::set-output name=tag_name::$tag_name"
+        sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
+        echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
     - name: Download artifacts
       uses: actions/download-artifact@v3
       with:
         name: ${{ matrix.config.artifact }}
-        path: ./android-binaries-${{ steps.get_tag_name.outputs.tag_name }}
+        path: ./android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
     - name: Make release artifacts
       run: |
-        ${{ matrix.config.command }} android-binaries-${{ steps.get_tag_name.outputs.tag_name }}-${{ matrix.config.suffix }} android-binaries-${{ steps.get_tag_name.outputs.tag_name }}
+        ${{ matrix.config.command }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
     - name: Download release URL
       uses: actions/download-artifact@v3
       with:
@@ -149,13 +149,13 @@ jobs:
       id: set_upload_url
       run: |
         upload_url=`cat ./release_url`
-        echo "::set-output name=upload_url::$upload_url"
+        echo upload_url=$upload_url >> $GITHUB_OUTPUT
     - name: Upload release artifacts
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
-        asset_name: android-binaries-${{ steps.get_tag_name.outputs.tag_name }}-${{ matrix.config.suffix }}
-        asset_path: ./android-binaries-${{ steps.get_tag_name.outputs.tag_name }}-${{ matrix.config.suffix }}
+        asset_name: android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }}
+        asset_path: ./android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }}
         asset_content_type: ${{ matrix.config.type }}
