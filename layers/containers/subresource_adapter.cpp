@@ -293,9 +293,17 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         }
     }
 
-    // WORKAROUND for not being able to handle packed MIPS without resulting in a non-monotonically increasing range generation
+    // WORKAROUND for not being able to handle general linear images without resulting in non-monotonically increasing ranges
     // Need to clean this up to correctly detect aliasing conflicts between linear image(s) and buffers
-    if (limits_.mipLevel > 1) linear_image_ = false;
+    // Issues:
+    //     * Lower resolution MIP levels are sometimes hidden in unused space of image rows smaller than minimum stride
+    //     * Mutliplane YUV formats may interleave UV rows
+    //     * Ranges treat row size as synonymous with row stride, causing ranges to include interleaved content when
+    //       checking for hazards or updating state.
+    //
+    // Needs a rework on how linear range generation is done to ensure correct sizing and monotonicity, before detection of
+    // aliased resources can be done correctly.
+    linear_image_ = false;
 
     is_compressed_ = vkuFormatIsCompressed(image.createInfo.format);
     texel_extent_ = vkuFormatTexelBlockExtent(image.createInfo.format);
