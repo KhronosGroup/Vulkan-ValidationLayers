@@ -671,7 +671,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         std::vector<VkPerformanceCounterResultKHR> results;
         results.resize(counterIndices.size());
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03231");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09441");
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
         m_errorMonitor->VerifyFound();
@@ -718,21 +718,21 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         // Invalid flags for vkCmdCopyQueryPoolResults
         if (perf_query_props.allowCommandBufferQueryCopies) {
             m_commandBuffer->begin(&command_buffer_begin_info);
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-09440");
             vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
                                         sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                         VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
             m_errorMonitor->VerifyFound();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-09440");
             vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
                                         sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
             m_errorMonitor->VerifyFound();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-09440");
             vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
                                         sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
             m_errorMonitor->VerifyFound();
             if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-09440");
                 vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
                                             sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                             VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
@@ -742,21 +742,21 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         }
 
         // Invalid flags for vkGetQueryPoolResults
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09440");
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09440");
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09440");
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
         if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09440");
             vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                     &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                     VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
@@ -933,7 +933,7 @@ TEST_F(NegativeQuery, HostResetFirstQuery) {
     query_pool_create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-02666");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-09436");
     vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 1, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -953,7 +953,7 @@ TEST_F(NegativeQuery, HostResetBadRange) {
     query_pool_create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-02667");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-09437");
     vk::ResetQueryPool(m_device->device(), query_pool.handle(), 0, 2);
     m_errorMonitor->VerifyFound();
 }
@@ -1125,13 +1125,13 @@ TEST_F(NegativeQuery, Sizes) {
     m_commandBuffer->begin();
 
     // FirstQuery is too large
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-00796");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-00797");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-09436");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-09437");
     vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool.handle(), query_pool_size, 1);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-00797");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-09437");
     vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool.handle(), 1, query_pool_size);
     m_errorMonitor->VerifyFound();
 
@@ -1148,14 +1148,14 @@ TEST_F(NegativeQuery, Sizes) {
     vk::CmdEndQuery(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0);
 
     // FirstQuery is too large
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-00820");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-00821");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-09436");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), query_pool_size, 1, buffer.handle(), 0, 0,
                                 0);
     m_errorMonitor->VerifyFound();
 
     // sum of firstQuery and queryCount is too large
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-00821");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), 1, query_pool_size, buffer.handle(), 0, 0,
                                 0);
     m_errorMonitor->VerifyFound();
@@ -1186,13 +1186,13 @@ TEST_F(NegativeQuery, Sizes) {
     uint8_t data[out_data_size];
 
     // FirstQuery is too large
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-00813");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-00816");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-09436");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-09437");
     vk::GetQueryPoolResults(m_device->device(), occlusion_query_pool.handle(), query_pool_size, 1, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-00816");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-09437");
     vk::GetQueryPoolResults(m_device->device(), occlusion_query_pool.handle(), 1, query_pool_size, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -1335,7 +1335,7 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-00827");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-09439");
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 0, 8, VK_QUERY_RESULT_PARTIAL_BIT);
     m_errorMonitor->VerifyFound();
 
@@ -1349,7 +1349,7 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
     vk::QueueWaitIdle(m_default_queue);
 
     // Attempt to obtain partial results.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-00818");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09439");
     uint32_t data_space[16];
     m_errorMonitor->SetUnexpectedError("Cannot get query results on queryPool");
     vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(uint32_t),
@@ -1603,7 +1603,7 @@ TEST_F(NegativeQuery, GetResultsFlags) {
 
     VkQueryResultFlags flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-04811");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-09443");
     vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, data + 1, 4, flags);
     m_errorMonitor->VerifyFound();
 }
@@ -1626,7 +1626,7 @@ TEST_F(NegativeQuery, ResultStatusOnly) {
 
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-04810");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-09442");
     vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
     m_errorMonitor->VerifyFound();
 }
