@@ -223,12 +223,6 @@ find_package(glslang CONFIG)
 
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
-    glslang::glslang
-    glslang::OGLCompiler
-    glslang::OSDependent
-    glslang::MachineIndependent
-    glslang::GenericCodeGen
-    glslang::HLSL
     glslang::SPIRV
     glslang::SPVRemapper
     SPIRV-Headers::SPIRV-Headers
