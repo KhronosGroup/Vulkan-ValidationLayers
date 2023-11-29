@@ -2082,8 +2082,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
                                                  spv_message_level_t level, const char *source, const spv_position_t &position,
                                                  const char *message) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-module-parameter", device, loc,
-                             "%s does not contain valid spirv for stage %s. %s", FormatHandle(module_state.handle()).c_str(),
-                             string_VkShaderStageFlagBits(stage), message);
+                             "%s failed in spirv-opt because it does not contain valid spirv for stage %s. %s",
+                             FormatHandle(module_state.handle()).c_str(), string_VkShaderStageFlagBits(stage), message);
         };
         optimizer.SetMessageConsumer(consumer);
 
@@ -2193,9 +2193,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
                 const char *vuid = stage_create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
                                                               : "VUID-VkShaderCreateInfoEXT-pCode-08460";
                 std::string name = stage_create_info.pipeline ? FormatHandle(module_state.handle()) : "shader object";
-                skip |=
-                    LogError(vuid, device, loc, "After specialization was applied, %s does not contain valid spirv for stage %s.",
-                             name.c_str(), string_VkShaderStageFlagBits(stage));
+                skip |= LogError(vuid, device, loc,
+                                 "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s", name.c_str(),
+                                 string_VkShaderStageFlagBits(stage), diag && diag->error ? diag->error : "(no error text)");
             }
 
             // The new optimized SPIR-V will NOT match the original SPIRV_MODULE_STATE object parsing, so a new SPIRV_MODULE_STATE
@@ -2442,11 +2442,12 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 if (spv_valid == SPV_WARNING) {
-                    skip |= LogWarning("VUID-VkShaderModuleCreateInfo-pCode-08737", device, create_info_loc.dot(Field::pCode),
-                                       "SPIR-V module not valid: %s", diag && diag->error ? diag->error : "(no error text)");
+                    skip |=
+                        LogWarning("VUID-VkShaderModuleCreateInfo-pCode-08737", device, create_info_loc.dot(Field::pCode),
+                                   "(spirv-val produced a warning):\n%s", diag && diag->error ? diag->error : "(no error text)");
                 } else {
                     skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-08737", device, create_info_loc.dot(Field::pCode),
-                                     "is not valid SPIR-V: %s", diag && diag->error ? diag->error : "(no error text)");
+                                     "(spirv-val produced an error):\n%s", diag && diag->error ? diag->error : "(no error text)");
                 }
             }
         } else {

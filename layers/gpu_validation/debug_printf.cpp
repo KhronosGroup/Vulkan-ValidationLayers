@@ -104,8 +104,8 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
             case SPV_MSG_FATAL:
             case SPV_MSG_INTERNAL_ERROR:
             case SPV_MSG_ERROR:
-                this->LogError("UNASSIGNED-Debug-Printf", this->device, loc, "Error during shader instrumentation: line %zu: %s",
-                               position.index, message);
+                this->LogError("UNASSIGNED-Debug-Printf", this->device, loc,
+                               "Error during shader instrumentation in spirv-opt: line %zu: %s", position.index, message);
                 break;
             default:
                 break;
@@ -115,7 +115,7 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_id));
     const bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
     if (!pass) {
-        ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
+        ReportSetupProblem(device, "Failure to instrument shader in spirv-opt. Proceeding with non-instrumented shader.");
     }
     return pass;
 }
