@@ -341,6 +341,20 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
 
 void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                     const RecordObject &record_obj) {
+    if (record_obj.result == VK_ERROR_DEVICE_LOST) {
+        if (auto fence_node = Get<vvl::Fence>(fence)) {
+            fence_node->Reset();
+        }
+        for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+            const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
+            for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+                auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
+                if (cb_state) {
+                    cb_state->Reset();
+                }
+            }
+        }
+    }
     if (record_obj.result != VK_SUCCESS) return;
     // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {

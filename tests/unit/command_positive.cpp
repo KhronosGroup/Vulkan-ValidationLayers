@@ -450,44 +450,46 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
-    RETURN_IF_SKIP(Init());
+TEST_F(PositiveCommand, DeviceLost) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceVulkan13Features features_13 = vku::InitStructHelper();
+    features_13.synchronization2 = VK_TRUE;  // required to be supported in 1.3
+    RETURN_IF_SKIP(InitState(nullptr, &features_13));
+    InitRenderTarget();
 
-    // Record (empty!) command buffer that can be submitted multiple times
-    // simultaneously.
-    VkCommandBufferBeginInfo cbbi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
-                                     VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
-    m_commandBuffer->begin(&cbbi);
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    // Destroying should not throw VUID-vkDestroyPipeline-pipeline-00765
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_commandBuffer->end();
 
-    VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
-    VkFence fence;
-    vk::CreateFence(m_device->device(), &fci, nullptr, &fence);
+    // Destroying should not throw VUID-vkDestroyFence-fence-01120
+    VkFenceCreateInfo fci = vku::InitStructHelper();
+    vkt::Fence fence(*m_device, fci);
 
-    VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
-    VkSemaphore s1, s2;
-    vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s1);
-    vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s2);
+    // Use QueueSubmit2 because we use QueueSubmit for layout transitions in framework
+    VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = m_commandBuffer->handle();
 
-    // Submit CB once signaling s1, with fence so we can roll forward to its retirement.
-    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &m_commandBuffer->handle(), 1, &s1};
-    vk::QueueSubmit(m_default_queue, 1, &si, fence);
+    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    submit_info.commandBufferInfoCount = 1;
+    submit_info.pCommandBufferInfos = &cb_info;
 
-    // Submit CB again, signaling s2.
-    si.pSignalSemaphores = &s2;
-    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+    // Force VK_ERROR_DEVICE_LOST with MockICD
+    VkResult result = vk::QueueSubmit2(m_default_queue, 1, &submit_info, fence.handle());
 
-    // Wait for fence.
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
-
-    // CB is still in flight from second submission, but semaphore s1 is no
-    // longer in flight. delete it.
-    vk::DestroySemaphore(m_device->device(), s1, nullptr);
-
-    // Force device idle and clean up remaining objects
-    vk::DeviceWaitIdle(m_device->device());
-    vk::DestroySemaphore(m_device->device(), s2, nullptr);
-    vk::DestroyFence(m_device->device(), fence, nullptr);
+    if (result != VK_ERROR_DEVICE_LOST) {
+        vk::QueueWaitIdle(m_default_queue);
+        GTEST_SKIP() << "No device lost found";
+    }
 }
 
 TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
