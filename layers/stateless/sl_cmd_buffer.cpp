@@ -687,7 +687,7 @@ bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice dev
     bool skip = false;
 
     if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
-        skip |= LogError("VUID-vkGetQueryPoolResults-flags-04811", device, error_obj.location.dot(Field::flags),
+        skip |= LogError("VUID-vkGetQueryPoolResults-flags-09443", device, error_obj.location.dot(Field::flags),
                          "(%s) include both STATUS_BIT and AVAILABILITY_BIT.", string_VkQueryResultFlags(flags).c_str());
     }
 
