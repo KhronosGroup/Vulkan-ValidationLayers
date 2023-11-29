@@ -1438,7 +1438,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     if (!pipe && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-06233", commandBuffer, error_obj.location,
                          "No graphics pipeline has been bound yet.");
-    } else if (pipe->pre_raster_state) {
+    } else if (pipe && pipe->pre_raster_state) {
         for (const auto &stage_state : pipe->stage_states) {
             if (!stage_state.entrypoint || stage_state.GetStage() != pipe->pre_raster_state->last_stage) {
                 continue;
