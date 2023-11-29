@@ -146,7 +146,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
             inst_passes.RegisterPass(CreateInstBuffAddrCheckPass(unique_shader_id));
         }
         if (!inst_passes.Run(binaries[0].data(), binaries[0].size(), &binaries[0], opt_options)) {
-            ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
+            ReportSetupProblem(device, "Failure to instrument shader in spirv-opt.  Proceeding with non-instrumented shader.");
             assert(false);
             return false;
         }
@@ -167,7 +167,8 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
 
         if (!switch_descriptorsets.Run(inst_functions_comp, inst_size, &binaries[1], options)) {
             ReportSetupProblem(
-                device, "Failure to switch descriptorsets in instrumentation code. Proceeding with non-instrumented shader.");
+                device,
+                "Failure to switch descriptorsets in instrumentation code in spirv-opt. Proceeding with non-instrumented shader.");
             assert(false);
             return false;
         }
@@ -182,7 +183,8 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         spv_result_t link_status = Link(context, binaries, &new_pgm, link_options);
         if (link_status != SPV_SUCCESS && link_status != SPV_WARNING) {
             std::ostringstream strm;
-            strm << "Failed to link Instrumented shader, error = " << link_status << " Proceeding with non instrumented shader.";
+            strm << "Failed to link Instrumented shader, spirv-link error:\n"
+                 << link_status << " Proceeding with non instrumented shader.";
             ReportSetupProblem(device, strm.str().c_str());
             assert(false);
             return false;
@@ -194,7 +196,8 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         if (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout, device_extensions.vk_ext_scalar_block_layout,
                                instrumented_error)) {
             std::ostringstream strm;
-            strm << "Instrumented shader is invalid, error = " << instrumented_error << " Proceeding with non instrumented shader.";
+            strm << "Instrumented shader is invalid, spirv-val error:\n"
+                 << instrumented_error << " Proceeding with non instrumented shader.";
             ReportSetupProblem(device, strm.str().c_str());
             assert(false);
             return false;
@@ -209,7 +212,8 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         // Call CreateAggressiveDCEPass with preserve_interface == true
         dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
         if (!dce_pass.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options)) {
-            ReportSetupProblem(device, "Failure to run DCE on instrumented shader.  Proceeding with non-instrumented shader.");
+            ReportSetupProblem(device,
+                               "Failure to run spirv-opt DCE on instrumented shader.  Proceeding with non-instrumented shader.");
             assert(false);
             return false;
         }
@@ -691,7 +695,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     uint32_t push_constants[PreDrawResources::push_constant_words] = {};
     if (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR ||
-        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR || 
+        command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR ||
         command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV) {
         // Validate count buffer
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
