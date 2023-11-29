@@ -12,6 +12,8 @@
 #pragma once
 
 #include "binding.h"
+#include "descriptor_helper.h"
+#include "shader_helper.h"
 
 #include <memory>
 
@@ -244,7 +246,66 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt::Device& 
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device& device,
                                                            std::shared_ptr<BuildGeometryInfoKHR> on_host_bottom_level_geometry);
 
+// Create and build a top level acceleration structure
+BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::CommandBuffer& cmd_buffer);
 }  // namespace blueprint
-
 }  // namespace as
+
+namespace rt {
+class Pipeline {
+  public:
+    Pipeline(VkLayerTest& test, vkt::Device* device);
+
+    // Build settings
+    // --------------
+    void AddCreateInfoFlags(VkPipelineCreateFlags flags);
+    void InitLibraryInfo();
+    void AddBinding(VkDescriptorSetLayoutBinding binding);
+    std::shared_ptr<as::BuildGeometryInfoKHR> AddTopLevelAccelStructBinding(
+        std::shared_ptr<vkt::as::BuildGeometryInfoKHR> top_level_accel_struct, uint32_t bind_point);
+    void SetPushConstantRangeSize(uint32_t size);
+    void SetRayGenShader(const char* glsl);
+    void AddMissShader(const char* glsl);
+    void AddLibrary(const Pipeline& library);
+    void AddDynamicState(VkDynamicState dynamic_state);
+
+    // Build
+    // -----
+    void Build();
+    void BuildPipeline();
+    void BuildSbt();
+
+    // Use
+    // ---
+    void BindResources(vkt::CommandBuffer& cmd_buffer, void* push_constants = nullptr, uint32_t push_constants_byte_size = 0);
+    void TraceRays(vkt::CommandBuffer& cmd_buffer);
+
+    // Get
+    // ---
+    const auto& GetPipelineHandle() { return rt_pipeline_; }
+    uint32_t GetShaderGroupsCount();
+    std::vector<uint8_t> GetRayTracingShaderGroupHandles();
+    std::vector<uint8_t> GetRayTracingCaptureReplayShaderGroupHandles();
+
+  private:
+    VkLayerTest& test_;
+    vkt::Device* device_;
+    VkRayTracingPipelineCreateInfoKHR vk_info_{};
+    uint32_t push_constant_range_size_ = 0;
+    std::vector<std::shared_ptr<as::BuildGeometryInfoKHR>> top_level_accel_structs_;
+    std::vector<VkDescriptorSetLayoutBinding> bindings_;
+    std::unique_ptr<OneOffDescriptorSet> desc_set_{};
+    vkt::PipelineLayout pipeline_layout_{};
+    std::vector<VkDynamicState> dynamic_states{};
+    std::unique_ptr<VkShaderObj> ray_gen_{};
+    std::vector<std::unique_ptr<VkShaderObj>> miss_shaders_{};
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
+    vkt::Pipeline rt_pipeline_{};
+    vkt::Buffer sbt_buffer{};
+    VkRayTracingPipelineInterfaceCreateInfoKHR rt_pipeline_interface_info_{};
+    VkPipelineLibraryCreateInfoKHR pipeline_lib_info_{};
+    std::vector<VkPipeline> libraries_{};
+};
+}  // namespace rt
+
 }  // namespace vkt

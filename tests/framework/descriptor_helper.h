@@ -29,6 +29,7 @@ struct OneOffDescriptorSet {
         std::optional<VkDescriptorImageInfo> image_info;
         std::optional<VkDescriptorBufferInfo> buffer_info;
         std::optional<VkBufferView> buffer_view;
+        std::optional<VkWriteDescriptorSetAccelerationStructureKHR> accel_struct_info;
     };
     std::vector<ResourceInfo> resource_infos;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
@@ -47,8 +48,11 @@ struct OneOffDescriptorSet {
     void WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                   VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t arrayElement = 0);
+    void WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
+                                    const VkAccelerationStructureKHR *pAccelerationStructures, uint32_t arrayElement = 0);
     void UpdateDescriptorSets();
 
   private:
-    void AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type);
+    void AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type,
+                            uint32_t descriptor_count = 1);
 };

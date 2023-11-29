@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/ray_tracing_objects.h"
 
 TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
@@ -161,7 +162,11 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
         "pipeline created using pipeline libraries, the total shader group count is computed using info from the libraries.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper();
+    accel_struct_features.accelerationStructure = VK_TRUE;
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_struct_features);
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper(&bda_features);
     rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
     VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&rt_pipeline_features);
     gpl_features.graphicsPipelineLibrary = VK_TRUE;
@@ -185,18 +190,22 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    RayTracingPipelineHelper rt_pipeline_lib(*this);
-    rt_pipeline_lib.InitLibraryInfoKHR(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
-    rt_pipeline_lib.InitState();
-    ASSERT_EQ(VK_SUCCESS, rt_pipeline_lib.CreateKHRRayTracingPipeline());
+    vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
+    rt_pipe_lib.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
+    rt_pipe_lib.InitLibraryInfo();
+    rt_pipe_lib.SetRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.AddMissShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.Build();
 
-    RayTracingPipelineHelper rt_pipe(*this);
-    rt_pipe.InitLibraryInfoKHR(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
-    rt_pipe.rp_ci_KHR_.stageCount = 0;
-    rt_pipe.rp_ci_KHR_.groupCount = 0;
-    rt_pipe.AddLibrary(rt_pipeline_lib);
-    rt_pipe.InitState();
-    ASSERT_EQ(VK_SUCCESS, rt_pipe.CreateKHRRayTracingPipeline());
+    vkt::rt::Pipeline rt_pipe(*this, m_device);
+    rt_pipe.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
+    rt_pipe.InitLibraryInfo();
+    auto top_level_accel_struct =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    rt_pipe.AddTopLevelAccelStructBinding(std::move(top_level_accel_struct), 0);
+    rt_pipe.SetRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddLibrary(rt_pipe_lib);
+    rt_pipe.Build();
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -215,6 +224,6 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     // dataSize must be at least groupCount * VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 0, 3,
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.GetPipelineHandle(), 0, 3,
                                                         3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize, &buffer);
 }

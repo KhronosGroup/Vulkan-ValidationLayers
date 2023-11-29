@@ -731,6 +731,8 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
 
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
   public:
+    ShaderModule() = default;
+    ShaderModule(const Device &dev, const VkShaderModuleCreateInfo &info) { init(dev, info); }
     ~ShaderModule() noexcept;
     void destroy() noexcept;
 
@@ -766,6 +768,7 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
         init(dev, info, basePipeline);
     }
     Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { init(dev, info); }
+    Pipeline(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) { init(dev, info); }
     ~Pipeline() noexcept;
     void destroy() noexcept;
 
@@ -775,6 +778,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     void init(const Device &dev, const VkGraphicsPipelineCreateInfo &info, const VkPipeline basePipeline);
     // vkCreateComputePipeline()
     void init(const Device &dev, const VkComputePipelineCreateInfo &info);
+    // vkCreateRayTracingPipelinesKHR
+    void init(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info);
     // vkLoadPipeline()
     void init(const Device &dev, size_t size, const void *data);
     // vkLoadPipelineDerivative()

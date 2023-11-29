@@ -44,12 +44,13 @@ void OneOffDescriptorSet::Clear() {
     descriptor_writes.clear();
 }
 
-void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type) {
+void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type,
+                                             uint32_t descriptor_count /*= 1*/) {
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = array_element;
-    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorCount = descriptor_count;
     descriptor_write.descriptorType = descriptor_type;
     descriptor_writes.emplace_back(descriptor_write);
 }
@@ -89,6 +90,19 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
     AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
+void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
+                                                     const VkAccelerationStructureKHR *pAccelerationStructures,
+                                                     uint32_t arrayElement /*= 0*/) {
+    VkWriteDescriptorSetAccelerationStructureKHR write_desc_set_accel_struct = vku::InitStructHelper();
+    write_desc_set_accel_struct.accelerationStructureCount = accelerationStructureCount;
+    write_desc_set_accel_struct.pAccelerationStructures = pAccelerationStructures;
+
+    ResourceInfo resource_info;
+    resource_info.accel_struct_info = write_desc_set_accel_struct;
+    resource_infos.emplace_back(resource_info);
+    AddDescriptorWrite(binding, arrayElement, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount);
+}
+
 void OneOffDescriptorSet::UpdateDescriptorSets() {
     assert(resource_infos.size() == descriptor_writes.size());
     for (size_t i = 0; i < resource_infos.size(); i++) {
@@ -97,9 +111,11 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
             descriptor_writes[i].pImageInfo = &info.image_info.value();
         } else if (info.buffer_info.has_value()) {
             descriptor_writes[i].pBufferInfo = &info.buffer_info.value();
-        } else {
-            assert(info.buffer_view.has_value());
+        } else if (info.buffer_view.has_value()) {
             descriptor_writes[i].pTexelBufferView = &info.buffer_view.value();
+        } else {
+            assert(info.accel_struct_info.has_value());
+            descriptor_writes[i].pNext = &info.accel_struct_info.value();
         }
     }
     vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);

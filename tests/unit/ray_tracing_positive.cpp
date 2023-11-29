@@ -16,6 +16,7 @@
 #include "../framework/shader_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
+#include "../framework/descriptor_helper.h"
 
 void RayTracingTest::InitFrameworkForRayTracingTest(bool is_khr, VkPhysicalDeviceFeatures2KHR *features2 /*= nullptr*/,
                                                     VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {
@@ -82,13 +83,20 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     auto bot_level_build_geometry =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
     bot_level_build_geometry->BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_commandBuffer->end();
 
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+
+    m_commandBuffer->begin();
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR top_level_build_geometry =
         vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, bot_level_build_geometry);
     top_level_build_geometry.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
-
     m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
 }
 
 TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
@@ -137,7 +145,6 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     // Create ray tracing pipeline
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
     {
-        const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
         VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
@@ -423,8 +430,15 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
         build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096));
     }
 
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(m_device->handle());
+
+    m_commandBuffer->begin();
     vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
     m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(m_device->handle());
 }
 
 TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
@@ -486,6 +500,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->begin();
         vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
         m_commandBuffer->end();
+
+        m_commandBuffer->QueueCommandBuffer();
+        vk::DeviceWaitIdle(m_device->handle());
     }
 }
 
@@ -806,4 +823,30 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
 
     fence_frame_1.wait(kWaitTimeout);
     fence_frame_2.wait(kWaitTimeout);
+}
+
+TEST_F(PositiveRayTracing, BasicTraceRays) {
+    TEST_DESCRIPTION("Setup a ray tracing pipeline and acceleration structure, and trace one ray");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&bda_features);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper(&ray_tracing_features);
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&accel_struct_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    vkt::rt::Pipeline test_pipeline(*this, m_device);
+    auto top_level_accel_struct =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    test_pipeline.AddTopLevelAccelStructBinding(std::move(top_level_accel_struct), 0);
+    test_pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    test_pipeline.Build();
+    m_commandBuffer->begin();
+    test_pipeline.BindResources(*m_commandBuffer);
+    test_pipeline.TraceRays(*m_commandBuffer);
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
 }

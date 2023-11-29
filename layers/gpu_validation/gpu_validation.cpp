@@ -993,7 +993,7 @@ void gpuav::Validator::AllocateSharedTraceRaysValidationResources() {
         }
 
         VkPushConstantRange push_constant_range = {};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        push_constant_range.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         push_constant_range.offset = 0;
         push_constant_range.size = PreTraceRaysResources::push_constant_words * sizeof(uint32_t);
         VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -1064,7 +1064,7 @@ void gpuav::Validator::AllocateSharedTraceRaysValidationResources() {
             return;
         }
 
-        // Allocate buffer to SBT, and fill it with sbt_host_storage
+        // Allocate buffer to store SBT, and fill it with sbt_host_storage
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.size = 4096;
         buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
