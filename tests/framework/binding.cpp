@@ -1033,6 +1033,10 @@ void Pipeline::init(const Device &dev, const VkComputePipelineCreateInfo &info) 
     }
 }
 
+void Pipeline::init(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRayTracingPipelinesKHR, dev, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &info);
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
 
 void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info,
