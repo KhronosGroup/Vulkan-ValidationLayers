@@ -1400,3 +1400,83 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
 
     vk::DestroySwapchainKHR(device(), swapchain, nullptr);
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7025
+TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
+    TEST_DESCRIPTION("Use present fence to wait for submission");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    // Warm up. Show that we can reset command buffer after waiting on **submit** fence
+    {
+        m_commandBuffer->begin();
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+        vkt::Fence submit_fence(*m_device);
+        vk::QueueSubmit(*m_default_queue, 1, &submit_info, submit_fence);
+
+        vk::WaitForFences(device(), 1, &submit_fence.handle(), VK_TRUE, kWaitTimeout);
+
+        // It's safe to reset command buffer because we waited on the fence
+        m_commandBuffer->reset();
+    }
+
+    // Main performance. Show that we can reset command buffer after waiting on **present** fence
+    {
+        constexpr VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        const vkt::Semaphore acquire_semaphore(*m_device);
+        const vkt::Semaphore submit_semaphore(*m_device);
+
+        const auto swapchain_images = GetSwapchainImages(m_swapchain);
+        uint32_t image_index = 0;
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+        const VkImageMemoryBarrier present_transition =
+            TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
+
+        m_commandBuffer->begin();
+        vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &present_transition);
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &acquire_semaphore.handle();
+        submit_info.pWaitDstStageMask = &wait_stage_mask;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = &submit_semaphore.handle();
+        vk::QueueSubmit(*m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+        vkt::Fence present_fence(*m_device);
+        VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+        present_fence_info.swapchainCount = 1;
+        present_fence_info.pFences = &present_fence.handle();
+
+        VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
+        present.waitSemaphoreCount = 1;
+        present.pWaitSemaphores = &submit_semaphore.handle();
+        present.swapchainCount = 1;
+        present.pSwapchains = &m_swapchain;
+        present.pImageIndices = &image_index;
+        vk::QueuePresentKHR(*m_default_queue, &present);
+
+        vk::WaitForFences(device(), 1, &present_fence.handle(), VK_TRUE, kWaitTimeout);
+
+        // It should be safe to reset command buffer after waiting on present fence:
+        //      wait on present fence ->
+        //      present was initiated ->
+        //      submit semaphore signaled ->
+        //      QueueSubmit workload has completed ->
+        //      command buffer is no longer in use and we can reset it.
+        m_commandBuffer->reset();
+    }
+    m_default_queue->wait();
+}
