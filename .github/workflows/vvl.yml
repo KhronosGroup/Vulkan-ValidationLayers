@@ -250,7 +250,8 @@ jobs:
           -D CMAKE_OSX_ARCHITECTURES=arm64 \
           -D BUILD_WERROR=ON \
           -D UPDATE_DEPS=ON \
-          -D CMAKE_BUILD_TYPE=Debug
+          -D CMAKE_BUILD_TYPE=Debug \
+          -D BUILD_TESTS=ON
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
