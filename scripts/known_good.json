@@ -95,7 +95,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "845e5d5a28561a25f85d23ef779c828e535bd56f",
+            "commit": "719b6b7debbfe75bd427daa0e39c347fce16cf9a",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
