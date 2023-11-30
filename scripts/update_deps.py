@@ -556,7 +556,7 @@ class GoodRepo(object):
 
         total_time = time.time() - start
 
-        print(f"Installed {self.name} ({self.commit}) in {total_time} seconds", flush=True)
+        print(f"Installed {self.name} ({self.commit}) in {total_time:.3f} seconds", flush=True)
 
     def IsOptional(self, opts):
         return len(self.optional.intersection(opts)) > 0
