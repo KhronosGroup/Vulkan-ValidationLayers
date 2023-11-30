@@ -141,10 +141,11 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const vkt::ImageView resolve_view = resolve_image.CreateView(ivci);
 
     VkImageView attachments[2];
     attachments[0] = color_image.targetView(format_resolve_prop.colorAttachmentFormat);
-    attachments[1] = resolve_image.targetView(ivci);
+    attachments[1] = resolve_view.handle();
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
     fb_ci.width = 32;
@@ -256,10 +257,11 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const vkt::ImageView resolve_view = resolve_image.CreateView(ivci);
 
     VkImageView attachments[2];
     attachments[0] = color_image.targetView(format_resolve_prop.colorAttachmentFormat);
-    attachments[1] = resolve_image.targetView(ivci);
+    attachments[1] = resolve_view.handle();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info[2];
     framebuffer_attachment_image_info[0] = vku::InitStructHelper();
@@ -365,12 +367,14 @@ TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const vkt::ImageView resolve_view = resolve_image.CreateView(ivci);
+
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_image.targetView(format_resolve_prop.colorAttachmentFormat);
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
-    color_attachment.resolveImageView = resolve_image.targetView(ivci);
+    color_attachment.resolveImageView = resolve_view.handle();
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();

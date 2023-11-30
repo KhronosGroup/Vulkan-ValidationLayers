@@ -1158,7 +1158,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     imageViewCreateInfo.subresourceRange.levelCount = 1;
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
-    VkImageView imageView3D = image3D.targetView(imageViewCreateInfo);
+    const vkt::ImageView imageView3D = image3D.CreateView(imageViewCreateInfo);
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.flags = 0;
@@ -1183,7 +1183,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     {
         framebufferCreateInfo.pNext = nullptr;
         framebufferCreateInfo.flags = 0;
-        framebufferCreateInfo.pAttachments = &imageView3D;
+        framebufferCreateInfo.pAttachments = &imageView3D.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04113");
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         m_errorMonitor->VerifyFound();
@@ -1197,7 +1197,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
 
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = vku::InitStructHelper();
     renderPassAttachmentBeginInfo.attachmentCount = 1;
-    renderPassAttachmentBeginInfo.pAttachments = &imageView3D;
+    renderPassAttachmentBeginInfo.pAttachments = &imageView3D.handle();
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
     renderPassBeginInfo.renderPass = renderPass.handle();
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;

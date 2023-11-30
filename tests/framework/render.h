@@ -332,20 +332,9 @@ class VkImageObj : public vkt::Image {
         return ci;
     }
 
-    const VkImageView &targetView(VkImageViewCreateInfo ci) {
-        if (!m_targetView.initialized()) {
-            ci.image = handle();
-            m_targetView.init(*m_device, ci);
-            m_createInfo = ci;
-        }
-        assert(m_createInfo.viewType == ci.viewType);
-        assert(m_createInfo.format == ci.format);
-        assert(m_createInfo.subresourceRange.aspectMask == ci.subresourceRange.aspectMask);
-        assert(m_createInfo.subresourceRange.baseMipLevel == ci.subresourceRange.baseMipLevel);
-        assert(m_createInfo.subresourceRange.levelCount == ci.subresourceRange.levelCount);
-        assert(m_createInfo.subresourceRange.baseArrayLayer == ci.subresourceRange.baseArrayLayer);
-        assert(m_createInfo.subresourceRange.layerCount == ci.subresourceRange.layerCount);
-        return m_targetView.handle();
+    vkt::ImageView CreateView(VkImageViewCreateInfo ci) const {
+        ci.image = handle();
+        return vkt::ImageView(*m_device, ci);
     }
 
     const VkImageView &targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0,
