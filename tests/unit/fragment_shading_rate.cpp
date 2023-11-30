@@ -1009,8 +1009,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     m_errorMonitor->VerifyFound();
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
 
-    VkImageView imageViewLayered = image.targetView(VK_FORMAT_R8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2);
-    fb_info.pAttachments = &imageViewLayered;
+    fb_info.pAttachments = &imageView;
     fb_info.layers = 3;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04538");
     fb.init(*m_device, fb_info);
