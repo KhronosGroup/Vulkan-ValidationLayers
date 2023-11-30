@@ -152,8 +152,8 @@ class CommandResources {
                                       const uint32_t *debug_record, const uint32_t operation_index, const LogObjectList &objlist);
 
     DeviceMemoryBlock output_mem_block;
-   
-    VkDescriptorSet output_buffer_desc_set = VK_NULL_HANDLE;  
+
+    VkDescriptorSet output_buffer_desc_set = VK_NULL_HANDLE;
     VkDescriptorPool output_buffer_desc_pool = VK_NULL_HANDLE;
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     bool uses_robustness = false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
@@ -233,7 +233,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     void ProcessAccelerationStructure(VkQueue queue);
 };
 
-class Buffer : public BUFFER_STATE {
+class Buffer : public vvl::Buffer {
   public:
     Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
 
@@ -246,7 +246,7 @@ class Buffer : public BUFFER_STATE {
 
 class BufferView : public BUFFER_VIEW_STATE {
   public:
-    BufferView(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+    BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
@@ -283,7 +283,7 @@ class Sampler : public SAMPLER_STATE {
 class AccelerationStructureKHR : public ACCELERATION_STRUCTURE_STATE_KHR {
   public:
     AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                             std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address, DescriptorHeap &desc_heap_);
+                             std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;

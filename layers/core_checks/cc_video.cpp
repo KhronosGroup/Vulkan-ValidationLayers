@@ -1456,7 +1456,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
 
     const auto &profile_caps = vs_state->profile->GetCapabilities();
 
-    auto buffer_state = Get<BUFFER_STATE>(pDecodeInfo->srcBuffer);
+    auto buffer_state = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
     if (buffer_state) {
         const char *where = " Buffer referenced in pDecodeInfo->srcBuffer";
         skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, error_obj.location,

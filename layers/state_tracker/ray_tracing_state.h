@@ -70,7 +70,7 @@ class ACCELERATION_STRUCTURE_STATE_NV : public BINDABLE {
 class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
   public:
     ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                                     std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address)
+                                     std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address)
         : BASE_NODE(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
     ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
 
@@ -105,7 +105,7 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
     safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
     bool built = false;
     uint64_t opaque_handle = 0;
-    std::shared_ptr<BUFFER_STATE> buffer_state;
+    std::shared_ptr<vvl::Buffer> buffer_state;
     VkDeviceAddress address;
 };
 

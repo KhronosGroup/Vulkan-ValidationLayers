@@ -159,8 +159,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     const auto *context = cb_context->GetCurrentAccessContext();
 
     // If we have no previous accesses, we have no hazards
-    auto src_buffer = Get<BUFFER_STATE>(srcBuffer);
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto src_buffer = Get<vvl::Buffer>(srcBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -198,8 +198,8 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     const auto tag = cb_context->NextCommandTag(record_obj.location.function);
     auto *context = cb_context->GetCurrentAccessContext();
 
-    auto src_buffer = Get<BUFFER_STATE>(srcBuffer);
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto src_buffer = Get<vvl::Buffer>(srcBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -224,8 +224,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
     const auto *context = cb_context->GetCurrentAccessContext();
 
     // If we have no previous accesses, we have no hazards
-    auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer);
-    auto dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer);
+    auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
 
     for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
         const auto &copy_region = pCopyBufferInfo->pRegions[region];
@@ -268,8 +268,8 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
     const auto tag = cb_context->NextCommandTag(command);
     auto *context = cb_context->GetCurrentAccessContext();
 
-    auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer);
-    auto dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer);
+    auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
 
     for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
         const auto &copy_region = pCopyBufferInfo->pRegions[region];
@@ -820,7 +820,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
     assert(context);
     if (!context) return skip;
 
-    auto src_buffer = Get<BUFFER_STATE>(srcBuffer);
+    auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_image = Get<ImageState>(dstImage);
 
     for (uint32_t region = 0; region < regionCount; region++) {
@@ -890,7 +890,7 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    auto src_buffer = Get<BUFFER_STATE>(srcBuffer);
+    auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_image = Get<ImageState>(dstImage);
 
     for (uint32_t region = 0; region < regionCount; region++) {
@@ -948,7 +948,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
     if (!context) return skip;
 
     auto src_image = Get<ImageState>(srcImage);
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
     const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->deviceMemory() : VK_NULL_HANDLE;
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -1013,7 +1013,7 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
     const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->deviceMemory() : VK_NULL_HANDLE;
     const VulkanTypedHandle dst_handle(dst_mem, kVulkanObjectTypeDeviceMemory);
 
@@ -1201,7 +1201,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
     bool skip = false;
     if (drawCount == 0) return skip;
 
-    auto buf_state = Get<BUFFER_STATE>(buffer);
+    auto buf_state = Get<vvl::Buffer>(buffer);
     VkDeviceSize size = struct_size;
     if (drawCount == 1 || stride == size) {
         if (drawCount > 1) size *= drawCount;
@@ -1232,7 +1232,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
 void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag tag, const VkDeviceSize struct_size,
                                          const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
                                          uint32_t stride) {
-    auto buf_state = Get<BUFFER_STATE>(buffer);
+    auto buf_state = Get<vvl::Buffer>(buffer);
     VkDeviceSize size = struct_size;
     if (drawCount == 1 || stride == size) {
         if (drawCount > 1) size *= drawCount;
@@ -1252,7 +1252,7 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
                                         const Location &loc) const {
     bool skip = false;
 
-    auto count_buf_state = Get<BUFFER_STATE>(buffer);
+    auto count_buf_state = Get<vvl::Buffer>(buffer);
     const ResourceAccessRange range = MakeRange(offset, 4);
     auto hazard = context.DetectHazard(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
     if (hazard.IsHazard()) {
@@ -1265,7 +1265,7 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
 }
 
 void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset) {
-    auto count_buf_state = Get<BUFFER_STATE>(buffer);
+    auto count_buf_state = Get<vvl::Buffer>(buffer);
     const ResourceAccessRange range = MakeRange(offset, 4);
     context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
 }
@@ -1802,7 +1802,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
     assert(context);
     if (!context) return skip;
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
@@ -1832,7 +1832,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
@@ -1854,7 +1854,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
     assert(context);
     if (!context) return skip;
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
@@ -1879,7 +1879,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
@@ -2063,7 +2063,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
     assert(context);
     if (!context) return skip;
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
@@ -2089,7 +2089,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
@@ -2111,7 +2111,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
     assert(context);
     if (!context) return skip;
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
@@ -2137,7 +2137,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
@@ -2361,7 +2361,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer comm
     assert(context);
     if (!context) return skip;
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
@@ -2387,7 +2387,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    auto dst_buffer = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);

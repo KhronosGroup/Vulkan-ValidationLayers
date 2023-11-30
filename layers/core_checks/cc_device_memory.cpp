@@ -93,7 +93,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, cons
 }
 
 // Check to see if host-visible memory was bound to this buffer
-bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE &buffer_state, const Location &buffer_loc,
+bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const vvl::Buffer &buffer_state, const Location &buffer_loc,
                                                           const char *vuid) const {
     bool result = false;
     result |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_loc, vuid);
@@ -327,7 +327,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             // Dedicated VkBuffer
             const LogObjectList objlist(device, dedicated_buffer);
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
-            auto buffer_state = Get<BUFFER_STATE>(dedicated_buffer);
+            auto buffer_state = Get<vvl::Buffer>(dedicated_buffer);
             if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
                 !imported_ahb_buffer && !imported_qnx_buffer) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
@@ -519,7 +519,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         }
     }
 
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
     if (!buffer_state) {
         return false;
     }
@@ -1889,7 +1889,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
                          "bufferDeviceAddressMultiDevice feature must be enabled.");
     }
 
-    auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
+    auto buffer_state = Get<vvl::Buffer>(pInfo->buffer);
     if (buffer_state) {
         const Location info_loc = error_obj.location.dot(Field::pInfo);
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {

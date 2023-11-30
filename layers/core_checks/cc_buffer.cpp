@@ -26,9 +26,8 @@
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, BUFFER_STATE const &buffer_state,
-                                          VkBufferUsageFlags desired, bool strict, const char *vuid,
-                                          const Location &buffer_loc) const {
+bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buffer const &buffer_state, VkBufferUsageFlags desired,
+                                          bool strict, const char *vuid, const Location &buffer_loc) const {
     bool skip = false;
     bool correct_usage = false;
     if (strict) {
@@ -45,7 +44,7 @@ bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, BUFFER_S
     return skip;
 }
 
-bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE &buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
+bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
                                          const VkPhysicalDeviceLimits *device_limits, const Location &loc) const {
     bool skip = false;
 
@@ -98,7 +97,7 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE &buffer_state, const
     return skip;
 }
 
-bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE &buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
+bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
                                           const Location &loc) const {
     bool skip = false;
     const VkFormat format = pCreateInfo->format;
@@ -297,7 +296,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
-    auto buffer_state_ptr = Get<BUFFER_STATE>(pCreateInfo->buffer);
+    auto buffer_state_ptr = Get<vvl::Buffer>(pCreateInfo->buffer);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (!buffer_state_ptr) {
@@ -414,7 +413,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                               const ErrorObject &error_obj) const {
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
 
     bool skip = false;
     if (buffer_state) {
@@ -437,7 +436,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
                                               VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto buffer_state = Get<BUFFER_STATE>(dstBuffer);
+    auto buffer_state = Get<vvl::Buffer>(dstBuffer);
     if (!cb_state_ptr || !buffer_state) {
         return skip;
     }
@@ -474,7 +473,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 }
 
 // Validates the buffer is allowed to be protected
-bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state,
+bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state,
                                          const Location &buffer_loc, const char *vuid, const char *more_message) const {
     bool skip = false;
 
@@ -488,7 +487,7 @@ bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const
 }
 
 // Validates the buffer is allowed to be unprotected
-bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state,
+bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state,
                                            const Location &buffer_loc, const char *vuid, const char *more_message) const {
     bool skip = false;
 

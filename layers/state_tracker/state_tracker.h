@@ -48,6 +48,7 @@ class DescriptorSetLayout;
 class DescriptorUpdateTemplate;
 class Queue;
 class Semaphore;
+class Buffer;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -56,7 +57,6 @@ class PIPELINE_CACHE_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
 class PIPELINE_LAYOUT_STATE;
-class BUFFER_STATE;
 class BUFFER_VIEW_STATE;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
@@ -292,7 +292,7 @@ VALSTATETRACK_STATE_OBJECT(VkSampler, SAMPLER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImageView, IMAGE_VIEW_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkBufferView, BUFFER_VIEW_STATE)
-VALSTATETRACK_STATE_OBJECT(VkBuffer, BUFFER_STATE)
+VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, PIPELINE_CACHE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, PIPELINE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
@@ -477,7 +477,7 @@ class ValidationStateTracker : public ValidationObject {
     // more efficient to store them using raw pointers. It is safe to do so (at time of writing) because those raw pointers come
     // from shared ones created when the buffer is first recorded, and they are removed from buffer_address_map_ at BufferDestroy
     // time
-    using BUFFER_STATE_PTR = BUFFER_STATE*;
+    using BUFFER_STATE_PTR = vvl::Buffer*;
     vvl::span<BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
@@ -688,8 +688,9 @@ class ValidationStateTracker : public ValidationObject {
                                                      const VkAllocationCallbacks* pAllocator,
                                                      const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> CreateAccelerationStructureState(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR * pCreateInfo,
-                                                                                               std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address);
+    virtual std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> CreateAccelerationStructureState(
+        VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+        std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address);
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureKHR* pAccelerationStructure,
@@ -715,13 +716,15 @@ class ValidationStateTracker : public ValidationObject {
                                                       const VkAllocationCallbacks* pAllocator,
                                                       const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<BUFFER_STATE> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo);
+    virtual std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo);
     void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkBuffer* pBuffer, const RecordObject& record_obj) override;
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci, VkFormatFeatureFlags2KHR buf_ff);
+    virtual std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
+                                                                     const VkBufferViewCreateInfo* ci,
+                                                                     VkFormatFeatureFlags2KHR buf_ff);
     void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                         const RecordObject& record_obj) override;
@@ -1756,10 +1759,14 @@ class ValidationStateTracker : public ValidationObject {
                                 const char* vuid, const char* more_message = "") const { return false; }
     virtual bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
                                   const char* vuid, const char* more_message = "") const { return false; }
-    virtual bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
-                                 const char* vuid, const char* more_message = "") const { return false; }
-    virtual bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
-                                   const char* vuid, const char* more_message = "") const { return false; }
+    virtual bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state,
+                                         const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state,
+                                           const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
     virtual bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const { return false; }
@@ -1904,7 +1911,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, BUFFER_VIEW_STATE, buffer_view_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, BUFFER_STATE, buffer_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, PIPELINE_CACHE_STATE, pipeline_cache_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, SHADER_OBJECT_STATE, shader_object_map_)

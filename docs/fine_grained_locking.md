@@ -647,9 +647,9 @@ The image_layout_map maintains a local copy of the layout state for any images u
 
 [layers: Make global QFO and Image Layout state threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3669)
 
-VkBuffer / BUFFER_STATE
+VkBuffer / vvl::Buffer
 
-`BUFFER_STATE` has a flag used only by Best Practices:
+`vvl::Buffer` has a flag used only by Best Practices:
 
 
 ```
@@ -657,11 +657,11 @@ VkBuffer / BUFFER_STATE
 ```
 
 
-And `BUFFER_STATE::deviceAddress` field is used for lookups in a separate map used by ray tracing validation in CoreChecks and GPUAV:
+And `vvl::Buffer::deviceAddress` field is used for lookups in a separate map used by ray tracing validation in CoreChecks and GPUAV:
 
 
 ```
-    vl_concurrent_unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
+    vl_concurrent_unordered_map<VkDeviceAddress, vvl::Buffer*> buffer_address_map_;
 ```
 
 

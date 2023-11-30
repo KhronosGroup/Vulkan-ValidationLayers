@@ -376,7 +376,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, VkDeviceSize offset,
+bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state, VkDeviceSize offset,
                                             VkIndexType indexType, const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function == Func::vkCmdBindIndexBuffer2KHR;
@@ -405,7 +405,7 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, co
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType, const ErrorObject &error_obj) const {
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, error_obj.location);
 }
@@ -413,7 +413,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkDeviceSize size, VkIndexType indexType,
                                                        const ErrorObject &error_obj) const {
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, error_obj.location);
@@ -442,7 +442,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
+        auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         if (!buffer_state) {
             continue;
         }
@@ -464,7 +464,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
                                                 VkDeviceSize dataSize, const void *pData, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
     if (!cb_state_ptr || !dst_buffer_state) {
         return skip;
     }
@@ -1344,7 +1344,7 @@ bool CoreChecks::ValidateCmdDrawStrideWithStruct(const CMD_BUFFER_STATE &cb_stat
 
 bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const CMD_BUFFER_STATE &cb_state, const std::string &vuid, const uint32_t stride,
                                                  Struct struct_name, const uint32_t struct_size, const uint32_t drawCount,
-                                                 const VkDeviceSize offset, const BUFFER_STATE *buffer_state,
+                                                 const VkDeviceSize offset, const vvl::Buffer *buffer_state,
                                                  const Location &loc) const {
     bool skip = false;
     uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
@@ -1378,7 +1378,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
-        auto buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
+        auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         assert(buffer_state != nullptr);
 
         if (pOffsets[i] >= buffer_state->createInfo.size) {
@@ -1481,7 +1481,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
             if (pCounterBuffers[i] == VK_NULL_HANDLE) {
                 continue;
             }
-            auto buffer_state = Get<BUFFER_STATE>(pCounterBuffers[i]);
+            auto buffer_state = Get<vvl::Buffer>(pCounterBuffers[i]);
             assert(buffer_state != nullptr);
 
             if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
@@ -1534,7 +1534,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
             if (pCounterBuffers[i] == VK_NULL_HANDLE) {
                 continue;
             }
-            auto buffer_state = Get<BUFFER_STATE>(pCounterBuffers[i]);
+            auto buffer_state = Get<vvl::Buffer>(pCounterBuffers[i]);
             assert(buffer_state != nullptr);
 
             if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
@@ -1567,7 +1567,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
+        auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         if (!buffer_state) {
             continue;  // Can be null handle if using nullDescriptor
         }
@@ -1624,7 +1624,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     }
 
     if (pConditionalRenderingBegin) {
-        auto buffer_state = Get<BUFFER_STATE>(pConditionalRenderingBegin->buffer);
+        auto buffer_state = Get<vvl::Buffer>(pConditionalRenderingBegin->buffer);
         if (buffer_state) {
             const Location conditional_loc = error_obj.location.dot(Field::pConditionalRenderingBegin);
             skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, conditional_loc.dot(Field::buffer),

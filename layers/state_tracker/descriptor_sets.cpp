@@ -717,7 +717,7 @@ void vvl::BufferDescriptor::WriteUpdate(DescriptorSet &set_state, const Validati
     const auto &buffer_info = update.pBufferInfo[index];
     offset_ = buffer_info.offset;
     range_ = buffer_info.range;
-    auto buffer_state = dev_data.GetConstCastShared<BUFFER_STATE>(buffer_info.buffer);
+    auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(buffer_info.buffer);
     ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
 }
 
@@ -841,7 +841,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             const auto &buffer_info = update.pBufferInfo[index];
             offset_ = buffer_info.offset;
             range_ = buffer_info.range;
-            const auto buffer_state = dev_data.GetConstCastShared<BUFFER_STATE>(update.pBufferInfo->buffer);
+            const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
             if (buffer_state) {
                 buffer_size = buffer_state->createInfo.size;
             }

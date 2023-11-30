@@ -45,7 +45,7 @@ struct GpuVuid {
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureKHR, gpuav::AccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureNV, gpuav::AccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, BUFFER_VIEW_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav::DescriptorSet, vvl::DescriptorSet)
@@ -123,8 +123,8 @@ class Validator : public gpu_tracker::Validator {
     // gpu_setup.cpp
     // -------------
   public:
-    std::shared_ptr<BUFFER_STATE> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
-    std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<BUFFER_STATE>& bf, VkBufferView bv,
+    std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
+    std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
                                                              const VkBufferViewCreateInfo* ci,
                                                              VkFormatFeatureFlags2KHR buf_ff) final;
     std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv,
@@ -134,7 +134,7 @@ class Validator : public gpu_tracker::Validator {
         VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo) final;
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> CreateAccelerationStructureState(
         VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
-        std::shared_ptr<BUFFER_STATE>&& buf_state, VkDeviceAddress address) final;
+        std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address) final;
     std::shared_ptr<SAMPLER_STATE> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
@@ -417,9 +417,9 @@ class Validator : public gpu_tracker::Validator {
                                 const char* vuid, const char* more_message = "") const override;
     bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
                                   const char* vuid, const char* more_message = "") const override;
-    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                  const char* vuid, const char* more_message = "") const override;
-    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const override;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,

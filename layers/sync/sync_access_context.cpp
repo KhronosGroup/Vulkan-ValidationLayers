@@ -20,7 +20,7 @@
 #include "sync/sync_access_context.h"
 
 bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
-VkDeviceSize ResourceBaseAddress(const BUFFER_STATE &buffer) { return buffer.GetFakeBaseAddress(); }
+VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer) { return buffer.GetFakeBaseAddress(); }
 
 class HazardDetector {
     const SyncStageAccessInfoType &usage_info_;
@@ -173,7 +173,7 @@ void AccessContext::ResolvePreviousAccesses() {
     ResolvePreviousAccess(kFullRange, &access_state_map_, &default_state);
 }
 
-void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const ResourceAccessRange &range, const ResourceUsageTag tag) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
@@ -270,7 +270,7 @@ void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageT
     }
 }
 
-HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index,
+HazardResult AccessContext::DetectHazard(const vvl::Buffer &buffer, SyncStageAccessIndex usage_index,
                                          const ResourceAccessRange &range) const {
     if (!SimpleBinding(buffer)) return HazardResult();
     const auto base_address = ResourceBaseAddress(buffer);

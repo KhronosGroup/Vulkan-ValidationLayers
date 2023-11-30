@@ -609,7 +609,7 @@ void gpuav::Validator::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *cb_state)
 }
 
 // Validates the buffer is allowed to be protected
-bool gpuav::Validator::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state,
+bool gpuav::Validator::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state,
                                                const Location &buffer_loc, const char *vuid, const char *more_message) const {
     bool skip = false;
 
@@ -623,7 +623,7 @@ bool gpuav::Validator::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state,
 }
 
 // Validates the buffer is allowed to be unprotected
-bool gpuav::Validator::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state,
+bool gpuav::Validator::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state,
                                                  const Location &buffer_loc, const char *vuid, const char *more_message) const {
     bool skip = false;
 

@@ -149,7 +149,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 
 bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
 
     if (mem_state && mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&

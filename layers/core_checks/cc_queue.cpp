@@ -425,7 +425,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
                     break;
                 }
                 case kVulkanObjectTypeBuffer: {
-                    auto buffer_state = static_cast<const BUFFER_STATE *>(base_node.get());
+                    auto buffer_state = static_cast<const vvl::Buffer *>(base_node.get());
                     if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                         skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state->queueFamilyIndex,
                                                       buffer_state->createInfo.queueFamilyIndexCount,
@@ -583,7 +583,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             for (uint32_t buffer_idx = 0; buffer_idx < bind_info.bufferBindCount; ++buffer_idx) {
                 const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
                 if (buffer_bind.pBinds) {
-                    auto buffer_state = Get<BUFFER_STATE>(buffer_bind.buffer);
+                    auto buffer_state = Get<vvl::Buffer>(buffer_bind.buffer);
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
                         const Location buffer_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);

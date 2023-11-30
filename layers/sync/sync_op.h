@@ -114,13 +114,13 @@ class SyncEventsContext {
 };
 
 struct SyncBufferMemoryBarrier {
-    using Buffer = std::shared_ptr<const BUFFER_STATE>;
+    using Buffer = std::shared_ptr<const vvl::Buffer>;
     Buffer buffer;
     SyncBarrier barrier;
     ResourceAccessRange range;
     bool IsLayoutTransition() const { return false; }
     const ResourceAccessRange &Range() const { return range; };
-    const BUFFER_STATE *GetState() const { return buffer.get(); }
+    const vvl::Buffer *GetState() const { return buffer.get(); }
     SyncBufferMemoryBarrier(const Buffer &buffer_, const SyncBarrier &barrier_, const ResourceAccessRange &range_)
         : buffer(buffer_), barrier(barrier_), range(range_) {}
     SyncBufferMemoryBarrier() = default;

@@ -543,9 +543,9 @@ class BufferDescriptor : public Descriptor {
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     VkBuffer GetBuffer() const { return buffer_state_ ? buffer_state_->buffer() : VK_NULL_HANDLE; }
-    const BUFFER_STATE *GetBufferState() const { return buffer_state_.get(); }
-    BUFFER_STATE *GetBufferState() { return buffer_state_.get(); }
-    std::shared_ptr<BUFFER_STATE> GetSharedBufferState() const { return buffer_state_; }
+    const vvl::Buffer *GetBufferState() const { return buffer_state_.get(); }
+    vvl::Buffer *GetBufferState() { return buffer_state_.get(); }
+    std::shared_ptr<vvl::Buffer> GetSharedBufferState() const { return buffer_state_; }
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
 
@@ -566,7 +566,7 @@ class BufferDescriptor : public Descriptor {
   private:
     VkDeviceSize offset_{0};
     VkDeviceSize range_{0};
-    std::shared_ptr<BUFFER_STATE> buffer_state_;
+    std::shared_ptr<vvl::Buffer> buffer_state_;
 };
 
 class InlineUniformDescriptor : public Descriptor {
@@ -672,7 +672,7 @@ class MutableDescriptor : public Descriptor {
     std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
     std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
-    std::shared_ptr<BUFFER_STATE> GetSharedBufferState() const { return buffer_state_; }
+    std::shared_ptr<vvl::Buffer> GetSharedBufferState() const { return buffer_state_; }
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
     std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
@@ -716,7 +716,7 @@ class MutableDescriptor : public Descriptor {
     // Buffer Descriptor
     VkDeviceSize offset_{0};
     VkDeviceSize range_{0};
-    std::shared_ptr<BUFFER_STATE> buffer_state_;
+    std::shared_ptr<vvl::Buffer> buffer_state_;
     // Acceleration Structure Descriptor
     bool is_khr_{false};
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};

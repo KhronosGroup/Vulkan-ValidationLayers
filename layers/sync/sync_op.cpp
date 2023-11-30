@@ -291,7 +291,7 @@ struct SyncOpPipelineBarrierFunctorFactory {
         return GlobalBarrierOpFunctor(queue_id, barrier, false);
     }
 
-    BufferRange MakeRangeGen(const BUFFER_STATE &buffer, const ResourceAccessRange &range) const {
+    BufferRange MakeRangeGen(const vvl::Buffer &buffer, const ResourceAccessRange &range) const {
         if (!SimpleBinding(buffer)) return ResourceAccessRange();
         const auto base_address = ResourceBaseAddress(buffer);
         return (range + base_address);
@@ -382,7 +382,7 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
     buffer_memory_barriers.reserve(barrier_count);
     for (uint32_t index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
-        auto buffer = sync_state.Get<BUFFER_STATE>(barrier.buffer);
+        auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer);
         if (buffer) {
             const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
             const SyncBarrier sync_barrier(barrier, src, dst);
@@ -414,7 +414,7 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
         const auto &barrier = barriers[index];
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
-        auto buffer = sync_state.Get<BUFFER_STATE>(barrier.buffer);
+        auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer);
         if (buffer) {
             const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
             const SyncBarrier sync_barrier(barrier, src, dst);
@@ -694,7 +694,7 @@ struct SyncOpWaitEventsFunctorFactory {
         return GlobalBarrierOpFunctor(queue_id, sync_event->first_scope_tag, barrier, false);
     }
 
-    BufferRange MakeRangeGen(const BUFFER_STATE &buffer, const ResourceAccessRange &range_arg) const {
+    BufferRange MakeRangeGen(const vvl::Buffer &buffer, const ResourceAccessRange &range_arg) const {
         const auto base_address = ResourceBaseAddress(buffer);
         ResourceAccessRange range = SimpleBinding(buffer) ? (range_arg + base_address) : ResourceAccessRange();
         EventSimpleRangeGenerator filtered_range_gen(sync_event->FirstScope(), range);

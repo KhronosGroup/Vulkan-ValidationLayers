@@ -21,13 +21,16 @@
 #include "sync/sync_common.h"
 #include "sync/sync_access_state.h"
 
-class BUFFER_STATE;
+namespace vvl {
+class Buffer;
+}  // namespace vvl
+
 namespace syncval_state {
 class ImageState;
 class ImageViewState;
 }  // namespace syncval_state
 bool SimpleBinding(const BINDABLE &bindable);
-VkDeviceSize ResourceBaseAddress(const BUFFER_STATE &buffer);
+VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
 // ForEachEntryInRangesUntil -- Execute Action for each map entry in the generated ranges until it returns true
 //
@@ -274,7 +277,7 @@ class AccessContext {
 
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
 
-    HazardResult DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
+    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
     HazardResult DetectHazard(const ImageState &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
     HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const;
@@ -324,7 +327,7 @@ class AccessContext {
     void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context, RangeGenerator range_gen,
                             const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
 
-    void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const vvl::Buffer &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, ResourceUsageTag tag);
     void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);

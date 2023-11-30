@@ -940,8 +940,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
 }
 
 template <typename RegionType>
-bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const BUFFER_STATE &src_buffer_state,
-                                             const BUFFER_STATE &dst_buffer_state, uint32_t regionCount, const RegionType *pRegions,
+bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buffer &src_buffer_state,
+                                             const vvl::Buffer &dst_buffer_state, uint32_t regionCount, const RegionType *pRegions,
                                              const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function == Func::vkCmdCopyBuffer2 || loc.function == Func::vkCmdCopyBuffer2KHR;
@@ -1013,8 +1013,8 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
                                        const RegionType *pRegions, const Location &loc) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_buffer_state = Get<BUFFER_STATE>(srcBuffer);
-    auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
+    auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
+    auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
     if (!cb_state_ptr || !src_buffer_state || !dst_buffer_state) {
         return skip;
     }
@@ -2253,8 +2253,8 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
     const bool is_2 = loc.function == Func::vkCmdCopyBuffer2 || loc.function == Func::vkCmdCopyBuffer2KHR;
     const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
 
-    auto src_buffer_state = Get<BUFFER_STATE>(srcBuffer);
-    auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
+    auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
+    auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
     if (src_buffer_state->sparse || dst_buffer_state->sparse) {
         auto cb_state_ptr = Get<CMD_BUFFER_STATE>(commandBuffer);
 
@@ -2389,7 +2389,7 @@ bool CoreChecks::ValidateImageBounds(const HandleT handle, const IMAGE_STATE &im
 }
 
 template <typename RegionType>
-bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &image_state, const BUFFER_STATE &buff_state,
+bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &image_state, const vvl::Buffer &buff_state,
                                       uint32_t regionCount, const RegionType *pRegions, const Location &loc,
                                       const char *vuid) const {
     bool skip = false;
@@ -2434,7 +2434,7 @@ bool CoreChecks::ValidateImageSampleCount(const HandleT handle, const IMAGE_STAT
 template <typename RegionType>
 bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const CMD_BUFFER_STATE &cb_state, uint32_t regionCount,
                                                       const RegionType *pRegions, const IMAGE_STATE &image_state,
-                                                      const BUFFER_STATE &buffer_state, const Location &loc, bool image_to_buffer,
+                                                      const vvl::Buffer &buffer_state, const Location &loc, bool image_to_buffer,
                                                       bool is_2) const {
     bool skip = false;
 
@@ -2486,7 +2486,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
-    auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
     if (!cb_state_ptr || !src_image_state || !dst_buffer_state) {
         return skip;
     }
@@ -2646,7 +2646,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                                               const Location &loc) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_buffer_state = Get<BUFFER_STATE>(srcBuffer);
+    auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
     if (!cb_state_ptr || !src_buffer_state || !dst_image_state) {
         return skip;
