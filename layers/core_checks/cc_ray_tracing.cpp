@@ -57,7 +57,7 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
     if (!pCreateInfo) {
         return false;
     }
-    auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
+    auto buffer_state = Get<vvl::Buffer>(pCreateInfo->buffer);
     if (!buffer_state) {
         return false;
     }
@@ -164,10 +164,10 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
 
     auto validate_no_as_buffer_memory_overlap =
         [this, commandBuffer, error_obj](const ACCELERATION_STRUCTURE_STATE_KHR &accel_struct_a, const Location &location_a,
-                                         const BUFFER_STATE &buffer_a, const sparse_container::range<VkDeviceSize> &range_a,
+                                         const vvl::Buffer &buffer_a, const sparse_container::range<VkDeviceSize> &range_a,
 
                                          const ACCELERATION_STRUCTURE_STATE_KHR &accel_struct_b, const Location &location_b,
-                                         const BUFFER_STATE &buffer_b, const sparse_container::range<VkDeviceSize> &range_b,
+                                         const vvl::Buffer &buffer_b, const sparse_container::range<VkDeviceSize> &range_b,
 
                                          const char *vuid) {
             bool skip = false;
@@ -189,8 +189,8 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
         };
 
     if (info.srcAccelerationStructure != info.dstAccelerationStructure && src_as_state && dst_as_state) {
-        const std::shared_ptr<BUFFER_STATE> src_as_buffer = src_as_state->buffer_state;
-        const std::shared_ptr<BUFFER_STATE> dst_as_buffer = dst_as_state->buffer_state;
+        const std::shared_ptr<vvl::Buffer> src_as_buffer = src_as_state->buffer_state;
+        const std::shared_ptr<vvl::Buffer> dst_as_buffer = dst_as_state->buffer_state;
 
         if (src_as_buffer && dst_as_buffer) {
             const range<VkDeviceSize> src_as_range(src_as_state->create_infoKHR.offset, src_as_state->create_infoKHR.size);
@@ -220,7 +220,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
 
                 // Validate that scratch buffer's memory does not overlap destination acceleration structure's memory
                 if (dst_as_state && dst_as_state->buffer_state) {
-                    const BUFFER_STATE &dst_as_buffer = *dst_as_state->buffer_state;
+                    const vvl::Buffer &dst_as_buffer = *dst_as_state->buffer_state;
                     const range<VkDeviceSize> dst_as_buffer_range(
                         dst_as_state->create_infoKHR.offset,
                         dst_as_state->create_infoKHR.offset + dst_as_state->create_infoKHR.size);
@@ -279,7 +279,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
                 // update
                 if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR && src_as_state &&
                     src_as_state->buffer_state) {
-                    const BUFFER_STATE &src_as_buffer = *src_as_state->buffer_state;
+                    const vvl::Buffer &src_as_buffer = *src_as_state->buffer_state;
                     const range<VkDeviceSize> src_as_buffer_range(
                         src_as_state->create_infoKHR.offset,
                         src_as_state->create_infoKHR.offset + src_as_state->create_infoKHR.size);
@@ -451,11 +451,11 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
             // memory that is going to be updated by this cmd
             if (dst_as_state && dst_as_state->buffer_state && other_src_as_state && other_src_as_state->buffer_state) {
                 if (pInfos[other_info_j].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-                    const BUFFER_STATE &buffer_a = *dst_as_state->buffer_state;
+                    const vvl::Buffer &buffer_a = *dst_as_state->buffer_state;
                     const range<VkDeviceSize> range_a(dst_as_state->create_infoKHR.offset,
                                                       dst_as_state->create_infoKHR.offset + dst_as_state->create_infoKHR.size);
 
-                    const BUFFER_STATE &buffer_b = *other_src_as_state->buffer_state;
+                    const vvl::Buffer &buffer_b = *other_src_as_state->buffer_state;
                     const range<VkDeviceSize> range_b(
                         other_src_as_state->create_infoKHR.offset,
                         other_src_as_state->create_infoKHR.offset + other_src_as_state->create_infoKHR.size);
@@ -469,11 +469,11 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
 
             // Validate that there is no destination acceleration structures' memory overlaps
             if (dst_as_state && dst_as_state->buffer_state && other_dst_as_state && other_dst_as_state->buffer_state) {
-                const BUFFER_STATE &buffer_a = *dst_as_state->buffer_state;
+                const vvl::Buffer &buffer_a = *dst_as_state->buffer_state;
                 const range<VkDeviceSize> range_a(dst_as_state->create_infoKHR.offset,
                                                   dst_as_state->create_infoKHR.offset + dst_as_state->create_infoKHR.size);
 
-                const BUFFER_STATE &buffer_b = *other_dst_as_state->buffer_state;
+                const vvl::Buffer &buffer_b = *other_dst_as_state->buffer_state;
                 const range<VkDeviceSize> range_b(
                     other_dst_as_state->create_infoKHR.offset,
                     other_dst_as_state->create_infoKHR.offset + other_dst_as_state->create_infoKHR.size);
@@ -883,7 +883,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
 
     auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
     auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
-    auto scratch_buffer_state = Get<BUFFER_STATE>(scratch);
+    auto scratch_buffer_state = Get<vvl::Buffer>(scratch);
 
     if (dst_as_state != nullptr && pInfo != nullptr) {
         if (dst_as_state->create_infoNV.info.type != pInfo->type) {
@@ -1007,7 +1007,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     }
     if (instanceData != VK_NULL_HANDLE) {
-        auto buffer_state = Get<BUFFER_STATE>(instanceData);
+        auto buffer_state = Get<vvl::Buffer>(instanceData);
         if (buffer_state) {
             skip |= ValidateBufferUsageFlags(
                 LogObjectList(commandBuffer, instanceData), *buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
@@ -1293,13 +1293,13 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
     }
     auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
     if (src_accel_state) {
-        auto buffer_state = Get<BUFFER_STATE>(src_accel_state->create_infoKHR.buffer);
+        auto buffer_state = Get<vvl::Buffer>(src_accel_state->create_infoKHR.buffer);
         skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::src),
                                               "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
     }
     auto dst_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
     if (dst_accel_state) {
-        auto buffer_state = Get<BUFFER_STATE>(dst_accel_state->create_infoKHR.buffer);
+        auto buffer_state = Get<vvl::Buffer>(dst_accel_state->create_infoKHR.buffer);
         skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::dst),
                                               "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     }
@@ -1360,7 +1360,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
 
     auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
     if (accel_state) {
-        auto buffer_state = Get<BUFFER_STATE>(accel_state->create_infoKHR.buffer);
+        auto buffer_state = Get<vvl::Buffer>(accel_state->create_infoKHR.buffer);
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pInfo).dot(Field::src),
                                               "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
     }
@@ -1575,17 +1575,17 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
 bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, const Location &loc) const {
     bool skip = false;
 
-    auto vb_state = Get<BUFFER_STATE>(triangles.vertexData);
+    auto vb_state = Get<vvl::Buffer>(triangles.vertexData);
     if (vb_state != nullptr && vb_state->createInfo.size <= triangles.vertexOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-vertexOffset-02428", device, loc, "is invalid.");
     }
 
-    auto ib_state = Get<BUFFER_STATE>(triangles.indexData);
+    auto ib_state = Get<vvl::Buffer>(triangles.indexData);
     if (ib_state != nullptr && ib_state->createInfo.size <= triangles.indexOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02431", device, loc, "is invalid.");
     }
 
-    auto td_state = Get<BUFFER_STATE>(triangles.transformData);
+    auto td_state = Get<vvl::Buffer>(triangles.transformData);
     if (td_state != nullptr && td_state->createInfo.size <= triangles.transformOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-transformOffset-02437", device, loc, "is invalid.");
     }
@@ -1596,7 +1596,7 @@ bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triang
 bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, const Location &loc) const {
     bool skip = false;
 
-    auto aabb_state = Get<BUFFER_STATE>(aabbs.aabbData);
+    auto aabb_state = Get<vvl::Buffer>(aabbs.aabbData);
     if (aabb_state != nullptr && aabb_state->createInfo.size > 0 && aabb_state->createInfo.size <= aabbs.offset) {
         skip |= LogError("VUID-VkGeometryAABBNV-offset-02439", device, loc, "is invalid.");
     }

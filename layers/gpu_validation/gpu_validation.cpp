@@ -714,7 +714,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
             assert(command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV);
             struct_size = sizeof(VkDrawMeshTasksIndirectCommandEXT);
         }
-        auto buffer_state = Get<BUFFER_STATE>(indirect_buffer);
+        auto buffer_state = Get<vvl::Buffer>(indirect_buffer);
         uint32_t max_count;
         uint64_t bufsize = buffer_state->createInfo.size;
         uint64_t first_command_bytes = struct_size + indirect_offset;

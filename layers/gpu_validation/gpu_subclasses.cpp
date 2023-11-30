@@ -22,21 +22,21 @@
 
 gpuav::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
                       DescriptorHeap &desc_heap_)
-    : BUFFER_STATE(dev_data, buff, pCreateInfo),
+    : vvl::Buffer(dev_data, buff, pCreateInfo),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(buff, kVulkanObjectTypeBuffer))) {}
 
 void gpuav::Buffer::Destroy() {
     desc_heap.DeleteId(id);
-    BUFFER_STATE::Destroy();
+    vvl::Buffer::Destroy();
 }
 
 void gpuav::Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
-    BUFFER_STATE::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::Buffer::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav::BufferView::BufferView(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+gpuav::BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                               VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_)
     : BUFFER_VIEW_STATE(bf, bv, ci, buf_ff),
       desc_heap(desc_heap_),
@@ -84,7 +84,7 @@ void gpuav::Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink
 
 gpuav::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as,
                                                           const VkAccelerationStructureCreateInfoKHR *ci,
-                                                          std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address,
+                                                          std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address,
                                                           DescriptorHeap &desc_heap_)
     : ACCELERATION_STRUCTURE_STATE_KHR(as, ci, std::move(buf_state), address),
       desc_heap(desc_heap_),

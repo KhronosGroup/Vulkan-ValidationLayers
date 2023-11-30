@@ -1416,7 +1416,7 @@ bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet &push_set, ui
 
 // For the given buffer, verify that its creation parameters are appropriate for the given type
 //  If there's an error, update the error_msg string with details and return false, else return true
-bool CoreChecks::ValidateBufferUsage(const BUFFER_STATE &buffer_state, VkDescriptorType type, const Location &buffer_loc) const {
+bool CoreChecks::ValidateBufferUsage(const vvl::Buffer &buffer_state, VkDescriptorType type, const Location &buffer_loc) const {
     bool skip = false;
     switch (type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -1458,7 +1458,7 @@ bool CoreChecks::ValidateBufferUsage(const BUFFER_STATE &buffer_state, VkDescrip
 bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info, VkDescriptorType type,
                                       const Location &buffer_info_loc) const {
     bool skip = false;
-    const auto &buffer_state = *Get<BUFFER_STATE>(buffer_info.buffer);
+    const auto &buffer_state = *Get<vvl::Buffer>(buffer_info.buffer);
     skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
     skip |= ValidateBufferUsage(buffer_state, type, buffer_info_loc.dot(Field::buffer));
@@ -1609,7 +1609,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                                          "Attempted copy update to texel buffer descriptor with invalid buffer view (%s).",
                                          FormatHandle(buffer_view).c_str());
                     } else {
-                        auto buffer_state = Get<BUFFER_STATE>(bv_state->create_info.buffer);
+                        auto buffer_state = Get<vvl::Buffer>(bv_state->create_info.buffer);
                         if (buffer_state) {
                             skip |= ValidateBufferUsage(*buffer_state, src_type, copy_loc);
                         }
@@ -1917,7 +1917,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                     break;
                 }
                 auto buffer = bv_state->create_info.buffer;
-                auto buffer_state = Get<BUFFER_STATE>(buffer);
+                auto buffer_state = Get<vvl::Buffer>(buffer);
                 // Verify that buffer underlying the view hasn't been destroyed prematurely
                 if (!buffer_state) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", device, write_loc,
@@ -2388,7 +2388,7 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice
                          physical_device_count);
     }
 
-    auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
+    auto buffer_state = Get<vvl::Buffer>(pInfo->buffer);
 
     if (buffer_state) {
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {

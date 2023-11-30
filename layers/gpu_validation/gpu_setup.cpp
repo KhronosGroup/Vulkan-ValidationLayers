@@ -37,11 +37,11 @@
 #include "generated/inst_functions_comp.h"
 #include "generated/gpu_inst_shader_hash.h"
 
-std::shared_ptr<BUFFER_STATE> gpuav::Validator::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo *pCreateInfo) {
+std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo *pCreateInfo) {
     return std::make_shared<Buffer>(this, buf, pCreateInfo, *desc_heap);
 }
 
-std::shared_ptr<BUFFER_VIEW_STATE> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv,
+std::shared_ptr<BUFFER_VIEW_STATE> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
                                                                            const VkBufferViewCreateInfo *ci,
                                                                            VkFormatFeatureFlags2KHR buf_ff) {
     return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap);
@@ -59,7 +59,7 @@ std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> gpuav::Validator::CreateAcceler
 }
 
 std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> gpuav::Validator::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<BUFFER_STATE> &&buf_state,
+    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state,
     VkDeviceAddress address) {
     return std::make_shared<AccelerationStructureKHR>(as, ci, std::move(buf_state), address, *desc_heap);
 }

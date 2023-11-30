@@ -967,7 +967,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                                         const ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto dst_buff_state = Get<BUFFER_STATE>(dstBuffer);
+    auto dst_buff_state = Get<vvl::Buffer>(dstBuffer);
     assert(cb_state);
     assert(dst_buff_state);
     const LogObjectList buffer_objlist(commandBuffer, dstBuffer);
