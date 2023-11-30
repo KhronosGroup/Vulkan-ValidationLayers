@@ -708,7 +708,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     image.Init(image_create_info);
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    VkImageView imageView = image.targetView(image_view_ci);
+    const vkt::ImageView imageView = image.CreateView(image_view_ci);
 
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
     framebufferCreateInfo.width = 32;
@@ -716,7 +716,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.renderPass = render_pass.handle();
     framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &imageView;
+    framebufferCreateInfo.pAttachments = &imageView.handle();
 
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 

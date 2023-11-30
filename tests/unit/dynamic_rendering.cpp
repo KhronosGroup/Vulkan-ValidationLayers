@@ -1745,10 +1745,10 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
                                    VK_COMPONENT_SWIZZLE_IDENTITY},
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    VkImageView depth_image_view = image.targetView(ivci);
-    VkImageView depth_image_view_fragment = image_fragment.targetView(ivci);
-    ASSERT_NE(depth_image_view, VK_NULL_HANDLE);
-    ASSERT_NE(depth_image_view_fragment, VK_NULL_HANDLE);
+    const vkt::ImageView depth_image_view = image.CreateView(ivci);
+    const vkt::ImageView depth_image_view_fragment = image_fragment.CreateView(ivci);
+    ASSERT_NE(depth_image_view.handle(), VK_NULL_HANDLE);
+    ASSERT_NE(depth_image_view_fragment.handle(), VK_NULL_HANDLE);
 
     VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;

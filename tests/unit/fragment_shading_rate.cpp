@@ -987,12 +987,12 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.subresourceRange.layerCount = 2;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    const auto imageView = image.targetView(image_view_ci);
+    const auto imageView = image.CreateView(image_view_ci);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width * 2;
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
@@ -1009,7 +1009,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     m_errorMonitor->VerifyFound();
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
 
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.layers = 3;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04538");
     fb.init(*m_device, fb_info);
