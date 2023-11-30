@@ -1784,8 +1784,8 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
     depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
     for (size_t i = 0; i < 2; i++) {
-        const VkImageView depthView =
-            depthImage.targetView(ds_format, i == 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT);
+        const vkt::ImageView depth_or_stencil_view(
+            *m_device, depthImage.BasicViewCreatInfo(i == 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT));
 
         VkAttachmentReference depthAttachment = {};
         depthAttachment.attachment = 0;
@@ -1812,7 +1812,7 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
         VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
         fb_ci.renderPass = render_pass.handle();
         fb_ci.attachmentCount = 1;
-        fb_ci.pAttachments = &depthView;
+        fb_ci.pAttachments = &depth_or_stencil_view.handle();
         fb_ci.width = 32;
         fb_ci.height = 32;
         fb_ci.layers = 1;
