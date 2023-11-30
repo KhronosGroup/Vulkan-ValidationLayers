@@ -105,6 +105,7 @@
         },
         {
             "name": "Vulkan-Loader",
+            "api": "vulkan",
             "url": "https://github.com/KhronosGroup/Vulkan-Loader.git",
             "sub_dir": "Vulkan-Loader",
             "build_dir": "Vulkan-Loader/build",
@@ -117,6 +118,7 @@
         },
         {
             "name": "Vulkan-Profiles",
+            "api": "vulkan",
             "url": "https://github.com/KhronosGroup/Vulkan-Profiles.git",
             "sub_dir": "Vulkan-Profiles",
             "build_dir": "Vulkan-Profiles/build",
@@ -129,6 +131,7 @@
         },
         {
             "name": "Vulkan-Tools",
+            "api": "vulkan",
             "url": "https://github.com/KhronosGroup/Vulkan-Tools.git",
             "sub_dir": "Vulkan-Tools",
             "build_dir": "Vulkan-Tools/build",
