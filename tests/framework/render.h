@@ -336,7 +336,15 @@ class VkImageObj : public vkt::Image {
         if (!m_targetView.initialized()) {
             ci.image = handle();
             m_targetView.init(*m_device, ci);
+            m_createInfo = ci;
         }
+        assert(m_createInfo.viewType == ci.viewType);
+        assert(m_createInfo.format == ci.format);
+        assert(m_createInfo.subresourceRange.aspectMask == ci.subresourceRange.aspectMask);
+        assert(m_createInfo.subresourceRange.baseMipLevel == ci.subresourceRange.baseMipLevel);
+        assert(m_createInfo.subresourceRange.levelCount == ci.subresourceRange.levelCount);
+        assert(m_createInfo.subresourceRange.baseArrayLayer == ci.subresourceRange.baseArrayLayer);
+        assert(m_createInfo.subresourceRange.layerCount == ci.subresourceRange.layerCount);
         return m_targetView.handle();
     }
 
@@ -355,7 +363,15 @@ class VkImageObj : public vkt::Image {
             createView.subresourceRange = {aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount};
             createView.flags = 0;
             m_targetView.init(*m_device, createView);
+            m_createInfo = createView;
         }
+        assert(m_createInfo.viewType == type);
+        assert(m_createInfo.format == format);
+        assert(m_createInfo.subresourceRange.aspectMask == aspect);
+        assert(m_createInfo.subresourceRange.baseMipLevel == baseMipLevel);
+        assert(m_createInfo.subresourceRange.levelCount == levelCount);
+        assert(m_createInfo.subresourceRange.baseArrayLayer == baseArrayLayer);
+        assert(m_createInfo.subresourceRange.layerCount == layerCount);
         return m_targetView.handle();
     }
 
@@ -372,6 +388,8 @@ class VkImageObj : public vkt::Image {
     vkt::Device *m_device;
 
     vkt::ImageView m_targetView;
+    VkImageViewCreateInfo m_createInfo;  // To validate that cached view matches requested parameters
+
     VkDescriptorImageInfo m_descriptorImageInfo;
     uint32_t m_mipLevels;
     uint32_t m_arrayLayers;
