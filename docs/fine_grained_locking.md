@@ -225,17 +225,17 @@ The following sections cover state objects with non-const data and describe how 
 There it not any instance member data in `ValidationStateTracker` other than state object maps. It would be nice if there were separate classes for `VkInstance` and `VkDevice` state but that is beyond the scope of this project.
 
 
-### VkPhysicalDevice / PHYSICAL_DEVICE_STATE
+### VkPhysicalDevice / vvl::PhysicalDevice
 
 Since VkPhysicalDevice handles persist until the VkInstance is destroyed, it is not necessary to hold shared_ptr reference counts on them.
 
 The `queue_family_known_count` field is an uint32_t storing the maximum property count used in a call to `vkGetPhysicalDeviceQueueFamilyProperties2()`. The `vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called` field and `display_plane_property_count uint32_t` field are similar but for display plane properties.
 
-The `perf_counters` map is a per-queue family map of the results of calls to `vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters()` which are not otherwise modified. These could be made const by adding query code to `PHYSICAL_DEVICE_STATE` construction.
+The `perf_counters` map is a per-queue family map of the results of calls to `vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters()` which are not otherwise modified. These could be made const by adding query code to `vvl::PhysicalDevice` construction.
 
 ###### PRs:
 
-[layers: Set up vvl::Queue and PHYSICAL_DEVICE_STATE at create time](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3370)
+[layers: Set up vvl::Queue and vvl::PhysicalDevice at create time](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3370)
 
 
 ## Device Data

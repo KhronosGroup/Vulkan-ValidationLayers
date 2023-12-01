@@ -157,7 +157,7 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE &cb_state
     return skip;
 }
 
-bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t requested_queue_family, const char *vuid,
+bool CoreChecks::ValidateQueueFamilyIndex(const vvl::PhysicalDevice *pd_state, uint32_t requested_queue_family, const char *vuid,
                                           const Location &loc) const {
     bool skip = false;
 
@@ -174,7 +174,7 @@ bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state,
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t info_count,
+bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_state, uint32_t info_count,
                                                 const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
     bool skip = false;
 
@@ -322,7 +322,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                              const ErrorObject &error_obj) const {
     bool skip = false;
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(gpu);
+    auto pd_state = Get<vvl::PhysicalDevice>(gpu);
 
     // TODO: object_tracker should perhaps do this instead
     //       and it does not seem to currently work anyway -- the loader just crashes before this point
