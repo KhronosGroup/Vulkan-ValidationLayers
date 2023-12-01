@@ -1360,7 +1360,7 @@ bool CoreChecks::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance
         }
     }
 
-    auto dm_state = Get<DISPLAY_MODE_STATE>(display_mode);
+    auto dm_state = Get<vvl::DisplayMode>(display_mode);
     if (dm_state != nullptr) {
         // Get physical device from VkDisplayModeKHR state tracking
         const VkPhysicalDevice physical_device = dm_state->physical_device;

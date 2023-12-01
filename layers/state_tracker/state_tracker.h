@@ -56,6 +56,7 @@ class Framebuffer;
 class RenderPass;
 class PipelineCache;
 class Surface;
+class DisplayMode;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -65,7 +66,6 @@ class PIPELINE_LAYOUT_STATE;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
 class COMMAND_POOL_STATE;
-class DISPLAY_MODE_STATE;
 class EVENT_STATE;
 class SWAPCHAIN_NODE;
 struct SHADER_MODULE_STATE;
@@ -315,7 +315,7 @@ VALSTATETRACK_STATE_OBJECT(VkVideoSessionKHR, VIDEO_SESSION_STATE)
 VALSTATETRACK_STATE_OBJECT(VkVideoSessionParametersKHR, VIDEO_SESSION_PARAMETERS_STATE)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureKHR, vvl::AccelerationStructureKHR)
 VALSTATETRACK_STATE_OBJECT(VkSurfaceKHR, vvl::Surface)
-VALSTATETRACK_STATE_OBJECT(VkDisplayModeKHR, DISPLAY_MODE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkDisplayModeKHR, vvl::DisplayMode)
 VALSTATETRACK_STATE_OBJECT(VkPhysicalDevice, PHYSICAL_DEVICE_STATE)
 
 class ValidationStateTracker : public ValidationObject {
@@ -1934,7 +1934,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionParametersKHR, VIDEO_SESSION_PARAMETERS_STATE, video_session_parameters_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, vvl::AccelerationStructureKHR, acceleration_structure_khr_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, vvl::Surface, surface_map_)
-    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map_)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, vvl::DisplayMode, display_mode_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map_)
 
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.

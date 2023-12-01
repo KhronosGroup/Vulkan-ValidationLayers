@@ -64,12 +64,16 @@ class PHYSICAL_DEVICE_STATE : public BASE_NODE {
     }
 };
 
-class DISPLAY_MODE_STATE : public BASE_NODE {
+namespace vvl {
+
+class DisplayMode : public BASE_NODE {
   public:
     const VkPhysicalDevice physical_device;
 
-    DISPLAY_MODE_STATE(VkDisplayModeKHR dm, VkPhysicalDevice phys_dev)
+    DisplayMode(VkDisplayModeKHR dm, VkPhysicalDevice phys_dev)
         : BASE_NODE(dm, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
 
     VkDisplayModeKHR display_mode() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };
+
+}  // namespace vvl
