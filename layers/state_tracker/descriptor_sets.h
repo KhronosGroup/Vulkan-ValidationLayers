@@ -586,11 +586,11 @@ class AccelerationStructureDescriptor : public Descriptor {
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
-    const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
-    ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
+    const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
+    vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
-    const ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
-    ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+    const vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
+    vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     bool is_khr() const { return is_khr_; }
@@ -624,9 +624,9 @@ class AccelerationStructureDescriptor : public Descriptor {
   private:
     bool is_khr_{false};
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
+    std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> acc_state_nv_;
+    std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
 };
 
 class MutableDescriptor : public Descriptor {
@@ -677,11 +677,11 @@ class MutableDescriptor : public Descriptor {
     VkDeviceSize GetRange() const { return range_; }
     std::shared_ptr<vvl::BufferView> GetSharedBufferViewState() const { return buffer_view_state_; }
     VkAccelerationStructureKHR GetAccelerationStructureKHR() const { return acc_; }
-    const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
-    ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
+    const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
+    vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
-    const ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
-    ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+    const vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
+    vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
     // Returns true if there is a stored KHR acceleration structure and false if there is a stored NV acceleration structure.
     // Asserts that there is only one of the two.
     bool IsAccelerationStructureKHR() const {
@@ -720,9 +720,9 @@ class MutableDescriptor : public Descriptor {
     // Acceleration Structure Descriptor
     bool is_khr_{false};
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
+    std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> acc_state_nv_;
+    std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
 };
 
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below

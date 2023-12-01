@@ -668,7 +668,7 @@ And `vvl::Buffer::deviceAddress` field is used for lookups in a separate map use
 The `deviceAddress` field can only be set after memory is bound to the buffer, so it cannot be const. But once it is set it is not modified.
 
 
-### VkAccelerationStructureKHR / ACCELERATION_STRUCTURE_STATE_KHR
+### VkAccelerationStructureKHR / vvl::AccelerationStructureKHR
 
 There are separate state objects for the KHR and NV versions of the extensions. Unfortunately, due to differences in how memory is bound in the 2 extensions, these objects cannot be easily combined.
 

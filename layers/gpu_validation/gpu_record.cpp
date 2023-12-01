@@ -79,7 +79,7 @@ void gpuav::Validator::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuf
     assert(cb_state != nullptr);
 
     std::vector<uint64_t> current_valid_handles;
-    ForEach<ACCELERATION_STRUCTURE_STATE_NV>([&current_valid_handles](const ACCELERATION_STRUCTURE_STATE_NV &as_state) {
+    ForEach<vvl::AccelerationStructureNV>([&current_valid_handles](const vvl::AccelerationStructureNV &as_state) {
         if (as_state.built && as_state.create_infoNV.info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
             current_valid_handles.push_back(as_state.opaque_handle);
         }
@@ -227,7 +227,7 @@ void gpuav::Validator::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice 
     BaseClass::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-        auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(info.accelerationStructure);
+        auto as_state = Get<vvl::AccelerationStructureNV>(info.accelerationStructure);
         if (as_state) {
             DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
         }

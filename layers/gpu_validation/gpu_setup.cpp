@@ -53,12 +53,12 @@ std::shared_ptr<IMAGE_VIEW_STATE> gpuav::Validator::CreateImageViewState(
     return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap);
 }
 
-std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> gpuav::Validator::CreateAccelerationStructureState(
+std::shared_ptr<vvl::AccelerationStructureNV> gpuav::Validator::CreateAccelerationStructureState(
     VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci) {
     return std::make_shared<AccelerationStructureNV>(device, as, ci, *desc_heap);
 }
 
-std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> gpuav::Validator::CreateAccelerationStructureState(
+std::shared_ptr<vvl::AccelerationStructureKHR> gpuav::Validator::CreateAccelerationStructureState(
     VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state,
     VkDeviceAddress address) {
     return std::make_shared<AccelerationStructureKHR>(as, ci, std::move(buf_state), address, *desc_heap);

@@ -280,7 +280,7 @@ class Sampler : public vvl::Sampler {
     const DescriptorId id;
 };
 
-class AccelerationStructureKHR : public ACCELERATION_STRUCTURE_STATE_KHR {
+class AccelerationStructureKHR : public vvl::AccelerationStructureKHR {
   public:
     AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
                              std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address, DescriptorHeap &desc_heap_);
@@ -292,7 +292,7 @@ class AccelerationStructureKHR : public ACCELERATION_STRUCTURE_STATE_KHR {
     const DescriptorId id;
 };
 
-class AccelerationStructureNV : public ACCELERATION_STRUCTURE_STATE_NV {
+class AccelerationStructureNV : public vvl::AccelerationStructureNV {
   public:
     AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci,
                             DescriptorHeap &desc_heap_);

@@ -21,9 +21,11 @@
 #include "state_tracker/buffer_state.h"
 #include "generated/layer_chassis_dispatch.h"
 
-class ACCELERATION_STRUCTURE_STATE_NV : public BINDABLE {
+namespace vvl {
+
+class AccelerationStructureNV : public BINDABLE {
   public:
-    ACCELERATION_STRUCTURE_STATE_NV(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
+    AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
           create_infoNV(ci),
           memory_requirements(GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
@@ -34,7 +36,7 @@ class ACCELERATION_STRUCTURE_STATE_NV : public BINDABLE {
           tracker_(&memory_requirements) {
         BINDABLE::SetMemoryTracker(&tracker_);
     }
-    ACCELERATION_STRUCTURE_STATE_NV(const ACCELERATION_STRUCTURE_STATE_NV &rh_obj) = delete;
+    AccelerationStructureNV(const AccelerationStructureNV &rh_obj) = delete;
 
     VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }
 
@@ -67,12 +69,12 @@ class ACCELERATION_STRUCTURE_STATE_NV : public BINDABLE {
     BindableLinearMemoryTracker tracker_;
 };
 
-class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
+class AccelerationStructureKHR : public BASE_NODE {
   public:
-    ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                                     std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address)
+    AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
+                             std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address)
         : BASE_NODE(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
-    ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
+    AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
 
@@ -89,7 +91,7 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
         BASE_NODE::Destroy();
     }
 
-    virtual ~ACCELERATION_STRUCTURE_STATE_KHR() {
+    virtual ~AccelerationStructureKHR() {
         if (!Destroyed()) {
             Destroy();
         }
@@ -108,6 +110,8 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
     std::shared_ptr<vvl::Buffer> buffer_state;
     VkDeviceAddress address;
 };
+
+}  // namespace vvl
 
 // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
 // It is a safe_VkRayTracingPipelineCreateInfoKHR and supports construction from

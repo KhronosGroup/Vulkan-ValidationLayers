@@ -761,11 +761,10 @@ void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet &set_state,
     is_khr_ = (acc_info != NULL);
     if (is_khr_) {
         acc_ = acc_info->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
     } else {
         acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
-                        is_bindless);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
     }
 }
 
@@ -777,11 +776,10 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet &set_state, 
         is_khr_ = acc_desc.IsAccelerationStructureKHR();
         if (is_khr_) {
             acc_ = acc_desc.GetAccelerationStructureKHR();
-            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
-                            is_bindless);
+            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
         } else {
             acc_nv_ = acc_desc.GetAccelerationStructureNV();
-            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
+            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
                             is_bindless);
         }
         return;
@@ -790,11 +788,10 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet &set_state, 
     is_khr_ = acc_desc.is_khr_;
     if (is_khr_) {
         acc_ = acc_desc.acc_;
-        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
     } else {
         acc_nv_ = acc_desc.acc_nv_;
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
-                        is_bindless);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
     }
 }
 
@@ -863,11 +860,11 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             is_khr_ = (acc_info != NULL);
             if (is_khr_) {
                 acc_ = acc_info->pAccelerationStructures[index];
-                ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
+                ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
                                 is_bindless);
             } else {
                 acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-                ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
+                ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
                                 is_bindless);
             }
             break;
@@ -913,11 +910,10 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
         auto &acc_desc = static_cast<const AccelerationStructureDescriptor &>(src);
         if (is_khr_) {
             acc_ = acc_desc.GetAccelerationStructure();
-            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
-                            is_bindless);
+            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
         } else {
             acc_nv_ = acc_desc.GetAccelerationStructureNV();
-            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
+            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
                             is_bindless);
         }
     } else if (src.GetClass() == DescriptorClass::Mutable) {
@@ -952,11 +948,11 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
             case AccelerationStructure: {
                 if (mutable_src.is_khr()) {
                     acc_ = mutable_src.GetAccelerationStructureKHR();
-                    ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
+                    ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
                                     is_bindless);
                 } else {
                     acc_nv_ = mutable_src.GetAccelerationStructureNV();
-                    ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
+                    ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
                                     is_bindless);
                 }
 
