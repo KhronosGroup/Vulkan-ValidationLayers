@@ -296,6 +296,9 @@ target_sources(vvl PRIVATE
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
+find_package(VulkanMemoryAllocator CONFIG)
+target_link_libraries(vvl PRIVATE GPUOpen::VulkanMemoryAllocator)
+
 set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
 if(MSVC)

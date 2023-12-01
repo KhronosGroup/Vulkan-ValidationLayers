@@ -32,6 +32,14 @@
             "commit": "e867c06631767a2d96424cbec530f9ee5e78180f"
         },
         {
+            "name": "VulkanMemoryAllocator",
+            "url": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator",
+            "sub_dir": "VulkanMemoryAllocator",
+            "build_dir": "VulkanMemoryAllocator/build",
+            "install_dir": "VulkanMemoryAllocator/build/install",
+            "commit": "5e43c795daf43dd09398d8307212e85025215052"
+        },
+        {
             "name": "SPIRV-Tools",
             "url": "https://github.com/KhronosGroup/SPIRV-Tools.git",
             "sub_dir": "SPIRV-Tools",
@@ -147,6 +155,7 @@
         "glslang": "GLSLANG_INSTALL_DIR",
         "Vulkan-Headers": "VULKAN_HEADERS_INSTALL_DIR",
         "Vulkan-Utility-Libraries": "VULKAN_UTILITY_LIBRARIES_INSTALL_DIR",
+        "VulkanMemoryAllocator": "VMA_INSTALL_DIR",
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
         "robin-hood-hashing": "ROBIN_HOOD_HASHING_INSTALL_DIR",
