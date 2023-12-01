@@ -481,7 +481,7 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
 void CMD_BUFFER_STATE::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin,
                                        const VkSubpassContents contents) {
     RecordCmd(command);
-    activeFramebuffer = dev_data->Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+    activeFramebuffer = dev_data->Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data->Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     active_render_pass_begin_info = safe_VkRenderPassBeginInfo(pRenderPassBegin);
     SetActiveSubpass(0);
@@ -849,7 +849,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 SetActiveSubpass(beginInfo.pInheritanceInfo->subpass);
 
                 if (beginInfo.pInheritanceInfo->framebuffer) {
-                    activeFramebuffer = dev_data->Get<FRAMEBUFFER_STATE>(beginInfo.pInheritanceInfo->framebuffer);
+                    activeFramebuffer = dev_data->Get<vvl::Framebuffer>(beginInfo.pInheritanceInfo->framebuffer);
                     active_subpasses = nullptr;
                     active_attachments = nullptr;
 

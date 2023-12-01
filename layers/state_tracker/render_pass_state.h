@@ -119,19 +119,23 @@ class RENDER_PASS_STATE : public BASE_NODE {
     const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
 };
 
-class FRAMEBUFFER_STATE : public BASE_NODE {
+namespace vvl {
+
+class Framebuffer : public BASE_NODE {
   public:
     const safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_state;
 
-    FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
-                      std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments);
+    Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
+                std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments);
     void LinkChildNodes() override;
 
     VkFramebuffer framebuffer() const { return handle_.Cast<VkFramebuffer>(); }
 
-    virtual ~FRAMEBUFFER_STATE() { Destroy(); }
+    virtual ~Framebuffer() { Destroy(); }
 
     void Destroy() override;
 };
+
+}  // namespace vvl

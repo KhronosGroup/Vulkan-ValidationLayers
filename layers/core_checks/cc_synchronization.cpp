@@ -1625,7 +1625,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const CMD
 
 // Verify image barrier image state and that the image is consistent with FB image
 bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, CMD_BUFFER_STATE const *cb_state,
-                                                const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
+                                                const vvl::Framebuffer *framebuffer, uint32_t active_subpass,
                                                 const safe_VkSubpassDescription2 &sub_desc, const VkRenderPass rp_handle,
                                                 const ImageBarrier &img_barrier, const CMD_BUFFER_STATE *primary_cb_state) const {
     using sync_vuid_maps::GetImageBarrierVUID;
@@ -1732,7 +1732,7 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
         const auto render_pass = rp_state->renderPass();
         cb_state->cmd_execute_commands_functions.emplace_back(
             [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
-                const CMD_BUFFER_STATE &secondary_cb, const CMD_BUFFER_STATE *primary_cb, const FRAMEBUFFER_STATE *fb) {
+                const CMD_BUFFER_STATE &secondary_cb, const CMD_BUFFER_STATE *primary_cb, const vvl::Framebuffer *fb) {
                 return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), &secondary_cb, fb, active_subpass, sub_desc,
                                                                 render_pass, barrier, primary_cb);
             });

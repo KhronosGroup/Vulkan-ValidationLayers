@@ -416,7 +416,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS;
             }
 
-            auto framebuffer = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+            auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
             std::shared_ptr<IMAGE_VIEW_STATE> image_view = nullptr;
 
             if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
@@ -453,7 +453,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED;
             }
 
-            auto framebuffer = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+            auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
 
             std::shared_ptr<IMAGE_VIEW_STATE> image_view;
             if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {

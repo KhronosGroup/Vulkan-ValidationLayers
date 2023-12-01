@@ -185,7 +185,7 @@ The following objects have already been updated to meet the above construction r
 * VkSampler / vvl::Sampler
 * VkSamplerYcbcrConversion / vvl::SamplerYcbcrConversion
 * VkRenderPass / RENDER_PASS_STATE
-* VkFramebuffer / FRAMEBUFFER_STATE
+* VkFramebuffer / vvl::Framebuffer
 * VkBufferView / vvl::BufferView
 * VkImageView / IMAGE_VIEW_STATE
 * VkPipelineLayout / PIPELINE_LAYOUT_STATE

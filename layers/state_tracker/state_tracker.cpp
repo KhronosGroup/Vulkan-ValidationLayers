@@ -37,7 +37,7 @@
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
-                                                                          const FRAMEBUFFER_STATE &fb_state) {
+                                                                          const vvl::Framebuffer &fb_state) {
     const VkImageView *attachments = fb_state.createInfo.pAttachments;
     uint32_t count = fb_state.createInfo.attachmentCount;
     if (fb_state.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
@@ -51,7 +51,7 @@ static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const 
 }
 
 template <typename ImageViewPointer, typename Get>
-std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo &rp_begin, const FRAMEBUFFER_STATE &fb_state,
+std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo &rp_begin, const vvl::Framebuffer &fb_state,
                                                      const Get &get_fn) {
     std::vector<ImageViewPointer> views;
 
@@ -68,7 +68,7 @@ std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo
 }
 
 std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::GetAttachmentViews(
-    const VkRenderPassBeginInfo &rp_begin, const FRAMEBUFFER_STATE &fb_state) const {
+    const VkRenderPassBeginInfo &rp_begin, const vvl::Framebuffer &fb_state) const {
     auto get_fn = [this](VkImageView handle) { return this->Get<IMAGE_VIEW_STATE>(handle); };
     return GetAttachmentViewsImpl<std::shared_ptr<const IMAGE_VIEW_STATE>>(rp_begin, fb_state, get_fn);
 }
@@ -1725,7 +1725,7 @@ void ValidationStateTracker::PostCallRecordResetFences(VkDevice device, uint32_t
 void ValidationStateTracker::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              const RecordObject &record_obj) {
-    Destroy<FRAMEBUFFER_STATE>(framebuffer);
+    Destroy<vvl::Framebuffer>(framebuffer);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
@@ -2986,8 +2986,8 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
         }
     }
 
-    Add(std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, Get<RENDER_PASS_STATE>(pCreateInfo->renderPass),
-                                            std::move(views)));
+    Add(std::make_shared<vvl::Framebuffer>(*pFramebuffer, pCreateInfo, Get<RENDER_PASS_STATE>(pCreateInfo->renderPass),
+                                           std::move(views)));
 }
 
 void ValidationStateTracker::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,

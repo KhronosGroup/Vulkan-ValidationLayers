@@ -316,7 +316,7 @@ class CoreChecks : public ValidationStateTracker {
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const Location& loc, CMD_BUFFER_STATE* cb_state,
                                                           const ImageBarrier& barrier);
     bool ValidateImageBarrierAttachment(const Location& barrier_loc, CMD_BUFFER_STATE const* cb_state,
-                                        const FRAMEBUFFER_STATE* framebuffer, uint32_t active_subpass,
+                                        const vvl::Framebuffer* framebuffer, uint32_t active_subpass,
                                         const safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
                                         const ImageBarrier& img_barrier, const CMD_BUFFER_STATE* primary_cb_state = nullptr) const;
 
@@ -326,7 +326,7 @@ class CoreChecks : public ValidationStateTracker {
                                                   uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                     const ErrorObject& error_obj) const;
-    bool ValidateDependencies(const FRAMEBUFFER_STATE& framebuffer_state, const RENDER_PASS_STATE& render_pass_state,
+    bool ValidateDependencies(const vvl::Framebuffer& framebuffer_state, const RENDER_PASS_STATE& render_pass_state,
                               const ErrorObject& error_obj) const;
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& barrier_loc, const CMD_BUFFER_STATE* cb_state,
                                const BufferBarrier& barrier) const;
@@ -883,7 +883,7 @@ class CoreChecks : public ValidationStateTracker {
     bool FindLayouts(const IMAGE_STATE& image_state, std::vector<VkImageLayout>& layouts) const;
 
     bool VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const FRAMEBUFFER_STATE& framebuffer_state, const Location& rp_begin_loc) const;
+                                               const vvl::Framebuffer& framebuffer_state, const Location& rp_begin_loc) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
