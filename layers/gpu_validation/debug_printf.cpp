@@ -290,13 +290,9 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
     //    1         Size of output record, including this word
     //    2         Shader ID
     //    3         Instruction Position
-    //    4         Stage Ordinal
-    //    5         Stage - specific Info Word 0
-    //    6         Stage - specific Info Word 1
-    //    7         Stage - specific Info Word 2
-    //    8         Printf Format String Id
-    //    9         Printf Values Word 0 (optional)
-    //    10         Printf Values Word 1 (optional)
+    //    4         Printf Format String Id
+    //    5         Printf Values Word 0 (optional)
+    //    6         Printf Values Word 1 (optional)
     uint32_t expect = debug_output_buffer[1];
     if (!expect) return;
 
@@ -387,19 +383,17 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
         }
 
         if (verbose) {
-            std::string stage_message;
             std::string common_message;
             std::string filename_message;
             std::string source_message;
-            UtilGenerateStageMessage(&debug_output_buffer[index], stage_message);
             UtilGenerateCommonMessage(report_data, command_buffer, &debug_output_buffer[index], shader_module_handle,
                                       pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
             UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
-                std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " " << stage_message.c_str() << " "
+                std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " "
                           << shader_message.str().c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
             } else {
-                LogInfo("UNASSIGNED-DEBUG-PRINTF", queue, loc, "%s %s %s %s%s", common_message.c_str(), stage_message.c_str(),
+                LogInfo("UNASSIGNED-DEBUG-PRINTF", queue, loc, "%s %s %s%s", common_message.c_str(),
                         shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
@@ -467,9 +461,7 @@ void debug_printf::Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer comma
                                                            const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
                                                            uint32_t firstInstance, uint32_t stride,
                                                            const RecordObject &record_obj) {
-    for (uint32_t i = 0; i < drawCount; i++) {
-        AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    }
+    AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void debug_printf::Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount,
@@ -482,9 +474,7 @@ void debug_printf::Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffe
                                                                   const VkMultiDrawIndexedInfoEXT *pIndexInfo,
                                                                   uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
                                                                   const int32_t *pVertexOffset, const RecordObject &record_obj) {
-    for (uint32_t i = 0; i < drawCount; i++) {
-        AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    }
+    AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void debug_printf::Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

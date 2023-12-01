@@ -17,7 +17,6 @@
 #pragma once
 #include "generated/chassis.h"
 
-void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg);
 void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
                                const uint32_t *debug_record, const VkShaderModule shader_module_handle,
                                const VkPipeline pipeline_handle, const VkShaderEXT shader_object_handle,

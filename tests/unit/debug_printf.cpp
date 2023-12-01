@@ -110,7 +110,9 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         void main() {
             float myfloat = 3.1415f;
             int foo = -135;
-            if (gl_VertexIndex == 0) {
+            // referencing gl_InstanceIndex appears to be required to ensure this shader runs multiple times
+            // when called from vkCmdDrawMultiEXT().
+            if (gl_VertexIndex == 0 && gl_InstanceIndex < 10000) {
                 switch(u_info.whichtest) {
                     case 0:
                         debugPrintfEXT("Here are two float values %f, %f", 1.0, myfloat);
@@ -433,7 +435,9 @@ TEST_F(NegativeDebugPrintf, GPL) {
         void main() {
             float myfloat = 3.1415f;
             int foo = -135;
-            if (gl_VertexIndex == 0) {
+            // referencing gl_InstanceIndex appears to be required to ensure this shader runs multiple times
+            // when called from vkCmdDrawMultiEXT().
+            if (gl_VertexIndex == 0 && gl_InstanceIndex < 10000) {
                 switch(u_info.whichtest) {
                     case 0:
                         debugPrintfEXT("Here are two float values %f, %f", 1.0, myfloat);
@@ -1005,7 +1009,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         void main() {
             float myfloat = 3.1415f;
             int foo = -135;
-            if (gl_VertexIndex == 0) {
+            // referencing gl_InstanceIndex appears to be required to ensure this shader runs multiple times
+            // when called from vkCmdDrawMultiEXT().
+            if (gl_VertexIndex == 0 && gl_InstanceIndex < 10000) {
                 switch(u_info.whichtest) {
                     case 0:
                         debugPrintfEXT("Here are two float values %f, %f", 1.0, myfloat);
