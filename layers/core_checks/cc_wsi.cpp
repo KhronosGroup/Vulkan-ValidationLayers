@@ -1254,7 +1254,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
                                                                                uint32_t queueFamilyIndex,
                                                                                struct wl_display *display,
                                                                                const ErrorObject &error_obj) const {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
                                     error_obj.location.dot(Field::queueFamilyIndex));
@@ -1265,7 +1265,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
 bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                              uint32_t queueFamilyIndex,
                                                                              const ErrorObject &error_obj) const {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
                                     error_obj.location.dot(Field::queueFamilyIndex));
@@ -1277,7 +1277,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
                                                                            uint32_t queueFamilyIndex, xcb_connection_t *connection,
                                                                            xcb_visualid_t visual_id,
                                                                            const ErrorObject &error_obj) const {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
                                     error_obj.location.dot(Field::queueFamilyIndex));
@@ -1288,7 +1288,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
 bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex, Display *dpy,
                                                                             VisualID visualID, const ErrorObject &error_obj) const {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
                                     error_obj.location.dot(Field::queueFamilyIndex));
@@ -1300,7 +1300,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(Vk
                                                                               uint32_t queueFamilyIndex,
                                                                               struct _screen_window *window,
                                                                               const ErrorObject &error_obj) const {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-queueFamilyIndex-04743",
                                     error_obj.location.dot(Field::queueFamilyIndex));
@@ -1310,7 +1310,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(Vk
 bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                    VkSurfaceKHR surface, VkBool32 *pSupported,
                                                                    const ErrorObject &error_obj) const {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
                                     error_obj.location.dot(Field::queueFamilyIndex));
@@ -1364,7 +1364,7 @@ bool CoreChecks::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance
     if (dm_state != nullptr) {
         // Get physical device from VkDisplayModeKHR state tracking
         const VkPhysicalDevice physical_device = dm_state->physical_device;
-        auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physical_device);
+        auto pd_state = Get<vvl::PhysicalDevice>(physical_device);
         VkPhysicalDeviceProperties device_properties = {};
         DispatchGetPhysicalDeviceProperties(physical_device, &device_properties);
 
@@ -1472,7 +1472,7 @@ bool CoreChecks::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalD
                                                       const Location &loc) const {
     bool skip = false;
 
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     auto surface_state = Get<vvl::Surface>(surface);
     if (pd_state && surface_state) {
         bool is_supported = false;
@@ -1680,7 +1680,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysic
 bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                          const Location &loc) const {
     bool skip = false;
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     if (pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called) {
         if (planeIndex >= pd_state->display_plane_property_count) {
             skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, loc,

@@ -251,7 +251,7 @@ void gpuav::Validator::CreateAccelerationStructureBuildValidationState(const VkD
     Location loc(vvl::Func::vkCreateDevice);
 
     // Cannot use this validation without a queue that supports graphics
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physical_device);
+    auto pd_state = Get<vvl::PhysicalDevice>(physical_device);
     bool graphics_queue_exists = false;
     uint32_t graphics_queue_family = 0;
     for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {

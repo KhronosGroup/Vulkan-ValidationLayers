@@ -221,7 +221,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 }
 
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
-bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const PHYSICAL_DEVICE_STATE* bp_pd_state,
+bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice* bp_pd_state,
                                                                          uint32_t requested_queue_family_property_count,
                                                                          const CALL_STATE call_state, const Location& loc) const {
     bool skip = false;

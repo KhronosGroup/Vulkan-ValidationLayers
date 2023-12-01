@@ -662,7 +662,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     device_state->instance_state = this;
     // Save local link to this device's physical device state
-    device_state->physical_device_state = Get<PHYSICAL_DEVICE_STATE>(gpu).get();
+    device_state->physical_device_state = Get<vvl::PhysicalDevice>(gpu).get();
     // finish setup in the object representing the device
     device_state->CreateDevice(pCreateInfo);
 }
@@ -3554,8 +3554,8 @@ void ValidationStateTracker::PostCallRecordAcquireNextImage2KHR(VkDevice device,
                                 pAcquireInfo->fence, pImageIndex, record_obj.location.function);
 }
 
-std::shared_ptr<PHYSICAL_DEVICE_STATE> ValidationStateTracker::CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) {
-    return std::make_shared<PHYSICAL_DEVICE_STATE>(phys_dev);
+std::shared_ptr<vvl::PhysicalDevice> ValidationStateTracker::CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) {
+    return std::make_shared<vvl::PhysicalDevice>(phys_dev);
 }
 
 void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
@@ -3591,7 +3591,7 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
 }
 
 // Common function to update state for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
-static void StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEVICE_STATE *pd_state, uint32_t count) {
+static void StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(vvl::PhysicalDevice *pd_state, uint32_t count) {
     pd_state->queue_family_known_count = std::max(pd_state->queue_family_known_count, count);
 }
 
@@ -3599,7 +3599,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
                                                                                   uint32_t *pQueueFamilyPropertyCount,
                                                                                   VkQueueFamilyProperties *pQueueFamilyProperties,
                                                                                   const RecordObject &record_obj) {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     assert(pd_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
@@ -3608,7 +3608,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
                                                                                    uint32_t *pQueueFamilyPropertyCount,
                                                                                    VkQueueFamilyProperties2 *pQueueFamilyProperties,
                                                                                    const RecordObject &record_obj) {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     assert(pd_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
@@ -3781,7 +3781,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
         }
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
                vku::FindStructInPNextChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
-        auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+        auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
         assert(pd_state);
         pd_state->surfaceless_query_state.capabilities = safe_VkSurfaceCapabilities2KHR(pSurfaceCapabilities);
     }
@@ -3825,7 +3825,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
             auto surface_state = Get<vvl::Surface>(surface);
             surface_state->SetPresentModes(physicalDevice, vvl::span<const VkPresentModeKHR>(pPresentModes, *pPresentModeCount));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
-            auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+            auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
             assert(pd_state);
             pd_state->surfaceless_query_state.present_modes =
                 std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount);
@@ -3848,7 +3848,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
             auto surface_state = Get<vvl::Surface>(surface);
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
-            auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+            auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
             assert(pd_state);
             pd_state->surfaceless_query_state.formats = std::move(formats2);
         }
@@ -3871,7 +3871,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
             }
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
-            auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+            auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
             assert(pd_state);
             pd_state->surfaceless_query_state.formats.clear();
             pd_state->surfaceless_query_state.formats.reserve(*pSurfaceFormatCount);
@@ -3914,7 +3914,7 @@ void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformance
                                                                                               VkPerformanceCounterKHR *pCounters) {
     if (NULL == pCounters) return;
 
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     assert(pd_state);
 
     std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS> queue_family_counters(new QUEUE_FAMILY_PERF_COUNTERS());
@@ -4015,7 +4015,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
 
 void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount, void *pProperties) {
-    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     if (*pPropertyCount) {
         pd_state->display_plane_property_count = *pPropertyCount;
     }

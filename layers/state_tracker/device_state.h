@@ -34,7 +34,9 @@ class SURFACELESS_QUERY_STATE {
     safe_VkSurfaceCapabilities2KHR capabilities;
 };
 
-class PHYSICAL_DEVICE_STATE : public BASE_NODE {
+namespace vvl {
+
+class PhysicalDevice : public BASE_NODE {
   public:
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
@@ -48,7 +50,7 @@ class PHYSICAL_DEVICE_STATE : public BASE_NODE {
     // Surfaceless Query extension needs 'global' surface_state data
     SURFACELESS_QUERY_STATE surfaceless_query_state{};
 
-    PHYSICAL_DEVICE_STATE(VkPhysicalDevice phys_dev)
+    PhysicalDevice(VkPhysicalDevice phys_dev)
         : BASE_NODE(phys_dev, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(phys_dev)) {}
 
     VkPhysicalDevice PhysDev() const { return handle_.Cast<VkPhysicalDevice>(); }
@@ -63,8 +65,6 @@ class PHYSICAL_DEVICE_STATE : public BASE_NODE {
         return result;
     }
 };
-
-namespace vvl {
 
 class DisplayMode : public BASE_NODE {
   public:
