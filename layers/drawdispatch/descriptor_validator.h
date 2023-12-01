@@ -47,7 +47,7 @@ class DescriptorValidator {
 
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index, VkSampler sampler, bool is_immutable,
-                                   const SAMPLER_STATE* sampler_state) const;
+                                   const vvl::Sampler* sampler_state) const;
 
     ValidationStateTracker& dev_state;
     CMD_BUFFER_STATE& cb_state;

@@ -403,7 +403,7 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 if (immut) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        auto sampler = state_data->GetConstCastShared<SAMPLER_STATE>(immut[di]);
+                        auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immut[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
                             binding->updated[di] = true;
@@ -419,7 +419,7 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 if (immut) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        auto sampler = state_data->GetConstCastShared<SAMPLER_STATE>(immut[di]);
+                        auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immut[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
                             binding->updated[di] = true;
@@ -630,7 +630,7 @@ static void ReplaceStatePtr(DescriptorSet &set_state, T &dst, const T &src, bool
 void vvl::SamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                      const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
     if (!immutable_) {
-        ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<SAMPLER_STATE>(update.pImageInfo[index].sampler),
+        ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler),
                         is_bindless);
     }
 }
@@ -655,7 +655,7 @@ void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const Va
                                                           bool is_bindless) {
     const auto &image_info = update.pImageInfo[index];
     if (!immutable_) {
-        ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<SAMPLER_STATE>(image_info.sampler), is_bindless);
+        ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless);
     }
     image_layout_ = image_info.imageLayout;
     ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView), is_bindless);
@@ -816,13 +816,13 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
         case DescriptorClass::PlainSampler:
             if (!immutable_) {
                 ReplaceStatePtr(set_state, sampler_state_,
-                                dev_data.GetConstCastShared<SAMPLER_STATE>(update.pImageInfo[index].sampler), is_bindless);
+                                dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler), is_bindless);
             }
             break;
         case DescriptorClass::ImageSampler: {
             const auto &image_info = update.pImageInfo[index];
             if (!immutable_) {
-                ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<SAMPLER_STATE>(image_info.sampler),
+                ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler),
                                 is_bindless);
             }
             image_layout_ = image_info.imageLayout;

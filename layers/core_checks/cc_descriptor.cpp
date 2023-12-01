@@ -604,7 +604,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
              binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
             binding_info.pImmutableSamplers) {
             for (uint32_t j = 0; j < binding_info.descriptorCount; j++) {
-                auto sampler_state = Get<SAMPLER_STATE>(binding_info.pImmutableSamplers[j]);
+                auto sampler_state = Get<vvl::Sampler>(binding_info.pImmutableSamplers[j]);
                 if (sampler_state && (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
                                       sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT)) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009", device,
@@ -988,7 +988,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
 }
 
 // Validate given sampler. Currently this only checks to make sure it exists in the samplerMap
-bool CoreChecks::ValidateSampler(const VkSampler sampler) const { return Get<SAMPLER_STATE>(sampler).get() != nullptr; }
+bool CoreChecks::ValidateSampler(const VkSampler sampler) const { return Get<vvl::Sampler>(sampler).get() != nullptr; }
 
 bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
                                      const Location &image_info_loc) const {
@@ -1819,7 +1819,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
 
                 if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                     if (desc.IsImmutableSampler()) {
-                        auto sampler_state = Get<SAMPLER_STATE>(desc.GetSampler());
+                        auto sampler_state = Get<vvl::Sampler>(desc.GetSampler());
                         if (iv_state && sampler_state) {
                             if (iv_state->samplerConversion != sampler_state->samplerConversion) {
                                 const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->image_view());
@@ -1856,7 +1856,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                 }
 
                 // Verify portability
-                auto sampler_state = Get<SAMPLER_STATE>(sampler);
+                auto sampler_state = Get<vvl::Sampler>(sampler);
                 if (sampler_state) {
                     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
                         if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
@@ -2484,7 +2484,7 @@ bool CoreChecks::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevic
                          physical_device_count);
     }
 
-    auto sampler_state = Get<SAMPLER_STATE>(pInfo->sampler);
+    auto sampler_state = Get<vvl::Sampler>(pInfo->sampler);
 
     if (sampler_state) {
         if (!(sampler_state->createInfo.flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
@@ -2626,7 +2626,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                              string_VkDescriptorType(pDescriptorInfo->type));
             break;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            if (Get<SAMPLER_STATE>(pDescriptorInfo->data.pCombinedImageSampler->sampler).get() == nullptr) {
+            if (Get<vvl::Sampler>(pDescriptorInfo->data.pCombinedImageSampler->sampler).get() == nullptr) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08019", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but "
                                  "pCombinedImageSampler->sampler is not a valid sampler.");
@@ -2941,7 +2941,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     }
 
     if (pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && pDescriptorInfo->data.pSampler != nullptr) {
-        const auto sampler_state = Get<SAMPLER_STATE>(*pDescriptorInfo->data.pSampler);
+        const auto sampler_state = Get<vvl::Sampler>(*pDescriptorInfo->data.pSampler);
 
         if (sampler_state && (0 != (sampler_state->createInfo.flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT))) {
             dataSize = phys_dev_ext_props.descriptor_buffer_density_props.combinedImageSamplerDensityMapDescriptorSize;
@@ -4037,7 +4037,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         uint32_t sum_subsampled_samplers = 0;
         for (const auto &dsl : set_layouts) {
             // find the number of subsampled samplers across all stages
-            // NOTE: this does not use the GetDescriptorSum patter because it needs the Get<SAMPLER_STATE> method
+            // NOTE: this does not use the GetDescriptorSum patter because it needs the Get<vvl::Sampler> method
             if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
                 continue;
             }
@@ -4053,7 +4053,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                      (binding->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER)) &&
                     (binding->pImmutableSamplers != nullptr)) {
                     for (uint32_t sampler_idx = 0; sampler_idx < binding->descriptorCount; sampler_idx++) {
-                        auto state = Get<SAMPLER_STATE>(binding->pImmutableSamplers[sampler_idx]);
+                        auto state = Get<vvl::Sampler>(binding->pImmutableSamplers[sampler_idx]);
                         if (state && (state->createInfo.flags & (VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT |
                                                                  VK_SAMPLER_CREATE_SUBSAMPLED_COARSE_RECONSTRUCTION_BIT_EXT))) {
                             sum_subsampled_samplers++;
@@ -4134,7 +4134,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
-    auto num_samplers = Count<SAMPLER_STATE>();
+    auto num_samplers = Count<vvl::Sampler>();
     if (num_samplers >= phys_dev_props.limits.maxSamplerAllocationCount) {
         skip |= LogError("VUID-vkCreateSampler-maxSamplerAllocationCount-04110", device, error_obj.location,
                          "Number of currently valid sampler objects (%zu) is not less than the maximum allowed (%" PRIu32 ").",

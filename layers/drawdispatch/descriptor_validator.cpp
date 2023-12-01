@@ -159,7 +159,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
                                     VkDescriptorType descriptor_type,
                                     const vvl::ImageDescriptor &image_descriptor) const {
-    std::vector<const SAMPLER_STATE *> sampler_states;
+    std::vector<const vvl::Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
     const IMAGE_VIEW_STATE *image_view_state = image_descriptor.GetImageViewState();
     const auto binding = binding_info.first;
@@ -1012,8 +1012,9 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 // If the validation is related to both of image and sampler,
 // please leave it in (descriptor_class == DescriptorClass::ImageSampler || descriptor_class ==
 // DescriptorClass::Image) Here is to validate for only sampler.
-bool vvl::DescriptorValidator::ValidateSamplerDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index, VkSampler sampler,
-                                                         bool is_immutable, const SAMPLER_STATE *sampler_state) const {
+bool vvl::DescriptorValidator::ValidateSamplerDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
+                                                         VkSampler sampler, bool is_immutable,
+                                                         const vvl::Sampler *sampler_state) const {
     // Verify Sampler still valid
     if (!sampler_state || sampler_state->Destroyed()) {
         auto set = descriptor_set.Handle();

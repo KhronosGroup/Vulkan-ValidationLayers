@@ -64,7 +64,7 @@ std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> gpuav::Validator::CreateAccele
     return std::make_shared<AccelerationStructureKHR>(as, ci, std::move(buf_state), address, *desc_heap);
 }
 
-std::shared_ptr<SAMPLER_STATE> gpuav::Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
+std::shared_ptr<vvl::Sampler> gpuav::Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
     return std::make_shared<Sampler>(s, ci, *desc_heap);
 }
 
