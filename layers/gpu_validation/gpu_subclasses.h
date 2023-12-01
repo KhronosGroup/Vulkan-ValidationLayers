@@ -269,7 +269,7 @@ class ImageView : public IMAGE_VIEW_STATE {
     const DescriptorId id;
 };
 
-class Sampler : public SAMPLER_STATE {
+class Sampler : public vvl::Sampler {
   public:
     Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_);
 

@@ -50,6 +50,7 @@ class Queue;
 class Semaphore;
 class Buffer;
 class BufferView;
+class Sampler;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -63,7 +64,6 @@ class IMAGE_VIEW_STATE;
 class COMMAND_POOL_STATE;
 class DISPLAY_MODE_STATE;
 class RENDER_PASS_STATE;
-class SAMPLER_STATE;
 class SAMPLER_YCBCR_CONVERSION_STATE;
 class EVENT_STATE;
 class SWAPCHAIN_NODE;
@@ -288,7 +288,7 @@ VALSTATETRACK_STATE_OBJECT(VkQueue, vvl::Queue)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, RENDER_PASS_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
-VALSTATETRACK_STATE_OBJECT(VkSampler, SAMPLER_STATE)
+VALSTATETRACK_STATE_OBJECT(VkSampler, vvl::Sampler)
 VALSTATETRACK_STATE_OBJECT(VkImageView, IMAGE_VIEW_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
@@ -919,7 +919,7 @@ class ValidationStateTracker : public ValidationObject {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<SAMPLER_STATE> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci);
+    virtual std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci);
     void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                      const RecordObject& record_obj) override;
@@ -1907,7 +1907,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV, acceleration_structure_nv_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, render_pass_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, vvl::DescriptorSetLayout, descriptor_set_layout_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, sampler_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSampler, vvl::Sampler, sampler_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, vvl::BufferView, buffer_view_map_)

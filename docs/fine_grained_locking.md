@@ -182,7 +182,7 @@ It is very common for state objects to contain data that is set up at creation t
 
 The following objects have already been updated to meet the above construction requirements and now only have `const` data members. They do not require any additional locking. This is the best way to make a state object thread safe and should be used whenever possible!
 
-* VkSampler / SAMPLER_STATE
+* VkSampler / vvl::Sampler
 * VkSamplerYcbcrConversion / SAMPLER_YCBCR_CONVERSION_STATE
 * VkRenderPass / RENDER_PASS_STATE
 * VkFramebuffer / FRAMEBUFFER_STATE

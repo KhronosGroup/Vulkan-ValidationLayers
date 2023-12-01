@@ -50,7 +50,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, vvl::BufferV
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav::DescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav::ImageView, IMAGE_VIEW_STATE)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav::Sampler, SAMPLER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav::Sampler, vvl::Sampler)
 
 namespace gpuav {
 
@@ -134,7 +134,7 @@ class Validator : public gpu_tracker::Validator {
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> CreateAccelerationStructureState(
         VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
         std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address) final;
-    std::shared_ptr<SAMPLER_STATE> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
+    std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
     std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,

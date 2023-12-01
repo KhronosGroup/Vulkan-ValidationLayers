@@ -1617,7 +1617,7 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineLayout(VkDevice device,
 void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler,
                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (!sampler) return;
-    auto sampler_state = Get<SAMPLER_STATE>(sampler);
+    auto sampler_state = Get<vvl::Sampler>(sampler);
     // Any bound cmd buffers are now invalid
     if (sampler_state) {
         if (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
@@ -1625,7 +1625,7 @@ void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSamp
             custom_border_color_sampler_count--;
         }
     }
-    Destroy<SAMPLER_STATE>(sampler);
+    Destroy<vvl::Sampler>(sampler);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
@@ -1946,8 +1946,8 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
     crtpl_state->pipe_state.clear();
 }
 
-std::shared_ptr<SAMPLER_STATE> ValidationStateTracker::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
-    return std::make_shared<SAMPLER_STATE>(s, ci);
+std::shared_ptr<vvl::Sampler> ValidationStateTracker::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
+    return std::make_shared<vvl::Sampler>(s, ci);
 }
 
 void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,

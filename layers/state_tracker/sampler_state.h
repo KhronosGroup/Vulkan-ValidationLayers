@@ -54,13 +54,15 @@ struct hash<SamplerUsedByImage> {
 };
 }  // namespace std
 
-class SAMPLER_STATE : public BASE_NODE {
+namespace vvl {
+
+class Sampler : public BASE_NODE {
   public:
     const VkSamplerCreateInfo createInfo;
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
-    SAMPLER_STATE(const VkSampler s, const VkSamplerCreateInfo *pci)
+    Sampler(const VkSampler s, const VkSamplerCreateInfo *pci)
         : BASE_NODE(s, kVulkanObjectTypeSampler),
           createInfo(*pci),
           samplerConversion(GetConversion(pci)),
@@ -80,6 +82,8 @@ class SAMPLER_STATE : public BASE_NODE {
         return result;
     }
 };
+
+}  // namespace vvl
 
 class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
   public:

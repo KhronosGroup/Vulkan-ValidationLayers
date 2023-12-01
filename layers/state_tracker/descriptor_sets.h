@@ -41,9 +41,9 @@ class ValidationStateTracker;
 class CMD_BUFFER_STATE;
 class UPDATE_TEMPLATE_STATE;
 struct DeviceExtensions;
-class SAMPLER_STATE;
 
 namespace vvl {
+class Sampler;
 class DescriptorSet;
 struct AllocateDescriptorSetsData;
 
@@ -380,15 +380,15 @@ class SamplerDescriptor : public Descriptor {
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_state_ ? sampler_state_->sampler() : VK_NULL_HANDLE; }
 
-    void SetSamplerState(std::shared_ptr<SAMPLER_STATE> &&state) {
+    void SetSamplerState(std::shared_ptr<vvl::Sampler> &&state) {
         sampler_state_ = std::move(state);
         // currently this method is only used to initialize immutable samplers during DescriptorSet creation
         immutable_ = true;
     }
 
-    const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
-    SAMPLER_STATE *GetSamplerState() { return sampler_state_.get(); }
-    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
+    const vvl::Sampler *GetSamplerState() const { return sampler_state_.get(); }
+    vvl::Sampler *GetSamplerState() { return sampler_state_.get(); }
+    std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }
 
     bool AddParent(BASE_NODE *base_node) override {
         bool result = false;
@@ -406,7 +406,7 @@ class SamplerDescriptor : public Descriptor {
 
   private:
     bool immutable_{false};
-    std::shared_ptr<SAMPLER_STATE> sampler_state_;
+    std::shared_ptr<vvl::Sampler> sampler_state_;
 };
 
 class ImageDescriptor : public Descriptor {
@@ -471,15 +471,15 @@ class ImageSamplerDescriptor : public ImageDescriptor {
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_state_ ? sampler_state_->sampler() : VK_NULL_HANDLE; }
 
-    void SetSamplerState(std::shared_ptr<SAMPLER_STATE> &&state) {
+    void SetSamplerState(std::shared_ptr<vvl::Sampler> &&state) {
         sampler_state_ = std::move(state);
         // currently this method is only used to initialize immutable samplers during DescriptorSet creation
         immutable_ = true;
     }
 
-    const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
-    SAMPLER_STATE *GetSamplerState() { return sampler_state_.get(); }
-    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
+    const vvl::Sampler *GetSamplerState() const { return sampler_state_.get(); }
+    vvl::Sampler *GetSamplerState() { return sampler_state_.get(); }
+    std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }
 
     bool AddParent(BASE_NODE *base_node) override {
         bool result = ImageDescriptor::AddParent(base_node);
@@ -498,7 +498,7 @@ class ImageSamplerDescriptor : public ImageDescriptor {
     bool Invalid() const override { return ImageDescriptor::Invalid() || !sampler_state_ || sampler_state_->Invalid(); }
 
   private:
-    std::shared_ptr<SAMPLER_STATE> sampler_state_;
+    std::shared_ptr<vvl::Sampler> sampler_state_;
     bool immutable_{false};
 };
 
@@ -669,7 +669,7 @@ class MutableDescriptor : public Descriptor {
     }
     VkDeviceSize GetBufferSize() const { return buffer_size_; }
 
-    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
+    std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }
     std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
     std::shared_ptr<vvl::Buffer> GetSharedBufferState() const { return buffer_state_; }
@@ -707,7 +707,7 @@ class MutableDescriptor : public Descriptor {
 
     // Sampler and ImageSampler Descriptor
     bool immutable_{false};
-    std::shared_ptr<SAMPLER_STATE> sampler_state_;
+    std::shared_ptr<vvl::Sampler> sampler_state_;
     // Image Descriptor
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};

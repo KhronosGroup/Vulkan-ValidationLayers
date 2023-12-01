@@ -577,7 +577,7 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator,
                                                const ErrorObject &error_obj) const {
-    auto sampler_state = Get<SAMPLER_STATE>(sampler);
+    auto sampler_state = Get<vvl::Sampler>(sampler);
     bool skip = false;
     if (sampler_state) {
         skip |= ValidateObjectNotInUse(sampler_state.get(), error_obj.location.dot(Field::sampler),

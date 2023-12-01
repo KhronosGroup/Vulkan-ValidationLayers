@@ -70,16 +70,16 @@ void gpuav::ImageView::NotifyInvalidate(const NodeList &invalid_nodes, bool unli
 }
 
 gpuav::Sampler::Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_)
-    : SAMPLER_STATE(s, pci), desc_heap(desc_heap_), id(desc_heap.NextId(VulkanTypedHandle(s, kVulkanObjectTypeSampler))) {}
+    : vvl::Sampler(s, pci), desc_heap(desc_heap_), id(desc_heap.NextId(VulkanTypedHandle(s, kVulkanObjectTypeSampler))) {}
 
 void gpuav::Sampler::Destroy() {
     desc_heap.DeleteId(id);
-    SAMPLER_STATE::Destroy();
+    vvl::Sampler::Destroy();
 }
 
 void gpuav::Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
-    SAMPLER_STATE::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::Sampler::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 gpuav::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as,
