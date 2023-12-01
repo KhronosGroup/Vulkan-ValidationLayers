@@ -227,7 +227,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
 
         // Validate color attachments
         const uint32_t subpass = pipeline.Subpass();
-        auto render_pass = Get<RENDER_PASS_STATE>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass);
+        auto render_pass = Get<vvl::RenderPass>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass);
         const bool ignore_color_blend_state =
             raster_state_ci->rasterizerDiscardEnable ||
             (pipeline.rendering_create_info ? (pipeline.rendering_create_info->colorAttachmentCount == 0)

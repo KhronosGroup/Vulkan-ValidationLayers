@@ -124,7 +124,7 @@ bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBuffer& c
 
 bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, uint32_t fb_attachment, uint32_t color_attachment,
                                             VkImageAspectFlags aspects, const Location& loc) const {
-    const RENDER_PASS_STATE* rp = cmd.activeRenderPass.get();
+    const vvl::RenderPass* rp = cmd.activeRenderPass.get();
     bool skip = false;
 
     if (!rp || fb_attachment == VK_ATTACHMENT_UNUSED) {
@@ -207,7 +207,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
 
     // Check for uses of ClearAttachments along with LOAD_OP_LOAD,
     // as it can be more efficient to just use LOAD_OP_CLEAR
-    const RENDER_PASS_STATE* rp = cb_node->activeRenderPass.get();
+    const vvl::RenderPass* rp = cb_node->activeRenderPass.get();
     if (rp) {
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
             const auto pColorAttachments = rp->dynamic_rendering_begin_rendering_info.pColorAttachments;

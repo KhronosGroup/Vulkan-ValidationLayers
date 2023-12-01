@@ -265,30 +265,30 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const;
-    bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                     const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
+    bool LogInvalidAttachmentMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                     const vvl::RenderPass& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const Location& loc, const char* error_code) const;
-    bool LogInvalidPnextMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                const RENDER_PASS_STATE& rp2_state, const char* msg, const Location& loc,
+    bool LogInvalidPnextMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                const vvl::RenderPass& rp2_state, const char* msg, const Location& loc,
                                 const char* error_code) const;
-    bool LogInvalidDependencyMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                     const RENDER_PASS_STATE& rp2_state, const char* msg, const Location& loc,
+    bool LogInvalidDependencyMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                     const vvl::RenderPass& rp2_state, const char* msg, const Location& loc,
                                      const char* error_code) const;
     bool ValidateStageMaskHost(const Location& stage_mask_loc, VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const DEVICE_MEMORY_STATE& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
                            const Location& size_loc) const;
     bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
-    bool ValidateAttachmentCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                         const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
+    bool ValidateAttachmentCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                         const vvl::RenderPass& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                          const Location& loc, const char* error_code) const;
-    bool ValidateSubpassCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                      const RENDER_PASS_STATE& rp2_state, const int subpass, const Location& loc,
+    bool ValidateSubpassCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                      const vvl::RenderPass& rp2_state, const int subpass, const Location& loc,
                                       const char* error_code) const;
-    bool ValidateDependencyCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                         const RENDER_PASS_STATE& rp2_state, const uint32_t dependency, const Location& loc,
+    bool ValidateDependencyCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                         const vvl::RenderPass& rp2_state, const uint32_t dependency, const Location& loc,
                                          const char* error_code) const;
-    bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
-                                         const RENDER_PASS_STATE& rp2_state, const Location& loc, const char* vuid) const;
+    bool ValidateRenderPassCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
+                                         const vvl::RenderPass& rp2_state, const Location& loc, const char* vuid) const;
     bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family, const char* vuid,
                                   const Location& loc) const;
@@ -326,7 +326,7 @@ class CoreChecks : public ValidationStateTracker {
                                                   uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                     const ErrorObject& error_obj) const;
-    bool ValidateDependencies(const vvl::Framebuffer& framebuffer_state, const RENDER_PASS_STATE& render_pass_state,
+    bool ValidateDependencies(const vvl::Framebuffer& framebuffer_state, const vvl::RenderPass& render_pass_state,
                               const ErrorObject& error_obj) const;
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& barrier_loc, const CMD_BUFFER_STATE* cb_state,
                                const BufferBarrier& barrier) const;
@@ -888,9 +888,9 @@ class CoreChecks : public ValidationStateTracker {
                                          const VkSubpassContents contents);
     void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
 
-    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state, const int);
+    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const vvl::RenderPass& render_pass_state, const int);
 
-    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state);
+    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const vvl::RenderPass& render_pass_state);
 
     bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& image_loc,
                                            const ImageBarrier& img_barrier, const CommandBufferImageLayoutMap& current_map,

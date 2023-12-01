@@ -71,7 +71,7 @@ struct BeginRenderingCmdState {
 };
 }  // namespace syncval_state
 
-void InitSubpassContexts(VkQueueFlags queue_flags, const RENDER_PASS_STATE &rp_state, const AccessContext *external_context,
+void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state, const AccessContext *external_context,
                          std::vector<AccessContext> &subpass_contexts);
 
 struct ClearAttachmentInfo {
@@ -103,28 +103,28 @@ class RenderPassAccessContext {
     static AttachmentViewGenVector CreateAttachmentViewGen(
         const VkRect2D &render_area, const std::vector<const syncval_state::ImageViewState *> &attachment_views);
     RenderPassAccessContext() : rp_state_(nullptr), render_area_(VkRect2D()), current_subpass_(0) {}
-    RenderPassAccessContext(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, VkQueueFlags queue_flags,
+    RenderPassAccessContext(const vvl::RenderPass &rp_state, const VkRect2D &render_area, VkQueueFlags queue_flags,
                             const std::vector<const syncval_state::ImageViewState *> &attachment_views,
                             const AccessContext *external_context);
 
     static bool ValidateLayoutTransitions(const SyncValidationInfo &val_info, const AccessContext &access_context,
-                                          const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, uint32_t subpass,
+                                          const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
                                           const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
     static bool ValidateLoadOperation(const SyncValidationInfo &val_info, const AccessContext &access_context,
-                                      const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, uint32_t subpass,
+                                      const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
                                       const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
     bool ValidateStoreOperation(const SyncValidationInfo &val_info, vvl::Func command) const;
     bool ValidateResolveOperations(const SyncValidationInfo &val_info, vvl::Func command) const;
 
-    static void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
+    static void UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
                                               uint32_t subpass, const ResourceUsageTag tag, AccessContext access_context);
 
-    static void UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
+    static void UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
                                             uint32_t subpass, const ResourceUsageTag tag, AccessContext &access_context);
 
-    static void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
+    static void RecordLayoutTransitions(const vvl::RenderPass &rp_state, uint32_t subpass,
                                         const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                         AccessContext &access_context);
 
@@ -149,11 +149,11 @@ class RenderPassAccessContext {
     const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
     const std::vector<AccessContext> &GetContexts() const { return subpass_contexts_; }
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
-    const RENDER_PASS_STATE *GetRenderPassState() const { return rp_state_; }
+    const vvl::RenderPass *GetRenderPassState() const { return rp_state_; }
     AccessContext *CreateStoreResolveProxy() const;
 
   private:
-    const RENDER_PASS_STATE *rp_state_;
+    const vvl::RenderPass *rp_state_;
     const VkRect2D render_area_;
     uint32_t current_subpass_;
     std::vector<AccessContext> subpass_contexts_;

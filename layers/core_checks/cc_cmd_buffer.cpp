@@ -92,7 +92,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 auto framebuffer = Get<vvl::Framebuffer>(info->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != info->renderPass) {
-                        auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
+                        auto render_pass = Get<vvl::RenderPass>(info->renderPass);
                         // renderPass that framebuffer was created with must be compatible with local renderPass
                         skip |= ValidateRenderPassCompatibility("framebuffer", *framebuffer->rp_state.get(), "command buffer",
                                                                 *render_pass.get(), inheritance_loc,
@@ -101,7 +101,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 }
 
                 if (info->renderPass != VK_NULL_HANDLE) {
-                    auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
+                    auto render_pass = Get<vvl::RenderPass>(info->renderPass);
                     if (!render_pass) {
                         skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-06000", commandBuffer,
                                          inheritance_loc.dot(Field::renderPass), "is not a valid VkRenderPass.");
@@ -866,7 +866,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             } else if (sub_cb_state.beginInfo.pInheritanceInfo != nullptr) {
                 const uint32_t inheritance_subpass = sub_cb_state.beginInfo.pInheritanceInfo->subpass;
                 const VkRenderPass inheritance_render_pass = sub_cb_state.beginInfo.pInheritanceInfo->renderPass;
-                auto secondary_rp_state = Get<RENDER_PASS_STATE>(inheritance_render_pass);
+                auto secondary_rp_state = Get<vvl::RenderPass>(inheritance_render_pass);
                 if (!(sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     const LogObjectList objlist(pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
                     skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096", objlist, cb_loc,

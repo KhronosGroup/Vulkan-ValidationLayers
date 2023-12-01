@@ -449,7 +449,7 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const P
 // static
 std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                      const safe_VkGraphicsPipelineCreateInfo &create_info,
-                                                                     const std::shared_ptr<const RENDER_PASS_STATE> &rp) {
+                                                                     const std::shared_ptr<const vvl::RenderPass> &rp) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {  // Pre-raster graphics library
         return std::make_shared<PreRasterState>(p, state, create_info, rp);
@@ -473,7 +473,7 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPEL
 // static
 std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
     const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const RENDER_PASS_STATE> &rp) {
+    const safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp) {
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
@@ -504,7 +504,7 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
 // create_info.
 std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
     const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const RENDER_PASS_STATE> &rp) {
+    const safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp) {
     // If this pipeline is being created a non-executable (i.e., does not contain complete state) pipeline with FO state, then
     // unconditionally set this pipeline's FO state.
     const auto lib_type = GetGraphicsLibType(create_info);
@@ -598,7 +598,7 @@ std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkS
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                               std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
+                               std::shared_ptr<const vvl::RenderPass> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),

@@ -482,7 +482,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(Func command, const VkRenderPassBeginInfo
                                        const VkSubpassContents contents) {
     RecordCmd(command);
     activeFramebuffer = dev_data->Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
-    activeRenderPass = dev_data->Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    activeRenderPass = dev_data->Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     active_render_pass_begin_info = safe_VkRenderPassBeginInfo(pRenderPassBegin);
     SetActiveSubpass(0);
     activeSubpassContents = contents;
@@ -556,7 +556,7 @@ void CMD_BUFFER_STATE::EndRenderPass(Func command) {
 
 void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(command);
-    activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo, true);
+    activeRenderPass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
@@ -845,7 +845,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         if ((createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
             (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
             if (beginInfo.pInheritanceInfo->renderPass) {
-                activeRenderPass = dev_data->Get<RENDER_PASS_STATE>(beginInfo.pInheritanceInfo->renderPass);
+                activeRenderPass = dev_data->Get<vvl::RenderPass>(beginInfo.pInheritanceInfo->renderPass);
                 SetActiveSubpass(beginInfo.pInheritanceInfo->subpass);
 
                 if (beginInfo.pInheritanceInfo->framebuffer) {
@@ -875,7 +875,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 auto inheritance_rendering_info =
                     vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
-                    activeRenderPass = std::make_shared<RENDER_PASS_STATE>(inheritance_rendering_info);
+                    activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
                 }
             }
 

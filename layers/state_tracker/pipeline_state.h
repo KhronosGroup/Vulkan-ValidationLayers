@@ -34,12 +34,11 @@ class DescriptorSetLayoutDef;
 class DescriptorSetLayout;
 class DescriptorSet;
 class Descriptor;
-
+class RenderPass;
 }  // namespace vvl
 
 class ValidationStateTracker;
 class CMD_BUFFER_STATE;
-class RENDER_PASS_STATE;
 struct SHADER_MODULE_STATE;
 class PIPELINE_STATE;
 
@@ -70,7 +69,7 @@ class PIPELINE_STATE : public BASE_NODE {
         template <typename CI>
         struct Traits {};
 
-        CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate,
+        CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const vvl::RenderPass> rpstate,
                    const ValidationStateTracker *state_data)
             : graphics() {
             bool use_color = false;
@@ -125,7 +124,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // NOTE: The style guide suggests private data appear at the end, but we need this populated first, so placing it here
 
     // Render pass state for dynamic rendering, etc.
-    std::shared_ptr<const RENDER_PASS_STATE> rp_state;
+    std::shared_ptr<const vvl::RenderPass> rp_state;
 
     const CreateInfo create_info;
 
@@ -180,7 +179,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
     // Executable or legacy pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
+                   std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
                    CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
@@ -253,7 +252,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // Important as some pipeline checks need pipeline state that won't be there if the substate is from linking
     bool OwnsSubState(const std::shared_ptr<PipelineSubState> sub_state) const { return sub_state && (&sub_state->parent == this); }
 
-    const std::shared_ptr<const RENDER_PASS_STATE> RenderPassState() const {
+    const std::shared_ptr<const vvl::RenderPass> RenderPassState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (fragment_output_state && fragment_output_state->rp_state) {
             return fragment_output_state->rp_state;
@@ -562,17 +561,17 @@ class PIPELINE_STATE : public BASE_NODE {
                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
     static std::shared_ptr<PreRasterState> CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                 const safe_VkGraphicsPipelineCreateInfo &create_info,
-                                                                const std::shared_ptr<const RENDER_PASS_STATE> &rp);
+                                                                const std::shared_ptr<const vvl::RenderPass> &rp);
     static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(const PIPELINE_STATE &p,
                                                                           const ValidationStateTracker &state,
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
-                                                                          const std::shared_ptr<const RENDER_PASS_STATE> &rp);
+                                                                          const std::shared_ptr<const vvl::RenderPass> &rp);
     static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(const PIPELINE_STATE &p,
                                                                           const ValidationStateTracker &state,
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
-                                                                          const std::shared_ptr<const RENDER_PASS_STATE> &rp);
+                                                                          const std::shared_ptr<const vvl::RenderPass> &rp);
 
     template <typename CreateInfo>
     static bool EnablesRasterizationStates(const CreateInfo &create_info) {

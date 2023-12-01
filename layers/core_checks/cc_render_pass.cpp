@@ -28,8 +28,8 @@
 #include "sync/sync_utils.h"
 #include "utils/convert_utils.h"
 
-bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
-                                             const RENDER_PASS_STATE &rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
+bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const vvl::RenderPass &rp1_state, const char *type2_string,
+                                             const vvl::RenderPass &rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                              const char *msg, const Location &loc, const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(error_code, objlist, loc,
@@ -40,8 +40,8 @@ bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const REN
                     secondary_attach, msg);
 }
 
-bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
-                                                 const char *type2_string, const RENDER_PASS_STATE &rp2_state,
+bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const vvl::RenderPass &rp1_state,
+                                                 const char *type2_string, const vvl::RenderPass &rp2_state,
                                                  uint32_t primary_attach, uint32_t secondary_attach, const Location &loc,
                                                  const char *error_code) const {
     bool skip = false;
@@ -82,9 +82,9 @@ bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const
     return skip;
 }
 
-bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
-                                              const char *type2_string, const RENDER_PASS_STATE &rp2_state, const int subpass,
-                                              const Location &loc, const char *error_code) const {
+bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const vvl::RenderPass &rp1_state, const char *type2_string,
+                                              const vvl::RenderPass &rp2_state, const int subpass, const Location &loc,
+                                              const char *error_code) const {
     bool skip = false;
     const auto &primary_desc = rp1_state.createInfo.pSubpasses[subpass];
     const auto &secondary_desc = rp2_state.createInfo.pSubpasses[subpass];
@@ -190,8 +190,8 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
     return skip;
 }
 
-bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
-                                                 const char *type2_string, const RENDER_PASS_STATE &rp2_state,
+bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const vvl::RenderPass &rp1_state,
+                                                 const char *type2_string, const vvl::RenderPass &rp2_state,
                                                  const uint32_t dependency, const Location &loc, const char *error_code) const {
     bool skip = false;
 
@@ -270,16 +270,16 @@ bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const
     return skip;
 }
 
-bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
-                                        const RENDER_PASS_STATE &rp2_state, const char *msg, const Location &loc,
+bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const vvl::RenderPass &rp1_state, const char *type2_string,
+                                        const vvl::RenderPass &rp2_state, const char *msg, const Location &loc,
                                         const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(error_code, objlist, loc, "RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", type1_string,
                     FormatHandle(rp1_state).c_str(), type2_string, FormatHandle(rp2_state).c_str(), msg);
 }
 
-bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
-                                             const RENDER_PASS_STATE &rp2_state, const char *msg, const Location &loc,
+bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const vvl::RenderPass &rp1_state, const char *type2_string,
+                                             const vvl::RenderPass &rp2_state, const char *msg, const Location &loc,
                                              const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(error_code, objlist, loc, "RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", type1_string,
@@ -289,8 +289,8 @@ bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const REN
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
 //  This function deals directly with the CreateInfo, there are overloaded versions below that can take the renderPass handle and
 //  will then feed into this function
-bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
-                                                 const char *type2_string, const RENDER_PASS_STATE &rp2_state, const Location &loc,
+bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const vvl::RenderPass &rp1_state,
+                                                 const char *type2_string, const vvl::RenderPass &rp2_state, const Location &loc,
                                                  const char *vuid) const {
     bool skip = false;
 
@@ -374,7 +374,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
                                                   const ErrorObject &error_obj) const {
-    auto rp_state = Get<RENDER_PASS_STATE>(renderPass);
+    auto rp_state = Get<vvl::RenderPass>(renderPass);
     bool skip = false;
     if (rp_state) {
         skip |= ValidateObjectNotInUse(rp_state.get(), error_obj.location, "VUID-vkDestroyRenderPass-renderPass-00873");
@@ -400,7 +400,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                             const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    const auto &rp_state = *Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    const auto &rp_state = *Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     const auto &fb_state = *Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     const Location rp_begin_loc = error_obj.location.dot(Field::pRenderPassBegin);
 
@@ -540,7 +540,7 @@ void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, 
         return;
     }
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto render_pass_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
         TransitionBeginRenderPassLayouts(cb_state.get(), *render_pass_state);
@@ -920,7 +920,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                 ", but VkFramebuffer was created with VkFramebufferAttachmentsCreateInfo::attachmentImageInfoCount = %" PRIu32 ".",
                 render_pass_attachment_begin_info->attachmentCount, framebuffer_attachments_create_info->attachmentImageInfoCount);
         } else {
-            auto render_pass_state = Get<RENDER_PASS_STATE>(pRenderPassBeginInfo->renderPass);
+            auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBeginInfo->renderPass);
             const auto *render_pass_create_info = &render_pass_state->createInfo;
             for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
                 const Location attachment_loc = loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::pAttachments, i);
@@ -2049,7 +2049,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
     return skip;
 }
 
-bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state, const RENDER_PASS_STATE &render_pass_state,
+bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state, const vvl::RenderPass &render_pass_state,
                                       const ErrorObject &error_obj) const {
     bool skip = false;
     auto const framebuffer_info = framebuffer_state.createInfo.ptr();
@@ -4146,7 +4146,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                          phys_dev_props.limits.maxFramebufferLayers);
     }
 
-    auto rp_state = Get<RENDER_PASS_STATE>(pCreateInfo->renderPass);
+    auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
     if (!rp_state) {
         return skip;
     }

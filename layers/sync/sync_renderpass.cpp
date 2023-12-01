@@ -66,7 +66,7 @@ class UpdateStateResolveAction {
     const ResourceUsageTag tag_;
 };
 
-void InitSubpassContexts(VkQueueFlags queue_flags, const RENDER_PASS_STATE &rp_state, const AccessContext *external_context,
+void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state, const AccessContext *external_context,
                          std::vector<AccessContext> &subpass_contexts) {
     const auto &create_info = rp_state.createInfo;
     // Add this for all subpasses here so that they exsist during next subpass validation
@@ -111,7 +111,7 @@ static SyncStageAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
 }
 
 // Caller must manage returned pointer
-static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const RENDER_PASS_STATE &rp_state,
+static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const vvl::RenderPass &rp_state,
                                                      uint32_t subpass, const AttachmentViewGenVector &attachment_views) {
     auto *proxy = new AccessContext(context);
     RenderPassAccessContext::UpdateAttachmentResolveAccess(rp_state, attachment_views, subpass, kInvalidTag, *proxy);
@@ -121,7 +121,7 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
 
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
 bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncValidationInfo &val_info, const AccessContext &access_context,
-                                                        const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                                        const vvl::RenderPass &rp_state, const VkRect2D &render_area,
                                                         uint32_t subpass, const AttachmentViewGenVector &attachment_views,
                                                         vvl::Func command) {
     bool skip = false;
@@ -173,9 +173,8 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncValidationInfo
 }
 
 bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &val_info, const AccessContext &access_context,
-                                                    const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                                    uint32_t subpass, const AttachmentViewGenVector &attachment_views,
-                                                    vvl::Func command) {
+                                                    const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
+                                                    const AttachmentViewGenVector &attachment_views, vvl::Func command) {
     bool skip = false;
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
 
@@ -337,7 +336,7 @@ bool IsStencilAttachmentWriteable(const LAST_BOUND_STATE &last_bound_state, cons
 //
 // The signature for Action() reflect the needs of both uses.
 template <typename Action>
-void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
+void ResolveOperation(Action &action, const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
                       uint32_t subpass) {
     const auto &rp_ci = rp_state.createInfo;
     const auto *attachment_ci = rp_ci.pAttachments;
@@ -403,14 +402,14 @@ bool RenderPassAccessContext::ValidateResolveOperations(const SyncValidationInfo
     return validate_action.GetSkip();
 }
 
-void RenderPassAccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state,
+void RenderPassAccessContext::UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state,
                                                             const AttachmentViewGenVector &attachment_views, uint32_t subpass,
                                                             const ResourceUsageTag tag, AccessContext access_context) {
     UpdateStateResolveAction update(access_context, tag);
     ResolveOperation(update, rp_state, attachment_views, subpass);
 }
 
-void RenderPassAccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state,
+void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state,
                                                           const AttachmentViewGenVector &attachment_views, uint32_t subpass,
                                                           const ResourceUsageTag tag, AccessContext &access_context) {
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
@@ -446,7 +445,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STAT
     }
 }
 
-void RenderPassAccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
+void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_state, uint32_t subpass,
                                                       const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                                       AccessContext &access_context) {
     const auto &transitions = rp_state.subpass_transitions[subpass];
@@ -883,7 +882,7 @@ AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
     }
     return view_gens;
 }
-RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass &rp_state, const VkRect2D &render_area,
                                                  VkQueueFlags queue_flags,
                                                  const std::vector<const syncval_state::ImageViewState *> &attachment_views,
                                                  const AccessContext *external_context)
