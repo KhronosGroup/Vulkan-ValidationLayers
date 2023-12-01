@@ -3398,7 +3398,7 @@ void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const Vk
 }
 
 void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                        VkSwapchainKHR *pSwapchain, std::shared_ptr<SURFACE_STATE> &&surface_state,
+                                                        VkSwapchainKHR *pSwapchain, std::shared_ptr<vvl::Surface> &&surface_state,
                                                         SWAPCHAIN_NODE *old_swapchain_state) {
     if (VK_SUCCESS == result) {
         if (surface_state->swapchain) {
@@ -3430,7 +3430,7 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
 void ValidationStateTracker::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                               const RecordObject &record_obj) {
-    auto surface_state = Get<SURFACE_STATE>(pCreateInfo->surface);
+    auto surface_state = Get<vvl::Surface>(pCreateInfo->surface);
     auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfo->oldSwapchain);
     RecordCreateSwapchainState(record_obj.result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state.get());
 }
@@ -3508,7 +3508,7 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
                                                                      VkSwapchainKHR *pSwapchains, const RecordObject &record_obj) {
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            auto surface_state = Get<SURFACE_STATE>(pCreateInfos[i].surface);
+            auto surface_state = Get<vvl::Surface>(pCreateInfos[i].surface);
             auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfos[i].oldSwapchain);
             RecordCreateSwapchainState(record_obj.result, &pCreateInfos[i], &pSwapchains[i], std::move(surface_state),
                                        old_swapchain_state.get());
@@ -3623,10 +3623,10 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
 void ValidationStateTracker::PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             const RecordObject &record_obj) {
-    Destroy<SURFACE_STATE>(surface);
+    Destroy<vvl::Surface>(surface);
 }
 
-void ValidationStateTracker::RecordVulkanSurface(VkSurfaceKHR *pSurface) { Add(std::make_shared<SURFACE_STATE>(*pSurface)); }
+void ValidationStateTracker::RecordVulkanSurface(VkSurfaceKHR *pSurface) { Add(std::make_shared<vvl::Surface>(*pSurface)); }
 
 void ValidationStateTracker::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance,
                                                                         const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
@@ -3746,7 +3746,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesK
                                                                                    VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
                                                                                    const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    auto surface_state = Get<SURFACE_STATE>(surface);
+    auto surface_state = Get<vvl::Surface>(surface);
     VkSurfaceCapabilities2KHR caps2 = vku::InitStructHelper();
     caps2.surfaceCapabilities = *pSurfaceCapabilities;
     surface_state->SetCapabilities(physicalDevice, safe_VkSurfaceCapabilities2KHR(&caps2));
@@ -3758,7 +3758,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
     if (VK_SUCCESS != record_obj.result) return;
 
     if (pSurfaceInfo->surface) {
-        auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+        auto surface_state = Get<vvl::Surface>(pSurfaceInfo->surface);
 
         const VkSurfacePresentModeEXT *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
         if ((!IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) || (!surface_present_mode)) {
@@ -3791,7 +3791,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                                                                                     VkSurfaceKHR surface,
                                                                                     VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
                                                                                     const RecordObject &record_obj) {
-    auto surface_state = Get<SURFACE_STATE>(surface);
+    auto surface_state = Get<vvl::Surface>(surface);
     const VkSurfaceCapabilitiesKHR caps{
         pSurfaceCapabilities->minImageCount,           pSurfaceCapabilities->maxImageCount,
         pSurfaceCapabilities->currentExtent,           pSurfaceCapabilities->minImageExtent,
@@ -3809,7 +3809,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(Vk
                                                                               VkBool32 *pSupported,
                                                                               const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    auto surface_state = Get<SURFACE_STATE>(surface);
+    auto surface_state = Get<vvl::Surface>(surface);
     surface_state->SetQueueSupport(physicalDevice, queueFamilyIndex, (*pSupported == VK_TRUE));
 }
 
@@ -3822,7 +3822,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
 
     if (pPresentModes) {
         if (surface) {
-            auto surface_state = Get<SURFACE_STATE>(surface);
+            auto surface_state = Get<vvl::Surface>(surface);
             surface_state->SetPresentModes(physicalDevice, vvl::span<const VkPresentModeKHR>(pPresentModes, *pPresentModeCount));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
@@ -3845,7 +3845,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
             formats2[surface_format_index].surfaceFormat = pSurfaceFormats[surface_format_index];
         }
         if (surface) {
-            auto surface_state = Get<SURFACE_STATE>(surface);
+            auto surface_state = Get<vvl::Surface>(surface);
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
@@ -3864,7 +3864,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
 
     if (pSurfaceFormats) {
         if (pSurfaceInfo->surface) {
-            auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+            auto surface_state = Get<vvl::Surface>(pSurfaceInfo->surface);
             std::vector<safe_VkSurfaceFormat2KHR> formats2(*pSurfaceFormatCount);
             for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; surface_format_index++) {
                 formats2[surface_format_index].initialize(&pSurfaceFormats[surface_format_index]);
