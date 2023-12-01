@@ -398,25 +398,28 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfo con
       has_multiview_enabled(false),
       inheritance_rendering_info(pInheritanceRenderingInfo) {}
 
-FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo,
-                                     std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
-                                     std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments)
+namespace vvl {
+
+Framebuffer::Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
+                         std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments)
     : BASE_NODE(fb, kVulkanObjectTypeFramebuffer),
       createInfo(pCreateInfo),
       rp_state(rpstate),
       attachments_view_state(std::move(attachments)) {}
 
-void FRAMEBUFFER_STATE::LinkChildNodes() {
+void Framebuffer::LinkChildNodes() {
     // Connect child node(s), which cannot safely be done in the constructor.
     for (auto &a : attachments_view_state) {
         a->AddParent(this);
     }
 }
 
-void FRAMEBUFFER_STATE::Destroy() {
+void Framebuffer::Destroy() {
     for (auto &view : attachments_view_state) {
         view->RemoveParent(this);
     }
     attachments_view_state.clear();
     BASE_NODE::Destroy();
 }
+
+}  // namespace vvl

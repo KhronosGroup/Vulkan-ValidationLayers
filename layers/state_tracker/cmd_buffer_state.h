@@ -32,12 +32,15 @@
 #include "containers/custom_containers.h"
 
 struct SUBPASS_INFO;
-class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
 class VIDEO_SESSION_STATE;
 class VIDEO_SESSION_PARAMETERS_STATE;
 class CoreChecks;
 class ValidationStateTracker;
+
+namespace vvl {
+class Framebuffer;
+}  // namespace vvl
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static bool GetMetalExport(const VkEventCreateInfo *info) {
@@ -389,7 +392,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void SetActiveSubpassRasterizationSampleCount(VkSampleCountFlagBits rasterization_sample_count) {
         active_subpass_sample_count_ = rasterization_sample_count;
     }
-    std::shared_ptr<FRAMEBUFFER_STATE> activeFramebuffer;
+    std::shared_ptr<vvl::Framebuffer> activeFramebuffer;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     vvl::unordered_set<std::shared_ptr<BASE_NODE>> object_bindings;
@@ -421,7 +424,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Layers using this are responsible for inserting the callbacks into queue_submit_functions.
     std::vector<QueueCallback> queue_submit_functions_after_render_pass;
     // Validation functions run when secondary CB is executed in primary
-    std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
+    std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const vvl::Framebuffer *)>>
         cmd_execute_commands_functions;
 
     using EventCallback = std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,

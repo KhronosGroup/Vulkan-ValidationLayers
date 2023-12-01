@@ -52,10 +52,10 @@ class Buffer;
 class BufferView;
 class Sampler;
 class SamplerYcbcrConversion;
+class Framebuffer;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
-class FRAMEBUFFER_STATE;
 class PIPELINE_CACHE_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
@@ -297,7 +297,7 @@ VALSTATETRACK_STATE_OBJECT(VkPipelineCache, PIPELINE_CACHE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, PIPELINE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, DEVICE_MEMORY_STATE)
-VALSTATETRACK_STATE_OBJECT(VkFramebuffer, FRAMEBUFFER_STATE)
+VALSTATETRACK_STATE_OBJECT(VkFramebuffer, vvl::Framebuffer)
 VALSTATETRACK_STATE_OBJECT(VkShaderModule, SHADER_MODULE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate)
 VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, SWAPCHAIN_NODE)
@@ -1480,7 +1480,7 @@ class ValidationStateTracker : public ValidationObject {
 
     // State Utilty functions
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
-                                                                            const FRAMEBUFFER_STATE& fb_state) const;
+                                                                            const vvl::Framebuffer& fb_state) const;
 
     VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
@@ -1916,7 +1916,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, SHADER_OBJECT_STATE, shader_object_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, FRAMEBUFFER_STATE, frame_buffer_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, vvl::Framebuffer, frame_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate, desc_template_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchain_map_)

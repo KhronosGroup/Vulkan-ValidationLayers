@@ -1022,7 +1022,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
     if (pRenderPassBegin) {
         rp_state_ = sync_state.Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
         renderpass_begin_info_ = safe_VkRenderPassBeginInfo(pRenderPassBegin);
-        auto fb_state = sync_state.Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+        auto fb_state = sync_state.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
         if (fb_state) {
             shared_attachments_ = sync_state.GetAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
             // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy

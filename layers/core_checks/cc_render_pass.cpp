@@ -401,7 +401,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
     bool skip = false;
     const auto &cb_state = *GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto &rp_state = *Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
-    const auto &fb_state = *Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+    const auto &fb_state = *Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     const Location rp_begin_loc = error_obj.location.dot(Field::pRenderPassBegin);
 
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -823,7 +823,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
     const uint32_t device_group_area_count =
         device_group_render_pass_begin_info ? device_group_render_pass_begin_info->deviceRenderAreaCount : 0;
 
-    auto framebuffer_state = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+    auto framebuffer_state = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     const auto *framebuffer_info = &framebuffer_state->createInfo;
     // These VUs depend on count being non-zero, or else acts like struct is not there
     if (device_group_area_count > 0) {
@@ -899,7 +899,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         return false;
     }
 
-    const auto &framebuffer_state = *Get<FRAMEBUFFER_STATE>(pRenderPassBeginInfo->framebuffer);
+    const auto &framebuffer_state = *Get<vvl::Framebuffer>(pRenderPassBeginInfo->framebuffer);
     const auto &framebuffer_create_info = framebuffer_state.createInfo;
     const auto *framebuffer_attachments_create_info =
         vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(framebuffer_create_info.pNext);
@@ -2049,7 +2049,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
     return skip;
 }
 
-bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state, const RENDER_PASS_STATE &render_pass_state,
+bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state, const RENDER_PASS_STATE &render_pass_state,
                                       const ErrorObject &error_obj) const {
     bool skip = false;
     auto const framebuffer_info = framebuffer_state.createInfo.ptr();
@@ -4777,7 +4777,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
-    auto framebuffer_state = Get<FRAMEBUFFER_STATE>(framebuffer);
+    auto framebuffer_state = Get<vvl::Framebuffer>(framebuffer);
     bool skip = false;
     if (framebuffer_state) {
         skip |= ValidateObjectNotInUse(framebuffer_state.get(), error_obj.location, "VUID-vkDestroyFramebuffer-framebuffer-00892");

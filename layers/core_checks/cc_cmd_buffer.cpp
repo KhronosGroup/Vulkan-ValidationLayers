@@ -89,7 +89,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             auto p_inherited_rendering_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(info->pNext);
 
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-                auto framebuffer = Get<FRAMEBUFFER_STATE>(info->framebuffer);
+                auto framebuffer = Get<vvl::Framebuffer>(info->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != info->renderPass) {
                         auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
