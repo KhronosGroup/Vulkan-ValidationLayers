@@ -3447,7 +3447,7 @@ void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice
                                                                 const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     if (!pMode) return;
-    Add(std::make_shared<DISPLAY_MODE_STATE>(*pMode, physicalDevice));
+    Add(std::make_shared<vvl::DisplayMode>(*pMode, physicalDevice));
 }
 
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
