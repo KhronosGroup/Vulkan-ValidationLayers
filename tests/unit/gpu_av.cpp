@@ -1877,7 +1877,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
         taskPayloadSharedEXT Task IN;
         void main() {})glsl";
         VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
-                                nullptr, "main", +true);
+                                nullptr, "main", true);
         CreatePipelineHelper mesh_pipe(*this);
         mesh_pipe.InitState();
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
@@ -1921,6 +1921,172 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
         vk::QueueWaitIdle(m_default_queue);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(VkGpuAssistedLayerTest, GpuDrawMeshIndirect) {
+    TEST_DESCRIPTION("GPU validation: Validate DrawMeshTasksIndirect* DrawBuffer contents");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper(&mesh_shader_features);
+
+    GetPhysicalDeviceFeatures2(features13);
+    mesh_shader_features.multiviewMeshShader = VK_FALSE;
+    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+
+    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    InitRenderTarget();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_props);
+
+    if (mesh_shader_props.maxMeshWorkGroupTotalCount > 0xfffffffe) {
+        GTEST_SKIP() << "MeshWorkGroupTotalCount too high for this test";
+    }
+    const uint32_t num_commands = 3;
+    uint32_t buffer_size = num_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4);  // 4 byte pad between commands
+
+    vkt::Buffer draw_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t *draw_ptr = static_cast<uint32_t *>(draw_buffer.memory().map());
+    memset(draw_ptr, 0, buffer_size);
+
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    *count_ptr = 3;
+    count_buffer.memory().unmap();
+    char const *mesh_shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3, max_primitives = 1) out;
+        layout(triangles) out;
+        struct Task {
+          uint baseID;
+        };
+        taskPayloadSharedEXT Task IN;
+        void main() {})glsl";
+    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, nullptr,
+                            "main", true);
+    CreatePipelineHelper mesh_pipe(*this);
+    mesh_pipe.InitState();
+    mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    mesh_pipe.CreateGraphicsPipeline();
+    // 012 456 8910
+    // Set x in third draw
+    draw_ptr[8] = mesh_shader_props.maxMeshWorkGroupCount[0] + 1;
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07326");
+    vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, 3,
+                                    (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->VerifyFound();
+
+    // Set y in second draw
+    draw_ptr[8] = 0;
+    draw_ptr[5] = mesh_shader_props.maxMeshWorkGroupCount[1] + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07327");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->VerifyFound();
+
+    // Set z in first draw
+    draw_ptr[5] = 0;
+    draw_ptr[2] = mesh_shader_props.maxMeshWorkGroupCount[2] + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->VerifyFound();
+    draw_ptr[2] = 0;
+
+    uint32_t half_total = (mesh_shader_props.maxMeshWorkGroupTotalCount + 2) / 2;
+    if (half_total < mesh_shader_props.maxMeshWorkGroupCount[0]) {
+        draw_ptr[2] = 1;
+        draw_ptr[1] = 2;
+        draw_ptr[0] = (mesh_shader_props.maxMeshWorkGroupTotalCount + 2) / 2;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_default_queue);
+        m_errorMonitor->VerifyFound();
+
+        draw_ptr[2] = 0;
+        draw_ptr[1] = 0;
+        draw_ptr[0] = 0;
+    }
+
+    char const *task_shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+        void main () {
+        }
+    )glsl";
+    VkShaderObj task_shader(this, task_shader_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, nullptr,
+                            "main", true);
+    CreatePipelineHelper task_pipe(*this);
+    task_pipe.InitState();
+    task_pipe.shader_stages_[0] = task_shader.GetStageCreateInfo();
+    task_pipe.shader_stages_[1] = mesh_shader.GetStageCreateInfo();
+    task_pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, task_pipe.Handle());
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 3,
+                                         (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // Set x in second draw
+    draw_ptr[4] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->VerifyFound();
+    draw_ptr[4] = 0;
+
+    // Set y in first draw
+    draw_ptr[1] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->VerifyFound();
+    draw_ptr[1] = 0;
+
+    // Set z in third draw
+    draw_ptr[10] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_default_queue);
+    m_errorMonitor->VerifyFound();
+    draw_ptr[10] = 0;
+
+    half_total = (mesh_shader_props.maxTaskWorkGroupTotalCount + 2) / 2;
+    if (half_total < mesh_shader_props.maxTaskWorkGroupCount[0]) {
+        draw_ptr[2] = 1;
+        draw_ptr[1] = 2;
+        draw_ptr[0] = (mesh_shader_props.maxTaskWorkGroupTotalCount + 2) / 2;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325");
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_default_queue);
+        m_errorMonitor->VerifyFound();
+
+        draw_ptr[2] = 0;
+        draw_ptr[1] = 0;
+        draw_ptr[0] = 0;
+    }
+    draw_buffer.memory().unmap();
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
