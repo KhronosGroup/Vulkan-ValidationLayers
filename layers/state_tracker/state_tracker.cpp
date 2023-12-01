@@ -1741,9 +1741,9 @@ void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const Vk
     Add(std::make_shared<vvl::Fence>(*this, *pFence, pCreateInfo));
 }
 
-std::shared_ptr<PIPELINE_CACHE_STATE> ValidationStateTracker::CreatePipelineCacheState(
+std::shared_ptr<vvl::PipelineCache> ValidationStateTracker::CreatePipelineCacheState(
     VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo) const {
-    return std::make_shared<PIPELINE_CACHE_STATE>(pipeline_cache, pCreateInfo);
+    return std::make_shared<vvl::PipelineCache>(pipeline_cache, pCreateInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
@@ -1756,7 +1756,7 @@ void ValidationStateTracker::PostCallRecordCreatePipelineCache(VkDevice device, 
 void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                const RecordObject &record_obj) {
-    Destroy<PIPELINE_CACHE_STATE>(pipelineCache);
+    Destroy<vvl::PipelineCache>(pipelineCache);
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(

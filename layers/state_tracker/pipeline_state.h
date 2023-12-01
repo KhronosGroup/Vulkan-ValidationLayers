@@ -42,15 +42,17 @@ class CMD_BUFFER_STATE;
 struct SHADER_MODULE_STATE;
 class PIPELINE_STATE;
 
-class PIPELINE_CACHE_STATE : public BASE_NODE {
+namespace vvl {
+class PipelineCache : public BASE_NODE {
   public:
-    PIPELINE_CACHE_STATE(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
+    PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
         : BASE_NODE(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
 
     VkPipelineCache pipelineCache() const { return handle_.Cast<VkPipelineCache>(); }
 
     const safe_VkPipelineCacheCreateInfo create_info;
 };
+}  // namespace vvl
 
 struct StageCreateInfo {
     const PIPELINE_STATE *pipeline;

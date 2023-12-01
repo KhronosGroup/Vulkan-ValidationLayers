@@ -54,10 +54,10 @@ class Sampler;
 class SamplerYcbcrConversion;
 class Framebuffer;
 class RenderPass;
+class PipelineCache;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
-class PIPELINE_CACHE_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
 class PIPELINE_LAYOUT_STATE;
@@ -293,7 +293,7 @@ VALSTATETRACK_STATE_OBJECT(VkImageView, IMAGE_VIEW_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
-VALSTATETRACK_STATE_OBJECT(VkPipelineCache, PIPELINE_CACHE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkPipelineCache, vvl::PipelineCache)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, PIPELINE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, DEVICE_MEMORY_STATE)
@@ -807,8 +807,8 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator,
                                          const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<PIPELINE_CACHE_STATE> CreatePipelineCacheState(VkPipelineCache pipeline_cache,
-                                                                           const VkPipelineCacheCreateInfo* pCreateInfo) const;
+    virtual std::shared_ptr<vvl::PipelineCache> CreatePipelineCacheState(VkPipelineCache pipeline_cache,
+                                                                         const VkPipelineCacheCreateInfo* pCreateInfo) const;
     void PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
                                            const RecordObject& record_obj) override;
@@ -1912,7 +1912,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, vvl::BufferView, buffer_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, PIPELINE_CACHE_STATE, pipeline_cache_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, vvl::PipelineCache, pipeline_cache_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, SHADER_OBJECT_STATE, shader_object_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
