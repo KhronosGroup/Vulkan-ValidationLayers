@@ -37,6 +37,21 @@ static VkBufferUsageFlags2KHR GetBufferUsageFlags(const VkBufferCreateInfo &crea
     return usage_flags2 ? usage_flags2->usage : create_info.usage;
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
+    bool retval = false;
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif
+
 namespace vvl {
 
 Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
@@ -58,25 +73,8 @@ Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCr
     }
 }
 
-}  // namespace vvl
-
-#ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
-    bool retval = false;
-    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
-    while (export_metal_object_info) {
-        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) {
-            retval = true;
-            break;
-        }
-        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
-    }
-    return retval;
-}
-#endif
-
-BUFFER_VIEW_STATE::BUFFER_VIEW_STATE(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                                     VkFormatFeatureFlags2KHR buf_ff)
+BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+                       VkFormatFeatureFlags2KHR buf_ff)
     : BASE_NODE(bv, kVulkanObjectTypeBufferView),
       create_info(*ci),
       buffer_state(bf),
@@ -85,3 +83,5 @@ BUFFER_VIEW_STATE::BUFFER_VIEW_STATE(const std::shared_ptr<vvl::Buffer> &bf, VkB
 #endif
       buf_format_features(buf_ff) {
 }
+
+}  // namespace vvl

@@ -41,9 +41,9 @@ std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer buf, c
     return std::make_shared<Buffer>(this, buf, pCreateInfo, *desc_heap);
 }
 
-std::shared_ptr<BUFFER_VIEW_STATE> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
-                                                                           const VkBufferViewCreateInfo *ci,
-                                                                           VkFormatFeatureFlags2KHR buf_ff) {
+std::shared_ptr<vvl::BufferView> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
+                                                                         const VkBufferViewCreateInfo *ci,
+                                                                         VkFormatFeatureFlags2KHR buf_ff) {
     return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap);
 }
 

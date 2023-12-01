@@ -389,7 +389,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                     }
                 }
                 if (metal_texture_ptr->bufferView) {
-                    auto buffer_view_info = Get<BUFFER_VIEW_STATE>(metal_texture_ptr->bufferView);
+                    auto buffer_view_info = Get<vvl::BufferView>(metal_texture_ptr->bufferView);
                     if (buffer_view_info) {
                         if (!buffer_view_info->metal_bufferview_export) {
                             skip |= LogError(

@@ -378,10 +378,10 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     Add(std::move(buffer_state));
 }
 
-std::shared_ptr<BUFFER_VIEW_STATE> ValidationStateTracker::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf,
-                                                                                 VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                                                                                 VkFormatFeatureFlags2KHR buf_ff) {
-    return std::make_shared<BUFFER_VIEW_STATE>(bf, bv, ci, buf_ff);
+std::shared_ptr<vvl::BufferView> ValidationStateTracker::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf,
+                                                                               VkBufferView bv, const VkBufferViewCreateInfo *ci,
+                                                                               VkFormatFeatureFlags2KHR buf_ff) {
+    return std::make_shared<vvl::BufferView>(bf, bv, ci, buf_ff);
 }
 
 void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
@@ -530,7 +530,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
 void ValidationStateTracker::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             const RecordObject &record_obj) {
-    Destroy<BUFFER_VIEW_STATE>(bufferView);
+    Destroy<vvl::BufferView>(bufferView);
 }
 
 void ValidationStateTracker::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,

@@ -55,7 +55,7 @@ ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, Vk
     return MakeRange(offset, buffer.ComputeSize(offset, size));
 }
 
-ResourceAccessRange MakeRange(const BUFFER_VIEW_STATE& buf_view_state) {
+ResourceAccessRange MakeRange(const vvl::BufferView& buf_view_state) {
     return MakeRange(*buf_view_state.buffer_state.get(), buf_view_state.create_info.offset, buf_view_state.create_info.range);
 }
 

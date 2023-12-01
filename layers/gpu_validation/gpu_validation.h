@@ -46,7 +46,7 @@ struct GpuVuid {
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureKHR, gpuav::AccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureNV, gpuav::AccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, BUFFER_VIEW_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, vvl::BufferView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav::DescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav::ImageView, IMAGE_VIEW_STATE)
@@ -124,9 +124,8 @@ class Validator : public gpu_tracker::Validator {
     // -------------
   public:
     std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
-    std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
-                                                             const VkBufferViewCreateInfo* ci,
-                                                             VkFormatFeatureFlags2KHR buf_ff) final;
+    std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
+                                                           const VkBufferViewCreateInfo* ci, VkFormatFeatureFlags2KHR buf_ff) final;
     std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv,
                                                            const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
                                                            const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) final;

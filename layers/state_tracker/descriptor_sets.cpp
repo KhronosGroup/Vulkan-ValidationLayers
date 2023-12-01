@@ -738,7 +738,7 @@ void vvl::BufferDescriptor::CopyUpdate(DescriptorSet &set_state, const Validatio
 
 void vvl::TexelDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
-    auto buffer_view = dev_data.GetConstCastShared<BUFFER_VIEW_STATE>(update.pTexelBufferView[index]);
+    auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
     ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
 }
 
@@ -849,7 +849,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             break;
         }
         case DescriptorClass::TexelBuffer: {
-            const auto buffer_view = dev_data.GetConstCastShared<BUFFER_VIEW_STATE>(update.pTexelBufferView[index]);
+            const auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
             if (buffer_view) {
                 buffer_size = buffer_view->buffer_state->createInfo.size;
             }

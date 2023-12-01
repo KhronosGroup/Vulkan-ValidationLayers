@@ -511,9 +511,9 @@ class TexelDescriptor : public Descriptor {
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     VkBufferView GetBufferView() const { return buffer_view_state_ ? buffer_view_state_->buffer_view() : VK_NULL_HANDLE; }
-    const BUFFER_VIEW_STATE *GetBufferViewState() const { return buffer_view_state_.get(); }
-    BUFFER_VIEW_STATE *GetBufferViewState() { return buffer_view_state_.get(); }
-    std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
+    const vvl::BufferView *GetBufferViewState() const { return buffer_view_state_.get(); }
+    vvl::BufferView *GetBufferViewState() { return buffer_view_state_.get(); }
+    std::shared_ptr<vvl::BufferView> GetSharedBufferViewState() const { return buffer_view_state_; }
 
     bool AddParent(BASE_NODE *base_node) override {
         bool result = false;
@@ -531,7 +531,7 @@ class TexelDescriptor : public Descriptor {
     bool Invalid() const override { return !buffer_view_state_ || buffer_view_state_->Invalid(); }
 
   private:
-    std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
+    std::shared_ptr<vvl::BufferView> buffer_view_state_;
 };
 
 class BufferDescriptor : public Descriptor {
@@ -675,7 +675,7 @@ class MutableDescriptor : public Descriptor {
     std::shared_ptr<vvl::Buffer> GetSharedBufferState() const { return buffer_state_; }
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
-    std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
+    std::shared_ptr<vvl::BufferView> GetSharedBufferViewState() const { return buffer_view_state_; }
     VkAccelerationStructureKHR GetAccelerationStructureKHR() const { return acc_; }
     const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
     ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
@@ -712,7 +712,7 @@ class MutableDescriptor : public Descriptor {
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
     // Texel Descriptor
-    std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
+    std::shared_ptr<vvl::BufferView> buffer_view_state_;
     // Buffer Descriptor
     VkDeviceSize offset_{0};
     VkDeviceSize range_{0};
