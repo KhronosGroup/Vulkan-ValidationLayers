@@ -4161,7 +4161,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
         const auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         if (conversion_info) {
             const VkSamplerYcbcrConversion sampler_ycbcr_conversion = conversion_info->conversion;
-            auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(sampler_ycbcr_conversion);
+            auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(sampler_ycbcr_conversion);
             if ((ycbcr_state->format_features &
                  VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT_KHR) == 0) {
                 const VkFilter chroma_filter = ycbcr_state->chromaFilter;

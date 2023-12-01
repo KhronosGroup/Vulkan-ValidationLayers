@@ -2173,7 +2173,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
     const auto ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
     if (ycbcr_conversion && ycbcr_conversion->conversion != VK_NULL_HANDLE) {
-        auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion->conversion);
+        auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conversion->conversion);
         if (pCreateInfo->format != ycbcr_state->format) {
             skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06658", pCreateInfo->image,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
