@@ -51,6 +51,7 @@ class Semaphore;
 class Buffer;
 class BufferView;
 class Sampler;
+class SamplerYcbcrConversion;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -64,7 +65,6 @@ class IMAGE_VIEW_STATE;
 class COMMAND_POOL_STATE;
 class DISPLAY_MODE_STATE;
 class RENDER_PASS_STATE;
-class SAMPLER_YCBCR_CONVERSION_STATE;
 class EVENT_STATE;
 class SWAPCHAIN_NODE;
 class SURFACE_STATE;
@@ -310,7 +310,7 @@ VALSTATETRACK_STATE_OBJECT(VkFence, vvl::Fence)
 VALSTATETRACK_STATE_OBJECT(VkQueryPool, QUERY_POOL_STATE)
 VALSTATETRACK_STATE_OBJECT(VkSemaphore, vvl::Semaphore)
 VALSTATETRACK_STATE_OBJECT(VkEvent, EVENT_STATE)
-VALSTATETRACK_STATE_OBJECT(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE)
+VALSTATETRACK_STATE_OBJECT(VkSamplerYcbcrConversion, vvl::SamplerYcbcrConversion)
 VALSTATETRACK_STATE_OBJECT(VkVideoSessionKHR, VIDEO_SESSION_STATE)
 VALSTATETRACK_STATE_OBJECT(VkVideoSessionParametersKHR, VIDEO_SESSION_PARAMETERS_STATE)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR)
@@ -1929,7 +1929,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, query_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, vvl::Semaphore, semaphore_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkEvent, EVENT_STATE, event_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, sampler_ycbcr_conversion_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, vvl::SamplerYcbcrConversion, sampler_ycbcr_conversion_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionKHR, VIDEO_SESSION_STATE, video_session_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionParametersKHR, VIDEO_SESSION_PARAMETERS_STATE, video_session_parameters_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, acceleration_structure_khr_map_)

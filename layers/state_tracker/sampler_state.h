@@ -83,17 +83,15 @@ class Sampler : public BASE_NODE {
     }
 };
 
-}  // namespace vvl
-
-class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
+class SamplerYcbcrConversion : public BASE_NODE {
   public:
     const VkFormatFeatureFlags2KHR format_features;
     const VkFormat format;
     const VkFilter chromaFilter;
     const uint64_t external_format;
 
-    SAMPLER_YCBCR_CONVERSION_STATE(VkSamplerYcbcrConversion ycbcr, const VkSamplerYcbcrConversionCreateInfo *info,
-                                   VkFormatFeatureFlags2KHR features)
+    SamplerYcbcrConversion(VkSamplerYcbcrConversion ycbcr, const VkSamplerYcbcrConversionCreateInfo *info,
+                           VkFormatFeatureFlags2KHR features)
         : BASE_NODE(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion),
           format_features(features),
           format(info->format),
@@ -102,3 +100,5 @@ class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
 
     VkSamplerYcbcrConversion ycbcr_conversion() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
 };
+
+}  // namespace vvl

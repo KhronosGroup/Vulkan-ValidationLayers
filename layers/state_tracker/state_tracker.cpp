@@ -4091,7 +4091,7 @@ void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(VkDevice
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
     }
 
-    Add(std::make_shared<SAMPLER_YCBCR_CONVERSION_STATE>(*pYcbcrConversion, pCreateInfo, format_features));
+    Add(std::make_shared<vvl::SamplerYcbcrConversion>(*pYcbcrConversion, pCreateInfo, format_features));
 }
 
 void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device,
@@ -4105,7 +4105,7 @@ void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDev
 void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                                          const VkAllocationCallbacks *pAllocator,
                                                                          const RecordObject &record_obj) {
-    Destroy<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcrConversion);
+    Destroy<vvl::SamplerYcbcrConversion>(ycbcrConversion);
 }
 
 void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device,
