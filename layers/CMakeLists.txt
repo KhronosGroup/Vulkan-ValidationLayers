@@ -364,6 +364,9 @@ if (ANDROID)
     # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
     target_link_libraries(VkLayer_utils PUBLIC log)
 
+    # Required for AHardwareBuffer_describe. Marking as PUBLIC since the tests use AHardwareBuffer_describe as well.
+    target_link_libraries(VkLayer_utils PUBLIC android)
+
     install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
     return()

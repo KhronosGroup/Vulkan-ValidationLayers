@@ -25,8 +25,8 @@
 #include <regex>
 
 // Generate the stage-specific part of the message.
-void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg) {
-    using namespace spvtools;
+static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg) {
+    using namespace gpuav::glsl;
     std::ostringstream strm;
     switch (debug_record[kInstCommonOutStageIdx]) {
         case spv::ExecutionModelVertex: {
@@ -499,7 +499,7 @@ bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, Vk
         std::string common_message;
         std::string filename_message;
         std::string source_message;
-        UtilGenerateStageMessage(debug_record, stage_message);
+        GenerateStageMessage(debug_record, stage_message);
         UtilGenerateCommonMessage(report_data, cmd_buffer, debug_record, shader_module_handle, pipeline_handle,
                                   shader_object_handle, cmd_resources.pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
