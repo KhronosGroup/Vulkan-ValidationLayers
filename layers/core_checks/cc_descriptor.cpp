@@ -1257,7 +1257,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
         const auto *acceleration_structure_khr = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
         if (acceleration_structure_khr) {
             for (uint32_t j = 0; j < acceleration_structure_khr->accelerationStructureCount; ++j) {
-                auto as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(acceleration_structure_khr->pAccelerationStructures[j]);
+                auto as_state = Get<vvl::AccelerationStructureKHR>(acceleration_structure_khr->pAccelerationStructures[j]);
                 if (as_state && (as_state->create_infoKHR.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR &&
                                     (as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                                     as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR))) {
@@ -1273,7 +1273,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
         const auto *acceleration_structure_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
         if (acceleration_structure_nv) {
             for (uint32_t j = 0; j < acceleration_structure_nv->accelerationStructureCount; ++j) {
-                auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(acceleration_structure_nv->pAccelerationStructures[j]);
+                auto as_state = Get<vvl::AccelerationStructureNV>(acceleration_structure_nv->pAccelerationStructures[j]);
                 if (as_state && (as_state->create_infoNV.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV &&
                                     as_state->create_infoNV.info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV)) {
                     const LogObjectList objlist(dst_set, as_state->Handle());
@@ -1948,7 +1948,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
             const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 VkAccelerationStructureNV as = acc_info->pAccelerationStructures[di];
-                auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(as);
+                auto as_state = Get<vvl::AccelerationStructureNV>(as);
                 // nullDescriptor feature allows this to be VK_NULL_HANDLE
                 if (as_state) {
                     skip |= VerifyBoundMemoryIsValid(
@@ -2517,7 +2517,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     }
 
     if (pInfo->accelerationStructure != VK_NULL_HANDLE) {
-        auto acceleration_structure_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->accelerationStructure);
+        auto acceleration_structure_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure);
 
         if (acceleration_structure_state) {
             if (!(acceleration_structure_state->create_infoKHR.createFlags &
@@ -2537,7 +2537,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     }
 
     if (pInfo->accelerationStructureNV != VK_NULL_HANDLE) {
-        auto acceleration_structure_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(pInfo->accelerationStructureNV);
+        auto acceleration_structure_state = Get<vvl::AccelerationStructureNV>(pInfo->accelerationStructureNV);
 
         if (acceleration_structure_state) {
             if (!(acceleration_structure_state->create_infoNV.info.flags &
@@ -2709,7 +2709,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
             if (pDescriptorInfo->data.accelerationStructure) {
                 const VkAccelerationStructureNV as = (VkAccelerationStructureNV)pDescriptorInfo->data.accelerationStructure;
-                auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(as);
+                auto as_state = Get<vvl::AccelerationStructureNV>(as);
 
                 if (!as_state) {
                     skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08029", device, descriptor_info_loc.dot(Field::type),

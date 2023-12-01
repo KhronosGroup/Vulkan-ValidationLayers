@@ -86,34 +86,34 @@ gpuav::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructur
                                                           const VkAccelerationStructureCreateInfoKHR *ci,
                                                           std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address,
                                                           DescriptorHeap &desc_heap_)
-    : ACCELERATION_STRUCTURE_STATE_KHR(as, ci, std::move(buf_state), address),
+    : vvl::AccelerationStructureKHR(as, ci, std::move(buf_state), address),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureKHR))) {}
 
 void gpuav::AccelerationStructureKHR::Destroy() {
     desc_heap.DeleteId(id);
-    ACCELERATION_STRUCTURE_STATE_KHR::Destroy();
+    vvl::AccelerationStructureKHR::Destroy();
 }
 
 void gpuav::AccelerationStructureKHR::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
-    ACCELERATION_STRUCTURE_STATE_KHR::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::AccelerationStructureKHR::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 gpuav::AccelerationStructureNV::AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as,
                                                         const VkAccelerationStructureCreateInfoNV *ci, DescriptorHeap &desc_heap_)
-    : ACCELERATION_STRUCTURE_STATE_NV(device, as, ci),
+    : vvl::AccelerationStructureNV(device, as, ci),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV))) {}
 
 void gpuav::AccelerationStructureNV::Destroy() {
     desc_heap.DeleteId(id);
-    ACCELERATION_STRUCTURE_STATE_NV::Destroy();
+    vvl::AccelerationStructureNV::Destroy();
 }
 
 void gpuav::AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
-    ACCELERATION_STRUCTURE_STATE_NV::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::AccelerationStructureNV::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 gpuav::CommandBuffer::CommandBuffer(gpuav::Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,

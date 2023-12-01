@@ -2264,9 +2264,9 @@ void ValidationStateTracker::PostCallRecordCmdSetViewportShadingRatePaletteNV(Vk
     cb_state->dynamic_state_value.shading_rate_palette_count = viewportCount;
 }
 
-std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> ValidationStateTracker::CreateAccelerationStructureState(
+std::shared_ptr<vvl::AccelerationStructureNV> ValidationStateTracker::CreateAccelerationStructureState(
     VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci) {
-    return std::make_shared<ACCELERATION_STRUCTURE_STATE_NV>(device, as, ci);
+    return std::make_shared<vvl::AccelerationStructureNV>(device, as, ci);
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
@@ -2278,10 +2278,10 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo));
 }
 
-std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> ValidationStateTracker::CreateAccelerationStructureState(
+std::shared_ptr<vvl::AccelerationStructureKHR> ValidationStateTracker::CreateAccelerationStructureState(
     VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state,
     VkDeviceAddress address) {
-    return std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(as, ci, std::move(buf_state), address);
+    return std::make_shared<vvl::AccelerationStructureKHR>(as, ci, std::move(buf_state), address);
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
@@ -2302,7 +2302,7 @@ void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const RecordObject &record_obj) {
     for (uint32_t i = 0; i < infoCount; ++i) {
-        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
+        auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfos[i].dstAccelerationStructure);
         if (dst_as_state != nullptr) {
             dst_as_state->Build(&pInfos[i], true, *ppBuildRangeInfos);
         }
@@ -2312,7 +2312,7 @@ void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
 // helper method for device side acceleration structure builds
 void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFFER_STATE &cb_state,
                                                                         const VkAccelerationStructureBuildGeometryInfoKHR &info) {
-    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(info.dstAccelerationStructure);
+    auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
     if (dst_as_state) {
         dst_as_state->Build(&info, false, nullptr);
     }
@@ -2322,7 +2322,7 @@ void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFF
     if (dst_as_state) {
         cb_state.AddChild(dst_as_state);
     }
-    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(info.srcAccelerationStructure);
+    auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
     if (src_as_state) {
         cb_state.AddChild(src_as_state);
     }
@@ -2367,7 +2367,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements,
     const RecordObject &record_obj) {
-    auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(pInfo->accelerationStructure);
+    auto as_state = Get<vvl::AccelerationStructureNV>(pInfo->accelerationStructure);
     if (as_state != nullptr) {
         if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
             as_state->memory_requirements_checked = true;
@@ -2386,7 +2386,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
 
-        auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(info.accelerationStructure);
+        auto as_state = Get<vvl::AccelerationStructureNV>(info.accelerationStructure);
         if (as_state) {
             // Track objects tied to memory
             auto mem_state = Get<DEVICE_MEMORY_STATE>(info.memory);
@@ -2413,7 +2413,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
     }
     cb_state->RecordCmd(record_obj.location.function);
 
-    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
+    auto dst_as_state = Get<vvl::AccelerationStructureNV>(dst);
     if (dst_as_state) {
         dst_as_state->Build(pInfo);
         if (!disabled[command_buffer_state]) {
@@ -2421,7 +2421,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
         }
     }
     if (!disabled[command_buffer_state]) {
-        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
+        auto src_as_state = Get<vvl::AccelerationStructureNV>(src);
         if (src_as_state) {
             cb_state->AddChild(src_as_state);
         }
@@ -2466,8 +2466,8 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
                                                                           const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
-        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
-        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
+        auto src_as_state = Get<vvl::AccelerationStructureNV>(src);
+        auto dst_as_state = Get<vvl::AccelerationStructureNV>(dst);
         if (!disabled[command_buffer_state]) {
             cb_state->RecordTransferCmd(record_obj.location.function, src_as_state, dst_as_state);
         }
@@ -2482,14 +2482,14 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevi
                                                                           VkAccelerationStructureKHR accelerationStructure,
                                                                           const VkAllocationCallbacks *pAllocator,
                                                                           const RecordObject &record_obj) {
-    Destroy<ACCELERATION_STRUCTURE_STATE_KHR>(accelerationStructure);
+    Destroy<vvl::AccelerationStructureKHR>(accelerationStructure);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
                                                                          VkAccelerationStructureNV accelerationStructure,
                                                                          const VkAllocationCallbacks *pAllocator,
                                                                          const RecordObject &record_obj) {
-    Destroy<ACCELERATION_STRUCTURE_STATE_NV>(accelerationStructure);
+    Destroy<vvl::AccelerationStructureNV>(accelerationStructure);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -4498,8 +4498,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
 void ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                         const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                                         const RecordObject &record_obj) {
-    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
-    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+    auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
+    auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state != nullptr && src_as_state != nullptr) {
         dst_as_state->built = true;
         dst_as_state->build_info_khr = src_as_state->build_info_khr;
@@ -4512,8 +4512,8 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCom
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
         cb_state->RecordCmd(record_obj.location.function);
-        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
-        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+        auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
+        auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
         if (dst_as_state != nullptr && src_as_state != nullptr) {
             dst_as_state->built = true;
             dst_as_state->build_info_khr = src_as_state->build_info_khr;
@@ -4530,7 +4530,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureToMemoryK
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
         cb_state->RecordCmd(record_obj.location.function);
-        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
+        auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(src_as_state);
         }
@@ -4546,7 +4546,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyMemoryToAccelerationStructureK
     if (cb_state) {
         cb_state->RecordCmd(record_obj.location.function);
         if (!disabled[command_buffer_state]) {
-            auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+            auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
             cb_state->AddChild(dst_as_state);
 
             // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461

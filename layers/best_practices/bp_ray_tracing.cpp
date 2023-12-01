@@ -65,7 +65,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice de
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(pBindInfos[i].accelerationStructure);
+        auto as_state = Get<vvl::AccelerationStructureNV>(pBindInfos[i].accelerationStructure);
         if (!as_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
             // BindAccelerationStructureMemoryNV but it's implied in that memory being bound must conform with
