@@ -232,9 +232,8 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
@@ -267,9 +266,8 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription vertex_desc{
@@ -303,9 +301,8 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription vertex_desc{
@@ -389,9 +386,8 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil_ci = vku::InitStructHelper();
     depth_stencil_ci.stencilTestEnable = VK_TRUE;

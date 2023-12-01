@@ -274,9 +274,10 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
 
         VkImageObj image(m_device);
         image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+        vkt::ImageView view = image.CreateView();
 
         VkDescriptorImageInfo image_info = {};
-        image_info.imageView = image.targetView(format);
+        image_info.imageView = view;
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -427,9 +428,10 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
 
         VkImageObj image(m_device);
         image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+        vkt::ImageView view = image.CreateView();
 
         VkDescriptorImageInfo image_info = {};
-        image_info.imageView = image.targetView(format);
+        image_info.imageView = view;
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -847,9 +849,10 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
-    image_info.imageView = image.targetView(format);
+    image_info.imageView = view;
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -929,9 +932,10 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
-    image_info.imageView = image.targetView(format);
+    image_info.imageView = view;
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();

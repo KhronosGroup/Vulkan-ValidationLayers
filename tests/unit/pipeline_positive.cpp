@@ -202,9 +202,8 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
@@ -840,7 +839,7 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -898,9 +897,10 @@ TEST_F(PositivePipeline, ConditionalRendering) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, 32, 32, 1};
+    VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView.handle(), 32, 32, 1};
     vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
@@ -1193,9 +1193,10 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
     VkImageObj image(m_device);
     image.Init(image_create_info);
+    vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
-    image_info.imageView = image.targetView(image_view_format);
+    image_info.imageView = view;
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();

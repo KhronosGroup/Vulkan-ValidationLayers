@@ -518,14 +518,14 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     vkt::RenderPass renderpass(*m_device, rpci);
     ASSERT_TRUE(renderpass.initialized());
 
-    auto render_target_view = m_renderTargets[0]->targetView(m_renderTargets[0]->format());
+    auto render_target_view = m_renderTargets[0]->CreateView();
     VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
     framebuffer_info.renderPass = renderpass;
     framebuffer_info.width = m_renderTargets[0]->width();
     framebuffer_info.height = m_renderTargets[0]->height();
     framebuffer_info.layers = 1;
     framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &render_target_view;
+    framebuffer_info.pAttachments = &render_target_view.handle();
     vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
 
     CreatePipelineHelper pipeline_1(*this);
@@ -674,9 +674,8 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -745,9 +744,8 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -2007,7 +2005,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkImageObj image(m_device);
     image.Init(128, 128, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
-    VkImageView imageView = image.targetView(sampled_format);
+    vkt::ImageView imageView = image.CreateView();
 
     // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     char const *fs_source_combined = R"glsl(
@@ -2552,12 +2550,12 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
     framebuffer_info.renderPass = render_pass.handle();
     framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &image_view;
+    framebuffer_info.pAttachments = &image_view.handle();
     framebuffer_info.width = 32;
     framebuffer_info.height = 32;
     framebuffer_info.layers = 1;
@@ -3368,7 +3366,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 
     image.init(&image_ci);
 
-    VkImageView image_view = image.targetView(image_ci.format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
@@ -3476,11 +3474,11 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     VkImageObj color_image(m_device);
     color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView color_image_view = color_image.targetView(color_format);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkImageObj ds_image(m_device);
     ds_image.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView ds_image_view = ds_image.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView ds_image_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1u;

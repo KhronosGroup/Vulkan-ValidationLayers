@@ -1118,12 +1118,12 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = rp.handle();
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &imageView;
+    fbci.pAttachments = &imageView.handle();
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;

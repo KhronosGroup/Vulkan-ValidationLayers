@@ -408,7 +408,7 @@ TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
 
     VkImageObj image(m_device);
     image.Init(16, 16, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -465,12 +465,12 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
     VkImageObj bad_image(m_device);
     bad_image.Init(128, 128, 1, bad_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(bad_image.initialized());
-    VkImageView bad_view = bad_image.targetView(bad_format);
+    vkt::ImageView bad_view = bad_image.CreateView();
 
     VkImageObj good_image(m_device);
     good_image.Init(128, 128, 1, good_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(good_image.initialized());
-    VkImageView good_view = good_image.targetView(good_format);
+    vkt::ImageView good_view = good_image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test

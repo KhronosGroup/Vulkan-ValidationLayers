@@ -225,12 +225,12 @@ TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthSt
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    VkImageView image_view = image.targetView(VK_FORMAT_S8_UINT, VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
 
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     VkImageObj resolve_image(m_device);
     resolve_image.Init(image_create_info);
-    VkImageView resolve_image_view = resolve_image.targetView(VK_FORMAT_S8_UINT, VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfoKHR stencil_attachment = vku::InitStructHelper();
     stencil_attachment.imageView = image_view;
@@ -272,14 +272,14 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
 
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView image_view = image.CreateView();
 
     image_ci.flags = 0;
     image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
 
     VkImageObj fdm_image(m_device);
     fdm_image.Init(image_ci);
-    VkImageView fdm_image_view = fdm_image.targetView(VK_FORMAT_R8G8B8A8_UINT);
+    vkt::ImageView fdm_image_view = fdm_image.CreateView();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1039,6 +1039,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
     VkImageObj colorImage(m_device);
     colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView colorImageView = colorImage.CreateView();
 
     VkImageObj depthStencilImage(m_device);
     depthStencilImage.Init(32, 32, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -1066,7 +1067,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         m_commandBuffer->EndRendering();
 
         // Matching color formats
-        color_attachment.imageView = colorImage.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+        color_attachment.imageView = colorImageView;
         m_commandBuffer->BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
@@ -1232,7 +1233,7 @@ TEST_F(PositiveDynamicRendering, PipelineUnusedAttachments) {
 
     VkImageObj colorImage(m_device);
     colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VkImageView colorImageView = colorImage.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView colorImageView = colorImage.CreateView();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;

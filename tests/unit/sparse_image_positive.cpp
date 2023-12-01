@@ -298,7 +298,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
 
-    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);

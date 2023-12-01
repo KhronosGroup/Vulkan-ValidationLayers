@@ -305,8 +305,8 @@ struct ClearAttachmentHazardHelper {
     VkImageObj image_ds;
     VkImageObj rt;
     VkImageObj ds;
-    VkImageView rt_view = VK_NULL_HANDLE;
-    VkImageView ds_view = VK_NULL_HANDLE;
+    vkt::ImageView rt_view;
+    vkt::ImageView ds_view;
 
     ClearAttachmentHazardHelper(VkLayerTest& test_, vkt::Device& device_, vkt::CommandBuffer& cb_)
         : test(test_),
@@ -325,11 +325,11 @@ struct ClearAttachmentHazardHelper {
 
         rt.InitNoLayout(width, height, 1, rt_format, rt_usage, VK_IMAGE_TILING_OPTIMAL);
         rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-        rt_view = rt.targetView(rt_format, VK_IMAGE_ASPECT_COLOR_BIT);
+        rt_view = rt.CreateView();
 
         ds.InitNoLayout(width, height, 1, ds_format, ds_usage, VK_IMAGE_TILING_OPTIMAL);
         ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-        ds_view = ds.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+        ds_view = ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
 
     template <typename BeginRenderFn, typename EndRenderFn>
@@ -1568,8 +1568,9 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.extent = {m_width, m_height, 1};
 
+    vkt::ImageView render_target_view = m_renderTargets[0]->CreateView();
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = m_renderTargets[0]->targetView(m_render_target_fmt);
+    color_attachment.imageView = render_target_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
@@ -1619,8 +1620,9 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.extent = {m_width, m_height, 1};
 
+    vkt::ImageView render_target_view = m_renderTargets[0]->CreateView();
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = m_renderTargets[0]->targetView(m_render_target_fmt);
+    color_attachment.imageView = render_target_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1670,7 +1672,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     image_c_a.Init(image_c_ci);
     image_c_b.Init(image_c_ci);
 
-    VkImageView imageview_c = image_c_a.targetView(format);
+    vkt::ImageView imageview_c = image_c_a.CreateView();
     VkImageUsageFlags image_usage_storage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkImageObj image_s_a(m_device), image_s_b(m_device);
@@ -1680,7 +1682,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     image_s_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageView imageview_s = image_s_a.targetView(format);
+    vkt::ImageView imageview_s = image_s_a.CreateView();
 
     vkt::Sampler sampler_s, sampler_c;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -2250,9 +2252,9 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
                   VK_IMAGE_TILING_OPTIMAL);
     image_st.Init(16, 16, 1, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                   VK_IMAGE_TILING_OPTIMAL);
-    VkImageView image_view_ds = image_ds.targetView(format_ds, VK_IMAGE_ASPECT_DEPTH_BIT);
-    VkImageView image_view_dp = image_dp.targetView(format_dp, VK_IMAGE_ASPECT_DEPTH_BIT);
-    VkImageView image_view_st = image_st.targetView(format_st, VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView image_view_ds = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView image_view_dp = image_dp.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView image_view_st = image_st.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkAttachmentReference attach = {};
     attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -2282,11 +2284,11 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
 
     vkt::Framebuffer fb_ds, fb_dp, fb_st;
     VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, &image_view_ds, 16, 16, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, &image_view_ds.handle(), 16, 16, 1};
     fb_ds.init(*m_device, fbci);
-    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_dp.handle(), 1, &image_view_dp, 16, 16, 1};
+    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_dp.handle(), 1, &image_view_dp.handle(), 16, 16, 1};
     fb_dp.init(*m_device, fbci);
-    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_st.handle(), 1, &image_view_st, 16, 16, 1};
+    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_st.handle(), 1, &image_view_st.handle(), 16, 16, 1};
     fb_st.init(*m_device, fbci);
 
     VkStencilOpState stencil = {};
@@ -2409,7 +2411,9 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     image_color.Init(image_ci);
     image_ci.usage = usage_input;
     image_input.Init(image_ci);
-    VkImageView attachments[] = {image_color.targetView(format), image_input.targetView(format)};
+    vkt::ImageView image_color_view = image_color.CreateView();
+    vkt::ImageView image_input_view = image_input.CreateView();
+    VkImageView attachments[] = {image_color_view, image_input_view};
 
     VkAttachmentDescription attachmentDescriptions[] = {
         // Result attachment
@@ -2551,13 +2555,15 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
                                                    0};
     vkt::RenderPass rp(*m_device, renderPassInfo);
 
-    VkImageView fb_attachments[] = {image_color.targetView(color_format),
-                                    image_ds.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)};
+    vkt::ImageView color_view = image_color.CreateView();
+    vkt::ImageView depth_view = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    VkImageView fb_attachments[] = {color_view, depth_view};
     const VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0u, rp.handle(), 2u, fb_attachments, 32, 32, 1u,
     };
     vkt::Framebuffer fb(*m_device, fbci);
-    fb_attachments[0] = image_color2.targetView(color_format);
+    vkt::ImageView color2_view = image_color2.CreateView();
+    fb_attachments[0] = color2_view;
     vkt::Framebuffer fb1(*m_device, fbci);
 
     CreatePipelineHelper g_pipe(*this);
@@ -2649,8 +2655,8 @@ struct CreateRenderPassHelper {
     uint32_t height = kDefaultImageSize;
     std::shared_ptr<VkImageObj> image_color;
     std::shared_ptr<VkImageObj> image_input;
-    VkImageView view_input = VK_NULL_HANDLE;
-    VkImageView view_color = VK_NULL_HANDLE;
+    vkt::ImageView view_input;
+    vkt::ImageView view_color;
 
     VkAttachmentReference color_ref;
     VkAttachmentReference input_ref;
@@ -2678,16 +2684,14 @@ struct CreateRenderPassHelper {
           fb_attach_desc(DefaultFbAttachDesc()),
           input_attach_desc(DefaultInputAttachDesc()) {}
 
-    CreateRenderPassHelper(const CreateRenderPassHelper& other) = default;
-
     void InitImageAndView() {
         auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, usage_input, VK_IMAGE_TILING_OPTIMAL);
         image_input->InitNoLayout(image_ci);
         image_ci.usage = usage_color;
         image_color->InitNoLayout(image_ci);
 
-        view_input = image_input->targetView(format);
-        view_color = image_color->targetView(format);
+        view_input = image_input->CreateView();
+        view_color = image_color->CreateView();
         attachments = {view_color, view_input};
     }
 
@@ -3205,13 +3209,15 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         images[i]->Init(dst_img_info);
     }
 
+    vkt::ImageView attachment_wrappers[kNumImages];
     std::array<VkImageView, kNumImages> attachments{};
     std::array<VkAttachmentDescription, kNumImages> attachment_descriptions{};
     std::array<VkAttachmentReference, kNumImages> color_refs{};
     std::array<VkImageMemoryBarrier, kNumImages> img_barriers{};
 
     for (uint32_t i = 0; i < attachments.size(); i++) {
-        attachments[i] = images[i]->targetView(kFormat);
+        attachment_wrappers[i] = images[i]->CreateView();
+        attachments[i] = attachment_wrappers[i].handle();
         attachment_descriptions[i] = {};
         attachment_descriptions[i].flags = 0;
         attachment_descriptions[i].format = kFormat;
@@ -4402,7 +4408,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     image_c_a.Init(image_c_ci);
     image_c_b.Init(image_c_ci);
 
-    VkImageView imageview_c = image_c_a.targetView(format);
+    vkt::ImageView imageview_c = image_c_a.CreateView();
     VkImageUsageFlags image_usage_storage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkImageObj image_s_a(m_device), image_s_b(m_device);
@@ -4412,7 +4418,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     image_s_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageView imageview_s = image_s_a.targetView(format);
+    vkt::ImageView imageview_s = image_s_a.CreateView();
 
     vkt::Sampler sampler_s, sampler_c;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();

@@ -414,13 +414,12 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     VkImageObj image(m_device);
     image.InitNoLayout(image.ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                                VK_IMAGE_TILING_OPTIMAL, 0));
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 2,
-                                             VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, VK_REMAINING_MIP_LEVELS, 0, 2);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.width = 32;
     fb_info.height = 32;
     fb_info.layers = 1;
@@ -733,13 +732,12 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferenceAttachment) {
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    VkImageView imageView =
-        image.targetView(VK_FORMAT_R8G8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 4);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = render_pass.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.width = 32;
     fb_info.height = 32;
     fb_info.layers = 1;
@@ -910,12 +908,12 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
@@ -987,7 +985,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.subresourceRange.layerCount = 2;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    const auto imageView = image.CreateView(image_view_ci);
+    const auto imageView = vkt::ImageView(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
@@ -1241,13 +1239,13 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     // Create a frame buffer with a render pass with FSR attachment
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp_fsr_1.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.width = 32;
     fb_info.height = 32;
     fb_info.layers = 1;
@@ -1258,7 +1256,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     VkFramebufferCreateInfo fb_info_0 = vku::InitStructHelper();
     fb_info_0.renderPass = rp_no_fsr.handle();
     fb_info_0.attachmentCount = 1;
-    fb_info_0.pAttachments = &imageView;
+    fb_info_0.pAttachments = &imageView.handle();
     fb_info_0.width = 32;
     fb_info_0.height = 32;
     fb_info_0.layers = 1;
@@ -2303,7 +2301,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     VkImageObj nonSRIimage(m_device);
     nonSRIimage.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(nonSRIimage.initialized());
-    VkImageView nonSRIview = nonSRIimage.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView nonSRIview = nonSRIimage.CreateView();
 
     // Test SRI layout on non-SRI image
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -2654,9 +2652,11 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
 
+    vkt::ImageView rt_view0 = m_renderTargets[0]->CreateView();
+    vkt::ImageView rt_view1 = m_renderTargets[0]->CreateView();
     VkImageView ivs[2];
-    ivs[0] = m_renderTargets[0]->targetView(VK_FORMAT_B8G8R8A8_UNORM);
-    ivs[1] = m_renderTargets[0]->targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    ivs[0] = rt_view0;
+    ivs[1] = rt_view1;
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.pAttachments = ivs;
@@ -2710,9 +2710,9 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
         VkImageObj image(m_device);
         image.init(&image_ci);
 
-        VkImageView view = image.targetView(VK_FORMAT_D16_UNORM);
+        vkt::ImageView view = image.CreateView(VK_FORMAT_D16_UNORM);
 
-        auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, m_renderPass, 1u, &view, 256u, 256u, 1u);
+        auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, m_renderPass, 1u, &view.handle(), 256u, 256u, 1u);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00891");
         m_errorMonitor->SetUnexpectedError("VUID-VkFramebufferCreateInfo-pAttachments-00880");
         vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);

@@ -68,12 +68,12 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
     // Second image that img_barrier will incorrectly use
     VkImageObj image2(m_device);
     image2.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView.handle(), 32, 32, 1};
     vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
@@ -781,8 +781,8 @@ TEST_F(NegativeCommand, ClearAttachmentsDepth) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view = m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
@@ -812,8 +812,8 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     m_depth_stencil_fmt = FindSupportedDepthOnlyFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view = m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
@@ -1043,7 +1043,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
 
     VkImageObj image(m_device);
     image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1097,7 +1097,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
 
     VkImageObj image(m_device);
     image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1149,7 +1149,7 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
 
     VkImageObj image(m_device);
     image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -5499,7 +5499,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
 
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView imageView = image.targetView(format, imageViewType);
+    vkt::ImageView imageView = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
@@ -5582,8 +5582,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
 
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView imageView = image.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
-                                             VK_REMAINING_ARRAY_LAYERS, imageViewType);
+    vkt::ImageView imageView = image.CreateView(imageViewType);
 
     VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
@@ -5841,12 +5840,12 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = render_pass.handle();
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &imageView;
+    fbci.pAttachments = &imageView.handle();
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
@@ -5975,10 +5974,10 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass.handle(), 1, &imageView, 32, 32, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass.handle(), 1, &imageView.handle(), 32, 32, 1};
     vkt::Framebuffer framebuffer(*m_device, fbci);
     ASSERT_TRUE(framebuffer.initialized());
 
@@ -6034,10 +6033,10 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1.handle(), 1, &imageView, 32, 32, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1.handle(), 1, &imageView.handle(), 32, 32, 1};
     vkt::Framebuffer framebuffer(*m_device, fbci);
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -6504,7 +6503,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
                   VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(ds_image.initialized());
 
-    VkImageView image_view = ds_image.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView image_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkAttachmentDescription attachment = {};
     attachment.flags = 0;
@@ -6582,7 +6581,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     framebuffer_ci.layers = 1;
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1;
-    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.pAttachments = &image_view.handle();
 
     vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
     ASSERT_TRUE(framebuffer.initialized());
@@ -6983,9 +6982,8 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     int depth_attachment_index = 1;
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     m_commandBuffer->begin();
 
@@ -7396,7 +7394,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
 
         VkImageObj image(m_device);
         image.Init(32, 32, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-        VkImageView image_view = image.targetView(format, image_aspect);
+        vkt::ImageView image_view = image.CreateView(image_aspect);
 
         VkAttachmentReference ds_attachment_ref = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
         VkSubpassDescription subpass = {
@@ -7418,7 +7416,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr);
         vkt::RenderPass render_pass(*m_device, rpci);
 
-        auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0, render_pass.handle(), 1, &image_view, 32, 32, 1);
+        auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0, render_pass.handle(), 1, &image_view.handle(), 32, 32, 1);
         vkt::Framebuffer framebuffer(*m_device, fbci);
 
         VkClearValue clear_value = {};

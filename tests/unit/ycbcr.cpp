@@ -1525,7 +1525,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
 
     auto image_view_ci = image_obj.BasicViewCreatInfo();
     image_view_ci.pNext = &ycbcr_info;
-    const auto image_view = image_obj.CreateView(image_view_ci);
+    const auto image_view = vkt::ImageView(*m_device, image_view_ci);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.pNext = &ycbcr_info;

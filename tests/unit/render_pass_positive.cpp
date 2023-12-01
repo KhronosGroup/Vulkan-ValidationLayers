@@ -168,9 +168,10 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view.handle(), 32, 32, 1};
     vkt::Framebuffer fb(*m_device, fci);
 
     // Record a single command buffer which issues a pipeline barrier w/
@@ -268,12 +269,11 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     rp_info.pSubpasses = &subpass;
     vkt::RenderPass rp(*m_device, rp_info);
 
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &depth_image_view;
+    fb_info.pAttachments = &depth_image_view.handle();
     fb_info.width = 100;
     fb_info.height = 100;
     fb_info.layers = 1;
@@ -700,10 +700,11 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
                     VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(depthImage.initialized());
 
-    VkImageView baseViews[] = {
-        colorImage.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, /*baseMipLevel*/ 0, /*levelCount*/ 1),
-        depthImage.targetView(VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT, /*baseMipLevel*/ 0, /*levelCount*/ 1),
-    };
+    vkt::ImageView color_view = colorImage.CreateView(VK_IMAGE_VIEW_TYPE_2D, /*baseMipLevel*/ 0, /*levelCount*/ 1);
+    vkt::ImageView depth_view = depthImage.CreateView(VK_IMAGE_VIEW_TYPE_2D, /*baseMipLevel*/ 0, /*levelCount*/ 1, 0,
+                                                      VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkImageView baseViews[] = {color_view, depth_view};
 
     VkImageViewCreateInfo vinfo = {};
     vinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -972,7 +973,7 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
                   VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(ds_image.initialized());
 
-    VkImageView ds_view = ds_image.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     // Create depth stencil attachment
     VkAttachmentDescriptionStencilLayoutKHR attachment_desc_stencil_layout = vku::InitStructHelper();
@@ -1007,7 +1008,7 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     VkFramebufferCreateInfo fci = vku::InitStructHelper();
     fci.renderPass = render_pass.handle();
     fci.attachmentCount = 1;
-    fci.pAttachments = &ds_view;
+    fci.pAttachments = &ds_view.handle();
     fci.width = ds_image.width();
     fci.height = ds_image.height();
     fci.layers = 1;
@@ -1224,9 +1225,10 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
     ASSERT_TRUE(image.initialized());
     image.SetLayout(0x6, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    VkImageView view = image.targetView(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view.handle(), 32, 32, 1};
     vkt::Framebuffer fb(*m_device, fci);
 
     m_commandBuffer->begin();

@@ -34,7 +34,7 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
     auto image_ci =
         VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();
     framebuffer_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -51,7 +51,7 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&framebuffer_attachments);
     fb_info.renderPass = m_renderPass;
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view;
+    fb_info.pAttachments = &image_view.handle();
     fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     fb_info.width = m_width;
     fb_info.height = m_height;

@@ -216,7 +216,7 @@ TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) 
     VkImageObj image(m_device);
     image.init(&imgInfo);
     ASSERT_TRUE(image.initialized());
-    image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    image.CreateView();
 }
 
 TEST_F(PositiveImage, BasicUsage) {
@@ -581,7 +581,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     vkt::Semaphore image_acquired(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
-    VkImageView imageView = image.targetView(attachmentFormat);
+    vkt::ImageView imageView = image.CreateView();
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,
                                                                           nullptr,
                                                                           0,
@@ -606,7 +606,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
-                                                                        nullptr, 1, &imageView};
+                                                                        nullptr, 1, &imageView.handle()};
     VkRenderPassBeginInfo renderPassBeginInfo =
         vku::InitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, renderPass.handle(), framebuffer.handle(),
                                              VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);

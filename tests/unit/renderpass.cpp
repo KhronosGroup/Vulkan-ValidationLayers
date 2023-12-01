@@ -1223,7 +1223,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     iadi.InitNoLayout(128, 128, 1, dformat, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
     ASSERT_TRUE(iadi.initialized());
 
-    VkImageView iadv = iadi.targetView(dformat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1);
+    vkt::ImageView iadv = iadi.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     // Create a color attachment view
     VkImageObj cai(m_device);
@@ -1379,8 +1379,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         input_image.InitNoLayout(128, 128, 1, depth_stencil_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
         ASSERT_TRUE(input_image.initialized());
 
-        VkImageView input_view =
-            input_image.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1);
+        vkt::ImageView input_view = input_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
         // Create the render pass attachment...
         VkAttachmentDescriptionStencilLayout stencil_layout = vku::InitStructHelper();
@@ -1416,7 +1415,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         VkFramebufferCreateInfo fbci = vku::InitStructHelper();
         fbci.renderPass = rp;
         fbci.attachmentCount = 1;
-        fbci.pAttachments = &input_view;
+        fbci.pAttachments = &input_view.handle();
         fbci.width = input_image.width();
         fbci.height = input_image.height();
         fbci.layers = 1;
@@ -1740,9 +1739,11 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     ds_resolve_image.init(&image_create_info);
     ASSERT_TRUE(ds_resolve_image.initialized());
 
+    vkt::ImageView depth_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView resolve_view = ds_resolve_image.CreateView();
     VkImageView image_views[2];
-    image_views[0] = ds_image.targetView(attachmentFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-    image_views[1] = ds_resolve_image.targetView(image_create_info.format, VK_IMAGE_ASPECT_COLOR_BIT);
+    image_views[0] = depth_view;
+    image_views[1] = resolve_view;
 
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.width = attachmentWidth;
@@ -1788,9 +1789,9 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
-    auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view, 32u, 32u, 1u);
+    auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view.handle(), 32u, 32u, 1u);
     vkt::Framebuffer fb(*m_device, fci);
 
     VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
@@ -1899,8 +1900,8 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     vk::CreateFramebuffer(device(), &fb_ci, NULL, &framebuffer);
     m_errorMonitor->VerifyFound();
 
-    VkImageView image_views[2] = {m_renderTargets[0]->targetView(VK_FORMAT_B8G8R8A8_UNORM),
-                                  CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
+    vkt::ImageView render_target_view = m_renderTargets[0]->CreateView();
+    VkImageView image_views[2] = {render_target_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
 
     fb_ci.pAttachments = image_views;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-02778");
@@ -2044,13 +2045,13 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView iv = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView iv = image.CreateView();
 
     // Create a framebuffer with rp1
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = rp1.handle();
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &iv;
+    fbci.pAttachments = &iv.handle();
     fbci.width = 128;
     fbci.height = 128;
     fbci.layers = 1;
@@ -3566,12 +3567,12 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
     fb_ci.renderPass = render_pass1.handle();
     fb_ci.attachmentCount = 1;
-    fb_ci.pAttachments = &imageView;
+    fb_ci.pAttachments = &imageView.handle();
     fb_ci.width = width;
     fb_ci.height = height;
     fb_ci.layers = 1;
@@ -3671,12 +3672,12 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
     fb_ci.renderPass = render_pass1.handle();
     fb_ci.attachmentCount = 1;
-    fb_ci.pAttachments = &imageView;
+    fb_ci.pAttachments = &imageView.handle();
     fb_ci.width = width;
     fb_ci.height = height;
     fb_ci.layers = 1;
@@ -3760,12 +3761,12 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
     fb_ci.renderPass = render_pass1.handle();
     fb_ci.attachmentCount = 1;
-    fb_ci.pAttachments = &imageView;
+    fb_ci.pAttachments = &imageView.handle();
     fb_ci.width = 32;
     fb_ci.height = 32;
     fb_ci.layers = 1;
@@ -4357,7 +4358,7 @@ TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
 
     VkImageObj image(m_device);
     image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkAttachmentDescription description = {0,
                                            VK_FORMAT_R8G8B8A8_UNORM,
@@ -4384,7 +4385,7 @@ TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1u;
-    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.pAttachments = &image_view.handle();
     framebuffer_ci.width = m_width;
     framebuffer_ci.height = m_height;
     framebuffer_ci.layers = 1u;
@@ -4447,7 +4448,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
 
     VkImageObj image(m_device);
     image.Init(32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkAttachmentReference attachment_reference = {};
     attachment_reference.attachment = 0u;
@@ -4476,7 +4477,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1u;
-    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.pAttachments = &image_view.handle();
     framebuffer_ci.width = 32u;
     framebuffer_ci.height = 32u;
     framebuffer_ci.layers = 1u;

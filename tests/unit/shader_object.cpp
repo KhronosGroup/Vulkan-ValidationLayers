@@ -1423,12 +1423,12 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
     framebuffer_info.renderPass = render_pass.handle();
     framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &image_view;
+    framebuffer_info.pAttachments = &image_view.handle();
     framebuffer_info.width = 32;
     framebuffer_info.height = 32;
     framebuffer_info.layers = 1;
@@ -1898,8 +1898,8 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
               VK_IMAGE_TILING_OPTIMAL);
 
-    VkImageView view1 = img1.targetView(m_render_target_fmt);
-    VkImageView view2 = img2.targetView(m_render_target_fmt);
+    vkt::ImageView view1 = img1.CreateView();
+    vkt::ImageView view2 = img2.CreateView();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
@@ -5908,7 +5908,7 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
@@ -6457,7 +6457,7 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.minFilter = VK_FILTER_LINEAR;
@@ -6504,7 +6504,7 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
 
     VkImageObj img(m_device);
     img.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView view = img.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView view = img.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = view;
@@ -6571,8 +6571,8 @@ TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
               VK_IMAGE_TILING_OPTIMAL);
 
-    VkImageView view1 = img1.targetView(m_render_target_fmt);
-    VkImageView view2 = img2.targetView(m_render_target_fmt);
+    vkt::ImageView view1 = img1.CreateView();
+    vkt::ImageView view2 = img2.CreateView();
 
     VkRenderingAttachmentInfo attachments[2];
     attachments[0] = vku::InitStructHelper();

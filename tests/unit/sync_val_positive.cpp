@@ -96,11 +96,12 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     rpci.pAttachments = &attachment;
     vkt::RenderPass render_pass(*m_device, rpci);
 
+    vkt::ImageView rt_view = rt.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, layers);
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.flags = 0;
     fbci.renderPass = render_pass;
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &rt.targetView(rt_format, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, layers, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    fbci.pAttachments = &rt_view.handle();
     fbci.width = width;
     fbci.height = height;
     fbci.layers = layers;
@@ -658,12 +659,12 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     constexpr VkImageLayout image_layout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkImageObj images[4] = {m_device, m_device, m_device, m_device};
-    VkImageView views[4] = {};
+    vkt::ImageView views[4];
     for (int i = 0; i < 4; i++) {
         images[i].Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
         ASSERT_TRUE(images[i].initialized());
         images[i].SetLayout(image_layout);
-        views[i] = images[i].targetView(VK_FORMAT_R8G8B8A8_UNORM);
+        views[i] = images[i].CreateView();
     }
 
     const OneOffDescriptorSet::Bindings bindings = {
@@ -744,7 +745,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
     ASSERT_TRUE(image.initialized());
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    const VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    const vkt::ImageView view = image.CreateView();
 
     const OneOffDescriptorSet::Bindings bindings = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},

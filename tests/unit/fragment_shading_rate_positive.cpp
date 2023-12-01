@@ -139,12 +139,12 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     VkImageObj image(m_device);
     image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL,
                        0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT);
+    vkt::ImageView imageView = image.CreateView();
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
+    fb_info.pAttachments = &imageView.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;

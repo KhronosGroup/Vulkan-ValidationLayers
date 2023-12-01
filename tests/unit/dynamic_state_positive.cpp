@@ -262,9 +262,8 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -294,7 +293,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     VkFramebufferCreateInfo &fbci = m_framebuffer_info;
     fbci.renderPass = rp.handle();
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &depth_image_view;
+    fbci.pAttachments = &depth_image_view.handle();
     vkt::Framebuffer fb(*m_device, fbci);
 
     // Enable dynamic color write enable
@@ -330,8 +329,8 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     VkImageObj ds_image(m_device);
     ds_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
                   0);
-    auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(1, &ds_view);
+    auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(1, &ds_view.handle());
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     ds_state.depthWriteEnable = VK_TRUE;
@@ -363,8 +362,8 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     VkImageObj ds_image(m_device);
     ds_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
                   0);
-    auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(1, &ds_view);
+    auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(1, &ds_view.handle());
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     CreatePipelineHelper pipe(*this);
@@ -892,9 +891,8 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

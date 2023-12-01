@@ -285,7 +285,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkDescriptorImageInfo img_info = {};

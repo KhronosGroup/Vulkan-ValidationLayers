@@ -525,6 +525,7 @@ void VkRenderFramework::ShutdownFramework() {
     if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, NULL);
     m_renderPass = VK_NULL_HANDLE;
 
+    m_render_target_views.clear();
     m_renderTargets.clear();
 
     delete m_depthStencil;
@@ -913,9 +914,9 @@ void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, NULL); }
 
-void VkRenderFramework::InitRenderTarget(VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
+void VkRenderFramework::InitRenderTarget(const VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
-void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBinding) {
+void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *dsBinding) {
     vector<VkAttachmentDescription> &attachments = m_renderPass_attachments;
     vector<VkAttachmentReference> color_references;
     vector<VkImageView> &bindings = m_framebuffer_attachments;
@@ -969,7 +970,8 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
             FAIL() << "Neither Linear nor Optimal allowed for render target";
         }
 
-        bindings.push_back(img->targetView(m_render_target_fmt));
+        m_render_target_views.push_back(img->CreateView());
+        bindings.push_back(m_render_target_views.back().handle());
         m_renderTargets.push_back(std::move(img));
     }
 
@@ -1064,8 +1066,8 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     VkFramebufferCreateInfo &fb_info = m_framebuffer_info;
     fb_info = vku::InitStructHelper();
     fb_info.renderPass = m_renderPass;
-    fb_info.attachmentCount = bindings.size();
-    fb_info.pAttachments = bindings.data();
+    fb_info.attachmentCount = m_framebuffer_attachments.size();
+    fb_info.pAttachments = m_framebuffer_attachments.data();
     fb_info.width = m_width;
     fb_info.height = m_height;
     fb_info.layers = 1;
@@ -1103,7 +1105,8 @@ void VkRenderFramework::InitDynamicRenderTarget(VkFormat format) {
         FAIL() << "Optimal tiling not allowed for render target";
     }
 
-    m_framebuffer_attachments.push_back(img->targetView(m_render_target_fmt));
+    m_render_target_views.push_back(img->CreateView());
+    m_framebuffer_attachments.push_back(m_render_target_views.back().handle());
     m_renderTargets.push_back(std::move(img));
 }
 
@@ -1119,13 +1122,7 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = VK_NULL_HANDLE;
 }
 
-VkImageObj::VkImageObj(vkt::Device *dev) {
-    m_device = dev;
-    m_descriptorImageInfo.imageView = VK_NULL_HANDLE;
-    m_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    m_arrayLayers = 0;
-    m_mipLevels = 0;
-}
+VkImageObj::VkImageObj(vkt::Device *dev) : m_device(dev) {}
 
 // clang-format off
 void VkImageObj::ImageMemoryBarrier(vkt::CommandBuffer *cmd_buf, VkImageAspectFlags aspect,
@@ -1362,6 +1359,7 @@ void VkImageObj::InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryProp
     VkImageCreateInfo imageCreateInfo = create_info;
     imageCreateInfo.tiling = tiling;
 
+    m_format = imageCreateInfo.format;
     m_mipLevels = imageCreateInfo.mipLevels;
     m_arrayLayers = imageCreateInfo.arrayLayers;
 
@@ -1433,6 +1431,7 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     Layout(create_info->initialLayout);
 
     vkt::Image::init(*m_device, *create_info, 0);
+    m_format = create_info->format;
     m_mipLevels = create_info->mipLevels;
     m_arrayLayers = create_info->arrayLayers;
 
@@ -1452,6 +1451,7 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
 void VkImageObj::init_no_mem(const vkt::Device &dev, const VkImageCreateInfo &info) {
     vkt::Image::init_no_mem(dev, info);
     Layout(info.initialLayout);
+    m_format = info.format;
     m_mipLevels = info.mipLevels;
     m_arrayLayers = info.arrayLayers;
 }

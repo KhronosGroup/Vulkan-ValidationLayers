@@ -585,7 +585,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -640,9 +640,10 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     VkImageObj image(m_device);
     image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
-    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 256, 256, 1};
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1};
     VkFramebuffer fb;
     err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -758,9 +759,10 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     VkImageObj image(m_device);
     image.init(&image_ci);
 
-    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 256, 256, 1};
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1};
     VkFramebuffer fb;
     err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -937,7 +939,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
     // Create PSO to use the sampler
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1072,7 +1074,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView view = image.CreateView();
 
     // Create PSO to use the sampler
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);

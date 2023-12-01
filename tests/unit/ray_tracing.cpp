@@ -192,7 +192,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     VkImageObj image(m_device);
     image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDeviceSize storage_buffer_size = 1024;

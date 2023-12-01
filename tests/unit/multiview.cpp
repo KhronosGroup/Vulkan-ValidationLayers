@@ -109,8 +109,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
-                                             VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
     framebufferCreateInfo.width = 32;
@@ -118,7 +117,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.renderPass = renderPass.handle();
     framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &imageView;
+    framebufferCreateInfo.pAttachments = &imageView.handle();
 
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
     ASSERT_TRUE(framebuffer.initialized());
@@ -251,8 +250,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     VkImageObj image(m_device);
     image.Init(image_create_info);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
-                                             VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
     framebufferCreateInfo.width = m_width;
@@ -260,7 +258,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.renderPass = m_renderPass;
     framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &imageView;
+    framebufferCreateInfo.pAttachments = &imageView.handle();
 
     vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &m_framebuffer);
 
@@ -708,7 +706,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     image.Init(image_create_info);
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    const vkt::ImageView imageView = image.CreateView(image_view_ci);
+    const vkt::ImageView imageView(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
     framebufferCreateInfo.width = 32;
@@ -1349,7 +1347,7 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
 
     VkImageObj img(m_device);
     img.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView view = img.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView view = img.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = view;
