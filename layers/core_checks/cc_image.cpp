@@ -60,18 +60,35 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
             }
         }
 
-        VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
-        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
-        std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-        drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
-        fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
+        if (has_format_feature2) {
+            VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
+            std::vector<VkDrmFormatModifierProperties2EXT> drm_properties;
+            drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
 
-        for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
-            if (drm_format_modifiers.find(fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier) !=
-                drm_format_modifiers.end()) {
-                tiling_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+                if (drm_format_modifiers.find(fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier) !=
+                    drm_format_modifiers.end()) {
+                    tiling_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                }
+            }
+        } else {
+            VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
+            drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
+
+            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+                if (drm_format_modifiers.find(fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier) !=
+                    drm_format_modifiers.end()) {
+                    tiling_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                }
             }
         }
     } else {
@@ -1561,20 +1578,39 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
-        VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
-        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
+        if (has_format_feature2) {
+            VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
 
-        std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-        drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
-        fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            std::vector<VkDrmFormatModifierProperties2EXT> drm_properties;
+            drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
 
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
 
-        for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
-            if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
-                tiling_features = fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
-                break;
+            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+                if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
+                    tiling_features = fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                    break;
+                }
+            }
+        } else {
+            VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
+
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
+            drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
+
+            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+                if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
+                    tiling_features = fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                    break;
+                }
             }
         }
     } else {
