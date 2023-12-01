@@ -38,18 +38,18 @@ void gpuav::Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink)
 
 gpuav::BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                               VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_)
-    : BUFFER_VIEW_STATE(bf, bv, ci, buf_ff),
+    : vvl::BufferView(bf, bv, ci, buf_ff),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(bv, kVulkanObjectTypeBufferView))) {}
 
 void gpuav::BufferView::Destroy() {
     desc_heap.DeleteId(id);
-    BUFFER_VIEW_STATE::Destroy();
+    vvl::BufferView::Destroy();
 }
 
 void gpuav::BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     desc_heap.DeleteId(id);
-    BUFFER_VIEW_STATE::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::BufferView::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 gpuav::ImageView::ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,

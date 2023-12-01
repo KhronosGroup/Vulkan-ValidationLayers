@@ -69,9 +69,7 @@ class Buffer : public BINDABLE {
     std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;
 };
 
-}  // namespace vvl
-
-class BUFFER_VIEW_STATE : public BASE_NODE {
+class BufferView : public BASE_NODE {
   public:
     const VkBufferViewCreateInfo create_info;
     std::shared_ptr<vvl::Buffer> buffer_state;
@@ -82,20 +80,20 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
     // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
     const VkFormatFeatureFlags2KHR buf_format_features;
 
-    BUFFER_VIEW_STATE(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                      VkFormatFeatureFlags2KHR buf_ff);
+    BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+               VkFormatFeatureFlags2KHR buf_ff);
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
         buffer_state->AddParent(this);
     }
-    virtual ~BUFFER_VIEW_STATE() {
+    virtual ~BufferView() {
         if (!Destroyed()) {
             Destroy();
         }
     }
 
-    BUFFER_VIEW_STATE(const BUFFER_VIEW_STATE &rh_obj) = delete;
+    BufferView(const BufferView &rh_obj) = delete;
 
     VkBufferView buffer_view() const { return handle_.Cast<VkBufferView>(); }
 
@@ -116,3 +114,5 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
         return size;
     }
 };
+
+}  // namespace vvl

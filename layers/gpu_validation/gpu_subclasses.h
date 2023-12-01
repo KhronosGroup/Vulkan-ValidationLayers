@@ -244,7 +244,7 @@ class Buffer : public vvl::Buffer {
     const DescriptorId id;
 };
 
-class BufferView : public BUFFER_VIEW_STATE {
+class BufferView : public vvl::BufferView {
   public:
     BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_);

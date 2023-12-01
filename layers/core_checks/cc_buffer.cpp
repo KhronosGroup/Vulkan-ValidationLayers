@@ -424,7 +424,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
                                                   const ErrorObject &error_obj) const {
-    auto buffer_view_state = Get<BUFFER_VIEW_STATE>(bufferView);
+    auto buffer_view_state = Get<vvl::BufferView>(bufferView);
     bool skip = false;
     if (buffer_view_state) {
         skip |= ValidateObjectNotInUse(buffer_view_state.get(), error_obj.location, "VUID-vkDestroyBufferView-bufferView-00936");

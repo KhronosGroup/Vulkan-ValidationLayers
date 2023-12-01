@@ -1602,7 +1602,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                 if (!src_iter.updated()) continue;
                 auto buffer_view = static_cast<const TexelDescriptor &>(*src_iter).GetBufferView();
                 if (buffer_view) {
-                    auto bv_state = device_data->Get<BUFFER_VIEW_STATE>(buffer_view);
+                    auto bv_state = device_data->Get<vvl::BufferView>(buffer_view);
                     if (!bv_state) {
                         const LogObjectList objlist(update.srcSet);
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", objlist, copy_loc,
@@ -1909,7 +1909,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                 if (buffer_view == VK_NULL_HANDLE) {
                     continue;
                 }
-                auto bv_state = Get<BUFFER_VIEW_STATE>(buffer_view);
+                auto bv_state = Get<vvl::BufferView>(buffer_view);
                 if (!bv_state) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", device, write_loc,
                                      "Attempted write update to texel buffer descriptor with invalid buffer view (%s).",

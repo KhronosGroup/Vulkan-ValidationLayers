@@ -49,6 +49,7 @@ class DescriptorUpdateTemplate;
 class Queue;
 class Semaphore;
 class Buffer;
+class BufferView;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -57,7 +58,6 @@ class PIPELINE_CACHE_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
 class PIPELINE_LAYOUT_STATE;
-class BUFFER_VIEW_STATE;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
 class COMMAND_POOL_STATE;
@@ -291,7 +291,7 @@ VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, SAMPLER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImageView, IMAGE_VIEW_STATE)
 VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
-VALSTATETRACK_STATE_OBJECT(VkBufferView, BUFFER_VIEW_STATE)
+VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, PIPELINE_CACHE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, PIPELINE_STATE)
@@ -722,9 +722,9 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
-                                                                     const VkBufferViewCreateInfo* ci,
-                                                                     VkFormatFeatureFlags2KHR buf_ff);
+    virtual std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
+                                                                   const VkBufferViewCreateInfo* ci,
+                                                                   VkFormatFeatureFlags2KHR buf_ff);
     void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                         const RecordObject& record_obj) override;
@@ -1910,7 +1910,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, sampler_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, BUFFER_VIEW_STATE, buffer_view_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, vvl::BufferView, buffer_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, PIPELINE_CACHE_STATE, pipeline_cache_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
