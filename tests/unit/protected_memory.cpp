@@ -810,10 +810,14 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     image_unprotected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     // need memory bound at image view creation time
-    image_views[0] = image_protected.targetView(image_format);
-    image_views[1] = image_unprotected.targetView(image_format);
-    image_views_descriptor[0] = image_protected_descriptor.targetView(image_format);
-    image_views_descriptor[1] = image_unprotected_descriptor.targetView(image_format);
+    vkt::ImageView view0 = image_protected.CreateView();
+    vkt::ImageView view1 = image_unprotected.CreateView();
+    image_views[0] = view0;
+    image_views[1] = view1;
+    vkt::ImageView view_descriptor0 = image_protected_descriptor.CreateView();
+    vkt::ImageView view_descriptor1 = image_unprotected_descriptor.CreateView();
+    image_views_descriptor[0] = view_descriptor0;
+    image_views_descriptor[1] = view_descriptor1;
 
     // A renderpass and framebuffer that contains a protected and unprotected image view
     VkAttachmentDescription attachments[2] = {

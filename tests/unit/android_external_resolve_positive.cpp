@@ -118,6 +118,7 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
 
     VkImageObj color_image(m_device);
     color_image.Init(image_ci);
+    vkt::ImageView color_view = color_image.CreateView();
 
     image_ci.pNext = &external_format;
     image_ci.format = VK_FORMAT_UNDEFINED;
@@ -141,10 +142,10 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    const vkt::ImageView resolve_view = resolve_image.CreateView(ivci);
+    const vkt::ImageView resolve_view(*m_device, ivci);
 
     VkImageView attachments[2];
-    attachments[0] = color_image.targetView(format_resolve_prop.colorAttachmentFormat);
+    attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
@@ -234,6 +235,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
 
     VkImageObj color_image(m_device);
     color_image.Init(image_ci);
+    vkt::ImageView color_view = color_image.CreateView();
 
     image_ci.pNext = &external_format;
     image_ci.format = VK_FORMAT_UNDEFINED;
@@ -257,10 +259,10 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    const vkt::ImageView resolve_view = resolve_image.CreateView(ivci);
+    const vkt::ImageView resolve_view(*m_device, ivci);
 
     VkImageView attachments[2];
-    attachments[0] = color_image.targetView(format_resolve_prop.colorAttachmentFormat);
+    attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info[2];
@@ -343,6 +345,7 @@ TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
 
     VkImageObj color_image(m_device);
     color_image.Init(image_ci);
+    vkt::ImageView color_view = color_image.CreateView();
 
     image_ci.pNext = &external_format;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -367,11 +370,11 @@ TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    const vkt::ImageView resolve_view = resolve_image.CreateView(ivci);
+    const vkt::ImageView resolve_view(*m_device, ivci);
 
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = color_image.targetView(format_resolve_prop.colorAttachmentFormat);
+    color_attachment.imageView = color_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
     color_attachment.resolveImageView = resolve_view.handle();

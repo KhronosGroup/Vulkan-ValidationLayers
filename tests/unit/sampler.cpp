@@ -397,7 +397,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
         mpimage.Init(128, 128, 1, test_struct.format, VK_IMAGE_USAGE_SAMPLED_BIT, test_struct.tiling);
         ASSERT_TRUE(mpimage.initialized());
 
-        VkImageView view = mpimage.targetView(test_struct.format);
+        vkt::ImageView view = mpimage.CreateView();
 
         CreatePipelineHelper pipe(*this);
         VkShaderObj *fs = nullptr;
@@ -470,7 +470,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     vkt::Sampler sampler(*m_device, sci);
 
-    VkImageView view = test_image.targetView(image_info.format);
+    vkt::ImageView view = test_image.CreateView();
 
     CreatePipelineHelper pipe(*this);
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -906,7 +906,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
-    VkImageView view_pass = image.targetView(format);
+    vkt::ImageView view_pass = image.CreateView();
 
     VkImageObj image_3d(m_device);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
@@ -915,8 +915,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
 
     // If the sampler is unnormalizedCoordinates, the imageview type shouldn't be 3D, CUBE, 1D_ARRAY, 2D_ARRAY, CUBE_ARRAY.
     // This causes DesiredFailure.
-    VkImageView view_fail = image_3d.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
-                                                VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
+    vkt::ImageView view_fail = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_3D);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
@@ -1012,8 +1011,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
-    VkImageView view_pass_a = image.targetView(format);
-    VkImageView view_pass_b = image.targetView(format);
+    vkt::ImageView view_pass_a = image.CreateView();
+    vkt::ImageView view_pass_b = image.CreateView();
 
     VkImageObj image_3d(m_device);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
@@ -1022,8 +1021,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
 
     // If the sampler is unnormalizedCoordinates, the imageview type shouldn't be 3D, CUBE, 1D_ARRAY, 2D_ARRAY, CUBE_ARRAY.
     // This causes DesiredFailure.
-    VkImageView view_fail = image_3d.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
-                                                VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
+    vkt::ImageView view_fail = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_3D);
 
     // Need 2 samplers (and ImageView) because testing both VUID and it will tie both errors to the same sampler/imageView, but only
     // 08610 will be triggered since it's first in the validation code
@@ -1098,7 +1096,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_FALSE;
@@ -1167,14 +1165,13 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkImageObj image_3d(m_device);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_3d.Init(image_ci);
     ASSERT_TRUE(image_3d.initialized());
-    VkImageView image_view_3d = image_3d.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
-                                                    VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
+    vkt::ImageView image_view_3d = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_3D);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
@@ -1272,7 +1269,7 @@ TEST_F(NegativeSampler, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
-    VkImageView view_pass = image.targetView(format);
+    vkt::ImageView view_pass = image.CreateView();
 
     VkImageObj image_3d(m_device);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
@@ -1368,7 +1365,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCopyObject) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
-    VkImageView view_pass = image.targetView(format);
+    vkt::ImageView view_pass = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;

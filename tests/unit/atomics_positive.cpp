@@ -145,7 +145,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT;
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_ci);
-    VkImageView image_view = image.targetView(VK_FORMAT_R64_UINT);
+    vkt::ImageView image_view = image.CreateView();
     pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -854,7 +854,7 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     const char *spv_source = R"(
              OpCapability Shader

@@ -1527,7 +1527,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     VkImageObj image(m_device);
     image.init(&image_info);
 
-    const auto image_view = image.targetView(image_info.format);
+    const auto image_view = image.CreateView();
 
     // Setup RenderPass
     VkAttachmentDescription attachment{};
@@ -1562,7 +1562,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     fb_info.layers = 1;
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view;
+    fb_info.pAttachments = &image_view.handle();
 
     vkt::Framebuffer fb(*m_device, fb_info);
 
@@ -1622,7 +1622,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     VkImageObj image(m_device);
     image.init(&image_info);
 
-    const auto image_view = image.targetView(image_info.format);
+    const auto image_view = image.CreateView();
 
     // Setup RenderPass
     VkAttachmentDescription attachment{};
@@ -1657,7 +1657,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     fb_info.layers = 1;
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view;
+    fb_info.pAttachments = &image_view.handle();
 
     vkt::Framebuffer fb(*m_device, fb_info);
 
@@ -1722,7 +1722,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     VkImageObj image(m_device);
     image.init(&image_info);
 
-    const auto image_view = image.targetView(image_info.format);
+    const auto image_view = image.CreateView();
 
     // Setup first RenderPass
     VkAttachmentDescription attachment{};
@@ -1765,7 +1765,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     fb_info.layers = 1;
     fb_info.renderPass = rp1.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view;
+    fb_info.pAttachments = &image_view.handle();
 
     vkt::Framebuffer fb(*m_device, fb_info);
 
@@ -1896,7 +1896,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     VkImageObj image(m_device);
     image.init(&image_info);
 
-    const auto image_view = image.targetView(image_info.format);
+    const auto image_view = image.CreateView();
 
     // Prepare graphics
 
@@ -1933,7 +1933,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     fb_info.layers = 1;
     fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view;
+    fb_info.pAttachments = &image_view.handle();
 
     vkt::Framebuffer fb(*m_device, fb_info);
 

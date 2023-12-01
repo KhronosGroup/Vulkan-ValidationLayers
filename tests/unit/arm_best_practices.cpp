@@ -683,9 +683,8 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                          VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     VkPipelineColorBlendAttachmentState color_write_off = {};
     VkPipelineColorBlendAttachmentState color_write_on = {};
@@ -953,21 +952,22 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<std::unique_ptr<VkImageObj>> images;
     std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
-
-    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
+    auto image0 = CreateImage(FMT, WIDTH, HEIGHT);
+    vkt::ImageView view0 = image0->CreateView();
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, view0, renderpasses[0]));
 
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image");
     auto img = std::unique_ptr<VkImageObj>(new VkImageObj(m_device));
     img->Init(WIDTH, HEIGHT, 1, FMT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
               VK_IMAGE_TILING_OPTIMAL);
-    images.push_back(std::move(img));
+
+    auto image1 = std::move(img);
+    vkt::ImageView view1 = image1->CreateView();
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), renderpasses[1]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, view1, renderpasses[1]));
 
     CreatePipelineHelper graphics_pipeline(*this);
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1063,14 +1063,15 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<std::unique_ptr<VkImageObj>> images;
-    std::vector<VkRenderPass> renderpasses;
-    std::vector<VkFramebuffer> framebuffers;
+    auto image0 = CreateImage(FMT, WIDTH, HEIGHT);
+    image0->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView view0 = image0->CreateView();
 
-    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
-    images[0]->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    std::vector<VkRenderPass> renderpasses;
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
+
+    std::vector<VkFramebuffer> framebuffers;
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, view0, renderpasses[0]));
 
     CreatePipelineHelper graphics_pipeline(*this);
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1098,7 +1099,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    vk::CmdClearColorImage(m_commandBuffer->handle(), images[0]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image0->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
                            &subresource_range);
 
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
@@ -1174,7 +1175,8 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
 
     std::unique_ptr<VkImageObj> image = CreateImage(FMT, WIDTH, HEIGHT);
     image->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    VkFramebuffer fb = CreateFramebuffer(WIDTH, HEIGHT, image->targetView(FMT), rp.handle());
+    vkt::ImageView view = image->CreateView();
+    VkFramebuffer fb = CreateFramebuffer(WIDTH, HEIGHT, view, rp.handle());
 
     CreatePipelineHelper graphics_pipeline(*this);
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1270,18 +1272,17 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
 
     vkt::RenderPass rp(*m_device, rpinf);
 
-    std::vector<std::unique_ptr<VkImageObj>> images;
+    auto image0 = CreateImage(FMT, WIDTH, HEIGHT);
+    image0->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    auto view0 = image0->CreateView();
+
+    auto image1 = CreateImage(FMT, WIDTH, HEIGHT);
+    image1->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    auto view1 = image1->CreateView();
+
     std::vector<VkFramebuffer> framebuffers;
-
-    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
-    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
-
-    for (auto& image : images) {
-        image->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    }
-
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), rp.handle()));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), rp.handle()));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, view0, rp.handle()));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, view1, rp.handle()));
 
     CreatePipelineHelper graphics_pipeline(*this);
     graphics_pipeline.dsl_bindings_.resize(2);
@@ -1320,7 +1321,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     vk::AllocateDescriptorSets(m_device->handle(), &descriptor_set_allocate_info, &descriptor_set);
 
     VkDescriptorImageInfo image_info = {};
-    image_info.imageView = images[1]->targetView(FMT);
+    image_info.imageView = view1;
     image_info.sampler = VK_NULL_HANDLE;
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -1349,7 +1350,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    vk::CmdClearColorImage(m_commandBuffer->handle(), images[1]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image1->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
                            &subresource_range);
 
     // Trigger a read on the image.
@@ -1501,9 +1502,9 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
     vkt::RenderPass rp(*m_device, rpci);
 
-    auto imageView = images[1]->targetView(FMT);
+    auto imageView = images[1]->CreateView();
     VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, WIDTH, HEIGHT, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView.handle(), WIDTH, HEIGHT, 1};
     vkt::Framebuffer fb(*m_device, fbci);
 
     VkRenderPassBeginInfo rpbi =
@@ -1543,8 +1544,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
 
     m_load_op_clear = true;
     m_depth_stencil_fmt = ds_format;
-    auto ds_view = ds->targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(1, &ds_view);
+    auto ds_view = ds->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(1, &ds_view.handle());
 
     CreatePipelineHelper pipe_all(*this);
     pipe_all.InitState();

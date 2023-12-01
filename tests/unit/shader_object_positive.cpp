@@ -401,7 +401,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageObj image(m_device);
     image.init(&imageInfo);
-    VkImageView view = image.targetView(imageInfo.format);
+    vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -599,7 +599,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageObj image(m_device);
     image.init(&imageInfo);
-    VkImageView view = image.targetView(imageInfo.format);
+    vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -807,7 +807,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageObj image(m_device);
     image.init(&imageInfo);
-    VkImageView view = image.targetView(imageInfo.format);
+    vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1150,7 +1150,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
         VkImageObj::ImageCreateInfo2D(64, 64, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1);
+    vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_info);
@@ -1603,8 +1603,8 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
               VK_IMAGE_TILING_OPTIMAL);
 
-    VkImageView view1 = img1.targetView(m_render_target_fmt);
-    VkImageView view2 = img2.targetView(m_render_target_fmt);
+    vkt::ImageView view1 = img1.CreateView();
+    vkt::ImageView view2 = img2.CreateView();
 
     VkRenderingAttachmentInfo attachments[2];
     attachments[0] = vku::InitStructHelper();

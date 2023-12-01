@@ -687,6 +687,12 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
   public:
     explicit ImageView() = default;
     explicit ImageView(const Device &dev, const VkImageViewCreateInfo &info) { init(dev, info); }
+    ImageView(ImageView &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
+    ImageView &operator=(ImageView &&src) noexcept {
+        this->~ImageView();
+        this->NonDispHandle::operator=(std::move(src));
+        return *this;
+    }
     ~ImageView() noexcept;
     void destroy() noexcept;
 

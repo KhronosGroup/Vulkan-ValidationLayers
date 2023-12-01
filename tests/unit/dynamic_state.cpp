@@ -171,10 +171,9 @@ TEST_F(NegativeDynamicState, DepthBoundsNotBound) {
     VkImageObj depth_image(m_device);
     depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                      VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView depth_image_view =
-        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    InitRenderTarget(1, &depth_image_view);
+    InitRenderTarget(1, &depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -202,10 +201,9 @@ TEST_F(NegativeDynamicState, StencilReadNotBound) {
     VkImageObj depth_image(m_device);
     depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                      VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView depth_image_view =
-        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    InitRenderTarget(1, &depth_image_view);
+    InitRenderTarget(1, &depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -233,10 +231,9 @@ TEST_F(NegativeDynamicState, StencilWriteNotBound) {
     VkImageObj depth_image(m_device);
     depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                      VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView depth_image_view =
-        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    InitRenderTarget(1, &depth_image_view);
+    InitRenderTarget(1, &depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -264,10 +261,9 @@ TEST_F(NegativeDynamicState, StencilRefNotBound) {
     VkImageObj depth_image(m_device);
     depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                      VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView depth_image_view =
-        depth_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    InitRenderTarget(1, &depth_image_view);
+    InitRenderTarget(1, &depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -3017,12 +3013,10 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     VkImageObj depth_image(m_device);
     depth_image.init(&image_create_info);
     ASSERT_TRUE(depth_image.initialized());
-    VkImageView depth_image_view = depth_image.targetView(depth_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkImageObj color_image(m_device);
     color_image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(color_image.initialized());
-    VkImageView color_image_view = color_image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkAttachmentDescription descriptions[2] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -3042,10 +3036,12 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     vk::CreateRenderPass(m_device->device(), &m_renderPass_info, NULL, &m_renderPass);
 
     // Create a framebuffer
-    m_framebuffer_attachments.push_back(color_image_view);
-    m_framebuffer_attachments.push_back(depth_image_view);
-    m_framebuffer_info =
-        vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, m_renderPass, 2u, m_framebuffer_attachments.data(), 128u, 128u, 1u);
+    vkt::ImageView color_view = color_image.CreateView();
+    vkt::ImageView depth_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    const std::array<VkImageView, 2> attachments = {color_view, depth_view};
+
+    m_framebuffer_info = vku::InitStruct<VkFramebufferCreateInfo>(
+        nullptr, 0u, m_renderPass, static_cast<uint32_t>(attachments.size()), attachments.data(), 128u, 128u, 1u);
     vk::CreateFramebuffer(m_device->handle(), &m_framebuffer_info, nullptr, &m_framebuffer);
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
@@ -3797,9 +3793,8 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     ds_ci.depthTestEnable = VK_TRUE;
@@ -3859,9 +3854,8 @@ TEST_F(NegativeDynamicState, DepthBoundsTestEnableState) {
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView depth_image_view =
-        m_depthStencil->targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    InitRenderTarget(&depth_image_view);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -5043,12 +5037,12 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     std::vector<std::unique_ptr<VkImageObj>> images(attachment_count);
-    std::vector<VkImageView> image_views(attachment_count);
+    std::vector<vkt::ImageView> image_views(attachment_count);
     std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
     for (uint32_t i = 0; i < attachment_count; ++i) {
         images[i] = std::make_unique<VkImageObj>(m_device);
         images[i]->init(&image_ci);
-        image_views[i] = images[i]->targetView(image_ci.format);
+        image_views[i] = images[i]->CreateView();
         rendering_attachment_info[i] = vku::InitStructHelper();
         rendering_attachment_info[i].imageView = image_views[i];
         rendering_attachment_info[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -5123,7 +5117,7 @@ TEST_F(NegativeDynamicState, MissingColorAttachmentBlendBit) {
 
     VkImageObj image(m_device);
     image.Init(32u, 32u, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkClearValue clear_value;
     clear_value.color = {{0, 0, 0, 0}};
@@ -5421,7 +5415,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
 
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkAttachmentReference attachment_reference = {};
     attachment_reference.attachment = 0u;
@@ -5450,7 +5444,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1u;
-    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.pAttachments = &image_view.handle();
     framebuffer_ci.width = 32u;
     framebuffer_ci.height = 32u;
     framebuffer_ci.layers = 1u;
@@ -5564,7 +5558,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
 
     VkImageObj image(m_device);
     image.Init(32u, 32u, 1u, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView image_view = image.targetView(format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkAttachmentReference attachment_reference = {};
     attachment_reference.attachment = 0u;
@@ -5592,7 +5586,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1u;
-    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.pAttachments = &image_view.handle();
     framebuffer_ci.width = 32u;
     framebuffer_ci.height = 32u;
     framebuffer_ci.layers = 1u;
@@ -5804,7 +5798,7 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamplesWithMSRTSS) {
 
     VkImageObj image(m_device);
     image.Init(image_ci);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

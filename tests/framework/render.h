@@ -98,8 +98,8 @@ class VkRenderFramework : public VkTestFramework {
 
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
-    void InitRenderTarget(VkImageView *dsBinding);
-    void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
+    void InitRenderTarget(const VkImageView *dsBinding);
+    void InitRenderTarget(uint32_t targets, const VkImageView *dsBinding);
     void InitDynamicRenderTarget(VkFormat format = VK_FORMAT_UNDEFINED);
     VkImageView GetDynamicRenderTarget() const;
     void DestroyRenderTarget();
@@ -195,7 +195,8 @@ class VkRenderFramework : public VkTestFramework {
 
     VkFramebuffer m_framebuffer;
     VkFramebufferCreateInfo m_framebuffer_info;
-    std::vector<VkImageView> m_framebuffer_attachments;
+    std::vector<vkt::ImageView> m_render_target_views;   // color attachments but not depth
+    std::vector<VkImageView> m_framebuffer_attachments;  // all attachments, can be consumed directly by the API
 
     // WSI items
     SurfaceContext m_surface_context{};
@@ -328,40 +329,23 @@ class VkImageObj : public vkt::Image {
         ci.components.b = VK_COMPONENT_SWIZZLE_B;
         ci.components.a = VK_COMPONENT_SWIZZLE_A;
         ci.subresourceRange = {aspect_mask, 0, 1, 0, 1};
-        ci.flags = 0;
         return ci;
     }
 
-    vkt::ImageView CreateView(VkImageViewCreateInfo ci) const {
-        ci.image = handle();
+    vkt::ImageView CreateView(VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) const {
+        VkImageViewCreateInfo ci = BasicViewCreatInfo(aspect);
+        ci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
         return vkt::ImageView(*m_device, ci);
     }
 
-    const VkImageView &targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0,
-                                  uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
-                                  uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) {
-        if (!m_targetView.initialized()) {
-            VkImageViewCreateInfo createView = vku::InitStructHelper();
-            createView.image = handle();
-            createView.viewType = type;
-            createView.format = format;
-            createView.components.r = VK_COMPONENT_SWIZZLE_R;
-            createView.components.g = VK_COMPONENT_SWIZZLE_G;
-            createView.components.b = VK_COMPONENT_SWIZZLE_B;
-            createView.components.a = VK_COMPONENT_SWIZZLE_A;
-            createView.subresourceRange = {aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount};
-            createView.flags = 0;
-            m_targetView.init(*m_device, createView);
-            m_createInfo = createView;
-        }
-        assert(m_createInfo.viewType == type);
-        assert(m_createInfo.format == format);
-        assert(m_createInfo.subresourceRange.aspectMask == aspect);
-        assert(m_createInfo.subresourceRange.baseMipLevel == baseMipLevel);
-        assert(m_createInfo.subresourceRange.levelCount == levelCount);
-        assert(m_createInfo.subresourceRange.baseArrayLayer == baseArrayLayer);
-        assert(m_createInfo.subresourceRange.layerCount == layerCount);
-        return m_targetView.handle();
+    vkt::ImageView CreateView(VkImageViewType type, uint32_t baseMipLevel = 0, uint32_t levelCount = VK_REMAINING_MIP_LEVELS,
+                              uint32_t baseArrayLayer = 0, uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS,
+                              VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) const {
+        VkImageViewCreateInfo ci = BasicViewCreatInfo();
+        ci.viewType = type;
+        ci.subresourceRange = {aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount};
+        return vkt::ImageView(*m_device, ci);
     }
 
     void SetLayout(vkt::CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
@@ -374,12 +358,9 @@ class VkImageObj : public vkt::Image {
     vkt::Device *device() const { return m_device; }
 
   protected:
-    vkt::Device *m_device;
-
-    vkt::ImageView m_targetView;
-    VkImageViewCreateInfo m_createInfo;  // To validate that cached view matches requested parameters
-
-    VkDescriptorImageInfo m_descriptorImageInfo;
-    uint32_t m_mipLevels;
-    uint32_t m_arrayLayers;
+    vkt::Device *m_device = nullptr;
+    VkFormat m_format = VK_FORMAT_UNDEFINED;
+    uint32_t m_mipLevels = 0;
+    uint32_t m_arrayLayers = 0;
+    VkDescriptorImageInfo m_descriptorImageInfo = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL};
 };

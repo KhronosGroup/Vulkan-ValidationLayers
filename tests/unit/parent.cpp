@@ -246,11 +246,11 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                                   VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderPassAttachmentBeginInfo render_pass_attachment_bi = vku::InitStructHelper();
     render_pass_attachment_bi.attachmentCount = 1;
-    render_pass_attachment_bi.pAttachments = &image_view;
+    render_pass_attachment_bi.pAttachments = &image_view.handle();
 
     m_renderPassBeginInfo.pNext = &render_pass_attachment_bi;
     m_renderPassBeginInfo.framebuffer = fb.handle();
@@ -667,7 +667,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
 
     VkImageObj image(m_second_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},

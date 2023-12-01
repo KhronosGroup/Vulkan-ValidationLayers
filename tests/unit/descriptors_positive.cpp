@@ -118,8 +118,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
     {
         VkImageObj image(m_device);
         image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-
-        VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+        vkt::ImageView view = image.CreateView();
 
         OneOffDescriptorSet descriptor_set(m_device, {
                                                          {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -765,8 +764,8 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
     image1.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     image2.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
-    VkImageView view1 = image1.targetView(VK_FORMAT_B8G8R8A8_UNORM);
-    VkImageView view2 = image2.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vkt::ImageView view1 = image1.CreateView();
+    vkt::ImageView view2 = image2.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -837,7 +836,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
 
     VkImageObj image_input(m_device);
     image_input.Init(width, height, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView view_input = image_input.targetView(format);
+    vkt::ImageView view_input = image_input.CreateView();
 
     // Create render pass with a subpass that has input attachment.
     vkt::RenderPass render_pass;
@@ -872,7 +871,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = render_pass.handle();
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &view_input;
+    fbci.pAttachments = &view_input.handle();
     fbci.width = width;
     fbci.height = height;
     fbci.layers = 1;
@@ -1107,7 +1106,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT,
                VK_IMAGE_TILING_OPTIMAL, 0);
 
-    VkImageView image_view = image.targetView(format);
+    vkt::ImageView image_view = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
@@ -1157,7 +1156,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     framebuffer_ci.layers = 1u;
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1;
-    framebuffer_ci.pAttachments = &image_view;
+    framebuffer_ci.pAttachments = &image_view.handle();
 
     vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
 

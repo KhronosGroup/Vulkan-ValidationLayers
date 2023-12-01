@@ -57,12 +57,12 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = render_pass;
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view;
+    fbci.pAttachments = &image_view.handle();
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
@@ -152,12 +152,12 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = render_pass;
     fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view;
+    fbci.pAttachments = &image_view.handle();
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
