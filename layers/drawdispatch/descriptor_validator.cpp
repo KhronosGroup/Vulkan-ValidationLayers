@@ -239,10 +239,10 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, image_view);
             return dev_state.LogError(vuids.image_view_dim_07752, objlist, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") ImageView type is %s but the OpTypeImage has (Dim = %s) and (Arrrayed = %" PRIu32 ").",
-                            FormatHandle(set).c_str(), binding, index, string_VkImageViewType(image_view_ci.viewType),
-                            string_SpvDim(dim), is_image_array);
+                                      "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                      ") ImageView type is %s but the OpTypeImage has (Dim = %s) and (Arrayed = %" PRIu32 ").",
+                                      FormatHandle(set).c_str(), binding, index, string_VkImageViewType(image_view_ci.viewType),
+                                      string_SpvDim(dim), is_image_array);
         }
 
         if (!(variable.info.image_format_type & image_view_state->descriptor_format_bits)) {
