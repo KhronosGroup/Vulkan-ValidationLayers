@@ -1731,7 +1731,7 @@ void ValidationStateTracker::PreCallRecordDestroyFramebuffer(VkDevice device, Vk
 void ValidationStateTracker::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             const RecordObject &record_obj) {
-    Destroy<RENDER_PASS_STATE>(renderPass);
+    Destroy<vvl::RenderPass>(renderPass);
 }
 
 void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
@@ -1760,7 +1760,7 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, 
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const RENDER_PASS_STATE> &&render_pass,
+    const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::RenderPass> &&render_pass,
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states) const {
     return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states);
 }
@@ -1777,17 +1777,16 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     for (uint32_t i = 0; i < count; i++) {
         const auto &create_info = pCreateInfos[i];
         auto layout_state = Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
-        std::shared_ptr<const RENDER_PASS_STATE> render_pass;
+        std::shared_ptr<const vvl::RenderPass> render_pass;
 
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
-            render_pass = Get<RENDER_PASS_STATE>(create_info.renderPass);
+            render_pass = Get<vvl::RenderPass>(create_info.renderPass);
         } else if (enabled_features.dynamicRendering) {
             auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
             const bool rasterization_enabled = PIPELINE_STATE::EnablesRasterizationStates(*this, create_info);
             const bool has_fragment_output_state =
                 PIPELINE_STATE::ContainsSubState(this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
-            render_pass =
-                std::make_shared<RENDER_PASS_STATE>(dynamic_rendering, rasterization_enabled && has_fragment_output_state);
+            render_pass = std::make_shared<vvl::RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state);
         } else {
             const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
             const bool has_link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext) != nullptr;
@@ -2986,7 +2985,7 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
         }
     }
 
-    Add(std::make_shared<vvl::Framebuffer>(*pFramebuffer, pCreateInfo, Get<RENDER_PASS_STATE>(pCreateInfo->renderPass),
+    Add(std::make_shared<vvl::Framebuffer>(*pFramebuffer, pCreateInfo, Get<vvl::RenderPass>(pCreateInfo->renderPass),
                                            std::move(views)));
 }
 
@@ -2994,7 +2993,7 @@ void ValidationStateTracker::PostCallRecordCreateRenderPass(VkDevice device, con
                                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                             const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo));
+    Add(std::make_shared<vvl::RenderPass>(*pRenderPass, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
@@ -3008,7 +3007,7 @@ void ValidationStateTracker::PostCallRecordCreateRenderPass2(VkDevice device, co
                                                              const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    Add(std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo));
+    Add(std::make_shared<vvl::RenderPass>(*pRenderPass, pCreateInfo));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer,

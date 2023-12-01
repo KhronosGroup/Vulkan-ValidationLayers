@@ -78,7 +78,7 @@ bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
 
-    auto rp_state = Get<RENDER_PASS_STATE>(pCreateInfo->renderPass);
+    auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
     if (rp_state && !(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         skip = ValidateAttachments(rp_state->createInfo.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments,
                                    error_obj.location);

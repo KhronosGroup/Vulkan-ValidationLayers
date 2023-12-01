@@ -1020,7 +1020,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
                                              const VkSubpassBeginInfo *pSubpassBeginInfo)
     : SyncOpBase(command), rp_context_(nullptr) {
     if (pRenderPassBegin) {
-        rp_state_ = sync_state.Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+        rp_state_ = sync_state.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
         renderpass_begin_info_ = safe_VkRenderPassBeginInfo(pRenderPassBegin);
         auto fb_state = sync_state.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
         if (fb_state) {

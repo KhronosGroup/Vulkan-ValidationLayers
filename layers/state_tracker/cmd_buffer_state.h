@@ -32,7 +32,6 @@
 #include "containers/custom_containers.h"
 
 struct SUBPASS_INFO;
-class RENDER_PASS_STATE;
 class VIDEO_SESSION_STATE;
 class VIDEO_SESSION_PARAMETERS_STATE;
 class CoreChecks;
@@ -40,6 +39,7 @@ class ValidationStateTracker;
 
 namespace vvl {
 class Framebuffer;
+class RenderPass;
 }  // namespace vvl
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -375,7 +375,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t initial_device_mask;
 
     // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
-    std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
+    std::shared_ptr<vvl::RenderPass> activeRenderPass;
     // Used for both type of renderPass
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     uint32_t active_render_pass_device_mask;

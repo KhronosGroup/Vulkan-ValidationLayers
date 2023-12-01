@@ -387,7 +387,7 @@ void gpuav::Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBu
         return;
     }
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto render_pass_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
         TransitionBeginRenderPassLayouts(cb_state.get(), *render_pass_state);

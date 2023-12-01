@@ -51,7 +51,7 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount, co
             return skip;
         }
 
-        auto rp_state = Get<RENDER_PASS_STATE>(create_info->renderPass);
+        auto rp_state = Get<vvl::RenderPass>(create_info->renderPass);
         if (!rp_state) {
             continue;
         }
@@ -253,13 +253,13 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
 }
 
 bp_state::Pipeline::Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
-                             std::shared_ptr<const RENDER_PASS_STATE>&& rpstate,
+                             std::shared_ptr<const vvl::RenderPass>&& rpstate,
                              std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout, CreateShaderModuleStates* csm_states)
     : PIPELINE_STATE(state_data, pCreateInfo, std::move(rpstate), std::move(layout), csm_states),
       access_framebuffer_attachments(GetAttachmentAccess(*this)) {}
 
 std::shared_ptr<PIPELINE_STATE> BestPractices::CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
-                                                                           std::shared_ptr<const RENDER_PASS_STATE>&& render_pass,
+                                                                           std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                            std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout,
                                                                            CreateShaderModuleStates* csm_states) const {
     return std::static_pointer_cast<PIPELINE_STATE>(

@@ -296,7 +296,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     safe_VkSubpassBeginInfo subpass_begin_info_;
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> shared_attachments_;
     std::vector<const syncval_state::ImageViewState *> attachments_;
-    std::shared_ptr<const RENDER_PASS_STATE> rp_state_;
+    std::shared_ptr<const vvl::RenderPass> rp_state_;
     const RenderPassAccessContext *rp_context_;
 };
 

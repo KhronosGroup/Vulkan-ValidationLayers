@@ -310,10 +310,10 @@ class Validator : public gpu_tracker::Validator {
 
     void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
 
-    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state, const int);
+    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const vvl::RenderPass& render_pass_state, const int);
     void TransitionFinalSubpassLayouts(CMD_BUFFER_STATE* cb_state);
 
-    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state);
+    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const vvl::RenderPass& render_pass_state);
 
     bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& image_loc,
                                            const ImageBarrier& img_barrier, const CommandBufferImageLayoutMap& current_map,

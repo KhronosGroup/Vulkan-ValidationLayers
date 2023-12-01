@@ -171,7 +171,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
                            "and can only be used for side effects such as layout transitions.");
     }
 
-    auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (rp_state) {
         if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
             const VkRenderPassAttachmentBeginInfo* rpabi = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
@@ -387,7 +387,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
-    auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (rp_state) {
         // Check load ops
         for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
@@ -681,7 +681,7 @@ void BestPractices::PostRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
     // Reset NV state
     cb->nv = {};
 
-    auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (rp_state) {
         // track depth / color attachment usage within the renderpass
         for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
@@ -791,7 +791,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
             VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
     }
 
-    RENDER_PASS_STATE* rp = cmd->activeRenderPass.get();
+    vvl::RenderPass* rp = cmd->activeRenderPass.get();
 
     if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) && rp) {
         // If we use an attachment on-tile, we should access it in some way. Otherwise,
