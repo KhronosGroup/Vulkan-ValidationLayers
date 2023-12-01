@@ -31,11 +31,11 @@
 namespace vvl {
 class Fence;
 class Semaphore;
+class Surface;
 } // namespace vvl
 
 class ValidationStateTracker;
 class VideoProfileDesc;
-class SURFACE_STATE;
 class SWAPCHAIN_NODE;
 
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
@@ -329,7 +329,7 @@ struct SWAPCHAIN_IMAGE {
 
 // State for VkSwapchainKHR objects.
 // Parent -> child relationships in the object usage tree:
-//    SWAPCHAIN_NODE [N] -> [1] SURFACE_STATE
+//    SWAPCHAIN_NODE [N] -> [1] vvl::Surface
 //    However, only 1 swapchain for each surface can be !retired.
 class SWAPCHAIN_NODE : public BASE_NODE {
   public:
@@ -343,7 +343,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     uint64_t max_present_id = 0;
     const safe_VkImageCreateInfo image_create_info;
 
-    std::shared_ptr<SURFACE_STATE> surface;
+    std::shared_ptr<vvl::Surface> surface;
     ValidationStateTracker *dev_data;
     uint32_t acquired_images = 0;
 
@@ -399,13 +399,15 @@ struct PresentModeState {
     std::vector<VkPresentModeKHR> compatible_present_modes_;
 };
 
-// Parent -> child relationships in the object usage tree:
-//    SURFACE_STATE -> nothing
-class SURFACE_STATE : public BASE_NODE {
-  public:
-    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
+namespace vvl {
 
-    ~SURFACE_STATE() {
+// Parent -> child relationships in the object usage tree:
+//    vvl::Surface -> nothing
+class Surface : public BASE_NODE {
+  public:
+    Surface(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
+
+    ~Surface() {
         if (!Destroyed()) {
             Destroy();
         }
@@ -462,3 +464,5 @@ class SURFACE_STATE : public BASE_NODE {
                                       vvl::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
         present_modes_data_;
 };
+
+}  // namespace vvl

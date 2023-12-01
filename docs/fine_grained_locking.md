@@ -202,7 +202,7 @@ For data that must change after object creation, the next best strategy is to ma
 
 Thread safe accessors are very important for complex data structures such as vectors, sets, and maps. It may be possible in some cases to make simple counters or flags thread safe using `std::atomic` instead.
 
-`SURFACE_STATE` is an example of a state object with fully encapsulated non-const data members.
+`vvl::Surface` is an example of a state object with fully encapsulated non-const data members.
 
 #### Encapsulated with limited interactions with other state objects
 
@@ -716,9 +716,9 @@ Some of this data is set in `vkGetSwapchainImagesKHR()` and `vkBindImageMemory2K
 TODO: Accesses to most of these fields will need to be atomic or lock guarded.
 
 
-### VkSurfaceState / SURFACE_STATE
+### VkSurfaceState / vvl::Surface
 
-`SURFACE_STATE` tracks the results of several calls that involve both `VkPhysicalDevice` and `VkSurface`:
+`vvl::Surface` tracks the results of several calls that involve both `VkPhysicalDevice` and `VkSurface`:
 
 
 ```
@@ -740,7 +740,7 @@ Also, surfaces are instance level objects but they hold a reference on the curre
 
 ###### PRs:
 
-[layers: Make SURFACE_STATE, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
+[layers: Make vvl::Surface, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
 
 [layers: Don't pre-query surface attributes during creation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3452)
 
@@ -770,7 +770,7 @@ This data is fully encapsulated by accessor methods that manage the locking.
 
 ###### PRs:
 
-[layers: Make SURFACE_STATE, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
+[layers: Make vvl::Surface, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
 
 
 ### VkDescriptorSet / vvl::DescriptorSet
@@ -816,7 +816,7 @@ This data is fully encapsulated by accessor methods that manage the locking.
 
 [layers: remove global queryToStateMap](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3586)
 
-[layers: Make SURFACE_STATE, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
+[layers: Make vvl::Surface, vvl::DescriptorPool, QUERY_POOL_STATE and ValidationCache threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3649)
 
 
 

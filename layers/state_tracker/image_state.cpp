@@ -603,28 +603,30 @@ std::shared_ptr<const IMAGE_STATE> SWAPCHAIN_NODE::GetSwapChainImageShared(uint3
     return std::shared_ptr<const IMAGE_STATE>();
 }
 
-void SURFACE_STATE::Destroy() {
+namespace vvl {
+
+void Surface::Destroy() {
     if (swapchain) {
         swapchain = nullptr;
     }
     BASE_NODE::Destroy();
 }
 
-void SURFACE_STATE::RemoveParent(BASE_NODE *parent_node) {
+void Surface::RemoveParent(BASE_NODE *parent_node) {
     if (swapchain == parent_node) {
         swapchain = nullptr;
     }
     BASE_NODE::RemoveParent(parent_node);
 }
 
-void SURFACE_STATE::SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported) {
+void Surface::SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported) {
     auto guard = Lock();
     assert(phys_dev);
     GpuQueue key{phys_dev, qfi};
     gpu_queue_support_[key] = supported;
 }
 
-bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const {
+bool Surface::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const {
     auto guard = Lock();
     assert(phys_dev);
     GpuQueue key{phys_dev, qfi};
@@ -639,7 +641,7 @@ bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) con
 }
 
 // Save data from vkGetPhysicalDeviceSurfacePresentModes
-void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes) {
+void Surface::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes) {
     auto guard = Lock();
     assert(phys_dev);
     for (auto new_present_mode : modes) {
@@ -651,8 +653,8 @@ void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const V
 }
 
 // Helper for data obtained from vkGetPhysicalDeviceSurfacePresentModesKHR
-std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
-                                                             const ValidationObject *validation_obj) const {
+std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
+                                                       const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
     std::vector<VkPresentModeKHR> result;
@@ -685,15 +687,15 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice ph
     return result;
 }
 
-void SURFACE_STATE::SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts) {
+void Surface::SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts) {
     auto guard = Lock();
     assert(phys_dev);
     formats_[phys_dev] = std::move(fmts);
 }
 
-vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                                    const void *surface_info2_pnext, const Location &loc,
-                                                                    const ValidationObject *validation_obj) const {
+vvl::span<const safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                              const void *surface_info2_pnext, const Location &loc,
+                                                              const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
 
@@ -764,15 +766,15 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
     return vvl::span<const safe_VkSurfaceFormat2KHR>(formats_[phys_dev]);
 }
 
-void SURFACE_STATE::SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps) {
+void Surface::SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps) {
     auto guard = Lock();
     assert(phys_dev);
     capabilities_[phys_dev] = caps;
 }
 
-safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                              const void *surface_info2_pnext, const Location &loc,
-                                                              const ValidationObject *validation_obj) const {
+safe_VkSurfaceCapabilities2KHR Surface::GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                        const void *surface_info2_pnext, const Location &loc,
+                                                        const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
 
@@ -806,8 +808,8 @@ safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_c
     return safe_surface_caps2;
 }
 
-void SURFACE_STATE::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                                       vvl::span<const VkPresentModeKHR> compatible_modes) {
+void Surface::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
+                                 vvl::span<const VkPresentModeKHR> compatible_modes) {
     auto guard = Lock();
     assert(phys_dev);
 
@@ -826,8 +828,7 @@ void SURFACE_STATE::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresen
     }
 }
 
-std::vector<VkPresentModeKHR> SURFACE_STATE::GetCompatibleModes(VkPhysicalDevice phys_dev,
-                                                                const VkPresentModeKHR present_mode) const {
+std::vector<VkPresentModeKHR> Surface::GetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode) const {
     auto guard = Lock();
     assert(phys_dev);
     auto iter = present_modes_data_.find(phys_dev);
@@ -858,9 +859,9 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetCompatibleModes(VkPhysicalDevice
 }
 
 // Set the surface and scaling caps for this present mode
-void SURFACE_STATE::SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                                               const VkSurfaceCapabilitiesKHR &caps,
-                                               const VkSurfacePresentScalingCapabilitiesEXT &scaling_caps) {
+void Surface::SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
+                                         const VkSurfaceCapabilitiesKHR &caps,
+                                         const VkSurfacePresentScalingCapabilitiesEXT &scaling_caps) {
     auto guard = Lock();
     assert(phys_dev);
     if (!present_modes_data_[phys_dev][present_mode].has_value()) {
@@ -872,8 +873,8 @@ void SURFACE_STATE::SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const 
 }
 
 // Get the surface caps this particular present mode
-VkSurfaceCapabilitiesKHR SURFACE_STATE::GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
-                                                                          const VkPresentModeKHR present_mode) const {
+VkSurfaceCapabilitiesKHR Surface::GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
+                                                                    const VkPresentModeKHR present_mode) const {
     auto iter = present_modes_data_.find(phys_dev);
     if ((iter != present_modes_data_.end()) && (iter->second.find(present_mode) != iter->second.end())) {
         auto const caps = (iter->second)[present_mode];
@@ -895,8 +896,8 @@ VkSurfaceCapabilitiesKHR SURFACE_STATE::GetPresentModeSurfaceCapabilities(VkPhys
 }
 
 // Get the scaling capabilities for this particular present mode
-VkSurfacePresentScalingCapabilitiesEXT SURFACE_STATE::GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
-                                                                                        const VkPresentModeKHR present_mode) const {
+VkSurfacePresentScalingCapabilitiesEXT Surface::GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
+                                                                                  const VkPresentModeKHR present_mode) const {
     auto iter = present_modes_data_.find(phys_dev);
     if ((iter != present_modes_data_.end()) && (iter->second.find(present_mode) != iter->second.end())) {
         auto const &caps = (iter->second)[present_mode];
@@ -918,6 +919,8 @@ VkSurfacePresentScalingCapabilitiesEXT SURFACE_STATE::GetPresentModeScalingCapab
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     return scaling_caps;
 }
+
+}  // namespace vvl
 
 bool GlobalImageLayoutRangeMap::AnyInRange(RangeGenerator &gen,
                                            std::function<bool(const key_type &range, const mapped_type &state)> &&func) const {

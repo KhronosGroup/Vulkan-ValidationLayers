@@ -55,6 +55,7 @@ class SamplerYcbcrConversion;
 class Framebuffer;
 class RenderPass;
 class PipelineCache;
+class Surface;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -67,7 +68,6 @@ class COMMAND_POOL_STATE;
 class DISPLAY_MODE_STATE;
 class EVENT_STATE;
 class SWAPCHAIN_NODE;
-class SURFACE_STATE;
 struct SHADER_MODULE_STATE;
 struct SHADER_OBJECT_STATE;
 struct SPIRV_MODULE_STATE;
@@ -314,7 +314,7 @@ VALSTATETRACK_STATE_OBJECT(VkSamplerYcbcrConversion, vvl::SamplerYcbcrConversion
 VALSTATETRACK_STATE_OBJECT(VkVideoSessionKHR, VIDEO_SESSION_STATE)
 VALSTATETRACK_STATE_OBJECT(VkVideoSessionParametersKHR, VIDEO_SESSION_PARAMETERS_STATE)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureKHR, vvl::AccelerationStructureKHR)
-VALSTATETRACK_STATE_OBJECT(VkSurfaceKHR, SURFACE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkSurfaceKHR, vvl::Surface)
 VALSTATETRACK_STATE_OBJECT(VkDisplayModeKHR, DISPLAY_MODE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPhysicalDevice, PHYSICAL_DEVICE_STATE)
 
@@ -1490,7 +1490,7 @@ class ValidationStateTracker : public ValidationObject {
     virtual std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                                  VkSwapchainKHR swapchain);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
-                                    std::shared_ptr<SURFACE_STATE>&& surface_state, SWAPCHAIN_NODE* old_swapchain_state);
+                                    std::shared_ptr<vvl::Surface>&& surface_state, SWAPCHAIN_NODE* old_swapchain_state);
     void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, uint32_t* pCounterCount,
                                                                           VkPerformanceCounterKHR* pCounters);
@@ -1933,7 +1933,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionKHR, VIDEO_SESSION_STATE, video_session_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionParametersKHR, VIDEO_SESSION_PARAMETERS_STATE, video_session_parameters_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, vvl::AccelerationStructureKHR, acceleration_structure_khr_map_)
-    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map_)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, vvl::Surface, surface_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map_)
 
