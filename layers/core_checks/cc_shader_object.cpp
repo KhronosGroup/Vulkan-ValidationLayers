@@ -285,9 +285,11 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             const PipelineStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
             skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc);
 
-            if (stage_state.entrypoint) {
+            // Validate tessellation stages
+            if (stage_state.entrypoint && (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
+                                           pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
                 if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                    if (stage_state.entrypoint->execution_mode.output_vertices == 0) {
+                    if (stage_state.entrypoint->execution_mode.output_vertices == vvl::kU32Max) {
                         skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08875", device, create_info_loc.dot(Field::stage),
                                          "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but patch size is not specified.");
                     }
@@ -304,6 +306,16 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                         skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08874", device, create_info_loc.dot(Field::stage),
                                          "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but spacing is not specified.");
                     }
+                }
+
+                if (stage_state.entrypoint->execution_mode.output_vertices != vvl::kU32Max &&
+                    (stage_state.entrypoint->execution_mode.output_vertices == 0u ||
+                     stage_state.entrypoint->execution_mode.output_vertices >= phys_dev_props.limits.maxTessellationPatchSize)) {
+                    skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08453", device, create_info_loc.dot(Field::pCode),
+                                     "is using patch size %" PRIu32
+                                     ", which is not greater than 0 and less than maxTessellationPatchSize (%" PRIu32 ").",
+                                     stage_state.entrypoint->execution_mode.output_vertices,
+                                     phys_dev_props.limits.maxTessellationPatchSize);
                 }
 
                 if ((pCreateInfos[i].flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0u) {
@@ -350,7 +362,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_linked_spacing), string_SpvExecutionMode(tese_linked_spacing));
     }
-    if (tesc_output_patch_size != tese_output_patch_size && tese_output_patch_size != 0) {
+    if (tesc_output_patch_size != tese_output_patch_size && tese_output_patch_size != vvl::kU32Max) {
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08871", device, error_obj.location,
                          "The output patch size in tessellation control shader (%" PRIu32
                          ") does not match the output patch size in tessellation evaluation shader (%" PRIu32 ").",

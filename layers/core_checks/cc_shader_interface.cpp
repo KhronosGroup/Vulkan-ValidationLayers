@@ -793,11 +793,11 @@ bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_mo
                          "tessellation evaluation shader is %s",
                          string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
     }
-    if (tesc_patch_size == 0 && tese_patch_size == 0) {
+    if (tesc_patch_size == vvl::kU32Max && tese_patch_size == vvl::kU32Max) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00734", objlist, create_info_loc,
                          "Output patch size is not specified in either of tessellation stages");
-    } else if (tesc_patch_size != 0 && tese_patch_size != 0 && tesc_patch_size != tese_patch_size) {
+    } else if (tesc_patch_size != vvl::kU32Max && tese_patch_size != vvl::kU32Max && tesc_patch_size != tese_patch_size) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00735", objlist, create_info_loc,
                          "Output patch size specified in tessellation control shader is %" PRIu32

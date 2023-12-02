@@ -136,7 +136,7 @@ struct ExecutionModeSet {
     uint32_t local_size_y = kInvalidValue;
     uint32_t local_size_z = kInvalidValue;
 
-    uint32_t output_vertices = 0;
+    uint32_t output_vertices = vvl::kU32Max;
     uint32_t output_primitives = 0;
     uint32_t invocations = 0;
 
