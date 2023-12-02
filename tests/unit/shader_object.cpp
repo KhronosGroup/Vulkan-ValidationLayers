@@ -7844,3 +7844,84 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationPatchSize) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderObject, TessellationPatchSize) {
+    TEST_DESCRIPTION("Create tessellation shader with invalid patch size.");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    for (uint32_t i = 0; i < 2; ++i) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08453");
+
+        std::string tesc_src = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
+               OpExecutionMode %main OutputVertices )";
+        tesc_src += i == 0 ? std::string("0") : std::to_string(m_device->phy().limits_.maxTessellationPatchSize + 1u);
+        tesc_src += R"(
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %11
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %24
+
+               ; Annotations
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %float_1 = OpConstant %float 1
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_2
+               OpStore %18 %float_1
+         %19 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_1
+               OpStore %19 %float_1
+         %20 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_0
+               OpStore %20 %float_1
+         %25 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %int_0
+               OpStore %25 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        std::vector<uint32_t> spv;
+        ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src.c_str(), spv);
+
+        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+        createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+        createInfo.codeSize = spv.size() * sizeof(spv[0]);
+        createInfo.pCode = spv.data();
+        createInfo.pName = "main";
+
+        VkShaderEXT shader;
+        vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+
+        m_errorMonitor->VerifyFound();
+    }
+}
