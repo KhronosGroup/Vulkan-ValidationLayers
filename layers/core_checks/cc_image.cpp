@@ -776,7 +776,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
 
-bool CoreChecks::ValidateClearImageSubresourceRange(const CMD_BUFFER_STATE &cb_state, const vvl::Image &image_state,
+bool CoreChecks::ValidateClearImageSubresourceRange(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                                     const VkImageSubresourceRange &range, const Location &loc) const {
     bool skip = false;
 
@@ -794,7 +794,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
                                                    const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto image_state_ptr = Get<vvl::Image>(image);
     if (!cb_state_ptr || !image_state_ptr) {
         return skip;
@@ -851,7 +851,7 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
                                                  const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
 
-    auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -883,7 +883,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto image_state_ptr = Get<vvl::Image>(image);
     if (!cb_state_ptr || !image_state_ptr) {
         return skip;
@@ -981,7 +981,7 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
     StateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
                                                          record_obj);
 
-    auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -1006,7 +1006,7 @@ static std::string string_VkRect2D(VkRect2D rect) {
     return ss.str();
 }
 
-bool CoreChecks::ValidateClearAttachmentExtent(const CMD_BUFFER_STATE &cb_state, const VkRect2D &render_area,
+bool CoreChecks::ValidateClearAttachmentExtent(const vvl::CommandBuffer &cb_state, const VkRect2D &render_area,
                                                uint32_t render_pass_layer_count, uint32_t rect_count,
                                                const VkClearRect *clear_rects, const Location &loc) const {
     bool skip = false;
@@ -1038,11 +1038,11 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                     const VkClearRect *pRects, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state_ptr) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
+    const vvl::CommandBuffer &cb_state = *cb_state_ptr;
 
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
@@ -1221,11 +1221,11 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                   const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                   const VkClearRect *pRects, const RecordObject &record_obj) {
-    auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state_ptr) {
         return;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
+    const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     if (!cb_state.activeRenderPass || (cb_state.createInfo.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         return;
     }
@@ -1251,8 +1251,9 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                 }
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                auto val_fn = [this, rectCount, clear_rect_copy, record_obj](
-                                  const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb, const vvl::Framebuffer *) {
+                auto val_fn = [this, rectCount, clear_rect_copy, record_obj](const vvl::CommandBuffer &secondary,
+                                                                             const vvl::CommandBuffer *prim_cb,
+                                                                             const vvl::Framebuffer *) {
                     assert(rectCount == clear_rect_copy->size());
                     bool skip = false;
                     skip = ValidateClearAttachmentExtent(
@@ -1286,8 +1287,9 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                 }
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                auto val_fn = [this, rectCount, clear_rect_copy, record_obj](
-                                  const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb, const vvl::Framebuffer *fb) {
+                auto val_fn = [this, rectCount, clear_rect_copy, record_obj](const vvl::CommandBuffer &secondary,
+                                                                             const vvl::CommandBuffer *prim_cb,
+                                                                             const vvl::Framebuffer *fb) {
                     assert(rectCount == clear_rect_copy->size());
                     const auto &render_area = prim_cb->active_render_pass_begin_info.renderArea;
                     bool skip = false;
@@ -2602,7 +2604,7 @@ void CoreChecks::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_
 }
 
 // Validates the image is allowed to be protected
-bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const vvl::Image &image_state, const Location &loc,
+bool CoreChecks::ValidateProtectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
                                         const char *vuid, const char *more_message) const {
     bool skip = false;
 
@@ -2616,7 +2618,7 @@ bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const 
 }
 
 // Validates the image is allowed to be unprotected
-bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, const vvl::Image &image_state, const Location &loc,
+bool CoreChecks::ValidateUnprotectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
                                           const char *vuid, const char *more_message) const {
     bool skip = false;
 

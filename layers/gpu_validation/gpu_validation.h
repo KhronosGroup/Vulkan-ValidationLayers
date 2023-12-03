@@ -47,7 +47,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureKHR, gpuav::Accelerati
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureNV, gpuav::AccelerationStructureNV, vvl::AccelerationStructureNV)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, vvl::BufferView)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, vvl::CommandBuffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav::DescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav::ImageView, vvl::ImageView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav::Sampler, vvl::Sampler)
@@ -135,8 +135,8 @@ class Validator : public gpu_tracker::Validator {
         VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
         std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address) final;
     std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
-    std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                                                           const vvl::CommandPool* pool) final;
+    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+                                                             const vvl::CommandPool* pool) final;
     std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;
@@ -308,14 +308,14 @@ class Validator : public gpu_tracker::Validator {
     // gpu_image_layout.cpp
     // --------------------
 
-    void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
+    void TransitionAttachmentRefLayout(vvl::CommandBuffer* cb_state, const safe_VkAttachmentReference2& ref);
 
-    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const vvl::RenderPass& render_pass_state, const int);
-    void TransitionFinalSubpassLayouts(CMD_BUFFER_STATE* cb_state);
+    void TransitionSubpassLayouts(vvl::CommandBuffer* cb_state, const vvl::RenderPass& render_pass_state, const int);
+    void TransitionFinalSubpassLayouts(vvl::CommandBuffer* cb_state);
 
-    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const vvl::RenderPass& render_pass_state);
+    void TransitionBeginRenderPassLayouts(vvl::CommandBuffer* cb_state, const vvl::RenderPass& render_pass_state);
 
-    bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& image_loc,
+    bool UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer* cb_state, const Location& image_loc,
                                            const ImageBarrier& img_barrier, const CommandBufferImageLayoutMap& current_map,
                                            CommandBufferImageLayoutMap& layout_updates) const;
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -406,30 +406,31 @@ class Validator : public gpu_tracker::Validator {
     void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                           const RecordObject&) override;
 
-    void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE& cb_state);
-    void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, const ImageBarrier& mem_barrier);
-    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
-    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
+    void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
+    void RecordTransitionImageLayout(vvl::CommandBuffer* cb_state, const ImageBarrier& mem_barrier);
+    void TransitionImageLayouts(vvl::CommandBuffer* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
+    void TransitionImageLayouts(vvl::CommandBuffer* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
                                 VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
 
-    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, const Location& image_loc,
+    bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const override;
-    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, const Location& image_loc,
+    bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                   const char* vuid, const char* more_message = "") const override;
-    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
+    bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                  const char* vuid, const char* more_message = "") const override;
-    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
+    bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const override;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const vvl::ImageView& image_view_state, VkImageLayout explicit_layout,
-                           const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const override;
+    bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
+                           bool* error) const override;
 
   private:
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
     VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
 
     template <typename RangeFactory>
-    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
+    bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
                                 VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& loc,
                                 const char* mismatch_layout_vuid, bool* error) const;
 
@@ -460,9 +461,9 @@ struct RestorablePipelineState {
     std::vector<uint8_t> push_constants_data;
     PushConstantRangesId push_constants_ranges;
 
-    RestorablePipelineState(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
+    RestorablePipelineState(vvl::CommandBuffer* cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
 
-    void Create(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
+    void Create(vvl::CommandBuffer* cb_state, VkPipelineBindPoint bind_point);
     void Restore(VkCommandBuffer command_buffer) const;
 };
 

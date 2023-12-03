@@ -34,7 +34,7 @@
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, vvl::Image)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, vvl::ImageView)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, vvl::CommandBuffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, vvl::Swapchain)
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
@@ -96,8 +96,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred);
     QueueBatchContext::BatchSet GetQueueLastBatchSnapshot() { return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred); };
 
-    std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                           const vvl::CommandPool *cmd_pool) override;
+    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                             const vvl::CommandPool *cmd_pool) override;
     std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                          VkSwapchainKHR swapchain) final;
     std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,

@@ -42,7 +42,7 @@ void CommandPool::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
     for (uint32_t i = 0; i < count; i++) {
         auto iter = commandBuffers.find(command_buffers[i]);
         if (iter != commandBuffers.end()) {
-            dev_data->Destroy<CMD_BUFFER_STATE>(iter->first);
+            dev_data->Destroy<CommandBuffer>(iter->first);
             commandBuffers.erase(iter);
         }
     }
@@ -57,22 +57,20 @@ void CommandPool::Reset() {
 
 void CommandPool::Destroy() {
     for (auto &entry : commandBuffers) {
-        dev_data->Destroy<CMD_BUFFER_STATE>(entry.first);
+        dev_data->Destroy<CommandBuffer>(entry.first);
     }
     commandBuffers.clear();
     BASE_NODE::Destroy();
 }
 
-}  // namespace vvl
-
-void CMD_BUFFER_STATE::SetActiveSubpass(uint32_t subpass) {
+void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
     active_subpass_ = subpass;
     // Always reset stored rasterization samples count
     active_subpass_sample_count_ = std::nullopt;
 }
 
-CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                   const vvl::CommandPool *pool)
+CommandBuffer::CommandBuffer(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                             const vvl::CommandPool *pool)
     : REFCOUNTED_NODE(cb, kVulkanObjectTypeCommandBuffer),
       createInfo(*pCreateInfo),
       command_pool(pool),
@@ -83,27 +81,27 @@ CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer 
 }
 
 // Get the image viewstate for a given framebuffer attachment
-vvl::ImageView *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) {
+vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) {
     assert(active_attachments && index != VK_ATTACHMENT_UNUSED && (index < active_attachments->size()));
     return active_attachments->at(index);
 }
 
 // Get the image viewstate for a given framebuffer attachment
-const vvl::ImageView *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) const {
+const vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) const {
     if (!active_attachments || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments->size())) {
         return nullptr;
     }
     return active_attachments->at(index);
 }
 
-void CMD_BUFFER_STATE::AddChild(std::shared_ptr<BASE_NODE> &child_node) {
+void CommandBuffer::AddChild(std::shared_ptr<BASE_NODE> &child_node) {
     assert(child_node);
     if (child_node->AddParent(this)) {
         object_bindings.insert(child_node);
     }
 }
 
-void CMD_BUFFER_STATE::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
+void CommandBuffer::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
     assert(child_node);
     child_node->RemoveParent(this);
     object_bindings.erase(child_node);
@@ -111,7 +109,7 @@ void CMD_BUFFER_STATE::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
 
 // Reset the command buffer state
 // Maintain the createInfo and set state to CB_NEW, but clear all other state
-void CMD_BUFFER_STATE::ResetCBState() {
+void CommandBuffer::ResetCBState() {
     // Remove object bindings
     for (const auto &obj : object_bindings) {
         obj->RemoveParent(this);
@@ -203,14 +201,14 @@ void CMD_BUFFER_STATE::ResetCBState() {
     ResetCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
 }
 
-void CMD_BUFFER_STATE::Reset() {
+void CommandBuffer::Reset() {
     ResetCBState();
     // Remove reverse command buffer links.
     Invalidate(true);
 }
 
 // Track which resources are in-flight by atomically incrementing their "in_use" count
-void CMD_BUFFER_STATE::IncrementResources() {
+void CommandBuffer::IncrementResources() {
     submitCount++;
 
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
@@ -229,7 +227,7 @@ void CMD_BUFFER_STATE::IncrementResources() {
 // vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
 //
 // Part of this assumes apps at draw/dispath/traceRays/etc time will have it properly compatabile or else other VU will be triggered
-void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state) {
+void CommandBuffer::ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state) {
     if (pipeline_layout_state == nullptr) {
         return;
     }
@@ -247,7 +245,7 @@ void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const vvl::PipelineLa
     push_constant_data.resize(size_needed, 0);
 }
 
-void CMD_BUFFER_STATE::Destroy() {
+void CommandBuffer::Destroy() {
     // Remove the cb debug labels
     EraseCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
     {
@@ -257,7 +255,7 @@ void CMD_BUFFER_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
+void CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
     {
         auto guard = WriteLock();
         assert(!invalid_nodes.empty());
@@ -271,7 +269,7 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
         for (auto &obj : invalid_nodes) {
             // Only record a broken binding if one of the nodes in the invalid chain is still
             // being tracked by the command buffer. This is to try to avoid race conditions
-            // caused by separate CMD_BUFFER_STATE and BASE_NODE::parent_nodes locking.
+            // caused by separate CommandBuffer and BASE_NODE::parent_nodes locking.
             if (object_bindings.erase(obj)) {
                 obj->RemoveParent(this);
                 found_invalid = true;
@@ -279,7 +277,7 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
             switch (obj->Type()) {
                 case kVulkanObjectTypeCommandBuffer:
                     if (unlink) {
-                        linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.get()));
+                        linkedCommandBuffers.erase(static_cast<CommandBuffer *>(obj.get()));
                     }
                     break;
                 case kVulkanObjectTypeImage:
@@ -303,10 +301,10 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
     BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-const CommandBufferImageLayoutMap &CMD_BUFFER_STATE::GetImageSubresourceLayoutMap() const { return image_layout_map; }
+const CommandBufferImageLayoutMap &CommandBuffer::GetImageSubresourceLayoutMap() const { return image_layout_map; }
 
 // The const variant only need the image as it is the key for the map
-const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const vvl::Image &image_state) const {
+const ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(const vvl::Image &image_state) const {
     auto it = image_layout_map.find(&image_state);
     if (it == image_layout_map.cend()) {
         return nullptr;
@@ -315,7 +313,7 @@ const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
-ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const vvl::Image &image_state) {
+ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(const vvl::Image &image_state) {
     auto &layout_map = image_layout_map[&image_state];
     if (!layout_map) {
         // Make sure we don't create a nullptr keyed entry for a zombie Image
@@ -352,10 +350,10 @@ static bool SetQueryState(const QueryObject &object, QueryState value, QueryMap 
     return false;
 }
 
-void CMD_BUFFER_STATE::BeginQuery(const QueryObject &query_obj) {
+void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
     activeQueries.insert(query_obj);
     startedQueries.insert(query_obj);
-    queryUpdates.emplace_back([query_obj](CMD_BUFFER_STATE &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
+    queryUpdates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
         SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
         return false;
@@ -363,16 +361,16 @@ void CMD_BUFFER_STATE::BeginQuery(const QueryObject &query_obj) {
     updatedQueries.insert(query_obj);
 }
 
-void CMD_BUFFER_STATE::EndQuery(const QueryObject &query_obj) {
+void CommandBuffer::EndQuery(const QueryObject &query_obj) {
     activeQueries.erase(query_obj);
-    queryUpdates.emplace_back([query_obj](CMD_BUFFER_STATE &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
+    queryUpdates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
     updatedQueries.insert(query_obj);
 }
 
-bool CMD_BUFFER_STATE::UpdatesQuery(const QueryObject &query_obj) const {
+bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     // Clear out the perf_pass from the caller because it isn't known when the command buffer is recorded.
     auto key = query_obj;
     key.perf_pass = 0;
@@ -394,34 +392,34 @@ static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint3
     return false;
 }
 
-void CMD_BUFFER_STATE::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         activeQueries.erase(query_obj);
         updatedQueries.insert(query_obj);
     }
-    queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+    queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
                                                                   QueryMap *localQueryToStateMap) {
         return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_ENDED, localQueryToStateMap);
     });
 }
 
-void CMD_BUFFER_STATE::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         resetQueries.insert(query_obj);
         updatedQueries.insert(query_obj);
     }
 
-    queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+    queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
                                                                   QueryMap *localQueryToStateMap) {
         return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_RESET, localQueryToStateMap);
     });
 }
 
-void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
+void CommandBuffer::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
@@ -463,7 +461,7 @@ void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2
     }
 }
 
-void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
+void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
     auto &attachments = *(active_attachments.get());
     const bool imageless = (activeFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
@@ -482,8 +480,7 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
     }
 }
 
-void CMD_BUFFER_STATE::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                       const VkSubpassContents contents) {
+void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
     RecordCmd(command);
     activeFramebuffer = dev_data->Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data->Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
@@ -526,7 +523,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(Func command, const VkRenderPassBeginInfo
     }
 }
 
-void CMD_BUFFER_STATE::NextSubpass(Func command, VkSubpassContents contents) {
+void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     RecordCmd(command);
     SetActiveSubpass(GetActiveSubpass() + 1);
     activeSubpassContents = contents;
@@ -548,7 +545,7 @@ void CMD_BUFFER_STATE::NextSubpass(Func command, VkSubpassContents contents) {
     }
 }
 
-void CMD_BUFFER_STATE::EndRenderPass(Func command) {
+void CommandBuffer::EndRenderPass(Func command) {
     RecordCmd(command);
     activeRenderPass = nullptr;
     active_attachments = nullptr;
@@ -558,7 +555,7 @@ void CMD_BUFFER_STATE::EndRenderPass(Func command) {
     activeFramebuffer = VK_NULL_HANDLE;
 }
 
-void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
+void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(command);
     activeRenderPass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
 
@@ -634,13 +631,13 @@ void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRend
     }
 }
 
-void CMD_BUFFER_STATE::EndRendering(Func command) {
+void CommandBuffer::EndRendering(Func command) {
     RecordCmd(command);
     activeRenderPass = nullptr;
     active_color_attachments_index.clear();
 }
 
-void CMD_BUFFER_STATE::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {
+void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {
     RecordCmd(Func::vkCmdBeginVideoCodingKHR);
     bound_video_session = dev_data->Get<VIDEO_SESSION_STATE>(pBeginInfo->videoSession);
     bound_video_session_parameters = dev_data->Get<VIDEO_SESSION_PARAMETERS_STATE>(pBeginInfo->videoSessionParameters);
@@ -712,14 +709,14 @@ void CMD_BUFFER_STATE::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginI
     }
 }
 
-void CMD_BUFFER_STATE::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
+void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
     RecordCmd(Func::vkCmdEndVideoCodingKHR);
     bound_video_session = nullptr;
     bound_video_session_parameters = nullptr;
     bound_video_picture_resources.clear();
 }
 
-void CMD_BUFFER_STATE::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo) {
+void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo) {
     RecordCmd(Func::vkCmdControlVideoCodingKHR);
 
     if (pControlInfo && bound_video_session) {
@@ -756,7 +753,7 @@ void CMD_BUFFER_STATE::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pCo
     }
 }
 
-void CMD_BUFFER_STATE::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
+void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
     RecordCmd(Func::vkCmdDecodeVideoKHR);
 
     if (bound_video_session && pDecodeInfo) {
@@ -834,7 +831,7 @@ void CMD_BUFFER_STATE::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
     }
 }
 
-void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
+void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     if (CbState::Recorded == state || CbState::InvalidComplete == state) {
         Reset();
     }
@@ -904,16 +901,16 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     updatedQueries.clear();
 }
 
-void CMD_BUFFER_STATE::End(VkResult result) {
+void CommandBuffer::End(VkResult result) {
     if (VK_SUCCESS == result) {
         state = CbState::Recorded;
     }
 }
 
-void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
+void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
     RecordCmd(Func::vkCmdExecuteCommands);
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
-        auto sub_cb_state = dev_data->GetWrite<CMD_BUFFER_STATE>(sub_command_buffer);
+        auto sub_cb_state = dev_data->GetWrite<CommandBuffer>(sub_command_buffer);
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -943,11 +940,11 @@ void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondar
         // Add a query update that runs all the query updates that happen in the sub command buffer.
         // This avoids locking ambiguity because primary command buffers are locked when these
         // callbacks run, but secondary command buffers are not.
-        queryUpdates.emplace_back([sub_command_buffer](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+        queryUpdates.emplace_back([sub_command_buffer](CommandBuffer &cb_state_arg, bool do_validate,
                                                        VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
                                                        QueryMap *localQueryToStateMap) {
             bool skip = false;
-            auto sub_cb_state_arg = cb_state_arg.dev_data->GetWrite<CMD_BUFFER_STATE>(sub_command_buffer);
+            auto sub_cb_state_arg = cb_state_arg.dev_data->GetWrite<CommandBuffer>(sub_command_buffer);
             for (auto &function : sub_cb_state_arg->queryUpdates) {
                 skip |= function(*sub_cb_state_arg, do_validate, firstPerfQueryPool, perfQueryPass, localQueryToStateMap);
             }
@@ -987,9 +984,9 @@ void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondar
     }
 }
 
-void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
-                                              uint32_t set, uint32_t descriptorWriteCount,
-                                              const VkWriteDescriptorSet *pDescriptorWrites) {
+void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
+                                           uint32_t set, uint32_t descriptorWriteCount,
+                                           const VkWriteDescriptorSet *pDescriptorWrites) {
     // Short circuit invalid updates
     if ((set >= pipeline_layout.set_layouts.size()) || !pipeline_layout.set_layouts[set] ||
         !pipeline_layout.set_layouts[set]->IsPushDescriptor()) {
@@ -1014,25 +1011,25 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
-void CMD_BUFFER_STATE::UpdateDrawCmd(Func command) {
+void CommandBuffer::UpdateDrawCmd(Func command) {
     has_draw_cmd = true;
     UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 // Generic function to handle state update for all CmdDispatch* type functions
-void CMD_BUFFER_STATE::UpdateDispatchCmd(Func command) {
+void CommandBuffer::UpdateDispatchCmd(Func command) {
     has_dispatch_cmd = true;
     UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 // Generic function to handle state update for all CmdTraceRay* type functions
-void CMD_BUFFER_STATE::UpdateTraceRayCmd(Func command) {
+void CommandBuffer::UpdateTraceRayCmd(Func command) {
     has_trace_rays_cmd = true;
     UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 }
 
 // Generic function to handle state update for all Provoking functions calls (draw/dispatch/traceray/etc)
-void CMD_BUFFER_STATE::UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point) {
+void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point) {
     RecordCmd(command);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
@@ -1113,11 +1110,11 @@ static bool PushDescriptorCleanup(LAST_BOUND_STATE &last_bound, uint32_t set_idx
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules.
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
-void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                     const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
-                                                     uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
-                                                     std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
-                                                     uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
+                                                  const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
+                                                  uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                                  std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
+                                                  uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     assert((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
     uint32_t required_size = first_set + set_count;
@@ -1197,10 +1194,10 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     }
 }
 
-void CMD_BUFFER_STATE::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
-                                                        const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
-                                                        uint32_t set_count, const uint32_t *buffer_indicies,
-                                                        const VkDeviceSize *buffer_offsets) {
+void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
+                                                     const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
+                                                     uint32_t set_count, const uint32_t *buffer_indicies,
+                                                     const VkDeviceSize *buffer_offsets) {
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout.set_compat_ids.size());
@@ -1255,8 +1252,8 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipe
 }
 
 // Set image layout for given VkImageSubresourceRange struct
-void CMD_BUFFER_STATE::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range,
-                                      VkImageLayout layout, VkImageLayout expected_layout) {
+void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range,
+                                   VkImageLayout layout, VkImageLayout expected_layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     if (subresource_map && subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
         image_layout_change_count++;  // Change the version of this data to force revalidation
@@ -1264,7 +1261,7 @@ void CMD_BUFFER_STATE::SetImageLayout(const vvl::Image &image_state, const VkIma
 }
 
 // Set the initial image layout for all slices of an image view
-void CMD_BUFFER_STATE::SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
+void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
     if (dev_data->disabled[image_layout_validation]) {
         return;
     }
@@ -1276,27 +1273,27 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const vvl::ImageView &view_stat
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
-void CMD_BUFFER_STATE::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
-                                             VkImageLayout layout) {
+void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
+                                          VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     if (subresource_map) {
         subresource_map->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
     }
 }
 
-void CMD_BUFFER_STATE::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
+void CommandBuffer::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
     auto image_state = dev_data->Get<vvl::Image>(image);
     if (!image_state) return;
     SetImageInitialLayout(*image_state, range, layout);
 }
 
-void CMD_BUFFER_STATE::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &layers,
-                                             VkImageLayout layout) {
+void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &layers,
+                                          VkImageLayout layout) {
     SetImageInitialLayout(image_state, RangeFromLayers(layers), layout);
 }
 
 // Set image layout for all slices of an image view
-void CMD_BUFFER_STATE::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
+void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     const vvl::Image *image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
@@ -1320,21 +1317,21 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const vvl::ImageView &view_state, VkIm
     }
 }
 
-void CMD_BUFFER_STATE::RecordCmd(Func command) { command_count++; }
+void CommandBuffer::RecordCmd(Func command) { command_count++; }
 
-void CMD_BUFFER_STATE::RecordStateCmd(Func command, CBDynamicState state) {
+void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     CBDynamicFlags state_bits;
     state_bits.set(state);
     RecordStateCmd(command, state_bits);
 }
 
-void CMD_BUFFER_STATE::RecordStateCmd(Func command, CBDynamicFlags const &state_bits) {
+void CommandBuffer::RecordStateCmd(Func command, CBDynamicFlags const &state_bits) {
     RecordCmd(command);
     dynamic_state_status.cb |= state_bits;
     dynamic_state_status.pipeline |= state_bits;
 }
 
-void CMD_BUFFER_STATE::RecordTransferCmd(Func command, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
+void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
     RecordCmd(command);
     if (buf1) {
         AddChild(buf1);
@@ -1354,7 +1351,7 @@ static bool SetEventSignalInfo(VkEvent event, VkPipelineStageFlags2 src_stage_ma
     return false;
 }
 
-void CMD_BUFFER_STATE::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
+void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(command);
     if (!dev_data->disabled[command_buffer_state]) {
         auto event_state = dev_data->Get<vvl::Event>(event);
@@ -1367,11 +1364,11 @@ void CMD_BUFFER_STATE::RecordSetEvent(Func command, VkEvent event, VkPipelineSta
         writeEventsBeforeWait.push_back(event);
     }
     eventUpdates.emplace_back(
-        [event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue,
+        [event, stageMask](CommandBuffer &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue,
                            const Location &loc) { return SetEventSignalInfo(event, stageMask, local_event_signal_info); });
 }
 
-void CMD_BUFFER_STATE::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
+void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(command);
     if (!dev_data->disabled[command_buffer_state]) {
         auto event_state = dev_data->Get<vvl::Event>(event);
@@ -1385,13 +1382,13 @@ void CMD_BUFFER_STATE::RecordResetEvent(Func command, VkEvent event, VkPipelineS
     }
 
     eventUpdates.emplace_back(
-        [event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue, const Location &loc) {
+        [event](CommandBuffer &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue, const Location &loc) {
             return SetEventSignalInfo(event, VK_PIPELINE_STAGE_2_NONE, local_event_signal_info);
         });
 }
 
-void CMD_BUFFER_STATE::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                        VkPipelineStageFlags2KHR src_stage_mask) {
+void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
+                                     VkPipelineStageFlags2KHR src_stage_mask) {
     RecordCmd(command);
     for (uint32_t i = 0; i < eventCount; ++i) {
         if (!dev_data->disabled[command_buffer_state]) {
@@ -1405,9 +1402,9 @@ void CMD_BUFFER_STATE::RecordWaitEvents(Func command, uint32_t eventCount, const
     }
 }
 
-void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                   uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     if (dev_data->disabled[command_buffer_state]) return;
 
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
@@ -1424,7 +1421,7 @@ void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemor
     }
 }
 
-void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
+void CommandBuffer::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
     if (dev_data->disabled[command_buffer_state]) return;
 
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
@@ -1441,8 +1438,8 @@ void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
     }
 }
 
-void CMD_BUFFER_STATE::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
-                                            uint32_t slot) {
+void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
+                                         uint32_t slot) {
     RecordCmd(command);
     if (dev_data->disabled[query_validation]) return;
 
@@ -1454,7 +1451,7 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(Func command, VkPipelineStageFlags2K
     EndQuery(query_obj);
 }
 
-void CMD_BUFFER_STATE::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc) {
+void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc) {
     // Update QUERY_POOL_STATE with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
@@ -1493,7 +1490,7 @@ void CMD_BUFFER_STATE::Submit(VkQueue queue, uint32_t perf_submit_pass, const Lo
     }
 }
 
-void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
+void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
     // First perform decrement on general case bound objects
     for (auto event : writeEventsBeforeWait) {
         auto event_state = dev_data->Get<vvl::Event>(event);
@@ -1518,7 +1515,7 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<boo
     }
 }
 
-void CMD_BUFFER_STATE::UnbindResources() {
+void CommandBuffer::UnbindResources() {
     // Vertex and index buffers
     index_buffer_binding.reset();
     vertex_buffer_used = false;
@@ -1537,7 +1534,7 @@ void CMD_BUFFER_STATE::UnbindResources() {
     lastBound[BindPoint_Graphics].Reset();
 }
 
-LogObjectList CMD_BUFFER_STATE::GetObjectList(VkShaderStageFlagBits stage) const {
+LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
     LogObjectList objlist(handle_);
     const auto lv_bind_point = ConvertToLvlBindPoint(stage);
     const auto &last_bound = lastBound[lv_bind_point];
@@ -1551,7 +1548,7 @@ LogObjectList CMD_BUFFER_STATE::GetObjectList(VkShaderStageFlagBits stage) const
     return objlist;
 }
 
-LogObjectList CMD_BUFFER_STATE::GetObjectList(VkPipelineBindPoint pipeline_bind_point) const {
+LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_point) const {
     LogObjectList objlist(handle_);
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     const auto &last_bound = lastBound[lv_bind_point];
@@ -1590,13 +1587,13 @@ LogObjectList CMD_BUFFER_STATE::GetObjectList(VkPipelineBindPoint pipeline_bind_
     return objlist;
 }
 
-PIPELINE_STATE *CMD_BUFFER_STATE::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
+PIPELINE_STATE *CommandBuffer::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     return lastBound[lv_bind_point].pipeline_state;
 }
 
-void CMD_BUFFER_STATE::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
-                                                          const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const {
+void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
+                                                       const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     const auto &last_bound = lastBound[lv_bind_point];
     if (!last_bound.IsUsing()) {
@@ -1605,3 +1602,5 @@ void CMD_BUFFER_STATE::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pi
     *rtn_pipe = last_bound.pipeline_state;
     *rtn_sets = &(last_bound.per_set);
 }
+
+}  // namespace vvl

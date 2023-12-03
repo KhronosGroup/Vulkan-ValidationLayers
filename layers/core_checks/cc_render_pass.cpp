@@ -399,7 +399,7 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                             const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto &cb_state = *GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     const auto &rp_state = *Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     const auto &fb_state = *Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     const Location rp_begin_loc = error_obj.location.dot(Field::pRenderPassBegin);
@@ -539,7 +539,7 @@ void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, 
     if (!pRenderPassBegin) {
         return;
     }
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
@@ -566,7 +566,7 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 
 bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                           const ErrorObject &error_obj) const {
-    const auto &cb_state = *GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     const bool use_rp2 = error_obj.location.function != Func::vkCmdEndRenderPass;
     const char *vuid;
@@ -793,7 +793,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer,
 }
 
 void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (cb_state) {
         TransitionFinalSubpassLayouts(cb_state.get());
     }
@@ -3112,7 +3112,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                   const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -3827,7 +3827,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
-bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
+bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool inside = false;
     if (cb_state.activeRenderPass) {
         inside = LogError(vuid, cb_state.commandBuffer(), loc, "It is invalid to issue this call inside an active %s.",
@@ -3838,7 +3838,7 @@ bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Locati
 
 // Flags validation error if the associated call is made outside a render pass. The apiName
 // routine should ONLY be called inside a render pass.
-bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
+bool CoreChecks::OutsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool outside = false;
     if (((cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) && (!cb_state.activeRenderPass)) ||
         ((cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (!cb_state.activeRenderPass) &&
@@ -3849,7 +3849,7 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Locat
 }
 
 bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -3922,7 +3922,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
-bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
+bool CoreChecks::ValidateCmdSubpassState(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     if (!cb_state.activeRenderPass || cb_state.activeRenderPass->UsesDynamicRendering()) return false;
     bool skip = false;
     if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY &&
@@ -3937,7 +3937,7 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const
 }
 
 bool CoreChecks::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = error_obj.location.function != Func::vkCmdNextSubpass;
@@ -3974,7 +3974,7 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, c
 }
 
 void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     TransitionSubpassLayouts(cb_state.get(), *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
 }
 
@@ -4785,8 +4785,8 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
     return skip;
 }
 
-bool CoreChecks::ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE &cb_state,
-                                                    VkCommandBuffer secondaryBuffer, const CMD_BUFFER_STATE &sub_cb_state,
+bool CoreChecks::ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffer, const vvl::CommandBuffer &cb_state,
+                                                    VkCommandBuffer secondaryBuffer, const vvl::CommandBuffer &sub_cb_state,
                                                     const Location &loc) const {
     bool skip = false;
     if (!sub_cb_state.beginInfo.pInheritanceInfo) {

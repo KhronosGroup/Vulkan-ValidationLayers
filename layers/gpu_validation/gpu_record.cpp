@@ -386,7 +386,7 @@ void gpuav::Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBu
     if (!pRenderPassBegin) {
         return;
     }
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
@@ -416,7 +416,7 @@ void gpuav::Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandB
 }
 
 void gpuav::Validator::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (cb_state) {
         TransitionFinalSubpassLayouts(cb_state.get());
     }
@@ -440,7 +440,7 @@ void gpuav::Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBu
 }
 
 void gpuav::Validator::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     TransitionSubpassLayouts(cb_state.get(), *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
 }
 
@@ -528,7 +528,7 @@ void gpuav::Validator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitC
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
+            auto cb_state = GetWrite<vvl::CommandBuffer>(submit->pCommandBuffers[i]);
             if (cb_state) {
                 for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(*secondary_cmd_buffer);
@@ -554,7 +554,7 @@ void gpuav::Validator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
+            auto cb_state = GetWrite<vvl::CommandBuffer>(submit->pCommandBufferInfos[i].commandBuffer);
             if (cb_state) {
                 for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(*secondary_cmd_buffer);

@@ -435,13 +435,13 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                               VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto buffer_state = Get<vvl::Buffer>(dstBuffer);
     if (!cb_state_ptr || !buffer_state) {
         return skip;
     }
     const LogObjectList objlist(commandBuffer, dstBuffer);
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
+    const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     const Location buffer_loc = error_obj.location.dot(Field::dstBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, buffer_loc, "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -473,7 +473,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 }
 
 // Validates the buffer is allowed to be protected
-bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state,
+bool CoreChecks::ValidateProtectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
                                          const Location &buffer_loc, const char *vuid, const char *more_message) const {
     bool skip = false;
 
@@ -487,7 +487,7 @@ bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const
 }
 
 // Validates the buffer is allowed to be unprotected
-bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const vvl::Buffer &buffer_state,
+bool CoreChecks::ValidateUnprotectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
                                            const Location &buffer_loc, const char *vuid, const char *more_message) const {
     bool skip = false;
 

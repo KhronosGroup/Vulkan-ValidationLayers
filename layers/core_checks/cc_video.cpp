@@ -23,7 +23,7 @@
 
 // Flags validation error if the associated call is made inside a video coding block.
 // The apiName routine should ONLY be called outside a video coding block.
-bool CoreChecks::InsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
+bool CoreChecks::InsideVideoCodingScope(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool inside = false;
     if (cb_state.bound_video_session) {
         inside = LogError(vuid, cb_state.commandBuffer(), loc, "It is invalid to issue this call inside a video coding block.");
@@ -33,7 +33,7 @@ bool CoreChecks::InsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const 
 
 // Flags validation error if the associated call is made outside a video coding block.
 // The apiName routine should ONLY be called inside a video coding block.
-bool CoreChecks::OutsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
+bool CoreChecks::OutsideVideoCodingScope(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool outside = false;
     if (!cb_state.bound_video_session) {
         outside = LogError(vuid, cb_state.commandBuffer(), loc, "This call must be issued inside a video coding block.");
@@ -408,7 +408,7 @@ bool CoreChecks::ValidateDecodeH265ParametersAddInfo(const VkVideoDecodeH265Sess
     return skip;
 }
 
-bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, const VkVideoDecodeInfoKHR &decode_info) const {
+bool CoreChecks::ValidateVideoDecodeInfoH264(const vvl::CommandBuffer &cb_state, const VkVideoDecodeInfoKHR &decode_info) const {
     bool skip = false;
 
     const char *pnext_msg = "%s(): missing %s from the pNext chain of %s";
@@ -530,7 +530,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
     return skip;
 }
 
-bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, const VkVideoDecodeInfoKHR &decode_info) const {
+bool CoreChecks::ValidateVideoDecodeInfoH265(const vvl::CommandBuffer &cb_state, const VkVideoDecodeInfoKHR &decode_info) const {
     bool skip = false;
 
     const char *pnext_msg = "%s(): missing %s from the pNext chain of %s";
@@ -609,7 +609,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
     return skip;
 }
 
-bool CoreChecks::ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE &cb_state,
+bool CoreChecks::ValidateActiveReferencePictureCount(const vvl::CommandBuffer &cb_state,
                                                      const VkVideoDecodeInfoKHR &decode_info) const {
     bool skip = false;
 
@@ -644,7 +644,8 @@ bool CoreChecks::ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE &cb_
     return skip;
 }
 
-bool CoreChecks::ValidateReferencePictureUseCount(const CMD_BUFFER_STATE &cb_state, const VkVideoDecodeInfoKHR &decode_info) const {
+bool CoreChecks::ValidateReferencePictureUseCount(const vvl::CommandBuffer &cb_state,
+                                                  const VkVideoDecodeInfoKHR &decode_info) const {
     bool skip = false;
 
     const auto &vs_state = *cb_state.bound_video_session;
@@ -1210,7 +1211,7 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device
 bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR *pBeginInfo,
                                                        const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
 
     if (cb_state->activeQueries.size() > 0) {
@@ -1418,7 +1419,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR *pEndCodingInfo,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
 
     if (cb_state->activeQueries.size() > 0) {
@@ -1434,7 +1435,7 @@ bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer command
                                                          const VkVideoCodingControlInfoKHR *pCodingControlInfo,
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -1444,7 +1445,7 @@ bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer command
 bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
 
     const auto vs_state = cb_state->bound_video_session.get();

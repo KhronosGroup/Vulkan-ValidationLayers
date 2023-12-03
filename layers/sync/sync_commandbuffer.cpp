@@ -1111,7 +1111,7 @@ std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &haz
     return out;
 }
 
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state)
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state)
     : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image)
@@ -1133,15 +1133,15 @@ std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
 
 syncval_state::CommandBuffer::CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                                             const vvl::CommandPool *pool)
-    : CMD_BUFFER_STATE(dev, cb, pCreateInfo, pool), access_context(*dev, this) {}
+    : vvl::CommandBuffer(dev, cb, pCreateInfo, pool), access_context(*dev, this) {}
 
 void syncval_state::CommandBuffer::Destroy() {
     access_context.Destroy();  // must be first to clean up self references correctly.
-    CMD_BUFFER_STATE::Destroy();
+    vvl::CommandBuffer::Destroy();
 }
 
 void syncval_state::CommandBuffer::Reset() {
-    CMD_BUFFER_STATE::Reset();
+    vvl::CommandBuffer::Reset();
     access_context.Reset();
 }
 
@@ -1154,6 +1154,6 @@ void syncval_state::CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &i
             default:
                 break;
         }
-        CMD_BUFFER_STATE::NotifyInvalidate(invalid_nodes, unlink);
+        vvl::CommandBuffer::NotifyInvalidate(invalid_nodes, unlink);
     }
 }

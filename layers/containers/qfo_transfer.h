@@ -148,7 +148,7 @@ using GlobalQFOTransferBarrierMap =
 // Submit queue uses the Scoreboard to track all release/acquire operations in a batch.
 template <typename TransferBarrier>
 using QFOTransferCBScoreboard =
-    vvl::unordered_map<TransferBarrier, const CMD_BUFFER_STATE *, QFOTransferBarrierHash<TransferBarrier>>;
+    vvl::unordered_map<TransferBarrier, const vvl::CommandBuffer *, QFOTransferBarrierHash<TransferBarrier>>;
 
 template <typename TransferBarrier>
 struct QFOTransferCBScoreboards {

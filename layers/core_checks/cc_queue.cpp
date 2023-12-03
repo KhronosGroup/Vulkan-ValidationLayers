@@ -42,7 +42,7 @@ struct CommandBufferSubmitState {
 
     CommandBufferSubmitState(const CoreChecks *c, const vvl::Queue *q) : core(c), queue_state(q) {}
 
-    bool Validate(const Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t perf_pass) {
+    bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
         skip |= core->ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
         auto cmd = cb_state.commandBuffer();
@@ -62,12 +62,12 @@ struct CommandBufferSubmitState {
             skip |= function(*core, *queue_state, cb_state);
         }
         for (auto &function : cb_state.eventUpdates) {
-            skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, local_event_signal_info,
+            skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, local_event_signal_info,
                              queue_state->VkHandle(), loc);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
         for (auto &function : cb_state.queryUpdates) {
-            skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, first_perf_query_pool, perf_pass,
+            skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, first_perf_query_pool, perf_pass,
                              &local_query_to_state_map);
         }
 
@@ -112,7 +112,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         const Location submit_loc = error_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
-            auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
+            auto cb_state = GetRead<vvl::CommandBuffer>(submit.pCommandBuffers[i]);
             if (cb_state) {
                 skip |= cb_submit_state.Validate(submit_loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
 
@@ -188,7 +188,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         // Make sure command buffers are all protected or unprotected
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
             const Location cb_loc = submit_loc.dot(Field::pCommandBuffers, i);
-            auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
+            auto cb_state = GetRead<vvl::CommandBuffer>(submit.pCommandBuffers[i]);
             if (cb_state) {
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
                     const LogObjectList objlist(cb_state->commandBuffer(), queue);
@@ -255,7 +255,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
             const Location info_loc = submit_loc.dot(Struct::VkCommandBufferSubmitInfo, Field::pCommandBufferInfos, i);
-            auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBufferInfos[i].commandBuffer);
+            auto cb_state = GetRead<vvl::CommandBuffer>(submit.pCommandBufferInfos[i].commandBuffer);
             skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
 
             {
@@ -326,7 +326,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
+            auto cb_state = GetWrite<vvl::CommandBuffer>(submit->pCommandBuffers[i]);
             if (cb_state) {
                 for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(*secondary_cmd_buffer);
@@ -346,7 +346,7 @@ void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const V
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
+            auto cb_state = GetWrite<vvl::CommandBuffer>(submit->pCommandBufferInfos[i].commandBuffer);
             if (cb_state) {
                 for (auto *secondaryCmdBuffer : cb_state->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(*secondaryCmdBuffer);
@@ -371,8 +371,9 @@ void CoreChecks::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
 }
 
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
-bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE &cb_state, const VulkanTypedHandle &object, uint32_t queueFamilyIndex,
-                                       uint32_t count, const uint32_t *indices, const Location &loc) const {
+bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer &cb_state, const VulkanTypedHandle &object,
+                                       uint32_t queueFamilyIndex, uint32_t count, const uint32_t *indices,
+                                       const Location &loc) const {
     bool found = false;
     bool skip = false;
     for (uint32_t i = 0; i < count; i++) {
@@ -394,7 +395,7 @@ bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE &cb_state, const V
 
 // Validate that queueFamilyIndices of primary command buffers match this queue
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
-bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFER_STATE &cb_state, VkQueue queue) const {
+bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::CommandBuffer &cb_state, VkQueue queue) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
@@ -442,7 +443,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, const Location &loc, uint32_t current_submit_count,
+bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, const Location &loc, uint32_t current_submit_count,
                                             const char *vuid) const {
     bool skip = false;
     if (disabled[command_buffer_state]) {
@@ -480,7 +481,7 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const CMD_BUFFER_STATE &cb_state,
+bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const vvl::CommandBuffer &cb_state,
                                                       int current_submit_count) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
@@ -497,7 +498,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const
 }
 
 bool CoreChecks::ValidatePrimaryCommandBufferState(
-    const Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t current_submit_count,
+    const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t current_submit_count,
     QFOTransferCBScoreboards<QFOImageTransferBarrier> *qfo_image_scoreboards,
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards) const {
     using sync_vuid_maps::GetQueueSubmitVUID;

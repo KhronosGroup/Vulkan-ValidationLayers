@@ -62,10 +62,11 @@ class PipelineLayout;
 class Image;
 class ImageView;
 class Swapchain;
+class Swapchain;
 class CommandPool;
+class CommandBuffer;
 }  // namespace vvl
 
-class CMD_BUFFER_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
 struct SHADER_MODULE_STATE;
@@ -303,7 +304,7 @@ VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemp
 VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, vvl::Swapchain)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, vvl::DescriptorSet)
-VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, vvl::CommandBuffer)
 VALSTATETRACK_STATE_OBJECT(VkCommandPool, vvl::CommandPool)
 VALSTATETRACK_STATE_OBJECT(VkPipelineLayout, vvl::PipelineLayout)
 VALSTATETRACK_STATE_OBJECT(VkFence, vvl::Fence)
@@ -428,8 +429,8 @@ class ValidationStateTracker : public ValidationObject {
     }
 
     // GetRead() and GetWrite() return an already locked state object. Currently this is only supported by
-    // CMD_BUFFER_STATE, because it has public ReadLock() and WriteLock() methods.
-    // NOTE: Calling base class hook methods with a CMD_BUFFER_STATE lock held will lead to deadlock. Instead,
+    // vvl::CommandBuffer, because it has public ReadLock() and WriteLock() methods.
+    // NOTE: Calling base class hook methods with a vvl::CommandBuffer lock held will lead to deadlock. Instead,
     // call the base class hook method before getting/locking the command buffer state for processing in the
     // derived class method.
     template <typename State, typename Traits = typename state_object::Traits<State>,
@@ -507,13 +508,13 @@ class ValidationStateTracker : public ValidationObject {
         return result;
     }
 
-    using SetImageViewInitialLayoutCallback = std::function<void(CMD_BUFFER_STATE*, const vvl::ImageView&, VkImageLayout)>;
+    using SetImageViewInitialLayoutCallback = std::function<void(vvl::CommandBuffer*, const vvl::ImageView&, VkImageLayout)>;
     template <typename Fn>
     void SetSetImageViewInitialLayoutCallback(Fn&& fn) {
         set_image_view_initial_layout_callback.reset(new SetImageViewInitialLayoutCallback(std::forward<Fn>(fn)));
     }
 
-    void CallSetImageViewInitialLayoutCallback(CMD_BUFFER_STATE* cb_state, const vvl::ImageView& iv_state, VkImageLayout layout) {
+    void CallSetImageViewInitialLayoutCallback(vvl::CommandBuffer* cb_state, const vvl::ImageView& iv_state, VkImageLayout layout) {
         if (set_image_view_initial_layout_callback) {
             (*set_image_view_initial_layout_callback)(cb_state, iv_state, layout);
         }
@@ -699,7 +700,7 @@ class ValidationStateTracker : public ValidationObject {
                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                       const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                       const RecordObject& record_obj) override;
-    void RecordDeviceAccelerationStructureBuildInfo(CMD_BUFFER_STATE& cb_state,
+    void RecordDeviceAccelerationStructureBuildInfo(vvl::CommandBuffer& cb_state,
                                                     const VkAccelerationStructureBuildGeometryInfoKHR& info);
     void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                          const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
@@ -1004,9 +1005,9 @@ class ValidationStateTracker : public ValidationObject {
                                                const RecordObject& record_obj) override;
     void PostCallRecordReleaseProfilingLockKHR(VkDevice device, const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb,
-                                                                   const VkCommandBufferAllocateInfo* create_info,
-                                                                   const vvl::CommandPool* pool);
+    virtual std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb,
+                                                                     const VkCommandBufferAllocateInfo* create_info,
+                                                                     const vvl::CommandPool* pool);
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
                                               VkCommandBuffer* pCommandBuffer, const RecordObject& record_obj) override;
@@ -1758,23 +1759,23 @@ class ValidationStateTracker : public ValidationObject {
     }
 #endif
 
-    virtual bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                        const char* vuid, const char* more_message = "") const {
+    virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                        const Location& image_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
-    virtual bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state,
+    virtual bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                           const Location& image_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
-    virtual bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state,
+    virtual bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
                                          const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
-    virtual bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state,
+    virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
                                            const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
-    virtual bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const vvl::ImageView& image_view_state,
+    virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
                                    VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                                    bool* error) const {
         return false;
@@ -1931,7 +1932,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, vvl::Swapchain, swapchain_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, vvl::DescriptorPool, descriptor_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, vvl::DescriptorSet, descriptor_set_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, vvl::CommandBuffer, command_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, vvl::CommandPool, command_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, vvl::PipelineLayout, pipeline_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFence, vvl::Fence, fence_map_)

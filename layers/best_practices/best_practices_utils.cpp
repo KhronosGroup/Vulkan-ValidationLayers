@@ -53,15 +53,15 @@ WriteLockGuard BestPractices::WriteLock() {
     }
 }
 
-std::shared_ptr<CMD_BUFFER_STATE> BestPractices::CreateCmdBufferState(VkCommandBuffer cb,
-                                                                      const VkCommandBufferAllocateInfo* pCreateInfo,
-                                                                      const vvl::CommandPool* pool) {
-    return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<bp_state::CommandBuffer>(this, cb, pCreateInfo, pool));
+std::shared_ptr<vvl::CommandBuffer> BestPractices::CreateCmdBufferState(VkCommandBuffer cb,
+                                                                        const VkCommandBufferAllocateInfo* pCreateInfo,
+                                                                        const vvl::CommandPool* pool) {
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<bp_state::CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
 bp_state::CommandBuffer::CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                                        const vvl::CommandPool* pool)
-    : CMD_BUFFER_STATE(bp, cb, pCreateInfo, pool) {}
+    : vvl::CommandBuffer(bp, cb, pCreateInfo, pool) {}
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
     for (const auto& vendor : kVendorInfo) {
@@ -523,7 +523,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     funcs.push_back([this, command, state, usage, array_layer, mip_level](const ValidationStateTracker& vst, const vvl::Queue& qs,
-                                                                          const CMD_BUFFER_STATE& cbs) -> bool {
+                                                                          const vvl::CommandBuffer& cbs) -> bool {
         ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
         return false;
     });
@@ -602,7 +602,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
     }
 }
 
-void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const CMD_BUFFER_STATE& cbs, Func command, bp_state::Image& state,
+void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, Func command, bp_state::Image& state,
                                          IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     auto queue_family = qs.queueFamilyIndex;
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);

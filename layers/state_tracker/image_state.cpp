@@ -252,9 +252,9 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
 
 void Image::Destroy() {
     // NOTE: due to corner cases in aliased images, the layout_range_map MUST not be cleaned up here.
-    // If it is, bad local entries could be created by CMD_BUFFER_STATE::GetImageSubresourceLayoutMap()
+    // If it is, bad local entries could be created by vvl::CommandBuffer::GetImageSubresourceLayoutMap()
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
-    // entry could get put into CMD_BUFFER_STATE::aliased_image_layout_map.
+    // entry could get put into vvl::CommandBuffer::aliased_image_layout_map.
     //
     // NOTE: the fragment_encoder should not be cleaned-up in case a semaphore to an acquired image is being processed
     //       after the swapchain is waited, and the range generation needs an intact encoder.

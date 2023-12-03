@@ -117,14 +117,14 @@ std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue q
     return syncval_state::GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
 }
 
-std::shared_ptr<CMD_BUFFER_STATE> SyncValidator::CreateCmdBufferState(VkCommandBuffer cb,
-                                                                      const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                      const vvl::CommandPool *cmd_pool) {
+std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkCommandBuffer cb,
+                                                                        const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                        const vvl::CommandPool *cmd_pool) {
     auto cb_state = std::make_shared<syncval_state::CommandBuffer>(this, cb, pCreateInfo, cmd_pool);
     if (cb_state) {
         cb_state->access_context.SetSelfReference();
     }
-    return std::static_pointer_cast<CMD_BUFFER_STATE>(cb_state);
+    return std::static_pointer_cast<vvl::CommandBuffer>(cb_state);
 }
 
 std::shared_ptr<vvl::Swapchain> SyncValidator::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,

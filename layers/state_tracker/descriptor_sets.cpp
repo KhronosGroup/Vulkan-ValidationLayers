@@ -565,9 +565,8 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
 //   to be used in a draw by the given cb_state
-void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_state,
-                                                     vvl::Func command, const PIPELINE_STATE *pipe,
-                                                     const BindingVariableMap &binding_req_map) {
+void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, vvl::CommandBuffer *cb_state, vvl::Func command,
+                                         const PIPELINE_STATE *pipe, const BindingVariableMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
     if (device_data->disabled[image_layout_validation]) {
         return;
@@ -704,7 +703,7 @@ void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const Validation
     UpdateKnownValidView(is_bindless);
 }
 
-void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_state) {
+void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer *cb_state) {
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
@@ -965,7 +964,7 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
     SetDescriptorType(src_type, src_size);
 }
 
-void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_state) {
+void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer *cb_state) {
     auto active_class = DescriptorTypeToClass(active_descriptor_type_);
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {

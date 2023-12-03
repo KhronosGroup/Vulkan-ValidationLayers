@@ -74,10 +74,10 @@ std::shared_ptr<vvl::DescriptorSet> gpuav::Validator::CreateDescriptorSet(
     return std::static_pointer_cast<vvl::DescriptorSet>(std::make_shared<DescriptorSet>(set, pool, layout, variable_count, this));
 }
 
-std::shared_ptr<CMD_BUFFER_STATE> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer cb,
-                                                                         const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                         const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CommandBuffer>(this, cb, pCreateInfo, pool));
+std::shared_ptr<vvl::CommandBuffer> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer cb,
+                                                                           const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                           const vvl::CommandPool *pool) {
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
 // Perform initializations that can be done at Create Device time.
@@ -86,7 +86,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
     SetSetImageViewInitialLayoutCallback(
-        [](CMD_BUFFER_STATE *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
+        [](vvl::CommandBuffer *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 
@@ -681,7 +681,7 @@ void gpuav::AccelerationStructureBuildValidationState::Destroy(VkDevice device, 
     initialized = false;
 }
 
-void gpuav::RestorablePipelineState::Create(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
+void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer *cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point = bind_point;
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
 

@@ -742,10 +742,10 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     cb_node->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point);
 }
 
-std::shared_ptr<CMD_BUFFER_STATE> debug_printf::Validator::CreateCmdBufferState(VkCommandBuffer cb,
-                                                                                const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                                const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<debug_printf::CommandBuffer>(this, cb, pCreateInfo, pool));
+std::shared_ptr<vvl::CommandBuffer> debug_printf::Validator::CreateCmdBufferState(VkCommandBuffer cb,
+                                                                                  const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                                  const vvl::CommandPool *pool) {
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<debug_printf::CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
 debug_printf::CommandBuffer::CommandBuffer(debug_printf::Validator *dp, VkCommandBuffer cb,
@@ -756,11 +756,11 @@ debug_printf::CommandBuffer::~CommandBuffer() { Destroy(); }
 
 void debug_printf::CommandBuffer::Destroy() {
     ResetCBState();
-    CMD_BUFFER_STATE::Destroy();
+    vvl::CommandBuffer::Destroy();
 }
 
 void debug_printf::CommandBuffer::Reset() {
-    CMD_BUFFER_STATE::Reset();
+    vvl::CommandBuffer::Reset();
     ResetCBState();
 }
 

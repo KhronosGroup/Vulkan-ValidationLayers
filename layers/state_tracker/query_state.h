@@ -121,7 +121,7 @@ struct QueryObject {
           indexed(indexed_),
           end_command_index(0) {}
 
-    // This is needed because CMD_BUFFER_STATE::BeginQuery() and EndQuery() need to make a copy to update
+    // This is needed because vvl::CommandBuffer::BeginQuery() and EndQuery() need to make a copy to update
     QueryObject(const QueryObject &obj, uint32_t perf_pass_)
         : pool(obj.pool),
           slot(obj.slot),

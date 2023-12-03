@@ -113,7 +113,7 @@ struct ResourceCmdUsageRecord {
 
     ResourceCmdUsageRecord() = default;
     ResourceCmdUsageRecord(vvl::Func command_, Count seq_num_, SubcommandType sub_type_, Count sub_command_,
-                           const CMD_BUFFER_STATE *cb_state_, Count reset_count_)
+                           const vvl::CommandBuffer *cb_state_, Count reset_count_)
         : command(command_),
           seq_num(seq_num_),
           sub_command_type(sub_type_),
@@ -135,20 +135,20 @@ struct ResourceCmdUsageRecord {
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
     // from different command buffers and resets.
     // plain pointer as a shared pointer is held by the context storing this record
-    const CMD_BUFFER_STATE *cb_state = nullptr;
+    const vvl::CommandBuffer *cb_state = nullptr;
     Count reset_count;
     small_vector<NamedHandle, 1> handles;
 };
 
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     struct FormatterState {
-        FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_, const CMD_BUFFER_STATE *cb_state_)
+        FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_, const vvl::CommandBuffer *cb_state_)
             : sync_state(sync_state_), record(record_), ex_cb_state(cb_state_) {}
         const SyncValidator &sync_state;
         const ResourceUsageRecord &record;
-        const CMD_BUFFER_STATE *ex_cb_state;
+        const vvl::CommandBuffer *ex_cb_state;
     };
-    FormatterState Formatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *ex_cb_state) const {
+    FormatterState Formatter(const SyncValidator &sync_state, const vvl::CommandBuffer *ex_cb_state) const {
         return FormatterState(sync_state, *this, ex_cb_state);
     }
 
@@ -156,7 +156,7 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
 
     ResourceUsageRecord() = default;
     ResourceUsageRecord(vvl::Func command_, Count seq_num_, SubcommandType sub_type_, Count sub_command_,
-                        const CMD_BUFFER_STATE *cb_state_, Count reset_count_)
+                        const vvl::CommandBuffer *cb_state_, Count reset_count_)
         : ResourceCmdUsageRecord(command_, seq_num_, sub_type_, sub_command_, cb_state_, reset_count_) {}
 
     ResourceUsageRecord(const AlternateResourceUsage &other) : ResourceCmdUsageRecord(), alt_usage(other) {}
@@ -171,7 +171,7 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
 class CommandExecutionContext : public SyncValidationInfo {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
-    using CommandBufferSet = vvl::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>>;
+    using CommandBufferSet = vvl::unordered_set<std::shared_ptr<const vvl::CommandBuffer>>;
     CommandExecutionContext() : SyncValidationInfo(nullptr) {}
     CommandExecutionContext(const SyncValidator *sync_validator) : SyncValidationInfo(sync_validator) {}
     virtual ~CommandExecutionContext() = default;
@@ -240,7 +240,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     };
 
     CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr);
-    CommandBufferAccessContext(SyncValidator &sync_validator, CMD_BUFFER_STATE *cb_state)
+    CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state)
         : CommandBufferAccessContext(&sync_validator) {
         cb_state_ = cb_state;
     }
@@ -332,9 +332,9 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         }
     }
 
-    std::shared_ptr<const CMD_BUFFER_STATE> GetCBStateShared() const { return cb_state_->shared_from_this(); }
+    std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }
 
-    const CMD_BUFFER_STATE &GetCBState() const {
+    const vvl::CommandBuffer &GetCBState() const {
         assert(cb_state_);
         return *cb_state_;
     }
@@ -361,7 +361,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
     // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
-    CMD_BUFFER_STATE *cb_state_;
+    vvl::CommandBuffer *cb_state_;
 
     std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
@@ -385,7 +385,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 };
 
 namespace syncval_state {
-class CommandBuffer : public CMD_BUFFER_STATE {
+class CommandBuffer : public vvl::CommandBuffer {
   public:
     CommandBufferAccessContext access_context;
 
@@ -406,7 +406,7 @@ struct SyncNodeFormatter {
     const BASE_NODE *node;
     const char *label;
 
-    SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state);
+    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state);
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image);
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
     SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_ = nullptr);

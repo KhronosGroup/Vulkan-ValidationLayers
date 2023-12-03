@@ -38,13 +38,13 @@
 class CoreChecks;
 class ValidationObject;
 class ValidationStateTracker;
-class CMD_BUFFER_STATE;
 class UPDATE_TEMPLATE_STATE;
 struct DeviceExtensions;
 
 namespace vvl {
 class Sampler;
 class DescriptorSet;
+class CommandBuffer;
 struct AllocateDescriptorSetsData;
 
 class DescriptorPool : public BASE_NODE {
@@ -421,7 +421,7 @@ class ImageDescriptor : public Descriptor {
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state);
+    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state);
     VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view() : VK_NULL_HANDLE; }
     const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
     vvl::ImageView *GetImageViewState() { return image_view_state_.get(); }
@@ -690,7 +690,7 @@ class MutableDescriptor : public Descriptor {
         return acc_khr != VK_NULL_HANDLE;
     }
 
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state);
+    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state);
 
     bool AddParent(BASE_NODE *base_node) override;
     void RemoveParent(BASE_NODE *base_node) override;
@@ -908,7 +908,7 @@ class DescriptorSet : public BASE_NODE {
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state, vvl::Func command, const PIPELINE_STATE *,
+    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state, vvl::Func command, const PIPELINE_STATE *,
                          const BindingVariableMap &);
 
     // For a particular binding, get the global index

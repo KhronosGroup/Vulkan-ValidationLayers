@@ -36,7 +36,7 @@ class Queue : public vvl::Queue {
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
 };
 
-class CommandBuffer : public CMD_BUFFER_STATE {
+class CommandBuffer : public vvl::CommandBuffer {
   public:
     CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
 
@@ -46,7 +46,7 @@ class CommandBuffer : public CMD_BUFFER_STATE {
 }  // namespace gpu_tracker
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_tracker::Queue, vvl::Queue)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, vvl::CommandBuffer)
 
 namespace gpu_tracker {
 
