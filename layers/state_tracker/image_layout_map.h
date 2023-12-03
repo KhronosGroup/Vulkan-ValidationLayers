@@ -33,7 +33,10 @@
 // Forward declarations...
 class CMD_BUFFER_STATE;
 class IMAGE_STATE;
-class IMAGE_VIEW_STATE;
+
+namespace vvl {
+class ImageView;
+}  // namespace vvl
 #endif
 
 namespace image_layout_map {
@@ -49,7 +52,7 @@ struct InitialLayoutState {
     VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
     VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
     LoggingLabel label;
-    InitialLayoutState(const CMD_BUFFER_STATE& cb_state_, const IMAGE_VIEW_STATE* view_state_);
+    InitialLayoutState(const CMD_BUFFER_STATE& cb_state_, const vvl::ImageView* view_state_);
     InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
 };
 
@@ -116,8 +119,7 @@ class ImageSubresourceLayoutMap {
                                    VkImageLayout expected_layout = kInvalidLayout);
     void SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range,
                                           VkImageLayout layout);
-    void SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
-                                          const IMAGE_VIEW_STATE& view_state);
+    void SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout, const vvl::ImageView& view_state);
     bool UpdateFrom(const ImageSubresourceLayoutMap& from);
     uintptr_t CompatibilityKey() const;
     const LayoutMap& GetLayoutMap() const { return layouts_; }

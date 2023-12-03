@@ -172,14 +172,14 @@ VideoPictureResource::VideoPictureResource()
     : image_view_state(nullptr), image_state(nullptr), base_array_layer(0), range(), coded_offset(), coded_extent() {}
 
 VideoPictureResource::VideoPictureResource(ValidationStateTracker const *dev_data, VkVideoPictureResourceInfoKHR const &res)
-    : image_view_state(dev_data->Get<IMAGE_VIEW_STATE>(res.imageViewBinding)),
+    : image_view_state(dev_data->Get<vvl::ImageView>(res.imageViewBinding)),
       image_state(image_view_state ? image_view_state->image_state : nullptr),
       base_array_layer(res.baseArrayLayer),
       range(GetImageSubresourceRange(image_view_state.get(), res.baseArrayLayer)),
       coded_offset(res.codedOffset),
       coded_extent(res.codedExtent) {}
 
-VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(IMAGE_VIEW_STATE const *image_view_state, uint32_t layer) {
+VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(vvl::ImageView const *image_view_state, uint32_t layer) {
     VkImageSubresourceRange range{};
     if (image_view_state) {
         range = image_view_state->normalized_subresource_range;

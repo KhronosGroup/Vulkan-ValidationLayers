@@ -993,7 +993,7 @@ bool CoreChecks::ValidateSampler(const VkSampler sampler) const { return Get<vvl
 bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
                                      const Location &image_info_loc) const {
     bool skip = false;
-    auto iv_state = Get<IMAGE_VIEW_STATE>(image_view);
+    auto iv_state = Get<vvl::ImageView>(image_view);
 
     // Note that when an imageview is created, we validated that memory is bound so no need to re-check here
     // Validate that imageLayout is compatible with aspect_mask and image format
@@ -1811,7 +1811,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                 }
                 auto image_layout = update.pImageInfo[di].imageLayout;
                 auto sampler = update.pImageInfo[di].sampler;
-                auto iv_state = Get<IMAGE_VIEW_STATE>(image_view);
+                auto iv_state = Get<vvl::ImageView>(image_view);
                 const ImageSamplerDescriptor &desc = (const ImageSamplerDescriptor &)*iter;
 
                 const auto *image_state = iv_state->image_state.get();
@@ -2452,7 +2452,7 @@ bool CoreChecks::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDev
                          physical_device_count);
     }
 
-    auto image_view_state = Get<IMAGE_VIEW_STATE>(pInfo->imageView);
+    auto image_view_state = Get<vvl::ImageView>(pInfo->imageView);
 
     if (image_view_state) {
         if (!(image_view_state->create_info.flags & VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
@@ -2632,14 +2632,14 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                                  "pCombinedImageSampler->sampler is not a valid sampler.");
             }
             if ((pDescriptorInfo->data.pCombinedImageSampler->imageView != VK_NULL_HANDLE) &&
-                (Get<IMAGE_VIEW_STATE>(pDescriptorInfo->data.pCombinedImageSampler->imageView).get() == nullptr)) {
+                (Get<vvl::ImageView>(pDescriptorInfo->data.pCombinedImageSampler->imageView).get() == nullptr)) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08020", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but "
                                  "pCombinedImageSampler->imageView is not a valid image view.");
             }
             break;
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            if (Get<IMAGE_VIEW_STATE>(pDescriptorInfo->data.pInputAttachmentImage->imageView).get() == nullptr) {
+            if (Get<vvl::ImageView>(pDescriptorInfo->data.pInputAttachmentImage->imageView).get() == nullptr) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08021", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, but "
                                  "pInputAttachmentImage->imageView is not valid image view.");
@@ -2647,7 +2647,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             if (pDescriptorInfo->data.pSampledImage && (pDescriptorInfo->data.pSampledImage->imageView != VK_NULL_HANDLE) &&
-                (Get<IMAGE_VIEW_STATE>(pDescriptorInfo->data.pSampledImage->imageView).get() == nullptr)) {
+                (Get<vvl::ImageView>(pDescriptorInfo->data.pSampledImage->imageView).get() == nullptr)) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08022", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but "
                                  "pSampledImage->imageView is not a valid image view.");
@@ -2655,7 +2655,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
             if (pDescriptorInfo->data.pStorageImage && (pDescriptorInfo->data.pStorageImage->imageView != VK_NULL_HANDLE) &&
-                (Get<IMAGE_VIEW_STATE>(pDescriptorInfo->data.pStorageImage->imageView).get() == nullptr)) {
+                (Get<vvl::ImageView>(pDescriptorInfo->data.pStorageImage->imageView).get() == nullptr)) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08023", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but "
                                  "pStorageImage->imageView is not a valid image view.");

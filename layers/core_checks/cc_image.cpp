@@ -1068,11 +1068,11 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
         const VkImageAspectFlags aspect_mask = clear_desc->aspectMask;
 
-        const IMAGE_VIEW_STATE *color_view_state = nullptr;
+        const vvl::ImageView *color_view_state = nullptr;
         uint32_t color_attachment_count = 0;
 
-        const IMAGE_VIEW_STATE *depth_view_state = nullptr;
-        const IMAGE_VIEW_STATE *stencil_view_state = nullptr;
+        const vvl::ImageView *depth_view_state = nullptr;
+        const vvl::ImageView *stencil_view_state = nullptr;
 
         uint32_t view_mask = 0;
         bool external_format_resolve = false;
@@ -1179,7 +1179,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                              "is %s.", string_VkImageAspectFlags(aspect_mask).c_str());
         }
 
-        std::array<const IMAGE_VIEW_STATE *, 3> image_views = {nullptr, nullptr, nullptr};
+        std::array<const vvl::ImageView *, 3> image_views = {nullptr, nullptr, nullptr};
         if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
             image_views[0] = color_view_state;
         }
@@ -2255,7 +2255,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator,
                                                  const ErrorObject &error_obj) const {
-    auto image_view_state = Get<IMAGE_VIEW_STATE>(imageView);
+    auto image_view_state = Get<vvl::ImageView>(imageView);
 
     bool skip = false;
     if (image_view_state) {

@@ -47,7 +47,7 @@ std::shared_ptr<vvl::BufferView> gpuav::Validator::CreateBufferViewState(const s
     return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap);
 }
 
-std::shared_ptr<IMAGE_VIEW_STATE> gpuav::Validator::CreateImageViewState(
+std::shared_ptr<vvl::ImageView> gpuav::Validator::CreateImageViewState(
     const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap);
@@ -86,7 +86,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
     SetSetImageViewInitialLayoutCallback(
-        [](CMD_BUFFER_STATE *cb_state, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
+        [](CMD_BUFFER_STATE *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 

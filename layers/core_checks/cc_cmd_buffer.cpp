@@ -968,7 +968,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
                                 }
                             } else {
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[color_i].imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[color_i].imageView);
 
                                 if (image_view_state->create_info.format !=
                                     inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
@@ -990,7 +990,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                         if ((rendering_info.pDepthAttachment != nullptr) &&
                             rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-                            auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                            auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
                             if (image_view_state->create_info.format != inheritance_rendering_info.depthAttachmentFormat) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1007,7 +1007,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                         if ((rendering_info.pStencilAttachment != nullptr) &&
                             rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-                            auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                            auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
                             if (image_view_state->create_info.format != inheritance_rendering_info.stencilAttachmentFormat) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1075,7 +1075,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
                                     continue;
                                 }
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[index].imageView);
 
                                 if (image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1095,7 +1095,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                             if ((rendering_info.pDepthAttachment != nullptr) &&
                                 rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
                                 if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1113,7 +1113,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                             if ((rendering_info.pStencilAttachment != nullptr) &&
                                 rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
                                 if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1133,7 +1133,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
                                     continue;
                                 }
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[index].imageView);
 
                                 if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1152,7 +1152,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                             if ((rendering_info.pDepthAttachment != nullptr) &&
                                 rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
                                 if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1169,7 +1169,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                             if ((rendering_info.pStencilAttachment != nullptr) &&
                                 rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                                auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
                                 if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
@@ -1693,7 +1693,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     if (imageView == VK_NULL_HANDLE) {
         return skip;
     }
-    auto view_state = Get<IMAGE_VIEW_STATE>(imageView);
+    auto view_state = Get<vvl::ImageView>(imageView);
     if (!view_state) {
         const LogObjectList objlist(commandBuffer, imageView);
         skip |= LogError("VUID-vkCmdBindShadingRateImageNV-imageView-02059", objlist, error_obj.location,

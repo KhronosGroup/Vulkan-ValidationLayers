@@ -67,10 +67,10 @@ std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo
     return views;
 }
 
-std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::GetAttachmentViews(
+std::vector<std::shared_ptr<const vvl::ImageView>> ValidationStateTracker::GetAttachmentViews(
     const VkRenderPassBeginInfo &rp_begin, const vvl::Framebuffer &fb_state) const {
-    auto get_fn = [this](VkImageView handle) { return this->Get<IMAGE_VIEW_STATE>(handle); };
-    return GetAttachmentViewsImpl<std::shared_ptr<const IMAGE_VIEW_STATE>>(rp_begin, fb_state, get_fn);
+    auto get_fn = [this](VkImageView handle) { return this->Get<vvl::ImageView>(handle); };
+    return GetAttachmentViewsImpl<std::shared_ptr<const vvl::ImageView>>(rp_begin, fb_state, get_fn);
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -406,10 +406,10 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
     Add(CreateBufferViewState(buffer_state, *pView, pCreateInfo, buffer_features));
 }
 
-std::shared_ptr<IMAGE_VIEW_STATE> ValidationStateTracker::CreateImageViewState(
+std::shared_ptr<vvl::ImageView> ValidationStateTracker::CreateImageViewState(
     const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<IMAGE_VIEW_STATE>(image_state, iv, ci, ff, cubic_props);
+    return std::make_shared<vvl::ImageView>(image_state, iv, ci, ff, cubic_props);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
@@ -476,7 +476,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer2(VkCommandBuffer command
 void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView,
                                                            const VkAllocationCallbacks *pAllocator,
                                                            const RecordObject &record_obj) {
-    Destroy<IMAGE_VIEW_STATE>(imageView);
+    Destroy<vvl::ImageView>(imageView);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
@@ -2248,7 +2248,7 @@ void ValidationStateTracker::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuf
     cb_state->RecordCmd(record_obj.location.function);
 
     if (imageView != VK_NULL_HANDLE) {
-        auto view_state = Get<IMAGE_VIEW_STATE>(imageView);
+        auto view_state = Get<vvl::ImageView>(imageView);
         cb_state->AddChild(view_state);
     }
 }
@@ -2976,12 +2976,12 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
                                                              const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> views;
+    std::vector<std::shared_ptr<vvl::ImageView>> views;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         views.resize(pCreateInfo->attachmentCount);
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-            views[i] = Get<IMAGE_VIEW_STATE>(pCreateInfo->pAttachments[i]);
+            views[i] = Get<vvl::ImageView>(pCreateInfo->pAttachments[i]);
         }
     }
 

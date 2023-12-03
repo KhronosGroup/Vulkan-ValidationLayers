@@ -401,7 +401,7 @@ RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritan
       inheritance_rendering_info(pInheritanceRenderingInfo) {}
 
 Framebuffer::Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
-                         std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments)
+                         std::vector<std::shared_ptr<vvl::ImageView>> &&attachments)
     : BASE_NODE(fb, kVulkanObjectTypeFramebuffer),
       createInfo(pCreateInfo),
       rp_state(rpstate),

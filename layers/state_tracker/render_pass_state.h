@@ -20,7 +20,9 @@
 #include "state_tracker/base_node.h"
 #include "generated/vk_safe_struct.h"
 
-class IMAGE_VIEW_STATE;
+namespace vvl {
+class ImageView;
+}  // namespace vvl
 
 static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const safe_VkPipelineDepthStencilStateCreateInfo *pipe_ds_ci,
                                                              const safe_VkAttachmentReference2 *depth_stencil_ref) {
@@ -125,10 +127,10 @@ class Framebuffer : public BASE_NODE {
   public:
     const safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<const RenderPass> rp_state;
-    std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_state;
+    std::vector<std::shared_ptr<vvl::ImageView>> attachments_view_state;
 
     Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
-                std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments);
+                std::vector<std::shared_ptr<vvl::ImageView>> &&attachments);
     void LinkChildNodes() override;
 
     VkFramebuffer framebuffer() const { return handle_.Cast<VkFramebuffer>(); }

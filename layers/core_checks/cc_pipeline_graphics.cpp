@@ -3177,7 +3177,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
                     if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
                         (view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) &&
@@ -3207,7 +3207,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                                          i, i, string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
                     }
                 } else {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
                     if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
                         view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
@@ -3226,7 +3226,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         if (rendering_info.pDepthAttachment) {
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                    auto view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
                     if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
                         (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat)) {
@@ -3252,7 +3252,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                                      string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
                     }
                 } else {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                    auto view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
                     if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
@@ -3280,7 +3280,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         if (rendering_info.pStencilAttachment) {
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                    auto view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
                     if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
                         (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat)) {
@@ -3306,7 +3306,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                                          string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
                     }
                 } else {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                    auto view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
                     if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
@@ -3412,7 +3412,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), cb_state.activeRenderPass->renderPass());
             if (rendering_info.colorAttachmentCount == 1 &&
                 rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
-                auto resolve_image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[0].resolveImageView);
+                auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].resolveImageView);
                 if (resolve_image_view_state) {
                     if (resolve_image_view_state->image_state->ahb_format != pipeline_external_format) {
                         skip |= LogError(vuid.external_format_resolve_09362, objlist, loc,
@@ -3422,7 +3422,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                     }
                 }
 
-                auto color_image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[0].imageView);
+                auto color_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].imageView);
                 if (color_image_view_state) {
                     if (color_image_view_state->image_state->ahb_format != pipeline_external_format) {
                         skip |= LogError(vuid.external_format_resolve_09363, objlist, loc,
@@ -3484,7 +3484,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
                 continue;
             }
-            auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+            auto color_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
             auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
 
             if (p_attachment_sample_count_info &&
@@ -3501,7 +3501,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         }
 
         if (rendering_info.pDepthAttachment != nullptr) {
-            auto depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+            auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
             auto depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
 
             if (p_attachment_sample_count_info) {
@@ -3519,7 +3519,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         }
 
         if (rendering_info.pStencilAttachment != nullptr) {
-            auto stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+            auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
             auto stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
 
             if (p_attachment_sample_count_info) {
@@ -3542,7 +3542,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
                 continue;
             }
-            auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+            auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
             auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
 
             if (samples != rasterization_samples) {
@@ -3557,7 +3557,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         }
 
         if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
-            const auto &depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+            const auto &depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
             const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
             if (depth_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
@@ -3571,7 +3571,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         }
 
         if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
-            const auto &stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+            const auto &stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
             const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
             if (stencil_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),

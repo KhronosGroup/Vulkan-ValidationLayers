@@ -33,7 +33,7 @@
 #include "sync/sync_submit.h"
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, IMAGE_VIEW_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, vvl::ImageView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, SWAPCHAIN_NODE)
 
@@ -105,9 +105,9 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
                                                   uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final;
-    std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv,
-                                                           const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
-                                                           const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) final;
+    std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv,
+                                                         const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+                                                         const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) final;
 
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo, Func command);

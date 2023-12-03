@@ -35,7 +35,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
                                                attachment.stencilStoreOp != VK_ATTACHMENT_STORE_OP_STORE);
         }
 
-        auto view_state = Get<IMAGE_VIEW_STATE>(image_views[i]);
+        auto view_state = Get<vvl::ImageView>(image_views[i]);
         if (view_state) {
             const auto& ici = view_state->image_state->createInfo;
 

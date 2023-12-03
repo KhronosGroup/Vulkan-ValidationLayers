@@ -142,7 +142,7 @@ std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const 
                                                              VkFormatFeatureFlags2KHR features) {
     return std::make_shared<ImageState>(this, img, pCreateInfo, swapchain, swapchain_index, features);
 }
-std::shared_ptr<IMAGE_VIEW_STATE> SyncValidator::CreateImageViewState(
+std::shared_ptr<vvl::ImageView> SyncValidator::CreateImageViewState(
     const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageViewState>(image_state, iv, ci, ff, cubic_props);
@@ -2861,7 +2861,7 @@ ImageRangeGen syncval_state::ImageState::MakeImageRangeGen(const VkImageSubresou
 syncval_state::ImageViewState::ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv,
                                               const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
                                               const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
-    : IMAGE_VIEW_STATE(image_state, iv, ci, ff, cubic_props), view_range_gen(MakeImageRangeGen()) {}
+    : vvl::ImageView(image_state, iv, ci, ff, cubic_props), view_range_gen(MakeImageRangeGen()) {}
 
 ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen() const {
     return GetImageState()->MakeImageRangeGen(normalized_subresource_range, IsDepthSliced());

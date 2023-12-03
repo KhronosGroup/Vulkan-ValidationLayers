@@ -530,7 +530,7 @@ void gpuav::Validator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandB
 
 void gpuav::Validator::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *cb_state, const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        IMAGE_VIEW_STATE *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
+        vvl::ImageView *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
@@ -732,7 +732,7 @@ bool gpuav::Validator::VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, 
     return skip;
 }
 
-bool gpuav::Validator::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE &image_view_state,
+bool gpuav::Validator::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const vvl::ImageView &image_view_state,
                                          VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
                                          bool *error) const {
     if (disabled[image_layout_validation]) return false;

@@ -25,7 +25,9 @@
 
 class ValidationStateTracker;
 class IMAGE_STATE;
-class IMAGE_VIEW_STATE;
+namespace vvl {
+class ImageView;
+}  // namespace vvl
 
 using SupportedVideoProfiles = vvl::unordered_set<std::shared_ptr<const class VideoProfileDesc>>;
 
@@ -161,7 +163,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
 
 class VideoPictureResource {
   public:
-    std::shared_ptr<const IMAGE_VIEW_STATE> image_view_state;
+    std::shared_ptr<const vvl::ImageView> image_view_state;
     std::shared_ptr<const IMAGE_STATE> image_state;
     uint32_t base_array_layer;
     VkImageSubresourceRange range;
@@ -191,7 +193,7 @@ class VideoPictureResource {
     };
 
   private:
-    VkImageSubresourceRange GetImageSubresourceRange(IMAGE_VIEW_STATE const *image_view_state, uint32_t layer);
+    VkImageSubresourceRange GetImageSubresourceRange(vvl::ImageView const *image_view_state, uint32_t layer);
 };
 
 using VideoPictureResources = vvl::unordered_set<VideoPictureResource, VideoPictureResource::hash>;

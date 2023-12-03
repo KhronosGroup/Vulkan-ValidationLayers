@@ -59,13 +59,13 @@ class Surface;
 class DisplayMode;
 class Event;
 class PipelineLayout;
+class ImageView;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
 class IMAGE_STATE;
-class IMAGE_VIEW_STATE;
 class COMMAND_POOL_STATE;
 class SWAPCHAIN_NODE;
 struct SHADER_MODULE_STATE;
@@ -289,7 +289,7 @@ VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, vvl::AccelerationStructure
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, vvl::RenderPass)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, vvl::Sampler)
-VALSTATETRACK_STATE_OBJECT(VkImageView, IMAGE_VIEW_STATE)
+VALSTATETRACK_STATE_OBJECT(VkImageView, vvl::ImageView)
 VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
@@ -507,13 +507,13 @@ class ValidationStateTracker : public ValidationObject {
         return result;
     }
 
-    using SetImageViewInitialLayoutCallback = std::function<void(CMD_BUFFER_STATE*, const IMAGE_VIEW_STATE&, VkImageLayout)>;
+    using SetImageViewInitialLayoutCallback = std::function<void(CMD_BUFFER_STATE*, const vvl::ImageView&, VkImageLayout)>;
     template <typename Fn>
     void SetSetImageViewInitialLayoutCallback(Fn&& fn) {
         set_image_view_initial_layout_callback.reset(new SetImageViewInitialLayoutCallback(std::forward<Fn>(fn)));
     }
 
-    void CallSetImageViewInitialLayoutCallback(CMD_BUFFER_STATE* cb_state, const IMAGE_VIEW_STATE& iv_state, VkImageLayout layout) {
+    void CallSetImageViewInitialLayoutCallback(CMD_BUFFER_STATE* cb_state, const vvl::ImageView& iv_state, VkImageLayout layout) {
         if (set_image_view_initial_layout_callback) {
             (*set_image_view_initial_layout_callback)(cb_state, iv_state, layout);
         }
@@ -838,8 +838,9 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                                                                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+    virtual std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv,
+                                                                 const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
+                                                                 const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props);
     void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView,
                                        const RecordObject& record_obj) override;
@@ -1481,8 +1482,8 @@ class ValidationStateTracker : public ValidationObject {
                                                 const RecordObject& record_obj) override;
 
     // State Utilty functions
-    std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
-                                                                            const vvl::Framebuffer& fb_state) const;
+    std::vector<std::shared_ptr<const vvl::ImageView>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
+                                                                          const vvl::Framebuffer& fb_state) const;
 
     VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
@@ -1769,9 +1770,11 @@ class ValidationStateTracker : public ValidationObject {
                                            const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
-    virtual bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                           bool* error) const { return false; }
+    virtual bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const vvl::ImageView& image_view_state,
+                                   VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
+                                   bool* error) const {
+        return false;
+    }
 
     // Link to the device's physical-device data
     vvl::PhysicalDevice* physical_device_state;
@@ -1910,7 +1913,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, vvl::RenderPass, render_pass_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, vvl::DescriptorSetLayout, descriptor_set_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, vvl::Sampler, sampler_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkImageView, vvl::ImageView, image_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, vvl::BufferView, buffer_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)

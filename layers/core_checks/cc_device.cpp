@@ -440,7 +440,7 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
     SetSetImageViewInitialLayoutCallback(
-        [](CMD_BUFFER_STATE *cb_state, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
+        [](CMD_BUFFER_STATE *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 

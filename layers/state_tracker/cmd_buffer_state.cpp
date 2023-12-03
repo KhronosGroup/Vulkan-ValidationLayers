@@ -79,13 +79,13 @@ CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer 
 }
 
 // Get the image viewstate for a given framebuffer attachment
-IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) {
+vvl::ImageView *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) {
     assert(active_attachments && index != VK_ATTACHMENT_UNUSED && (index < active_attachments->size()));
     return active_attachments->at(index);
 }
 
 // Get the image viewstate for a given framebuffer attachment
-const IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) const {
+const vvl::ImageView *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) const {
     if (!active_attachments || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments->size())) {
         return nullptr;
     }
@@ -468,7 +468,7 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
     for (uint32_t i = 0; i < attachments.size(); ++i) {
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
-                auto res = attachments_view_states.insert(dev_data->Get<IMAGE_VIEW_STATE>(attachment_info_struct->pAttachments[i]));
+                auto res = attachments_view_states.insert(dev_data->Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]));
                 attachments[i] = res.first->get();
             }
         } else {
@@ -514,7 +514,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(Func command, const VkRenderPassBeginInfo
         UpdateSubpassAttachments(subpass, *active_subpasses);
 
         // Set cb_state->active_attachments & cb_state->attachments_view_states
-        active_attachments = std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(activeFramebuffer->createInfo.attachmentCount);
+        active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->createInfo.attachmentCount);
         UpdateAttachmentsView(pRenderPassBegin);
 
         // Connect this framebuffer and its children to this cmdBuffer
@@ -580,7 +580,7 @@ void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRend
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     // Set cb_state->active_attachments & cb_state->attachments_view_states
-    active_attachments = std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(attachment_count);
+    active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(attachment_count);
     auto &attachments = *(active_attachments.get());
 
     for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
@@ -592,7 +592,7 @@ void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRend
 
         if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
             auto res =
-                attachments_view_states.insert(dev_data->Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[i].imageView));
+                attachments_view_states.insert(dev_data->Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView));
             colorAttachment = res.first->get();
             if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
                 pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
@@ -607,7 +607,7 @@ void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRend
         depthAttachment = nullptr;
         depthResolveAttachment = nullptr;
 
-        auto res = attachments_view_states.insert(dev_data->Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView));
+        auto res = attachments_view_states.insert(dev_data->Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView));
         depthAttachment = res.first->get();
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
@@ -621,7 +621,7 @@ void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRend
         stencilAttachment = nullptr;
         stencilResolveAttachment = nullptr;
 
-        auto res = attachments_view_states.insert(dev_data->Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView));
+        auto res = attachments_view_states.insert(dev_data->Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView));
         stencilAttachment = res.first->get();
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
@@ -862,7 +862,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
                         // Set active_attachments & attachments_view_states
                         active_attachments =
-                            std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(activeFramebuffer->createInfo.attachmentCount);
+                            std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->createInfo.attachmentCount);
                         UpdateAttachmentsView(nullptr);
 
                         // Connect this framebuffer and its children to this cmdBuffer
@@ -1260,7 +1260,7 @@ void CMD_BUFFER_STATE::SetImageLayout(const IMAGE_STATE &image_state, const VkIm
 }
 
 // Set the initial image layout for all slices of an image view
-void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+void CMD_BUFFER_STATE::SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
     if (dev_data->disabled[image_layout_validation]) {
         return;
     }
@@ -1292,7 +1292,7 @@ void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, con
 }
 
 // Set image layout for all slices of an image view
-void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
+void CMD_BUFFER_STATE::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     const IMAGE_STATE *image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
