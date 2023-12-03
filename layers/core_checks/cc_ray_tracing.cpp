@@ -1424,7 +1424,7 @@ bool CoreChecks::ValidateCmdRayQueryState(const vvl::CommandBuffer &cb_state, co
     return skip;
 }
 
-uint32_t CoreChecks::CalcTotalShaderGroupCount(const PIPELINE_STATE &pipeline) const {
+uint32_t CoreChecks::CalcTotalShaderGroupCount(const vvl::Pipeline &pipeline) const {
     uint32_t total = 0;
     if (pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR) {
         const auto &create_info = pipeline.GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
@@ -1432,7 +1432,7 @@ uint32_t CoreChecks::CalcTotalShaderGroupCount(const PIPELINE_STATE &pipeline) c
 
         if (create_info.pLibraryInfo) {
             for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
-                auto library_pipeline_state = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[i]);
+                auto library_pipeline_state = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
                 total += CalcTotalShaderGroupCount(*library_pipeline_state.get());
             }
         }
@@ -1442,7 +1442,7 @@ uint32_t CoreChecks::CalcTotalShaderGroupCount(const PIPELINE_STATE &pipeline) c
 
         if (create_info.pLibraryInfo) {
             for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
-                auto library_pipeline_state = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[i]);
+                auto library_pipeline_state = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
                 total += CalcTotalShaderGroupCount(*library_pipeline_state.get());
             }
         }
@@ -1455,11 +1455,11 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
                                                                    uint32_t groupCount, size_t dataSize, void *pData,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    auto pPipeline = Get<PIPELINE_STATE>(pipeline);
+    auto pPipeline = Get<vvl::Pipeline>(pipeline);
     if (!pPipeline) {
         return skip;
     }
-    const PIPELINE_STATE &pipeline_state = *pPipeline;
+    const vvl::Pipeline &pipeline_state = *pPipeline;
     if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828", pipeline,
@@ -1507,7 +1507,7 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
                          "shaderGroupHandleCaptureReplaySize (%" PRIu32 ") * groupCount (%" PRIu32 ").",
                          dataSize, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleCaptureReplaySize, groupCount);
     }
-    auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
+    auto pipeline_state = Get<vvl::Pipeline>(pipeline);
     if (!pipeline_state) {
         return skip;
     }
@@ -1556,7 +1556,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
                                                                      VkShaderGroupShaderKHR groupShader,
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
+    auto pipeline_state = Get<vvl::Pipeline>(pipeline);
     if (pipeline_state) {
         if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622", pipeline,

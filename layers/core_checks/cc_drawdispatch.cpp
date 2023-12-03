@@ -760,7 +760,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                          const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable) const {
     bool skip = false;
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const PIPELINE_STATE *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
+    const vvl::Pipeline *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
     const bool is_indirect = loc.function == Func::vkCmdTraceRaysIndirectKHR;
 
     if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
@@ -1466,7 +1466,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
     }
 
-    const PIPELINE_STATE *pipeline = last_pipeline;
+    const vvl::Pipeline *pipeline = last_pipeline;
     // Now complete other state checks
     if (pipeline) {
         for (const auto &ds : last_bound_state.per_set) {
@@ -1568,7 +1568,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     } else {
         std::string error_string;
 
-        const auto are_bound_sets_compat = [](uint32_t set, const LAST_BOUND_STATE &last_bound,
+        const auto are_bound_sets_compat = [](uint32_t set, const LastBound &last_bound,
                                               const SHADER_OBJECT_STATE &shader_object_state) {
             if ((set >= last_bound.per_set.size()) || (set >= shader_object_state.set_compat_ids.size())) {
                 return false;

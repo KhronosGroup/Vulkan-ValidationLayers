@@ -316,13 +316,13 @@ bool IsImageLayoutStencilWritable(VkImageLayout image_layout) {
             image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-bool IsDepthAttachmentWriteable(const LAST_BOUND_STATE &last_bound_state, const VkFormat format, const VkImageLayout layout) {
+bool IsDepthAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format, const VkImageLayout layout) {
     // PHASE1 TODO: These validation should be in core_checks.
     const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();  // implicitly means DepthTestEnable is set
     return !vkuFormatIsStencilOnly(format) && depth_write_enable && IsImageLayoutDepthWritable(layout);
 }
 
-bool IsStencilAttachmentWriteable(const LAST_BOUND_STATE &last_bound_state, const VkFormat format, const VkImageLayout layout) {
+bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format, const VkImageLayout layout) {
     // PHASE1 TODO: It needs to check if stencil is writable.
     //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
     //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
@@ -1050,7 +1050,7 @@ Location syncval_state::DynamicRenderingInfo::Attachment::GetLocation(const Loca
     }
 }
 
-bool syncval_state::DynamicRenderingInfo::Attachment::IsWriteable(const LAST_BOUND_STATE &last_bound_state) const {
+bool syncval_state::DynamicRenderingInfo::Attachment::IsWriteable(const LastBound &last_bound_state) const {
     bool writeable = IsValid();
     if (writeable) {
         //  Depth and Stencil have additional criteria

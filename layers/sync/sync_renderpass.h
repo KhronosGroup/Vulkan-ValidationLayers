@@ -25,7 +25,10 @@
 
 class CommandExecutionContext;
 struct ClearAttachmentInfo;
-struct LAST_BOUND_STATE;
+
+namespace vvl {
+struct LastBound;
+}  // namespace vvl
 
 namespace syncval_state {
 enum class AttachmentType { kColor, kDepth, kStencil };
@@ -46,7 +49,7 @@ struct DynamicRenderingInfo {
         SyncStageAccessIndex GetStoreUsage() const;
         SyncOrdering GetOrdering() const;
         Location GetLocation(const Location &loc, uint32_t index = 0) const;
-        bool IsWriteable(const LAST_BOUND_STATE &last_bound_state) const;
+        bool IsWriteable(const LastBound &last_bound_state) const;
         bool IsValid() const { return view.get(); }
     };
 

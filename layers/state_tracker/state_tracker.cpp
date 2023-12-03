@@ -1592,7 +1592,7 @@ void ValidationStateTracker::PreCallRecordDestroyShaderEXT(VkDevice device, VkSh
 
 void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                           const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    Destroy<PIPELINE_STATE>(pipeline);
+    Destroy<vvl::Pipeline>(pipeline);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
@@ -1759,10 +1759,10 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, 
     Destroy<vvl::PipelineCache>(pipelineCache);
 }
 
-std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(
+std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateGraphicsPipelineState(
     const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::RenderPass> &&render_pass,
     std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states) const {
-    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states);
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1783,9 +1783,9 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
             render_pass = Get<vvl::RenderPass>(create_info.renderPass);
         } else if (enabled_features.dynamicRendering) {
             auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
-            const bool rasterization_enabled = PIPELINE_STATE::EnablesRasterizationStates(*this, create_info);
+            const bool rasterization_enabled = vvl::Pipeline::EnablesRasterizationStates(*this, create_info);
             const bool has_fragment_output_state =
-                PIPELINE_STATE::ContainsSubState(this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
+                vvl::Pipeline::ContainsSubState(this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
             render_pass = std::make_shared<vvl::RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state);
         } else {
             const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
@@ -1816,9 +1816,9 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
     cgpl_state->pipe_state.clear();
 }
 
-std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateComputePipelineState(
+std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineState(
     const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(layout));
 }
 
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1852,9 +1852,9 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
     ccpl_state->pipe_state.clear();
 }
 
-std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipelineState(
+std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
     const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(layout));
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
@@ -1884,9 +1884,9 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
     crtpl_state->pipe_state.clear();
 }
 
-std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipelineState(
+std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(layout));
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -2121,7 +2121,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
     assert(cb_state);
     cb_state->RecordCmd(record_obj.location.function);
 
-    auto pipe_state = Get<PIPELINE_STATE>(pipeline);
+    auto pipe_state = Get<vvl::Pipeline>(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
         const auto *raster_state = pipe_state->RasterizationState();
         const bool rasterization_enabled = raster_state && !raster_state->rasterizerDiscardEnable;
@@ -2168,7 +2168,7 @@ void ValidationStateTracker::PostCallRecordCmdBindPipeline(VkCommandBuffer comma
                                                            VkPipeline pipeline, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
-    auto pipe_state = Get<PIPELINE_STATE>(pipeline);
+    auto pipe_state = Get<vvl::Pipeline>(pipeline);
 
     if (enabled_features.variableMultisampleRate == VK_FALSE) {
         if (const auto *multisample_state = pipe_state->MultisampleState(); multisample_state) {

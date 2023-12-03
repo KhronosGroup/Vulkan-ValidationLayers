@@ -345,7 +345,7 @@ class DescriptorPool : public vvl::DescriptorPool {
     uint32_t freed_count{0};
 };
 
-class Pipeline : public PIPELINE_STATE {
+class Pipeline : public vvl::Pipeline {
   public:
     Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
              std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout,
@@ -360,7 +360,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, bp_state::CommandBuffer, vvl
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, bp_state::Swapchain, vvl::Swapchain)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, vvl::Image)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, vvl::DescriptorPool)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, PIPELINE_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, vvl::Pipeline)
 
 class BestPractices : public ValidationStateTracker {
   public:
@@ -1028,10 +1028,10 @@ class BestPractices : public ValidationStateTracker {
             mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
     }
 
-    std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
-                                                                std::shared_ptr<const vvl::RenderPass>&& render_pass,
-                                                                std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                                                                CreateShaderModuleStates* csm_states) const final;
+    std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
+                                                               std::shared_ptr<const vvl::RenderPass>&& render_pass,
+                                                               std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                               CreateShaderModuleStates* csm_states) const final;
 
   private:
     // CacheEntry and PostTransformLRUCacheModel are used on the stack

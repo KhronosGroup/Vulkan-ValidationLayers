@@ -43,7 +43,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
@@ -168,7 +168,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     if (!enabled_features.triangleFans && (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)) {
         skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452", device, create_info_loc,
@@ -262,7 +262,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
@@ -409,7 +409,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
             bool lib_all_has_capture_internal = false;
 
             for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
-                const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
+                const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
                 if (!lib) {
                     continue;
                 }
@@ -557,7 +557,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                                       VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
                 if (flags_count >= 1 && flags_count <= 2) {
                     for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
-                        const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
+                        const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
                         const auto lib_gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->PNext());
                         if (!lib_gpl_info) {
                             continue;
@@ -575,7 +575,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                 }
             }
             for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
-                const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
+                const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
                 const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
                 skip |= ValidatePipelineLibraryFlags(lib->graphics_lib_type, *pipeline.library_create_info, lib_rendering_struct,
                                                      create_info_loc, i, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
@@ -728,7 +728,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const auto &rp_state = pipeline.RenderPassState();
     if (!rp_state) {
@@ -762,7 +762,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeline &pipeline,
                                                                const safe_VkSubpassDescription2 *subpass_desc,
                                                                const Location &create_info_loc) const {
     bool skip = false;
@@ -900,7 +900,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const PIPELINE_ST
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const Location ia_loc = create_info_loc.dot(Field::pInputAssemblyState);
 
@@ -990,7 +990,7 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineTessellationState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) &&
@@ -1007,7 +1007,7 @@ bool CoreChecks::ValidateGraphicsPipelineTessellationState(const PIPELINE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     // Only validate once during creation
     if (!pipeline.OwnsSubState(pipeline.pre_raster_state)) {
@@ -1072,7 +1072,7 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pipeline,
                                                          const safe_VkSubpassDescription2 *subpass_desc,
                                                          const Location &create_info_loc) const {
     bool skip = false;
@@ -1208,7 +1208,7 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline &pipeline,
                                                             const safe_VkSubpassDescription2 *subpass_desc,
                                                             const Location &create_info_loc) const {
     bool skip = false;
@@ -1445,7 +1445,7 @@ bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSa
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &pipeline,
                                                           const safe_VkSubpassDescription2 *subpass_desc,
                                                           const Location &create_info_loc) const {
     bool skip = false;
@@ -1776,7 +1776,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
     const auto ds_state = pipeline.DepthStencilState();
@@ -1801,7 +1801,7 @@ bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     auto get_state_index = [&pipeline](const VkDynamicState state) {
         const auto dynamic_info = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pDynamicState;
         for (uint32_t i = 0; i < dynamic_info->dynamicStateCount; i++) {
@@ -2181,7 +2181,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipe
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pipeline &pipeline,
                                                                   const Location &create_info_loc) const {
     bool skip = false;
     const auto *fragment_shading_rate_state = vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
@@ -2284,7 +2284,7 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
     if (!rendering_struct) {
@@ -2440,7 +2440,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer *cb_state, const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer *cb_state, const vvl::Pipeline &pipeline,
                                                    const Location &loc) const {
     bool skip = false;
 
@@ -2478,7 +2478,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer *cb_
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const vvl::CommandBuffer &cb_state,
+bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const vvl::Pipeline &pipeline, const vvl::CommandBuffer &cb_state,
                                                             const Location &loc, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
@@ -2502,10 +2502,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 }
 
 // Validate draw-time state related to the PSO
-bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
+bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state, const Location &loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
+    const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
 
@@ -2805,7 +2805,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
+bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_state, const Location &loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.commandBuffer());
@@ -3015,7 +3015,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
     return skip;
 }
 
-bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
+bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LastBound &last_bound_state, const Location &loc) const {
     bool skip = false;
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
@@ -3040,10 +3040,10 @@ bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STAT
 }
 
 // Verify that PSO creation renderPass is compatible with active (non-dynamic) renderPass
-bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
+bool CoreChecks::ValidatePipelineRenderpassDraw(const LastBound &last_bound_state, const Location &loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
+    const vvl::Pipeline &pipeline = *last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
 
     const auto &rp_state = pipeline.RenderPassState();
@@ -3133,10 +3133,10 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
+bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bound_state, const Location &loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
+    const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
     const auto &rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
     const auto &rp_state = pipeline->RenderPassState();
@@ -3660,7 +3660,7 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
         // We start iterating at the index after lib_index to avoid duplicating checks, because the caller will iterate the same
         // loop
         for (int i = lib_index + 1; i < static_cast<int>(link_info.libraryCount); ++i) {
-            const auto lib = Get<PIPELINE_STATE>(link_info.pLibraries[i]);
+            const auto lib = Get<vvl::Pipeline>(link_info.pLibraries[i]);
             const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
             const bool other_flag = (lib->graphics_lib_type & flags) && (lib->graphics_lib_type & ~lib_flags);
             if (other_flag) {
@@ -3691,7 +3691,7 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipelines,
+bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<vvl::Pipeline>> const &pipelines,
                                                      uint32_t pipe_index, const Location &loc) const {
     bool skip = false;
     const auto &pipeline = *pipelines[pipe_index].get();
@@ -3699,7 +3699,7 @@ bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
     if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT_KHR) {
-        std::shared_ptr<const PIPELINE_STATE> base_pipeline;
+        std::shared_ptr<const vvl::Pipeline> base_pipeline;
         const VkPipeline base_handle = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().basePipelineHandle;
         const int32_t base_index = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().basePipelineIndex;
         if (base_index != -1 && base_index < static_cast<int32_t>(pipelines.size())) {
@@ -3712,7 +3712,7 @@ bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr
                 base_pipeline = pipelines[base_index];
             }
         } else if (base_handle != VK_NULL_HANDLE) {
-            base_pipeline = Get<PIPELINE_STATE>(base_handle);
+            base_pipeline = Get<vvl::Pipeline>(base_handle);
         }
 
         if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT_KHR)) {

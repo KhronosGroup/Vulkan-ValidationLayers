@@ -940,7 +940,7 @@ bool gpu_tracker::Validator::CheckForGpuAvEnabled(const void *pNext) {
 template <typename CreateInfo, typename SafeCreateInfo, typename GPUAVState>
 void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                            std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
+                                                            std::vector<std::shared_ptr<vvl::Pipeline>> &pipe_state,
                                                             std::vector<SafeCreateInfo> *new_pipeline_create_infos,
                                                             const VkPipelineBindPoint bind_point, const RecordObject &record_obj,
                                                             GPUAVState &cgpl_state) {
@@ -1060,7 +1060,7 @@ void gpu_tracker::Validator::PostCallRecordPipelineCreations(const uint32_t coun
         return;
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        auto pipeline_state = Get<PIPELINE_STATE>(pPipelines[pipeline]);
+        auto pipeline_state = Get<vvl::Pipeline>(pPipelines[pipeline]);
         if (!pipeline_state) continue;
 
         if (!pipeline_state->stage_states.empty() && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {

@@ -255,14 +255,14 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
 bp_state::Pipeline::Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
                              std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout,
                              CreateShaderModuleStates* csm_states)
-    : PIPELINE_STATE(state_data, pCreateInfo, std::move(rpstate), std::move(layout), csm_states),
+    : vvl::Pipeline(state_data, pCreateInfo, std::move(rpstate), std::move(layout), csm_states),
       access_framebuffer_attachments(GetAttachmentAccess(*this)) {}
 
-std::shared_ptr<PIPELINE_STATE> BestPractices::CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
-                                                                           std::shared_ptr<const vvl::RenderPass>&& render_pass,
-                                                                           std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                                                                           CreateShaderModuleStates* csm_states) const {
-    return std::static_pointer_cast<PIPELINE_STATE>(
+std::shared_ptr<vvl::Pipeline> BestPractices::CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
+                                                                          std::shared_ptr<const vvl::RenderPass>&& render_pass,
+                                                                          std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                                          CreateShaderModuleStates* csm_states) const {
+    return std::static_pointer_cast<vvl::Pipeline>(
         std::make_shared<bp_state::Pipeline>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states));
 }
 
@@ -432,7 +432,7 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
                                                  VkPipeline pipeline, const RecordObject& record_obj) {
     StateTracker::PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
 
-    auto pipeline_info = Get<PIPELINE_STATE>(pipeline);
+    auto pipeline_info = Get<vvl::Pipeline>(pipeline);
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
     assert(pipeline_info);

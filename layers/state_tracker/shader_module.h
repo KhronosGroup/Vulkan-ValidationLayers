@@ -29,7 +29,10 @@
 #include <spirv/unified1/spirv.hpp>
 #include "spirv-tools/optimizer.hpp"
 
-class PIPELINE_STATE;
+namespace vvl {
+class Pipeline;
+}  // namespace vvl
+
 struct EntryPoint;
 struct SPIRV_MODULE_STATE;
 
