@@ -1443,7 +1443,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         FormatHandle(bind_info.image).c_str(), FormatHandle(image_state->create_from_swapchain).c_str(),
                         FormatHandle(swapchain_info->swapchain).c_str());
                 }
-                auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
+                auto swapchain_state = Get<vvl::Swapchain>(swapchain_info->swapchain);
                 if (swapchain_state) {
                     if (swapchain_state->images.size() <= swapchain_info->imageIndex) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);

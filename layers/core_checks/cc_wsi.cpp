@@ -295,7 +295,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
 }
 
 bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreateInfo, const vvl::Surface *surface_state,
-                                         const SWAPCHAIN_NODE *old_swapchain_state, const Location &create_info_loc) const {
+                                         const vvl::Swapchain *old_swapchain_state, const Location &create_info_loc) const {
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
     if (!instance_extensions.vk_khr_android_surface) {
@@ -722,7 +722,7 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
                                                    const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                    const ErrorObject &error_obj) const {
     auto surface_state = Get<vvl::Surface>(pCreateInfo->surface);
-    auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfo->oldSwapchain);
+    auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfo->oldSwapchain);
     return ValidateCreateSwapchain(pCreateInfo, surface_state.get(), old_swapchain_state.get(),
                                    error_obj.location.dot(Field::pCreateInfo));
 }
@@ -730,7 +730,7 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
 void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (swapchain) {
-        auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
+        auto swapchain_data = Get<vvl::Swapchain>(swapchain);
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
                 if (!swapchain_image.image_state) continue;
@@ -752,7 +752,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
     uint32_t new_swapchain_image_index = 0;
     if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
-        auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+        auto swapchain_state = Get<vvl::Swapchain>(swapchain);
         const auto image_vector_size = swapchain_state->images.size();
 
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
@@ -772,7 +772,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
     }
 }
 
-bool CoreChecks::ValidateImageAcquireWait(const SWAPCHAIN_IMAGE &swapchain_image, uint32_t image_index,
+bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_image, uint32_t image_index,
                                           const VkPresentInfoKHR &present_info, const Location present_info_loc) const {
     bool skip = false;
 
@@ -856,7 +856,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+        auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             const Location swapchain_loc = present_info_loc.dot(Field::pSwapchains, i);
             // Check if index is even possible to be acquired to give better error message
@@ -924,7 +924,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
-                auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+                auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
                 assert(swapchain_data);
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 const Location region_loc = present_info_loc.pNext(Struct::VkPresentRegionsKHR, Field::pRegions, i);
@@ -996,7 +996,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                  present_id_info->swapchainCount, pPresentInfo->swapchainCount);
             }
             for (uint32_t i = 0; i < present_id_info->swapchainCount; i++) {
-                auto swapchain_state = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+                auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
                 if ((present_id_info->pPresentIds[i] != 0) &&
                     (present_id_info->pPresentIds[i] <= swapchain_state->max_present_id)) {
                     skip |= LogError("VUID-VkPresentIdKHR-presentIds-04999", pPresentInfo->pSwapchains[i],
@@ -1041,7 +1041,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
             for (uint32_t i = 0; i < swapchain_present_mode_info->swapchainCount; i++) {
                 const VkPresentModeKHR present_mode = swapchain_present_mode_info->pPresentModes[i];
-                const auto swapchain_state = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+                const auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
                 if (!swapchain_state->present_modes.empty()) {
                     bool found_match = std::find(swapchain_state->present_modes.begin(), swapchain_state->present_modes.end(),
                                                  present_mode) != swapchain_state->present_modes.end();
@@ -1070,7 +1070,7 @@ bool CoreChecks::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const
                                                           const ErrorObject &error_obj) const {
     bool skip = false;
     bool image_in_use = false;
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(pReleaseInfo->swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(pReleaseInfo->swapchain);
     if (swapchain_state) {
         const Location release_info_loc = error_obj.location.dot(Field::pReleaseInfo);
         for (uint32_t i = 0; i < pReleaseInfo->imageIndexCount; i++) {
@@ -1107,7 +1107,7 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
             auto surface_state = Get<vvl::Surface>(pCreateInfos[i].surface);
-            auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfos[i].oldSwapchain);
+            auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfos[i].oldSwapchain);
             skip |= ValidateCreateSwapchain(&pCreateInfos[i], surface_state.get(), old_swapchain_state.get(),
                                             error_obj.location.dot(Field::pCreateInfos, i));
         }
@@ -1146,7 +1146,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
                                        "VUID-vkAcquireNextImageKHR-fence-01287", objlist, loc);
     }
 
-    auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     if (swapchain_data) {
         if (swapchain_data->retired) {
             const char *vuid =
@@ -1228,7 +1228,7 @@ bool CoreChecks::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKH
         skip |= LogError("VUID-vkWaitForPresentKHR-presentWait-06234", swapchain, error_obj.location,
                          "presentWait feature is not enabled.");
     }
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
     if (swapchain_state) {
         if (swapchain_state->retired) {
             skip |= LogError("VUID-vkWaitForPresentKHR-swapchain-04997", swapchain, error_obj.location,
@@ -1417,7 +1417,7 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
 
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
     if (swapchain_state) {
         if (swapchain_state->retired) {
             skip |= LogError("VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674", device, error_obj.location,
@@ -1446,7 +1446,7 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
 
-    const auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    const auto swapchain_state = Get<vvl::Swapchain>(swapchain);
     if (swapchain_state) {
         if (swapchain_state->retired) {
             skip |= LogError("VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677", device, error_obj.location,

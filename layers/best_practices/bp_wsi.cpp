@@ -251,7 +251,7 @@ bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                        VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                        const ErrorObject& error_obj) const {
-    auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     bool skip = false;
     if (swapchain_data && swapchain_data->images.size() == 0) {
         skip |= LogWarning(kVUID_BestPractices_DrawState_SwapchainImagesNotFound, swapchain, error_obj.location,

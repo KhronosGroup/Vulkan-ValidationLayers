@@ -381,7 +381,7 @@ class CoreChecks : public ValidationStateTracker {
                                                    VkSwapchainCreateInfoKHR const* create_info,
                                                    const vvl::Surface* surface_state) const;
     bool ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const* pCreateInfo, const vvl::Surface* surface_state,
-                                 const SWAPCHAIN_NODE* old_swapchain_state, const Location& create_info_loc) const;
+                                 const vvl::Swapchain* old_swapchain_state, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline,
                                            const Location& loc) const;
     bool ValidatePipelineBindPoint(const CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const Location& loc) const;
@@ -1820,7 +1820,7 @@ class CoreChecks : public ValidationStateTracker {
                                              VkImage* pSwapchainImages, const RecordObject& record_obj) override;
     bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                         const ErrorObject& error_obj) const override;
-    bool ValidateImageAcquireWait(const SWAPCHAIN_IMAGE& swapchain_image, uint32_t image_index,
+    bool ValidateImageAcquireWait(const vvl::SwapchainImage& swapchain_image, uint32_t image_index,
                                   const VkPresentInfoKHR& present_info, const Location present_info_loc) const;
     bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                   const ErrorObject& error_obj) const override;

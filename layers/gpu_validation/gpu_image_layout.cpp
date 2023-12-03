@@ -170,7 +170,7 @@ void gpuav::Validator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSw
 
     uint32_t new_swapchain_image_index = 0;
     if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
-        auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+        auto swapchain_state = Get<vvl::Swapchain>(swapchain);
         const auto image_vector_size = swapchain_state->images.size();
 
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {

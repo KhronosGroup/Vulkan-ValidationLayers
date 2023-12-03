@@ -3193,7 +3193,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
         const auto swapchain_info = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
         if (swapchain_info) {
-            auto swapchain = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
+            auto swapchain = Get<vvl::Swapchain>(swapchain_info->swapchain);
             if (swapchain) {
                 // All images bound to this swapchain and index are aliases
                 image_state->SetSwapchain(swapchain, swapchain_info->imageIndex);
@@ -3399,7 +3399,7 @@ void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const Vk
 
 void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                         VkSwapchainKHR *pSwapchain, std::shared_ptr<vvl::Surface> &&surface_state,
-                                                        SWAPCHAIN_NODE *old_swapchain_state) {
+                                                        vvl::Swapchain *old_swapchain_state) {
     if (VK_SUCCESS == result) {
         if (surface_state->swapchain) {
             surface_state->RemoveParent(surface_state->swapchain);
@@ -3431,14 +3431,14 @@ void ValidationStateTracker::PostCallRecordCreateSwapchainKHR(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                               const RecordObject &record_obj) {
     auto surface_state = Get<vvl::Surface>(pCreateInfo->surface);
-    auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfo->oldSwapchain);
+    auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfo->oldSwapchain);
     RecordCreateSwapchainState(record_obj.result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state.get());
 }
 
 void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               const RecordObject &record_obj) {
-    Destroy<SWAPCHAIN_NODE>(swapchain);
+    Destroy<vvl::Swapchain>(swapchain);
 }
 
 void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
@@ -3489,7 +3489,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI
-        auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+        auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
             swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id);
@@ -3509,7 +3509,7 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
             auto surface_state = Get<vvl::Surface>(pCreateInfos[i].surface);
-            auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfos[i].oldSwapchain);
+            auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfos[i].oldSwapchain);
             RecordCreateSwapchainState(record_obj.result, &pCreateInfos[i], &pSwapchains[i], std::move(surface_state),
                                        old_swapchain_state.get());
         }
@@ -3534,7 +3534,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     }
 
     // Mark the image as acquired.
-    auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     if (swapchain_data) {
         swapchain_data->AcquireImage(*pImageIndex, semaphore_state, fence_state);
     }
@@ -4468,13 +4468,13 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                                                                  uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
                                                                  const RecordObject &record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
 
     if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
 
     if (pSwapchainImages) {
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            SWAPCHAIN_IMAGE &swapchain_image = swapchain_state->images[i];
+            vvl::SwapchainImage &swapchain_image = swapchain_state->images[i];
             if (swapchain_image.image_state) continue;  // Already retrieved this.
 
             auto format_features = GetImageFormatFeatures(
@@ -4901,7 +4901,7 @@ void ValidationStateTracker::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkD
                                                                              const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
 
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
     swapchain_state->exclusive_full_screen_access = true;
 }
 
@@ -4909,7 +4909,7 @@ void ValidationStateTracker::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkD
                                                                              const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
 
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
     swapchain_state->exclusive_full_screen_access = false;
 }
 #endif
@@ -5236,9 +5236,9 @@ void ValidationStateTracker::PostCallRecordGetBufferDeviceAddressEXT(VkDevice de
     PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
 }
 
-std::shared_ptr<SWAPCHAIN_NODE> ValidationStateTracker::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
+std::shared_ptr<vvl::Swapchain> ValidationStateTracker::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                                              VkSwapchainKHR swapchain) {
-    return std::make_shared<SWAPCHAIN_NODE>(this, create_info, swapchain);
+    return std::make_shared<vvl::Swapchain>(this, create_info, swapchain);
 }
 
 std::shared_ptr<CMD_BUFFER_STATE> ValidationStateTracker::CreateCmdBufferState(VkCommandBuffer cb,
