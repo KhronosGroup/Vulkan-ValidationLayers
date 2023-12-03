@@ -27,7 +27,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "utils/shader_utils.h"
 
-bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
+bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const SPIRV_MODULE_STATE &module_state,
                                               const EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
@@ -160,7 +160,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
+bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, const SPIRV_MODULE_STATE &module_state,
                                                  const EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     const auto *ms_state = pipeline.MultisampleState();
@@ -632,7 +632,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
 }
 
 bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
-                                                    const PIPELINE_STATE &pipeline, uint32_t subpass_index,
+                                                    const vvl::Pipeline &pipeline, uint32_t subpass_index,
                                                     const Location &create_info_loc) const {
     bool skip = false;
 
@@ -720,7 +720,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
 }
 
 bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE &module_state,
-                                                                    const EntryPoint &entrypoint, const PIPELINE_STATE &pipeline,
+                                                                    const EntryPoint &entrypoint, const vvl::Pipeline &pipeline,
                                                                     const Location &create_info_loc) const {
     bool skip = false;
 
@@ -804,7 +804,7 @@ bool CoreChecks::ValidatePipelineTessellationStages(const SPIRV_MODULE_STATE &te
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
     if (!(pipeline.pre_raster_state || pipeline.fragment_shader_state)) {

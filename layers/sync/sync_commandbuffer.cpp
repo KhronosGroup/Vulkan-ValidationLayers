@@ -270,8 +270,8 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
 bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                    const Location &loc) const {
     bool skip = false;
-    const PIPELINE_STATE *pipe = nullptr;
-    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
+    const vvl::Pipeline *pipe = nullptr;
+    const std::vector<LastBound::PER_SET> *per_sets = nullptr;
     cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &per_sets);
     if (!pipe || !per_sets) {
         return skip;
@@ -416,8 +416,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 
 void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                  const ResourceUsageTag tag) {
-    const PIPELINE_STATE *pipe = nullptr;
-    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
+    const vvl::Pipeline *pipe = nullptr;
+    const std::vector<LastBound::PER_SET> *per_sets = nullptr;
     cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &per_sets);
     if (!pipe || !per_sets) {
         return;

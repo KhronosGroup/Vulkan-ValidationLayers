@@ -33,10 +33,10 @@ bool CoreChecks::ValidateDynamicStateIsSet(CBDynamicFlags state_status_cb, CBDyn
 }
 
 // Makes sure the vkCmdSet* call was called correctly prior to a draw
-bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
+    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
 
@@ -229,7 +229,7 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const auto pipeline_state = last_bound_state.pipeline_state;
 
@@ -420,10 +420,10 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
+    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     skip = ValidateDynamicStateSetStatus(last_bound_state, loc);
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
@@ -931,7 +931,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);

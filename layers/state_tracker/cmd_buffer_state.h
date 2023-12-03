@@ -344,7 +344,7 @@ class CommandBuffer : public REFCOUNTED_NODE {
     //  long-term may want to create caches of "lastBound" states and could have
     //  each individual CMD_NODE referencing its own "lastBound" state
     // Store last bound state for Gfx & Compute pipeline bind points
-    std::array<LAST_BOUND_STATE, BindPoint_Count> lastBound;  // index is LvlBindPoint.
+    std::array<LastBound, BindPoint_Count> lastBound;  // index is LvlBindPoint.
 
     // Use the casting boilerplate from BASE_NODE to implement the derived shared_from_this
     std::shared_ptr<const CommandBuffer> shared_from_this() const { return SharedFromThisImpl(this); }
@@ -518,9 +518,9 @@ class CommandBuffer : public REFCOUNTED_NODE {
     LogObjectList GetObjectList(VkShaderStageFlagBits stage) const;
     LogObjectList GetObjectList(VkPipelineBindPoint pipeline_bind_point) const;
 
-    PIPELINE_STATE *GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const;
-    void GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
-                                            const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const;
+    vvl::Pipeline *GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const;
+    void GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const vvl::Pipeline **rtn_pipe,
+                                            const std::vector<LastBound::PER_SET> **rtn_sets) const;
 
     VkQueueFlags GetQueueFlags() const { return command_pool->queue_flags; }
 
@@ -667,7 +667,7 @@ class CommandBuffer : public REFCOUNTED_NODE {
         return false;
     }
 
-    inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
+    inline void BindPipeline(LvlBindPoint bind_point, vvl::Pipeline *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
     }
     void BindShader(VkShaderStageFlagBits shader_stage, SHADER_OBJECT_STATE *shader_object_state) {

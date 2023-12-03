@@ -40,14 +40,14 @@ static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateI
 
 // Common amoung all pipeline sub state
 struct PipelineSubState {
-    PipelineSubState(const PIPELINE_STATE &p) : parent(p) {}
-    const PIPELINE_STATE &parent;
+    PipelineSubState(const vvl::Pipeline &p) : parent(p) {}
+    const vvl::Pipeline &parent;
 
     VkPipelineLayoutCreateFlags PipelineLayoutCreateFlags() const;
 };
 
 struct VertexInputState : public PipelineSubState {
-    VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info);
+    VertexInputState(const vvl::Pipeline &p, const safe_VkGraphicsPipelineCreateInfo &create_info);
 
     safe_VkPipelineVertexInputStateCreateInfo *input_state = nullptr;
     safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
@@ -69,7 +69,7 @@ struct VertexInputState : public PipelineSubState {
 };
 
 struct PreRasterState : public PipelineSubState {
-    PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+    PreRasterState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data,
                    const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp);
 
     static inline VkShaderStageFlags ValidShaderStages() {
@@ -112,11 +112,11 @@ std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(cons
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs);
 
 struct FragmentShaderState : public PipelineSubState {
-    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, std::shared_ptr<const vvl::RenderPass> rp,
+    FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data, std::shared_ptr<const vvl::RenderPass> rp,
                         uint32_t subpass, VkPipelineLayout layout);
 
     template <typename CreateInfo>
-    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info,
+    FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info,
                         std::shared_ptr<const vvl::RenderPass> rp)
         : FragmentShaderState(p, dev_data, rp, create_info.subpass, create_info.layout) {
         if (create_info.pMultisampleState) {
@@ -165,12 +165,12 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
 struct FragmentOutputState : public PipelineSubState {
     using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
-    FragmentOutputState(const PIPELINE_STATE &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp);
+    FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp);
     // For a graphics library, a "non-safe" create info must be passed in in order for pColorBlendState and pMultisampleState to not
     // get stripped out. If this is a "normal" pipeline, then we want to keep the logic from safe_VkGraphicsPipelineCreateInfo that
     // strips out pointers that should be ignored.
     template <typename CreateInfo>
-    FragmentOutputState(const PIPELINE_STATE &p, const CreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp)
+    FragmentOutputState(const vvl::Pipeline &p, const CreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp)
         : FragmentOutputState(p, rp, create_info.subpass) {
         if (create_info.pColorBlendState) {
             const auto &cbci = *create_info.pColorBlendState;

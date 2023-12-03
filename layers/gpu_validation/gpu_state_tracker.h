@@ -205,7 +205,7 @@ class Validator : public ValidationStateTracker {
 
     template <typename CreateInfo, typename SafeCreateInfo, typename GPUAVState>
     void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                        VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
+                                        VkPipeline *pPipelines, std::vector<std::shared_ptr<vvl::Pipeline>> &pipe_state,
                                         std::vector<SafeCreateInfo> *new_pipeline_create_infos,
                                         const VkPipelineBindPoint bind_point, const RecordObject &record_obj,
                                         GPUAVState &cgpl_state);

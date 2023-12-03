@@ -36,11 +36,22 @@ class DescriptorSet;
 class Descriptor;
 class RenderPass;
 class CommandBuffer;
+class Pipeline;
 }  // namespace vvl
 
 class ValidationStateTracker;
 struct SHADER_MODULE_STATE;
-class PIPELINE_STATE;
+
+struct StageCreateInfo {
+    const vvl::Pipeline *pipeline;
+
+    const PushConstantRangesId shader_object_const_ranges;
+
+    std::vector<VkPushConstantRange> const *GetPushConstantRanges() const;
+
+    StageCreateInfo(const vvl::Pipeline *pipeline);
+    StageCreateInfo(const VkShaderCreateInfoEXT &create_info);
+};
 
 namespace vvl {
 class PipelineCache : public BASE_NODE {
@@ -52,20 +63,8 @@ class PipelineCache : public BASE_NODE {
 
     const safe_VkPipelineCacheCreateInfo create_info;
 };
-}  // namespace vvl
 
-struct StageCreateInfo {
-    const PIPELINE_STATE *pipeline;
-
-    const PushConstantRangesId shader_object_const_ranges;
-
-    std::vector<VkPushConstantRange> const *GetPushConstantRanges() const;
-
-    StageCreateInfo(const PIPELINE_STATE *pipeline);
-    StageCreateInfo(const VkShaderCreateInfoEXT &create_info);
-};
-
-class PIPELINE_STATE : public BASE_NODE {
+class Pipeline : public BASE_NODE {
   public:
     union CreateInfo {
         template <typename CI>
@@ -91,7 +90,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
             PNextCopyState copy_state = {
                 [state_data, &ci](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
-                    return PIPELINE_STATE::PnextRenderingInfoCustomCopy(state_data, ci, safe_struct, in_struct);
+                    return Pipeline::PnextRenderingInfoCustomCopy(state_data, ci, safe_struct, in_struct);
                 }};
             graphics.initialize(&ci, use_color, use_depth_stencil, &copy_state);
         }
@@ -180,19 +179,19 @@ class PIPELINE_STATE : public BASE_NODE {
     CreateShaderModuleStates *csm_states = nullptr;
 
     // Executable or legacy pipeline
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-                   CreateShaderModuleStates *csm_states = nullptr);
+    Pipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+             std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+    Pipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+    Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+    Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
@@ -232,7 +231,7 @@ class PIPELINE_STATE : public BASE_NODE {
     struct SubStateTraits {};
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
-    static inline typename SubStateTraits<type_flag>::type GetSubState(const PIPELINE_STATE &) {
+    static inline typename SubStateTraits<type_flag>::type GetSubState(const Pipeline &) {
         return {};
     }
 
@@ -242,7 +241,7 @@ class PIPELINE_STATE : public BASE_NODE {
     static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,
                                                                           const VkPipelineLibraryCreateInfoKHR &link_info) {
         for (uint32_t i = 0; i < link_info.libraryCount; ++i) {
-            const auto lib_state = state.Get<PIPELINE_STATE>(link_info.pLibraries[i]);
+            const auto lib_state = state.Get<vvl::Pipeline>(link_info.pLibraries[i]);
             if (lib_state && ((lib_state->graphics_lib_type & type_flag) != 0)) {
                 return GetSubState<type_flag>(*lib_state);
             }
@@ -421,7 +420,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
     const void *PNext() const { return create_info.graphics.pNext; }
 
-    static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state,
+    static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
                                         CreateShaderModuleStates *csm_states);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
@@ -451,7 +450,7 @@ class PIPELINE_STATE : public BASE_NODE {
         if (link_info) {
             const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
             for (const auto handle : libs) {
-                auto lib = vo.template Get<PIPELINE_STATE>(handle);
+                auto lib = vo.template Get<vvl::Pipeline>(handle);
                 if (lib && lib->pre_raster_state) {
                     return EnablesRasterizationStates(lib->pre_raster_state);
                 }
@@ -489,7 +488,7 @@ class PIPELINE_STATE : public BASE_NODE {
             if (state_tracker) {
                 const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
                 for (const auto handle : libs) {
-                    auto lib = state_tracker->Get<PIPELINE_STATE>(handle);
+                    auto lib = state_tracker->Get<vvl::Pipeline>(handle);
                     current_state |= lib->graphics_lib_type;
                 }
             }
@@ -540,8 +539,8 @@ class PIPELINE_STATE : public BASE_NODE {
         // "safe_struct" is assumed to be non-null as it should be the "this" member of calling class instance
         assert(safe_struct);
         if (safe_struct->sType == VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO) {
-            const bool has_fo_state = PIPELINE_STATE::ContainsSubState(
-                state_data, graphics_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
+            const bool has_fo_state = Pipeline::ContainsSubState(state_data, graphics_info,
+                                                                 VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
             if (!has_fo_state) {
                 // Clear out all pointers except for viewMask. Since viewMask is a scalar, it has already been copied at this point
                 // in safe_VkPipelineRenderingCreateInfo construction.
@@ -559,18 +558,16 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
   protected:
-    static std::shared_ptr<VertexInputState> CreateVertexInputState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
+    static std::shared_ptr<VertexInputState> CreateVertexInputState(const Pipeline &p, const ValidationStateTracker &state,
                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
-    static std::shared_ptr<PreRasterState> CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
+    static std::shared_ptr<PreRasterState> CreatePreRasterState(const Pipeline &p, const ValidationStateTracker &state,
                                                                 const safe_VkGraphicsPipelineCreateInfo &create_info,
                                                                 const std::shared_ptr<const vvl::RenderPass> &rp);
-    static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(const PIPELINE_STATE &p,
-                                                                          const ValidationStateTracker &state,
+    static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(const Pipeline &p, const ValidationStateTracker &state,
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
                                                                           const std::shared_ptr<const vvl::RenderPass> &rp);
-    static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(const PIPELINE_STATE &p,
-                                                                          const ValidationStateTracker &state,
+    static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(const Pipeline &p, const ValidationStateTracker &state,
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
                                                                           const std::shared_ptr<const vvl::RenderPass> &rp);
@@ -611,55 +608,55 @@ class PIPELINE_STATE : public BASE_NODE {
 };
 
 template <>
-struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT> {
+struct Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT> {
     using type = std::shared_ptr<VertexInputState>;
 };
 
 // static
 template <>
-inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>::type
-PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
+inline Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>::type
+Pipeline::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(const Pipeline &pipe_state) {
     return pipe_state.vertex_input_state;
 }
 
 template <>
-struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT> {
+struct Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT> {
     using type = std::shared_ptr<PreRasterState>;
 };
 
 // static
 template <>
-inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>::type
-PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
+inline Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>::type
+Pipeline::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(const Pipeline &pipe_state) {
     return pipe_state.pre_raster_state;
 }
 
 template <>
-struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT> {
+struct Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT> {
     using type = std::shared_ptr<FragmentShaderState>;
 };
 
 // static
 template <>
-inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>::type
-PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
+inline Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>::type
+Pipeline::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(const Pipeline &pipe_state) {
     return pipe_state.fragment_shader_state;
 }
 
 template <>
-struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT> {
+struct Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT> {
     using type = std::shared_ptr<FragmentOutputState>;
 };
 
 // static
 template <>
-inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>::type
-PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
+inline Pipeline::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>::type
+Pipeline::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(const Pipeline &pipe_state) {
     return pipe_state.fragment_output_state;
 }
 
 template <>
-struct PIPELINE_STATE::CreateInfo::Traits<VkGraphicsPipelineCreateInfo> {
+struct Pipeline::CreateInfo::Traits<VkGraphicsPipelineCreateInfo> {
     using SafeCreateInfo = safe_VkGraphicsPipelineCreateInfo;
     static const SafeCreateInfo &GetSafeCreateInfo(const CreateInfo &ci) {
         assert(ci.graphics.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
@@ -668,7 +665,7 @@ struct PIPELINE_STATE::CreateInfo::Traits<VkGraphicsPipelineCreateInfo> {
 };
 
 template <>
-struct PIPELINE_STATE::CreateInfo::Traits<VkComputePipelineCreateInfo> {
+struct Pipeline::CreateInfo::Traits<VkComputePipelineCreateInfo> {
     using SafeCreateInfo = safe_VkComputePipelineCreateInfo;
     static const SafeCreateInfo &GetSafeCreateInfo(const CreateInfo &ci) {
         assert(ci.compute.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
@@ -677,7 +674,7 @@ struct PIPELINE_STATE::CreateInfo::Traits<VkComputePipelineCreateInfo> {
 };
 
 template <>
-struct PIPELINE_STATE::CreateInfo::Traits<VkRayTracingPipelineCreateInfoKHR> {
+struct Pipeline::CreateInfo::Traits<VkRayTracingPipelineCreateInfoKHR> {
     using SafeCreateInfo = safe_VkRayTracingPipelineCreateInfoCommon;
     static const SafeCreateInfo &GetSafeCreateInfo(const CreateInfo &ci) {
         assert(ci.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR);
@@ -686,7 +683,7 @@ struct PIPELINE_STATE::CreateInfo::Traits<VkRayTracingPipelineCreateInfoKHR> {
 };
 
 template <>
-struct PIPELINE_STATE::CreateInfo::Traits<VkRayTracingPipelineCreateInfoNV> {
+struct Pipeline::CreateInfo::Traits<VkRayTracingPipelineCreateInfoNV> {
     using SafeCreateInfo = safe_VkRayTracingPipelineCreateInfoCommon;
     static const SafeCreateInfo &GetSafeCreateInfo(const CreateInfo &ci) {
         assert(ci.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV);
@@ -694,12 +691,14 @@ struct PIPELINE_STATE::CreateInfo::Traits<VkRayTracingPipelineCreateInfoNV> {
     }
 };
 
+}  // namespace vvl
+
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
-struct LAST_BOUND_STATE {
-    LAST_BOUND_STATE(vvl::CommandBuffer &cb) : cb_state(cb) {}
+struct LastBound {
+    LastBound(vvl::CommandBuffer &cb) : cb_state(cb) {}
 
     vvl::CommandBuffer &cb_state;
-    PIPELINE_STATE *pipeline_state{nullptr};
+    vvl::Pipeline *pipeline_state{nullptr};
     // All shader stages for a used pipeline bind point must be bound to with a valid shader or VK_NULL_HANDLE
     // We have to track shader_object_bound, because shader_object_states will be nullptr when VK_NULL_HANDLE is used
     bool shader_object_bound[SHADER_OBJECT_STAGE_COUNT]{false};
@@ -761,7 +760,7 @@ struct LAST_BOUND_STATE {
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
 };
 
-static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound, const vvl::PipelineLayout &pipeline_layout) {
+static inline bool IsBoundSetCompat(uint32_t set, const LastBound &last_bound, const vvl::PipelineLayout &pipeline_layout) {
     if ((set >= last_bound.per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
         return false;
     }

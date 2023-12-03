@@ -1034,7 +1034,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    PIPELINE_STATE *pipe = last_bound.pipeline_state;
+    vvl::Pipeline *pipe = last_bound.pipeline_state;
     if (!pipe) {
         return;
     }
@@ -1094,7 +1094,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
 }
 
 // Helper for descriptor set (and buffer) updates.
-static bool PushDescriptorCleanup(LAST_BOUND_STATE &last_bound, uint32_t set_idx) {
+static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
     // All uses are from loops over per_set, but just in case..
     assert(set_idx < last_bound.per_set.size());
 
@@ -1587,13 +1587,13 @@ LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_poi
     return objlist;
 }
 
-PIPELINE_STATE *CommandBuffer::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
+vvl::Pipeline *CommandBuffer::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     return lastBound[lv_bind_point].pipeline_state;
 }
 
-void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
-                                                       const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const {
+void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const vvl::Pipeline **rtn_pipe,
+                                                       const std::vector<LastBound::PER_SET> **rtn_sets) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     const auto &last_bound = lastBound[lv_bind_point];
     if (!last_bound.IsUsing()) {

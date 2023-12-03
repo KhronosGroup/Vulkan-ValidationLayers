@@ -30,7 +30,7 @@
 #include "utils/hash_util.h"
 
 // Validate use of input attachments against subpass structure
-bool CoreChecks::ValidateShaderInputAttachment(const SPIRV_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateShaderInputAttachment(const SPIRV_MODULE_STATE &module_state, const vvl::Pipeline &pipeline,
                                                const ResourceInterfaceVariable &variable, const Location &loc) const {
     bool skip = false;
     assert(variable.is_input_attachment);
@@ -2325,7 +2325,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     return skip;
 }
 
-uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {
+uint32_t CoreChecks::CalcShaderStageCount(const vvl::Pipeline &pipeline, VkShaderStageFlagBits stageBit) const {
     uint32_t total = 0;
     for (const auto &stage_ci : pipeline.shader_stages_ci) {
         if (stage_ci.stage == stageBit) {
@@ -2335,7 +2335,7 @@ uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShad
 
     if (pipeline.ray_tracing_library_ci) {
         for (uint32_t i = 0; i < pipeline.ray_tracing_library_ci->libraryCount; ++i) {
-            auto library_pipeline = Get<PIPELINE_STATE>(pipeline.ray_tracing_library_ci->pLibraries[i]);
+            auto library_pipeline = Get<vvl::Pipeline>(pipeline.ray_tracing_library_ci->pLibraries[i]);
             total += CalcShaderStageCount(*library_pipeline, stageBit);
         }
     }
@@ -2343,7 +2343,7 @@ uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShad
     return total;
 }
 
-bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t group, uint32_t stage) const {
+bool CoreChecks::GroupHasValidIndex(const vvl::Pipeline &pipeline, uint32_t group, uint32_t stage) const {
     if (group == VK_SHADER_UNUSED_NV) {
         return true;
     }
@@ -2357,7 +2357,7 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
     // Search libraries
     if (pipeline.ray_tracing_library_ci) {
         for (uint32_t i = 0; i < pipeline.ray_tracing_library_ci->libraryCount; ++i) {
-            auto library_pipeline = Get<PIPELINE_STATE>(pipeline.ray_tracing_library_ci->pLibraries[i]);
+            auto library_pipeline = Get<vvl::Pipeline>(pipeline.ray_tracing_library_ci->pLibraries[i]);
             const uint32_t stage_count = static_cast<uint32_t>(library_pipeline->shader_stages_ci.size());
             if (group < stage_count) {
                 return (library_pipeline->shader_stages_ci[group].stage & stage) != 0;

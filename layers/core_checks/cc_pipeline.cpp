@@ -85,7 +85,7 @@ bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPip
 }
 
 // This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
-bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipeline,
                                                       const VkPipelineRobustnessCreateInfoEXT &create_info,
                                                       const Location &loc) const {
     bool skip = false;
@@ -176,7 +176,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
 
-    auto pipeline_state = Get<PIPELINE_STATE>(pExecutableInfo->pipeline);
+    auto pipeline_state = Get<vvl::Pipeline>(pExecutableInfo->pipeline);
     if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
         skip |= LogError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274", pExecutableInfo->pipeline, error_obj.location,
                          "called on a pipeline created without the "
@@ -193,7 +193,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
 
-    auto pipeline_state = Get<PIPELINE_STATE>(pExecutableInfo->pipeline);
+    auto pipeline_state = Get<vvl::Pipeline>(pExecutableInfo->pipeline);
     if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
         skip |= LogError("VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278", pExecutableInfo->pipeline,
                          error_obj.location,
@@ -206,7 +206,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                                 const ErrorObject &error_obj) const {
-    auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
+    auto pipeline_state = Get<vvl::Pipeline>(pipeline);
     bool skip = false;
     if (pipeline_state) {
         skip |= ValidateObjectNotInUse(pipeline_state.get(), error_obj.location, "VUID-vkDestroyPipeline-pipeline-00765");
@@ -223,9 +223,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
 
-    auto pPipeline = Get<PIPELINE_STATE>(pipeline);
+    auto pPipeline = Get<vvl::Pipeline>(pipeline);
     assert(pPipeline);
-    const PIPELINE_STATE &pipeline_state = *pPipeline;
+    const vvl::Pipeline &pipeline_state = *pPipeline;
 
     if (pipelineBindPoint != pipeline_state.pipeline_type) {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -604,7 +604,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     return skip;
 }
 
-bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateShaderModuleId(const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
     for (const auto &stage_ci : pipeline.shader_stages_ci) {
         const auto module_identifier = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);

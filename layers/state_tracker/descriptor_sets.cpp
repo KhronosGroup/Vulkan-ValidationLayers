@@ -566,7 +566,7 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
 //   to be used in a draw by the given cb_state
 void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, vvl::CommandBuffer *cb_state, vvl::Func command,
-                                         const PIPELINE_STATE *pipe, const BindingVariableMap &binding_req_map) {
+                                         const vvl::Pipeline *pipe, const BindingVariableMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
     if (device_data->disabled[image_layout_validation]) {
         return;

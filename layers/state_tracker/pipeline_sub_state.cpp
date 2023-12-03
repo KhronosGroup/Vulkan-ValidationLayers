@@ -23,7 +23,7 @@ VkPipelineLayoutCreateFlags PipelineSubState::PipelineLayoutCreateFlags() const 
     return (layout_state) ? layout_state->CreateFlags() : static_cast<VkPipelineLayoutCreateFlags>(0);
 }
 
-VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info)
+VertexInputState::VertexInputState(const vvl::Pipeline &p, const safe_VkGraphicsPipelineCreateInfo &create_info)
     : PipelineSubState(p), input_state(create_info.pVertexInputState), input_assembly_state(create_info.pInputAssemblyState) {
     if (create_info.pVertexInputState) {
         const auto *vici = create_info.pVertexInputState;
@@ -56,7 +56,7 @@ VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphic
     }
 }
 
-PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state_data,
+PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTracker &state_data,
                                const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp)
     : PipelineSubState(p), rp_state(rp), subpass(create_info.subpass) {
     pipeline_layout = state_data.Get<vvl::PipelineLayout>(create_info.layout);
@@ -234,11 +234,11 @@ void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, c
     SetFragmentShaderInfoPrivate(fs_state, state_data, create_info);
 }
 
-FragmentShaderState::FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data,
                                          std::shared_ptr<const vvl::RenderPass> rp, uint32_t subp, VkPipelineLayout layout)
     : PipelineSubState(p), rp_state(rp), subpass(subp), pipeline_layout(dev_data.Get<vvl::PipelineLayout>(layout)) {}
 
-FragmentOutputState::FragmentOutputState(const PIPELINE_STATE &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp)
+FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp)
     : PipelineSubState(p), rp_state(rp), subpass(sp) {}
 
 // static

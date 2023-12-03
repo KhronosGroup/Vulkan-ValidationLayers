@@ -22,7 +22,7 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
-bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateComputePipelineShaderState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     StageCreateInfo stage_create_info(&pipeline);
     return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0], create_info_loc.dot(Field::stage));
 }
@@ -36,7 +36,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
 
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
-        const PIPELINE_STATE *pipeline = ccpl_state->pipe_state[i].get();
+        const vvl::Pipeline *pipeline = ccpl_state->pipe_state[i].get();
         if (!pipeline) {
             continue;
         }
