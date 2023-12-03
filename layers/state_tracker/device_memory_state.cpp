@@ -85,9 +85,10 @@ static bool GetMetalExport(const VkMemoryAllocateInfo *info) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
-                                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                                         std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
+namespace vvl {
+DeviceMemory::DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+                           const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
+                           std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
     : BASE_NODE(memory, kVulkanObjectTypeDeviceMemory),
       alloc_info(p_alloc_info),
       export_handle_types(GetExportHandleTypes(p_alloc_info)),
@@ -102,8 +103,9 @@ DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory memory, const VkMemoryAl
       p_driver_data(nullptr),
       fake_base_address(fake_address) {
 }
+}  // namespace vvl
 
-void BindableLinearMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state,
+void BindableLinearMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                              VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     if (!mem_state) return;
 
@@ -151,8 +153,8 @@ bool BindableSparseMemoryTracker::HasFullRangeBound() const {
     return true;
 }
 
-void BindableSparseMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceSize memory_offset,
-                                             VkDeviceSize resource_offset, VkDeviceSize size) {
+void BindableSparseMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
+                                             VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     MEM_BINDING memory_data{mem_state, memory_offset, resource_offset};
     BindingMap::value_type item{{resource_offset, resource_offset + size}, memory_data};
 
@@ -230,7 +232,7 @@ bool BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
 }
 
 // resource_offset is the plane index
-void BindableMultiplanarMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state,
+void BindableMultiplanarMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                                   VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     if (!mem_state) return;
 

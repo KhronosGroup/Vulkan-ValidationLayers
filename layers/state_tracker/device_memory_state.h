@@ -42,8 +42,10 @@ struct DedicatedBinding {
         : handle(image, kVulkanObjectTypeImage), create_info(image_create_info) {}
 };
 
+namespace vvl {
+
 // Data struct for tracking memory object
-class DEVICE_MEMORY_STATE : public BASE_NODE {
+class DeviceMemory : public BASE_NODE {
   public:
     const safe_VkMemoryAllocateInfo alloc_info;
     const VkExternalMemoryHandleTypeFlags export_handle_types;  // from VkExportMemoryAllocateInfo::handleTypes
@@ -59,9 +61,9 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
     void *p_driver_data;                   // Pointer to application's actual memory
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
-    DEVICE_MEMORY_STATE(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
-                        const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                        std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
+    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+                 const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
+                 std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
 
     bool IsImport() const { return import_handle_type.has_value(); }
     bool IsImportAHB() const {
@@ -83,6 +85,8 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
     VkDeviceMemory deviceMemory() const { return handle_.Cast<VkDeviceMemory>(); }
 };
 
+}  // namespace vvl
+
 // Generic memory binding struct to track objects bound to objects
 // No size needed since it will either be the size of the resource if not sparse;
 // the size of the plane if multiplanar; and if sparse, the size of the bound range
@@ -90,7 +94,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 // We need the resource_offset and memory_offset to be able to transform from
 // resource space (in which the range is) to memory space
 struct MEM_BINDING {
-    std::shared_ptr<DEVICE_MEMORY_STATE> memory_state;
+    std::shared_ptr<vvl::DeviceMemory> memory_state;
     VkDeviceSize memory_offset;
     VkDeviceSize resource_offset;
 };
@@ -99,7 +103,7 @@ class BindableMemoryTracker {
   public:
     using MemoryRange = sparse_container::range<VkDeviceSize>;
     using BoundMemoryRange = std::map<VkDeviceMemory, std::vector<MemoryRange>>;
-    using DeviceMemoryState = vvl::unordered_set<std::shared_ptr<DEVICE_MEMORY_STATE>>;
+    using DeviceMemoryState = vvl::unordered_set<std::shared_ptr<vvl::DeviceMemory>>;
 
     virtual ~BindableMemoryTracker() {}
     // kept for backwards compatibility, only useful with the Linear tracker
@@ -107,7 +111,7 @@ class BindableMemoryTracker {
     virtual unsigned CountDeviceMemory(VkDeviceMemory memory) const = 0;
     virtual bool HasFullRangeBound() const = 0;
 
-    virtual void BindMemory(BASE_NODE *, std::shared_ptr<DEVICE_MEMORY_STATE> &, VkDeviceSize, VkDeviceSize, VkDeviceSize) = 0;
+    virtual void BindMemory(BASE_NODE *, std::shared_ptr<vvl::DeviceMemory> &, VkDeviceSize, VkDeviceSize, VkDeviceSize) = 0;
 
     virtual BoundMemoryRange GetBoundMemoryRange(const MemoryRange &) const = 0;
     virtual DeviceMemoryState GetBoundMemoryStates() const = 0;
@@ -124,7 +128,7 @@ class BindableNoMemoryTracker : public BindableMemoryTracker {
 
     bool HasFullRangeBound() const override { return true; }
 
-    void BindMemory(BASE_NODE *, std::shared_ptr<DEVICE_MEMORY_STATE> &, VkDeviceSize, VkDeviceSize, VkDeviceSize) override {}
+    void BindMemory(BASE_NODE *, std::shared_ptr<vvl::DeviceMemory> &, VkDeviceSize, VkDeviceSize, VkDeviceSize) override {}
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &) const override { return BoundMemoryRange{}; }
     DeviceMemoryState GetBoundMemoryStates() const override { return DeviceMemoryState{}; }
@@ -142,7 +146,7 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
 
     bool HasFullRangeBound() const override { return binding_.memory_state != nullptr; }
 
-    void BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceSize memory_offset,
+    void BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state, VkDeviceSize memory_offset,
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
@@ -165,7 +169,7 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
 
     bool HasFullRangeBound() const override;
 
-    void BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceSize memory_offset,
+    void BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state, VkDeviceSize memory_offset,
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
@@ -192,7 +196,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
 
     bool HasFullRangeBound() const override;
 
-    void BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceSize memory_offset,
+    void BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state, VkDeviceSize memory_offset,
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
@@ -234,7 +238,7 @@ class BINDABLE : public BASE_NODE {
                ((external_memory_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCREEN_BUFFER_BIT_QNX) != 0);
     }
 
-    const DEVICE_MEMORY_STATE *MemState() const {
+    const vvl::DeviceMemory *MemState() const {
         const MEM_BINDING *binding = Binding();
         return binding ? binding->memory_state.get() : nullptr;
     }
@@ -267,8 +271,8 @@ class BINDABLE : public BASE_NODE {
     }
 
     // Implemented by template class MemoryTrackedResource that has a BindableMemoryTracker with each needed function
-    void BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize memory_offset,
-                            const VkDeviceSize resource_offset, const VkDeviceSize mem_size) {
+    void BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem, const VkDeviceSize memory_offset,
+                    const VkDeviceSize resource_offset, const VkDeviceSize mem_size) {
         memory_tracker_->BindMemory(parent, mem, memory_offset, resource_offset, mem_size);
     }
 

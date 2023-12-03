@@ -922,7 +922,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
             const auto &bind_info = pBindSessionMemoryInfos[i];
             const auto &mem_binding_info = vs_state->GetMemoryBindingInfo(bind_info.memoryBindIndex);
             if (mem_binding_info != nullptr) {
-                auto mem_state = Get<DEVICE_MEMORY_STATE>(bind_info.memory);
+                auto mem_state = Get<vvl::DeviceMemory>(bind_info.memory);
                 if (mem_state) {
                     if (((1 << mem_state->alloc_info.memoryTypeIndex) & mem_binding_info->requirements.memoryTypeBits) == 0) {
                         LogObjectList objlist(videoSession);

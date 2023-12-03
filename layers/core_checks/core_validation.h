@@ -275,7 +275,7 @@ class CoreChecks : public ValidationStateTracker {
                                      const vvl::RenderPass& rp2_state, const char* msg, const Location& loc,
                                      const char* error_code) const;
     bool ValidateStageMaskHost(const Location& stage_mask_loc, VkPipelineStageFlags2KHR stageMask) const;
-    bool ValidateMapMemory(const DEVICE_MEMORY_STATE& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
+    bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
                            const Location& size_loc) const;
     bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
     bool ValidateAttachmentCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
@@ -430,16 +430,16 @@ class CoreChecks : public ValidationStateTracker {
                                  const Location& loc) const;
     bool ValidateGraphicsIndexedCmd(const CMD_BUFFER_STATE& cb_state, const Location& loc) const;
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const;
-    bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
+    bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const vvl::DeviceMemory* mem_info,
                                    VkDeviceSize memoryOffset, const Location& loc) const;
-    bool ValidateInsertImageMemoryRange(VkImage image, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
+    bool ValidateInsertImageMemoryRange(VkImage image, const vvl::DeviceMemory* mem_info, VkDeviceSize mem_offset,
                                         const Location& loc) const;
-    bool ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
+    bool ValidateInsertBufferMemoryRange(VkBuffer buffer, const vvl::DeviceMemory* mem_info, VkDeviceSize mem_offset,
                                          const Location& loc) const;
-    bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE* mem_info,
+    bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory* mem_info,
                                                         VkDeviceSize mem_offset, const Location& loc) const;
 
-    bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const Location& resource_loc,
+    bool ValidateMemoryTypes(const vvl::DeviceMemory* mem_info, const uint32_t memory_type_bits, const Location& resource_loc,
                              const char* vuid) const;
     bool ValidateCommandBufferState(const CMD_BUFFER_STATE& cb_state, const Location& loc, uint32_t current_submit_count,
                                     const char* vuid) const;
@@ -992,9 +992,9 @@ class CoreChecks : public ValidationStateTracker {
 
     void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE& cb_state);
 
-    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
+    bool VerifyBoundMemoryIsValid(const vvl::DeviceMemory* mem_state, const LogObjectList& objlist,
                                   const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
-    bool VerifyBoundMemoryIsDeviceVisible(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
+    bool VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory* mem_state, const LogObjectList& objlist,
                                           const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
 
     bool ValidateLayoutVsAttachmentDescription(const VkImageLayout first_layout, const uint32_t attachment,

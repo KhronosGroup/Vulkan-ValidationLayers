@@ -40,7 +40,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if ((Count<DEVICE_MEMORY_STATE>() + 1) > kMemoryObjectWarningLimit) {
+    if ((Count<vvl::DeviceMemory>() + 1) > kMemoryObjectWarningLimit) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_AllocateMemory_TooManyObjects, device, error_obj.location,
                                       "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
     }
@@ -113,7 +113,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                             const RecordObject& record_obj) {
     if (memory != VK_NULL_HANDLE && VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+        auto mem_info = Get<vvl::DeviceMemory>(memory);
 
         // Exclude memory free events on dedicated allocations, or imported/exported allocations.
         if (!mem_info->IsDedicatedBuffer() && !mem_info->IsDedicatedImage() && !mem_info->IsExport() && !mem_info->IsImport()) {
@@ -135,7 +135,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
     if (memory == VK_NULL_HANDLE) return false;
     bool skip = false;
 
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_info = Get<vvl::DeviceMemory>(memory);
 
     for (const auto& item : mem_info->ObjectBindings()) {
         const auto& obj = item.first;
@@ -150,7 +150,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_state = Get<vvl::DeviceMemory>(memory);
 
     if (mem_state && mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
         mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
@@ -197,7 +197,7 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
 bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(image);
-    auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_state = Get<vvl::DeviceMemory>(memory);
 
     if (mem_state->alloc_info.allocationSize == image_state->requirements[0].size &&
         mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
@@ -276,7 +276,7 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
 
 void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
                                                             const RecordObject& record_obj) {
-    auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
+    auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
     mem_info->dynamic_priority.emplace(priority);
 }
 
@@ -284,7 +284,7 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
-        auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
+        auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
         if (!mem_info->dynamic_priority) {
             skip |=
                 LogPerformanceWarning(kVUID_BestPractices_BindMemory_NoPriority, device, loc,

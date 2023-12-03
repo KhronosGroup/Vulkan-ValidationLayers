@@ -134,7 +134,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
                                                                       struct AHardwareBuffer **pBuffer,
                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(pInfo->memory);
+    auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory);
 
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
     // VkExportMemoryAllocateInfo::handleTypes when memory was created.
