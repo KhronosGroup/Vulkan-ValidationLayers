@@ -38,7 +38,7 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
                                                           VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    auto cp_state = Get<COMMAND_POOL_STATE>(pAllocateInfo->commandPool);
+    auto cp_state = Get<vvl::CommandPool>(pAllocateInfo->commandPool);
     if (!cp_state) return false;
 
     const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[cp_state->queueFamilyIndex].queueFlags;

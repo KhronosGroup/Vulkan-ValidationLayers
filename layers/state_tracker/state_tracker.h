@@ -62,12 +62,12 @@ class PipelineLayout;
 class Image;
 class ImageView;
 class Swapchain;
+class CommandPool;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
-class COMMAND_POOL_STATE;
 struct SHADER_MODULE_STATE;
 struct SHADER_OBJECT_STATE;
 struct SPIRV_MODULE_STATE;
@@ -304,7 +304,7 @@ VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, vvl::Swapchain)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE)
-VALSTATETRACK_STATE_OBJECT(VkCommandPool, COMMAND_POOL_STATE)
+VALSTATETRACK_STATE_OBJECT(VkCommandPool, vvl::CommandPool)
 VALSTATETRACK_STATE_OBJECT(VkPipelineLayout, vvl::PipelineLayout)
 VALSTATETRACK_STATE_OBJECT(VkFence, vvl::Fence)
 VALSTATETRACK_STATE_OBJECT(VkQueryPool, QUERY_POOL_STATE)
@@ -730,8 +730,8 @@ class ValidationStateTracker : public ValidationObject {
                                         const RecordObject& record_obj) override;
     void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
-    virtual std::shared_ptr<COMMAND_POOL_STATE> CreateCommandPoolState(VkCommandPool command_pool,
-                                                                       const VkCommandPoolCreateInfo* pCreateInfo);
+    virtual std::shared_ptr<vvl::CommandPool> CreateCommandPoolState(VkCommandPool command_pool,
+                                                                     const VkCommandPoolCreateInfo* pCreateInfo);
     void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
                                          const RecordObject& record_obj) override;
@@ -1006,7 +1006,7 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb,
                                                                    const VkCommandBufferAllocateInfo* create_info,
-                                                                   const COMMAND_POOL_STATE* pool);
+                                                                   const vvl::CommandPool* pool);
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
                                               VkCommandBuffer* pCommandBuffer, const RecordObject& record_obj) override;
@@ -1932,7 +1932,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, vvl::DescriptorPool, descriptor_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, vvl::DescriptorSet, descriptor_set_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, command_pool_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, vvl::CommandPool, command_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, vvl::PipelineLayout, pipeline_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFence, vvl::Fence, fence_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, query_pool_map_)

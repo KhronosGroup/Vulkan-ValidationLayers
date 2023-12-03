@@ -55,12 +55,12 @@ WriteLockGuard BestPractices::WriteLock() {
 
 std::shared_ptr<CMD_BUFFER_STATE> BestPractices::CreateCmdBufferState(VkCommandBuffer cb,
                                                                       const VkCommandBufferAllocateInfo* pCreateInfo,
-                                                                      const COMMAND_POOL_STATE* pool) {
+                                                                      const vvl::CommandPool* pool) {
     return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<bp_state::CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
 bp_state::CommandBuffer::CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                                       const COMMAND_POOL_STATE* pool)
+                                       const vvl::CommandPool* pool)
     : CMD_BUFFER_STATE(bp, cb, pCreateInfo, pool) {}
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {

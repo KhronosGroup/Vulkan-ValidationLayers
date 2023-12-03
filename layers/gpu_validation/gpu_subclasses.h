@@ -218,8 +218,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     std::vector<AccelerationStructureBuildValidationInfo> as_validation_buffers;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
 
-    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const COMMAND_POOL_STATE *pool);
+    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
     ~CommandBuffer();
 
     bool NeedsProcessing() const final { return !per_command_resources.empty() || has_build_as_cmd; }

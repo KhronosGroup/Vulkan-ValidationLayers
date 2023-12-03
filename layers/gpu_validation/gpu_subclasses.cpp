@@ -117,7 +117,7 @@ void gpuav::AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_no
 }
 
 gpuav::CommandBuffer::CommandBuffer(gpuav::Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                    const COMMAND_POOL_STATE *pool)
+                                    const vvl::CommandPool *pool)
     : gpu_tracker::CommandBuffer(ga, cb, pCreateInfo, pool) {}
 
 gpuav::CommandBuffer::~CommandBuffer() { Destroy(); }

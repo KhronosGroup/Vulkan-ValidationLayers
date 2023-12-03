@@ -119,7 +119,7 @@ std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue q
 
 std::shared_ptr<CMD_BUFFER_STATE> SyncValidator::CreateCmdBufferState(VkCommandBuffer cb,
                                                                       const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                      const COMMAND_POOL_STATE *cmd_pool) {
+                                                                      const vvl::CommandPool *cmd_pool) {
     auto cb_state = std::make_shared<syncval_state::CommandBuffer>(this, cb, pCreateInfo, cmd_pool);
     if (cb_state) {
         cb_state->access_context.SetSelfReference();

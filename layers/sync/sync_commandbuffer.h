@@ -390,7 +390,7 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     CommandBufferAccessContext access_context;
 
     CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const COMMAND_POOL_STATE *pool);
+                  const vvl::CommandPool *pool);
     ~CommandBuffer() { Destroy(); }
 
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
