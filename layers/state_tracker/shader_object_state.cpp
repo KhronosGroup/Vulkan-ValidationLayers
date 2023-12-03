@@ -17,9 +17,9 @@
 #include "shader_object_state.h"
 #include "pipeline_layout_state.h"
 
-static SHADER_OBJECT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data,
-                                                          const VkShaderCreateInfoEXT &pCreateInfo) {
-    SHADER_OBJECT_STATE::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
+namespace vvl {
+static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+    ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
         set_layouts[i] = dev_data->Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
@@ -27,9 +27,9 @@ static SHADER_OBJECT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTracker
     return set_layouts;
 }
 
-SHADER_OBJECT_STATE::SHADER_OBJECT_STATE(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info,
-                                         VkShaderEXT shader_object, std::shared_ptr<SPIRV_MODULE_STATE> &spirv_module,
-                                         uint32_t createInfoCount, VkShaderEXT *pShaders, uint32_t unique_shader_id)
+ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
+                           std::shared_ptr<SPIRV_MODULE_STATE> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
+                           uint32_t unique_shader_id)
     : BASE_NODE(shader_object, kVulkanObjectTypeShaderEXT),
       create_info(&create_info),
       spirv(spirv_module),
@@ -49,7 +49,7 @@ SHADER_OBJECT_STATE::SHADER_OBJECT_STATE(ValidationStateTracker *dev_data, const
     }
 }
 
-VkPrimitiveTopology SHADER_OBJECT_STATE::GetTopology() const {
+VkPrimitiveTopology ShaderObject::GetTopology() const {
     if (spirv) {
         const auto topology = spirv->GetTopology(*entrypoint);
         if (topology) {
@@ -58,3 +58,4 @@ VkPrimitiveTopology SHADER_OBJECT_STATE::GetTopology() const {
     }
     return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
+}  // namespace vvl

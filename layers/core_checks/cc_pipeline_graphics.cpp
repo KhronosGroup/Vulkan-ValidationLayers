@@ -2896,18 +2896,18 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_s
         skip |= LogError(vuid.vert_task_mesh_shader_08696, objlist, loc, "Vertex shader %s is bound, but %s.",
                          report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str(), msg.str().c_str());
     }
-    for (uint32_t i = 0; i < SHADER_OBJECT_STAGE_COUNT; ++i) {
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         if (i != static_cast<uint32_t>(ShaderObjectStage::COMPUTE) && last_bound_state.shader_object_states[i]) {
             for (const auto &linkedShader : last_bound_state.shader_object_states[i]->linked_shaders) {
                 bool found = false;
-                for (uint32_t j = 0; j < SHADER_OBJECT_STAGE_COUNT; ++j) {
+                for (uint32_t j = 0; j < kShaderObjectStageCount; ++j) {
                     if (linkedShader == last_bound_state.GetShader(static_cast<ShaderObjectStage>(j))) {
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    const auto missingShader = Get<SHADER_OBJECT_STATE>(linkedShader);
+                    const auto missingShader = Get<vvl::ShaderObject>(linkedShader);
                     skip |=
                         LogError(vuid.linked_shaders_08698, objlist, loc,
                                  "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
@@ -2941,7 +2941,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_s
             if (!state->linked_shaders.empty()) {
                 prev_stage = stage;
                 for (const auto &linked_shader : state->linked_shaders) {
-                    const auto &linked_state = Get<SHADER_OBJECT_STATE>(linked_shader);
+                    const auto &linked_state = Get<vvl::ShaderObject>(linked_shader);
                     if (linked_state->create_info.stage == state->create_info.nextStage) {
                         next_stage = static_cast<VkShaderStageFlagBits>(state->create_info.nextStage);
                         break;
@@ -2951,7 +2951,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_s
         }
     }
 
-    const SHADER_OBJECT_STATE *first = nullptr;
+    const vvl::ShaderObject *first = nullptr;
     for (const auto shader_state : last_bound_state.shader_object_states) {
         if (shader_state && shader_state->IsGraphicsShaderState()) {
             if (!first) {

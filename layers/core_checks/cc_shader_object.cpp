@@ -476,7 +476,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                              string_VkShaderStageFlagBits(stage));
         }
         if (shader != VK_NULL_HANDLE) {
-            const auto shader_state = Get<SHADER_OBJECT_STATE>(shader);
+            const auto shader_state = Get<vvl::ShaderObject>(shader);
             if (shader_state->create_info.stage != stage) {
                 skip |=
                     LogError("VUID-vkCmdBindShadersEXT-pShaders-08469", device, stage_loc,

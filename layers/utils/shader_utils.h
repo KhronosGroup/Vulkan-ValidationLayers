@@ -53,7 +53,7 @@ enum class ShaderObjectStage : uint32_t {
     LAST = 8u,
 };
 
-constexpr uint32_t SHADER_OBJECT_STAGE_COUNT = 8u;
+constexpr uint32_t kShaderObjectStageCount = 8u;
 
 inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits stage) {
     switch (stage) {
@@ -94,16 +94,19 @@ typedef vvl::unordered_map<uint32_t, DescriptorRequirement> BindingVariableMap;
 using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
 
 struct EntryPoint;
-struct SHADER_MODULE_STATE;
 struct SPIRV_MODULE_STATE;
 struct safe_VkPipelineShaderStageCreateInfo;
 struct safe_VkShaderCreateInfoEXT;
 struct safe_VkSpecializationInfo;
 class Instruction;
 
+namespace vvl {
+struct ShaderModule;
+}  // namespace vvl
+
 struct PipelineStageState {
     // We use this over a SPIRV_MODULE_STATE because there are times we need to create empty objects
-    std::shared_ptr<const SHADER_MODULE_STATE> module_state;
+    std::shared_ptr<const vvl::ShaderModule> module_state;
     std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state;
     const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
     const safe_VkShaderCreateInfoEXT *shader_object_create_info;
@@ -112,7 +115,7 @@ struct PipelineStageState {
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                        const safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                       std::shared_ptr<const SHADER_MODULE_STATE> module_state,
+                       std::shared_ptr<const vvl::ShaderModule> module_state,
                        std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state);
 
     const char *GetPName() const;

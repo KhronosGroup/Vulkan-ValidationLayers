@@ -46,7 +46,7 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
         // shader stages need to be recorded in pipeline order
         for (const auto &stage_ci : pipe_state.shader_stages_ci) {
             if (stage_ci.stage == stage) {
-                auto module_state = state_data.Get<SHADER_MODULE_STATE>(stage_ci.module);
+                auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
                 if (!module_state) {
                     // See if the module is referenced in a library sub state
                     module_state = pipe_state.GetSubStateShader(stage_ci.stage);
@@ -60,10 +60,10 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
                     if (shader_ci) {
                         // don't need to worry about GroupDecoration in GPL
                         auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
-                        module_state = std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, spirv_module, unique_shader_id);
+                        module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, unique_shader_id);
                     } else {
                         // VK_EXT_shader_module_identifier could legally provide a null module handle
-                        module_state = std::make_shared<SHADER_MODULE_STATE>(unique_shader_id);
+                        module_state = std::make_shared<vvl::ShaderModule>(unique_shader_id);
                     }
                 }
 
@@ -73,7 +73,7 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
         }
         if (!stage_found) {
             // Check if stage has been supplied by a library
-            std::shared_ptr<const SHADER_MODULE_STATE> module_state = nullptr;
+            std::shared_ptr<const vvl::ShaderModule> module_state = nullptr;
             const safe_VkPipelineShaderStageCreateInfo *stage_ci = nullptr;
             switch (stage) {
                 case VK_SHADER_STAGE_VERTEX_BIT:
@@ -550,8 +550,8 @@ std::vector<std::shared_ptr<const vvl::PipelineLayout>> Pipeline::PipelineLayout
 }
 
 // TODO (ncesario) this needs to be automated. As a first step, need to leverage SubState::ValidShaderStages()
-// Currently will return SHADER_MODULE_STATE with no SPIR-V
-std::shared_ptr<const SHADER_MODULE_STATE> Pipeline::GetSubStateShader(VkShaderStageFlagBits state) const {
+// Currently will return vvl::ShaderModule with no SPIR-V
+std::shared_ptr<const vvl::ShaderModule> Pipeline::GetSubStateShader(VkShaderStageFlagBits state) const {
     switch (state) {
         case VK_SHADER_STAGE_VERTEX_BIT: {
             const auto sub_state = Pipeline::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
@@ -888,12 +888,12 @@ VkShaderEXT LastBound::GetShader(ShaderObjectStage stage) const {
     return shader_object_states[static_cast<uint32_t>(stage)]->shader();
 }
 
-SHADER_OBJECT_STATE *LastBound::GetShaderState(ShaderObjectStage stage) const {
+vvl::ShaderObject *LastBound::GetShaderState(ShaderObjectStage stage) const {
     return shader_object_states[static_cast<uint32_t>(stage)];
 }
 
 bool LastBound::HasShaderObjects() const {
-    for (uint32_t i = 0; i < SHADER_OBJECT_STAGE_COUNT; ++i) {
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         if (GetShader(static_cast<ShaderObjectStage>(i)) != VK_NULL_HANDLE) {
             return true;
         }

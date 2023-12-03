@@ -1400,7 +1400,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
-        for (uint32_t stage = 0; stage < SHADER_OBJECT_STAGE_COUNT; ++stage) {
+        for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
             const auto shader_stage = last_bound_state.GetShaderState(static_cast<ShaderObjectStage>(stage));
             if (shader_stage && shader_stage->entrypoint && shader_stage->entrypoint->written_builtin_primitive_shading_rate_khr) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, objlist,

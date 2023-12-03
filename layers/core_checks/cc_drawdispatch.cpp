@@ -1569,7 +1569,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         std::string error_string;
 
         const auto are_bound_sets_compat = [](uint32_t set, const LastBound &last_bound,
-                                              const SHADER_OBJECT_STATE &shader_object_state) {
+                                              const vvl::ShaderObject &shader_object_state) {
             if ((set >= last_bound.per_set.size()) || (set >= shader_object_state.set_compat_ids.size())) {
                 return false;
             }

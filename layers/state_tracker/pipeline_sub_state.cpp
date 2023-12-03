@@ -80,7 +80,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
         }
         all_stages |= stage;
 
-        auto module_state = state_data.Get<SHADER_MODULE_STATE>(stage_ci.module);
+        auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
         if (!module_state) {
             // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
             // module is part of a library and the state must be created
@@ -88,7 +88,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
             if (shader_ci) {
                 // don't need to worry about GroupDecoration in GPL
                 auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
-                module_state = std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, spirv_module, 0);
+                module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
             }
         }
 
@@ -188,7 +188,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                                   const CreateInfo &create_info) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            auto module_state = state_data.Get<SHADER_MODULE_STATE>(create_info.pStages[i].module);
+            auto module_state = state_data.Get<vvl::ShaderModule>(create_info.pStages[i].module);
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
@@ -196,7 +196,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                 if (shader_ci) {
                     // don't need to worry about GroupDecoration in GPL
                     auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
-                    module_state = std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, spirv_module, 0);
+                    module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
                 }
             }
 

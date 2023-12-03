@@ -37,10 +37,10 @@ class Descriptor;
 class RenderPass;
 class CommandBuffer;
 class Pipeline;
+struct ShaderModule;
 }  // namespace vvl
 
 class ValidationStateTracker;
-struct SHADER_MODULE_STATE;
 
 struct StageCreateInfo {
     const vvl::Pipeline *pipeline;
@@ -235,7 +235,7 @@ class Pipeline : public BASE_NODE {
         return {};
     }
 
-    std::shared_ptr<const SHADER_MODULE_STATE> GetSubStateShader(VkShaderStageFlagBits state) const;
+    std::shared_ptr<const vvl::ShaderModule> GetSubStateShader(VkShaderStageFlagBits state) const;
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
     static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,
@@ -701,8 +701,8 @@ struct LastBound {
     vvl::Pipeline *pipeline_state{nullptr};
     // All shader stages for a used pipeline bind point must be bound to with a valid shader or VK_NULL_HANDLE
     // We have to track shader_object_bound, because shader_object_states will be nullptr when VK_NULL_HANDLE is used
-    bool shader_object_bound[SHADER_OBJECT_STAGE_COUNT]{false};
-    SHADER_OBJECT_STATE *shader_object_states[SHADER_OBJECT_STAGE_COUNT]{nullptr};
+    bool shader_object_bound[kShaderObjectStageCount]{false};
+    vvl::ShaderObject *shader_object_states[kShaderObjectStageCount]{nullptr};
     VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
     std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
 
@@ -754,7 +754,7 @@ struct LastBound {
 
     bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;
     VkShaderEXT GetShader(ShaderObjectStage stage) const;
-    SHADER_OBJECT_STATE *GetShaderState(ShaderObjectStage stage) const;
+    vvl::ShaderObject *GetShaderState(ShaderObjectStage stage) const;
     bool HasShaderObjects() const;
     bool IsValidShaderBound(ShaderObjectStage stage) const;
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;

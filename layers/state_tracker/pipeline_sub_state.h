@@ -22,11 +22,11 @@
 
 // Graphics pipeline sub-state as defined by VK_KHR_graphics_pipeline_library
 //
-struct SHADER_MODULE_STATE;
 struct EntryPoint;
 
 namespace vvl {
 class RenderPass;
+struct ShaderModule;
 }  // namespace vvl
 
 template <typename CreateInfoType>
@@ -87,11 +87,11 @@ struct PreRasterState : public PipelineSubState {
 
     VkShaderStageFlagBits last_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> tessc_shader, tesse_shader;
+    std::shared_ptr<const vvl::ShaderModule> tessc_shader, tesse_shader;
     const safe_VkPipelineShaderStageCreateInfo *tessc_shader_ci = nullptr, *tesse_shader_ci = nullptr;
     const safe_VkPipelineTessellationStateCreateInfo *tess_create_info = nullptr;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> vertex_shader, geometry_shader, task_shader, mesh_shader;
+    std::shared_ptr<const vvl::ShaderModule> vertex_shader, geometry_shader, task_shader, mesh_shader;
     const safe_VkPipelineShaderStageCreateInfo *vertex_shader_ci = nullptr, *geometry_shader_ci = nullptr,
                                                *task_shader_ci = nullptr, *mesh_shader_ci = nullptr;
 };
@@ -137,7 +137,7 @@ struct FragmentShaderState : public PipelineSubState {
     std::unique_ptr<const safe_VkPipelineMultisampleStateCreateInfo> ms_state;
     std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ds_state;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> fragment_shader;
+    std::shared_ptr<const vvl::ShaderModule> fragment_shader;
     std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> fragment_shader_ci;
     // many times we need to quickly get the entry point to access the SPIR-V static data
     std::shared_ptr<const EntryPoint> fragment_entry_point;

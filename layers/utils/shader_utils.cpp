@@ -152,7 +152,7 @@ bool PipelineStageState::GetInt32ConstantValue(const Instruction &insn, uint32_t
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                                        const safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                                       std::shared_ptr<const SHADER_MODULE_STATE> module_state,
+                                       std::shared_ptr<const vvl::ShaderModule> module_state,
                                        std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state)
     : module_state(module_state),
       spirv_state(spirv_state),
