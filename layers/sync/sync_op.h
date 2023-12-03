@@ -30,7 +30,7 @@ using SyncMemoryBarrier = SyncBarrier;
 
 struct SyncEventState {
     enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
-    using EventPointer = std::shared_ptr<const EVENT_STATE>;
+    using EventPointer = std::shared_ptr<const vvl::Event>;
     EventPointer event;
     vvl::Func last_command;             // Only Event commands are valid here.
     ResourceUsageTag last_command_tag;  // Needed to filter replay validation
@@ -68,7 +68,7 @@ struct SyncEventState {
 
 class SyncEventsContext {
   public:
-    using Map = vvl::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
+    using Map = vvl::unordered_map<const vvl::Event *, std::shared_ptr<SyncEventState>>;
     using iterator = Map::iterator;
     using const_iterator = Map::const_iterator;
 
@@ -85,7 +85,7 @@ class SyncEventsContext {
         return find_it->second.get();
     }
 
-    const SyncEventState *Get(const EVENT_STATE *event_state) const {
+    const SyncEventState *Get(const vvl::Event *event_state) const {
         const auto find_it = map_.find(event_state);
         if (find_it == map_.end()) {
             return nullptr;
@@ -97,7 +97,7 @@ class SyncEventsContext {
     void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag);
     void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);
 
-    void Destroy(const EVENT_STATE *event_state) {
+    void Destroy(const vvl::Event *event_state) {
         auto sync_it = map_.find(event_state);
         if (sync_it != map_.end()) {
             sync_it->second->destroyed = true;
@@ -233,7 +233,7 @@ class SyncOpWaitEvents : public SyncOpBarriers {
     void DoRecord(CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
     // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
-    std::vector<std::shared_ptr<const EVENT_STATE>> events_;
+    std::vector<std::shared_ptr<const vvl::Event>> events_;
     void MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events);
 };
 
@@ -250,7 +250,7 @@ class SyncOpResetEvent : public SyncOpBase {
 
   private:
     bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
-    std::shared_ptr<const EVENT_STATE> event_;
+    std::shared_ptr<const vvl::Event> event_;
     SyncExecScope exec_scope_;
 };
 
@@ -271,7 +271,7 @@ class SyncOpSetEvent : public SyncOpBase {
     bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
     void DoRecord(QueueId queue_id, ResourceUsageTag recorded_tag, const std::shared_ptr<const AccessContext> &access_context,
                   SyncEventsContext *events_context) const;
-    std::shared_ptr<const EVENT_STATE> event_;
+    std::shared_ptr<const vvl::Event> event_;
     // The Access context of the command buffer at record set event time.
     std::shared_ptr<const AccessContext> recorded_context_;
     SyncExecScope src_exec_scope_;

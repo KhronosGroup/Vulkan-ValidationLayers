@@ -461,7 +461,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                     }
                 }
                 if (metal_shared_event_ptr->event) {
-                    auto event_info = Get<EVENT_STATE>(metal_shared_event_ptr->event);
+                    auto event_info = Get<vvl::Event>(metal_shared_event_ptr->event);
                     if (event_info && !(event_info->metal_event_export)) {
                         skip |= LogError(
                             "VUID-VkExportMetalObjectsInfoEXT-pNext-06806", device, error_obj.location,

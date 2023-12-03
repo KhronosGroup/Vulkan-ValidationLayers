@@ -57,7 +57,9 @@ static bool GetMetalExport(const VkEventCreateInfo *info) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-class EVENT_STATE : public BASE_NODE {
+namespace vvl {
+
+class Event : public BASE_NODE {
   public:
     int write_in_use;
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -71,7 +73,7 @@ class EVENT_STATE : public BASE_NODE {
     // Queue that signaled this event. It's null if event was signaled from the host
     VkQueue signaling_queue = VK_NULL_HANDLE;
 
-    EVENT_STATE(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
+    Event(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
         : BASE_NODE(event_, kVulkanObjectTypeEvent),
           write_in_use(0),
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -82,6 +84,8 @@ class EVENT_STATE : public BASE_NODE {
 
     VkEvent event() const { return handle_.Cast<VkEvent>(); }
 };
+
+}  // namespace vvl
 
 // Only CoreChecks uses this, but the state tracker stores it.
 constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;

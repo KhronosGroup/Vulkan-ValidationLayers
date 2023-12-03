@@ -297,7 +297,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
     ResourceUsageTag RecordNextSubpass(vvl::Func command);
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);
-    void RecordDestroyEvent(EVENT_STATE *event_state);
+    void RecordDestroyEvent(vvl::Event *event_state);
 
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);

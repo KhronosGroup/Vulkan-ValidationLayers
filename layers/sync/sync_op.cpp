@@ -773,15 +773,13 @@ bool SyncOpWaitEvents::ReplayValidate(ReplayState &replay, ResourceUsageTag reco
 void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events) {
     events_.reserve(event_count);
     for (uint32_t event_index = 0; event_index < event_count; event_index++) {
-        events_.emplace_back(sync_state.Get<EVENT_STATE>(events[event_index]));
+        events_.emplace_back(sync_state.Get<vvl::Event>(events[event_index]));
     }
 }
 
 SyncOpResetEvent::SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                    VkPipelineStageFlags2KHR stageMask)
-    : SyncOpBase(command),
-      event_(sync_state.Get<EVENT_STATE>(event)),
-      exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
+    : SyncOpBase(command), event_(sync_state.Get<vvl::Event>(event)), exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
 bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
     return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
@@ -862,7 +860,7 @@ void SyncOpResetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resou
 SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                VkPipelineStageFlags2KHR stageMask, const AccessContext *access_context)
     : SyncOpBase(command),
-      event_(sync_state.Get<EVENT_STATE>(event)),
+      event_(sync_state.Get<vvl::Event>(event)),
       recorded_context_(),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)),
       dep_info_() {
@@ -878,7 +876,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
 SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                const VkDependencyInfoKHR &dep_info, const AccessContext *access_context)
     : SyncOpBase(command),
-      event_(sync_state.Get<EVENT_STATE>(event)),
+      event_(sync_state.Get<vvl::Event>(event)),
       recorded_context_(),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetGlobalStageMasks(dep_info).src)),
       dep_info_(new safe_VkDependencyInfo(&dep_info)) {

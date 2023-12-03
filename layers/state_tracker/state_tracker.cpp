@@ -1477,7 +1477,7 @@ void ValidationStateTracker::PreCallRecordDestroySemaphore(VkDevice device, VkSe
 
 void ValidationStateTracker::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator,
                                                        const RecordObject &record_obj) {
-    Destroy<EVENT_STATE>(event);
+    Destroy<vvl::Event>(event);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
@@ -3246,7 +3246,7 @@ void ValidationStateTracker::PostCallRecordBindImageMemory2KHR(VkDevice device, 
 }
 
 void ValidationStateTracker::PreCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject &record_obj) {
-    auto event_state = Get<EVENT_STATE>(event);
+    auto event_state = Get<vvl::Event>(event);
     if (event_state) {
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;
         event_state->signaling_queue = VK_NULL_HANDLE;
@@ -3394,7 +3394,7 @@ void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const Vk
                                                        const VkAllocationCallbacks *pAllocator, VkEvent *pEvent,
                                                        const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(std::make_shared<EVENT_STATE>(*pEvent, pCreateInfo));
+    Add(std::make_shared<vvl::Event>(*pEvent, pCreateInfo));
 }
 
 void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
