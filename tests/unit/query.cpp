@@ -2772,3 +2772,65 @@ TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0u);
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
+    TEST_DESCRIPTION("Call vkCmdWriteTimestamp() inside an active render pass instance");
+
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(multiview_features);
+    if (!multiview_features.multiview) {
+        GTEST_SKIP() << "multivew not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &multiview_features));
+    InitRenderTarget();
+
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 2;
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    uint32_t viewMasks[] = {0x3u};
+    uint32_t correlationMasks[] = {0x1u};
+    VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
+    rpmv_ci.subpassCount = 1;
+    rpmv_ci.pViewMasks = viewMasks;
+    rpmv_ci.correlationMaskCount = 1;
+    rpmv_ci.pCorrelationMasks = correlationMasks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&rpmv_ci);
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass;
+
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
+    render_pass_bi.clearValueCount = 1u;
+    render_pass_bi.pClearValues = m_renderPassClearValues.data();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(render_pass_bi);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-query-00831");
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, query_pool.handle(), 1);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
