@@ -129,7 +129,7 @@ struct PresentedImage : public PresentedImageRecord {
 using PresentedImages = std::vector<PresentedImage>;
 
 namespace syncval_state {
-class Swapchain : public SWAPCHAIN_NODE {
+class Swapchain : public vvl::Swapchain {
   public:
     Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
     ~Swapchain() { Destroy(); }

@@ -32,11 +32,11 @@ namespace vvl {
 class Fence;
 class Semaphore;
 class Surface;
+class Swapchain;
 } // namespace vvl
 
 class ValidationStateTracker;
 class VideoProfileDesc;
-class SWAPCHAIN_NODE;
 
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
     return (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
@@ -95,7 +95,7 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
 //    All other images using the same device memory are in the aliasing_images set.
 //
 // 4. Swapchain images
-//    IMAGE_STATE [N] -> [1] SWAPCHAIN_NODE
+//    IMAGE_STATE [N] -> [1] vvl::Swapchain
 //    All other images using the same swapchain and swapchain_image_index are in the aliasing_images set.
 //    Note that the images for *every* image_index will show up as parents of the swapchain,
 //    so swapchain_image_index values must be compared.
@@ -110,7 +110,7 @@ class IMAGE_STATE : public BINDABLE {
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
     const VkSwapchainKHR create_from_swapchain;
     const bool owned_by_swapchain;
-    std::shared_ptr<SWAPCHAIN_NODE> bind_swapchain;
+    std::shared_ptr<vvl::Swapchain> bind_swapchain;
     uint32_t swapchain_image_index;
     const VkFormatFeatureFlags2KHR format_features;
     // Need to memory requirments for each plane if image is disjoint
@@ -206,7 +206,7 @@ class IMAGE_STATE : public BINDABLE {
         }
     }
 
-    void SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index);
+    void SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index);
 
     void Destroy() override;
 
@@ -322,9 +322,7 @@ class ImageView : public BASE_NODE {
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 };
 
-}  // namespace vvl
-
-struct SWAPCHAIN_IMAGE {
+struct SwapchainImage {
     IMAGE_STATE *image_state = nullptr;
     bool acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
@@ -333,13 +331,13 @@ struct SWAPCHAIN_IMAGE {
 
 // State for VkSwapchainKHR objects.
 // Parent -> child relationships in the object usage tree:
-//    SWAPCHAIN_NODE [N] -> [1] vvl::Surface
+//    vvl::Swapchain [N] -> [1] vvl::Surface
 //    However, only 1 swapchain for each surface can be !retired.
-class SWAPCHAIN_NODE : public BASE_NODE {
+class Swapchain : public BASE_NODE {
   public:
     const safe_VkSwapchainCreateInfoKHR createInfo;
     std::vector<VkPresentModeKHR> present_modes;
-    std::vector<SWAPCHAIN_IMAGE> images;
+    std::vector<SwapchainImage> images;
     bool retired = false;
     bool exclusive_full_screen_access;
     const bool shared_presentable;
@@ -351,9 +349,9 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     ValidationStateTracker *dev_data;
     uint32_t acquired_images = 0;
 
-    SWAPCHAIN_NODE(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
+    Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
 
-    ~SWAPCHAIN_NODE() {
+    ~Swapchain() {
         if (!Destroyed()) {
             Destroy();
         }
@@ -368,13 +366,15 @@ class SWAPCHAIN_NODE : public BASE_NODE {
 
     void Destroy() override;
 
-    SWAPCHAIN_IMAGE GetSwapChainImage(uint32_t index) const;
+    SwapchainImage GetSwapChainImage(uint32_t index) const;
 
     std::shared_ptr<const IMAGE_STATE> GetSwapChainImageShared(uint32_t index) const;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
+
+}  // namespace vvl
 
 struct GpuQueue {
     VkPhysicalDevice gpu;
@@ -456,7 +456,7 @@ class Surface : public BASE_NODE {
                                                                const VkPresentModeKHR present_mode) const;
     VkSurfacePresentScalingCapabilitiesEXT GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
                                                                              const VkPresentModeKHR present_mode) const;
-    SWAPCHAIN_NODE *swapchain{nullptr};
+    vvl::Swapchain *swapchain{nullptr};
 
   private:
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }

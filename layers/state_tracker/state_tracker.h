@@ -60,6 +60,7 @@ class DisplayMode;
 class Event;
 class PipelineLayout;
 class ImageView;
+class Swapchain;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
@@ -67,7 +68,6 @@ class PIPELINE_STATE;
 struct PipelineStageState;
 class IMAGE_STATE;
 class COMMAND_POOL_STATE;
-class SWAPCHAIN_NODE;
 struct SHADER_MODULE_STATE;
 struct SHADER_OBJECT_STATE;
 struct SPIRV_MODULE_STATE;
@@ -300,7 +300,7 @@ VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, vvl::DeviceMemory)
 VALSTATETRACK_STATE_OBJECT(VkFramebuffer, vvl::Framebuffer)
 VALSTATETRACK_STATE_OBJECT(VkShaderModule, SHADER_MODULE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate)
-VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, SWAPCHAIN_NODE)
+VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, vvl::Swapchain)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE)
@@ -1490,10 +1490,10 @@ class ValidationStateTracker : public ValidationObject {
                                                     const vvl::DescriptorUpdateTemplate* template_state, const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex, vvl::Func command);
-    virtual std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
+    virtual std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                                  VkSwapchainKHR swapchain);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
-                                    std::shared_ptr<vvl::Surface>&& surface_state, SWAPCHAIN_NODE* old_swapchain_state);
+                                    std::shared_ptr<vvl::Surface>&& surface_state, vvl::Swapchain* old_swapchain_state);
     void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, uint32_t* pCounterCount,
                                                                           VkPerformanceCounterKHR* pCounters);
@@ -1924,7 +1924,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, vvl::Framebuffer, frame_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate, desc_template_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchain_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, vvl::Swapchain, swapchain_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, vvl::DescriptorPool, descriptor_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, vvl::DescriptorSet, descriptor_set_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)

@@ -160,7 +160,7 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence>& fence_, 
 
 syncval_state::Swapchain::Swapchain(ValidationStateTracker* dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                     VkSwapchainKHR swapchain)
-    : SWAPCHAIN_NODE(dev_data, pCreateInfo, swapchain) {}
+    : vvl::Swapchain(dev_data, pCreateInfo, swapchain) {}
 
 void syncval_state::Swapchain::RecordPresentedImage(PresentedImage&& presented_image) {
     // All presented images are stored within the swapchain until the are reaquired.

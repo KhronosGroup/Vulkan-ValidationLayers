@@ -362,7 +362,7 @@ void IMAGE_STATE::SetImageLayout(const VkImageSubresourceRange &range, VkImageLa
     }
 }
 
-void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index) {
+void IMAGE_STATE::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index) {
     assert(IsSwapchainImage());
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
@@ -522,8 +522,9 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
     return safe_VkImageCreateInfo(&image_ci);
 }
 
-SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                               VkSwapchainKHR swapchain)
+namespace vvl {
+
+Swapchain::Swapchain(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
     : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
       createInfo(pCreateInfo),
       images(),
@@ -533,7 +534,7 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapch
       image_create_info(GetImageCreateInfo(pCreateInfo)),
       dev_data(dev_data_) {}
 
-void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
+void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
     if (!shared_presentable) {
@@ -552,8 +553,8 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
     }
 }
 
-void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
-                                  const std::shared_ptr<vvl::Fence> &fence_state) {
+void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
+                             const std::shared_ptr<vvl::Fence> &fence_state) {
     if (image_index >= images.size()) return;
 
     assert(acquired_images < std::numeric_limits<uint32_t>::max());
@@ -569,7 +570,7 @@ void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index, const std::shared_ptr<vv
     }
 }
 
-void SWAPCHAIN_NODE::Destroy() {
+void Swapchain::Destroy() {
     for (auto &swapchain_image : images) {
         if (swapchain_image.image_state) {
             RemoveParent(swapchain_image.image_state);
@@ -585,29 +586,27 @@ void SWAPCHAIN_NODE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-void SWAPCHAIN_NODE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
+void Swapchain::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
     BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
         surface = nullptr;
     }
 }
 
-SWAPCHAIN_IMAGE SWAPCHAIN_NODE::GetSwapChainImage(uint32_t index) const {
+SwapchainImage Swapchain::GetSwapChainImage(uint32_t index) const {
     if (index < images.size()) {
         return images[index];
     }
-    return SWAPCHAIN_IMAGE();
+    return SwapchainImage();
 }
 
-std::shared_ptr<const IMAGE_STATE> SWAPCHAIN_NODE::GetSwapChainImageShared(uint32_t index) const {
-    const SWAPCHAIN_IMAGE swapchain_image(GetSwapChainImage(index));
+std::shared_ptr<const IMAGE_STATE> Swapchain::GetSwapChainImageShared(uint32_t index) const {
+    const SwapchainImage swapchain_image(GetSwapChainImage(index));
     if (swapchain_image.image_state) {
         return swapchain_image.image_state->shared_from_this();
     }
     return std::shared_ptr<const IMAGE_STATE>();
 }
-
-namespace vvl {
 
 void Surface::Destroy() {
     if (swapchain) {

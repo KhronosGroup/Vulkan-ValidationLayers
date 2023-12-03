@@ -127,9 +127,9 @@ std::shared_ptr<CMD_BUFFER_STATE> SyncValidator::CreateCmdBufferState(VkCommandB
     return std::static_pointer_cast<CMD_BUFFER_STATE>(cb_state);
 }
 
-std::shared_ptr<SWAPCHAIN_NODE> SyncValidator::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
+std::shared_ptr<vvl::Swapchain> SyncValidator::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                                     VkSwapchainKHR swapchain) {
-    return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<syncval_state::Swapchain>(this, create_info, swapchain));
+    return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<syncval_state::Swapchain>(this, create_info, swapchain));
 }
 
 std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
@@ -2779,11 +2779,11 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
                                                         VkImage *pSwapchainImages, const RecordObject &record_obj) {
     StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
-    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
 
     if (pSwapchainImages) {
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            SWAPCHAIN_IMAGE &swapchain_image = swapchain_state->images[i];
+            vvl::SwapchainImage &swapchain_image = swapchain_state->images[i];
             if (swapchain_image.image_state) {
                 auto *sync_image = static_cast<ImageState *>(swapchain_image.image_state);
                 assert(sync_image->IsTiled());  // This is the assumption from the spec, and the implementation relies on it
