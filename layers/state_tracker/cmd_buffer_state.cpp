@@ -19,8 +19,10 @@
  */
 #include "state_tracker/cmd_buffer_state.h"
 
-COMMAND_POOL_STATE::COMMAND_POOL_STATE(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
-                                       VkQueueFlags flags)
+namespace vvl {
+
+CommandPool::CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
+                         VkQueueFlags flags)
     : BASE_NODE(cp, kVulkanObjectTypeCommandPool),
       dev_data(dev),
       createFlags(pCreateInfo->flags),
@@ -28,7 +30,7 @@ COMMAND_POOL_STATE::COMMAND_POOL_STATE(ValidationStateTracker *dev, VkCommandPoo
       queue_flags(flags),
       unprotected((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
 
-void COMMAND_POOL_STATE::Allocate(const VkCommandBufferAllocateInfo *create_info, const VkCommandBuffer *command_buffers) {
+void CommandPool::Allocate(const VkCommandBufferAllocateInfo *create_info, const VkCommandBuffer *command_buffers) {
     for (uint32_t i = 0; i < create_info->commandBufferCount; i++) {
         auto new_cb = dev_data->CreateCmdBufferState(command_buffers[i], create_info, this);
         commandBuffers.emplace(command_buffers[i], new_cb.get());
@@ -36,7 +38,7 @@ void COMMAND_POOL_STATE::Allocate(const VkCommandBufferAllocateInfo *create_info
     }
 }
 
-void COMMAND_POOL_STATE::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
+void CommandPool::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
     for (uint32_t i = 0; i < count; i++) {
         auto iter = commandBuffers.find(command_buffers[i]);
         if (iter != commandBuffers.end()) {
@@ -46,20 +48,22 @@ void COMMAND_POOL_STATE::Free(uint32_t count, const VkCommandBuffer *command_buf
     }
 }
 
-void COMMAND_POOL_STATE::Reset() {
+void CommandPool::Reset() {
     for (auto &entry : commandBuffers) {
         auto guard = entry.second->WriteLock();
         entry.second->Reset();
     }
 }
 
-void COMMAND_POOL_STATE::Destroy() {
+void CommandPool::Destroy() {
     for (auto &entry : commandBuffers) {
         dev_data->Destroy<CMD_BUFFER_STATE>(entry.first);
     }
     commandBuffers.clear();
     BASE_NODE::Destroy();
 }
+
+}  // namespace vvl
 
 void CMD_BUFFER_STATE::SetActiveSubpass(uint32_t subpass) {
     active_subpass_ = subpass;
@@ -68,7 +72,7 @@ void CMD_BUFFER_STATE::SetActiveSubpass(uint32_t subpass) {
 }
 
 CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                   const COMMAND_POOL_STATE *pool)
+                                   const vvl::CommandPool *pool)
     : REFCOUNTED_NODE(cb, kVulkanObjectTypeCommandBuffer),
       createInfo(*pCreateInfo),
       command_pool(pool),

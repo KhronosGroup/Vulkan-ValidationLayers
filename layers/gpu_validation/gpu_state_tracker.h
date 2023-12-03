@@ -38,14 +38,13 @@ class Queue : public vvl::Queue {
 
 class CommandBuffer : public CMD_BUFFER_STATE {
   public:
-    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const COMMAND_POOL_STATE *pool);
+    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
 
     virtual bool NeedsProcessing() const = 0;
     virtual void Process(VkQueue queue, const Location &loc) = 0;
 };
 }  // namespace gpu_tracker
- 
+
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_tracker::Queue, vvl::Queue)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, CMD_BUFFER_STATE)
 

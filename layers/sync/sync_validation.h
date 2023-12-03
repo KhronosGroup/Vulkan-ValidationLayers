@@ -97,7 +97,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     QueueBatchContext::BatchSet GetQueueLastBatchSnapshot() { return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred); };
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                           const COMMAND_POOL_STATE *cmd_pool) override;
+                                                           const vvl::CommandPool *cmd_pool) override;
     std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                          VkSwapchainKHR swapchain) final;
     std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,

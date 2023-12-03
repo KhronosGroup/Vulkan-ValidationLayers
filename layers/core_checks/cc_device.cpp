@@ -754,7 +754,7 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
+    auto cp_state = Get<vvl::CommandPool>(commandPool);
     if (!cp_state) { return false; }
     // Verify that command buffers in pool are complete (not in-flight)
     for (auto &entry : cp_state->commandBuffers) {
@@ -771,7 +771,7 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
-    auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
+    auto cp_state = Get<vvl::CommandPool>(commandPool);
     if (!cp_state) { return false; }
     // Verify that command buffers in pool are complete (not in-flight)
     for (auto &entry : cp_state->commandBuffers) {

@@ -92,8 +92,9 @@ constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
 using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
 typedef vvl::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
 
+namespace vvl {
 // Track command pools and their command buffers
-class COMMAND_POOL_STATE : public BASE_NODE {
+class CommandPool : public BASE_NODE {
   public:
     ValidationStateTracker *dev_data;
     const VkCommandPoolCreateFlags createFlags;
@@ -103,9 +104,8 @@ class COMMAND_POOL_STATE : public BASE_NODE {
     // Cmd buffers allocated from this pool
     vvl::unordered_map<VkCommandBuffer, CMD_BUFFER_STATE *> commandBuffers;
 
-    COMMAND_POOL_STATE(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
-                       VkQueueFlags flags);
-    virtual ~COMMAND_POOL_STATE() { Destroy(); }
+    CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo, VkQueueFlags flags);
+    virtual ~CommandPool() { Destroy(); }
 
     VkCommandPool commandPool() const { return handle_.Cast<VkCommandPool>(); }
 
@@ -115,6 +115,7 @@ class COMMAND_POOL_STATE : public BASE_NODE {
 
     void Destroy() override;
 };
+}  // namespace vvl
 
 enum class CbState {
     New,                // Newly created CB w/o any cmds
@@ -174,7 +175,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
-    const COMMAND_POOL_STATE *command_pool;
+    const vvl::CommandPool *command_pool;
     ValidationStateTracker *dev_data;
     bool unprotected;  // can't be used for protected memory
     bool hasRenderPassInstance;
@@ -468,7 +469,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
     CMD_BUFFER_STATE(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                     const COMMAND_POOL_STATE *cmd_pool);
+                     const vvl::CommandPool *cmd_pool);
 
     virtual ~CMD_BUFFER_STATE() { Destroy(); }
 

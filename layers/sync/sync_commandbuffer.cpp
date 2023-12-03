@@ -1132,7 +1132,7 @@ std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
 }
 
 syncval_state::CommandBuffer::CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                            const COMMAND_POOL_STATE *pool)
+                                            const vvl::CommandPool *pool)
     : CMD_BUFFER_STATE(dev, cb, pCreateInfo, pool), access_context(*dev, this) {}
 
 void syncval_state::CommandBuffer::Destroy() {

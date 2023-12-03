@@ -136,7 +136,7 @@ class Validator : public gpu_tracker::Validator {
         std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address) final;
     std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                                                           const COMMAND_POOL_STATE* pool) final;
+                                                           const vvl::CommandPool* pool) final;
     std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;

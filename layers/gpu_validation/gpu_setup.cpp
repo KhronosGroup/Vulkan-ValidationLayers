@@ -76,7 +76,7 @@ std::shared_ptr<vvl::DescriptorSet> gpuav::Validator::CreateDescriptorSet(
 
 std::shared_ptr<CMD_BUFFER_STATE> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer cb,
                                                                          const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                         const COMMAND_POOL_STATE *pool) {
+                                                                         const vvl::CommandPool *pool) {
     return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 

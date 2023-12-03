@@ -744,12 +744,12 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
 
 std::shared_ptr<CMD_BUFFER_STATE> debug_printf::Validator::CreateCmdBufferState(VkCommandBuffer cb,
                                                                                 const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                                const COMMAND_POOL_STATE *pool) {
+                                                                                const vvl::CommandPool *pool) {
     return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<debug_printf::CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
 debug_printf::CommandBuffer::CommandBuffer(debug_printf::Validator *dp, VkCommandBuffer cb,
-                                           const VkCommandBufferAllocateInfo *pCreateInfo, const COMMAND_POOL_STATE *pool)
+                                           const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
     : gpu_tracker::CommandBuffer(dp, cb, pCreateInfo, pool) {}
 
 debug_printf::CommandBuffer::~CommandBuffer() { Destroy(); }

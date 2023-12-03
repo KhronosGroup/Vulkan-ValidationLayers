@@ -326,7 +326,7 @@ struct CommandBufferStateNV {
 class CommandBuffer : public CMD_BUFFER_STATE {
   public:
     CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                  const COMMAND_POOL_STATE* pool);
+                  const vvl::CommandPool* pool);
 
     RenderPassState render_pass_state;
     CommandBufferStateNV nv;
@@ -994,7 +994,7 @@ class BestPractices : public ValidationStateTracker {
 #include "generated/best_practices.h"
   protected:
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                                                           const COMMAND_POOL_STATE* pool) final;
+                                                           const vvl::CommandPool* pool) final;
 
     std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                          VkSwapchainKHR swapchain) final {

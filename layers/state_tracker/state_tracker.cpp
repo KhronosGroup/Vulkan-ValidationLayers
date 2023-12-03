@@ -1643,16 +1643,16 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device,
 void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                                              uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers,
                                                              const RecordObject &record_obj) {
-    auto pool = Get<COMMAND_POOL_STATE>(commandPool);
+    auto pool = Get<vvl::CommandPool>(commandPool);
     if (pool) {
         pool->Free(commandBufferCount, pCommandBuffers);
     }
 }
 
-std::shared_ptr<COMMAND_POOL_STATE> ValidationStateTracker::CreateCommandPoolState(VkCommandPool command_pool,
-                                                                                   const VkCommandPoolCreateInfo *pCreateInfo) {
+std::shared_ptr<vvl::CommandPool> ValidationStateTracker::CreateCommandPoolState(VkCommandPool command_pool,
+                                                                                 const VkCommandPoolCreateInfo *pCreateInfo) {
     auto queue_flags = physical_device_state->queue_family_properties[pCreateInfo->queueFamilyIndex].queueFlags;
-    return std::make_shared<COMMAND_POOL_STATE>(this, command_pool, pCreateInfo, queue_flags);
+    return std::make_shared<vvl::CommandPool>(this, command_pool, pCreateInfo, queue_flags);
 }
 
 void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -1699,14 +1699,14 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
 void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              const RecordObject &record_obj) {
-    Destroy<COMMAND_POOL_STATE>(commandPool);
+    Destroy<vvl::CommandPool>(commandPool);
 }
 
 void ValidationStateTracker::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool,
                                                             VkCommandPoolResetFlags flags, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     // Reset all of the CBs allocated from this pool
-    auto pool = Get<COMMAND_POOL_STATE>(commandPool);
+    auto pool = Get<vvl::CommandPool>(commandPool);
     if (pool) {
         pool->Reset();
     }
@@ -2080,7 +2080,7 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
                                                                   VkCommandBuffer *pCommandBuffers,
                                                                   const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    auto pool = Get<COMMAND_POOL_STATE>(pCreateInfo->commandPool);
+    auto pool = Get<vvl::CommandPool>(pCreateInfo->commandPool);
     if (pool) {
         pool->Allocate(pCreateInfo, pCommandBuffers);
     }
@@ -5243,7 +5243,7 @@ std::shared_ptr<vvl::Swapchain> ValidationStateTracker::CreateSwapchainState(con
 
 std::shared_ptr<CMD_BUFFER_STATE> ValidationStateTracker::CreateCmdBufferState(VkCommandBuffer cb,
                                                                                const VkCommandBufferAllocateInfo *create_info,
-                                                                               const COMMAND_POOL_STATE *pool) {
+                                                                               const vvl::CommandPool *pool) {
     return std::make_shared<CMD_BUFFER_STATE>(this, cb, create_info, pool);
 }
 
