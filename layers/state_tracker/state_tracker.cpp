@@ -1483,7 +1483,7 @@ void ValidationStateTracker::PreCallRecordDestroyEvent(VkDevice device, VkEvent 
 void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
                                                            const VkAllocationCallbacks *pAllocator,
                                                            const RecordObject &record_obj) {
-    Destroy<QUERY_POOL_STATE>(queryPool);
+    Destroy<vvl::QueryPool>(queryPool);
 }
 
 void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
@@ -1691,7 +1691,7 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
         DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->PhysDev(), perf, &n_perf_pass);
     }
 
-    Add(std::make_shared<QUERY_POOL_STATE>(
+    Add(std::make_shared<vvl::QueryPool>(
         *pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb,
         video_profile_cache_.Get(this, vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext))));
 }
@@ -2806,7 +2806,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer command
             cb_state->BeginQuery(query_obj);
         }
         if (!disabled[command_buffer_state]) {
-            auto pool_state = Get<QUERY_POOL_STATE>(queryPool);
+            auto pool_state = Get<vvl::QueryPool>(queryPool);
             cb_state->AddChild(pool_state);
         }
     }
@@ -2830,7 +2830,7 @@ void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBu
             cb_state->EndQuery(query_obj);
         }
         if (!disabled[command_buffer_state]) {
-            auto pool_state = Get<QUERY_POOL_STATE>(queryPool);
+            auto pool_state = Get<vvl::QueryPool>(queryPool);
             cb_state->AddChild(pool_state);
         }
     }
@@ -2846,7 +2846,7 @@ void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer com
     cb_state->ResetQueryPool(queryPool, firstQuery, queryCount);
 
     if (!disabled[command_buffer_state]) {
-        auto pool_state = Get<QUERY_POOL_STATE>(queryPool);
+        auto pool_state = Get<vvl::QueryPool>(queryPool);
         cb_state->AddChild(pool_state);
     }
 }
@@ -2861,7 +2861,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
     cb_state->RecordCmd(record_obj.location.function);
     auto dst_buff_state = Get<vvl::Buffer>(dstBuffer);
     cb_state->AddChild(dst_buff_state);
-    auto pool_state = Get<QUERY_POOL_STATE>(queryPool);
+    auto pool_state = Get<vvl::QueryPool>(queryPool);
     cb_state->AddChild(pool_state);
 }
 
@@ -2891,7 +2891,7 @@ void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropert
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
     if (!disabled[command_buffer_state]) {
-        auto pool_state = Get<QUERY_POOL_STATE>(queryPool);
+        auto pool_state = Get<vvl::QueryPool>(queryPool);
         cb_state->AddChild(pool_state);
     }
     cb_state->EndQueries(queryPool, firstQuery, accelerationStructureCount);
@@ -4125,7 +4125,7 @@ void ValidationStateTracker::PostCallRecordResetQueryPool(VkDevice device, VkQue
     if (!enabled_features.hostQueryReset) return;
 
     // Do nothing if the query pool has been destroyed.
-    auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
+    auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     if (!query_pool_state) return;
 
     // Reset the state of existing entries.

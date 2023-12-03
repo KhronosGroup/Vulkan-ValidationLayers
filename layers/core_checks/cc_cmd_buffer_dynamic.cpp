@@ -796,7 +796,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         cb_state.dynamic_state_value.rasterization_stream != 0) {
         bool pgq_active = false;
         for (const auto& active_query : cb_state.activeQueries) {
-            auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
+            auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
             if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
                 pgq_active = true;
                 break;
