@@ -24,7 +24,7 @@
 bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                const ErrorObject &error_obj) const {
     bool skip = false;
-    if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
+    if (const auto memory_state = Get<vvl::DeviceMemory>(pGetFdInfo->memory)) {
         const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
         if (!export_info) {
             skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
@@ -281,7 +281,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
 
             case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
                 auto metal_buffer_ptr = reinterpret_cast<const VkExportMetalBufferInfoEXT *>(metal_objects_info_ptr);
-                auto mem_info = Get<DEVICE_MEMORY_STATE>(metal_buffer_ptr->memory);
+                auto mem_info = Get<vvl::DeviceMemory>(metal_buffer_ptr->memory);
                 if (mem_info) {
                     if (!mem_info->metal_buffer_export) {
                         skip |= LogError(

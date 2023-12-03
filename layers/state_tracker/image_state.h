@@ -85,13 +85,13 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
 // State for VkImage objects.
 // Parent -> child relationships in the object usage tree:
 // 1. Normal images:
-//    IMAGE_STATE [1] -> [1] DEVICE_MEMORY_STATE
+//    IMAGE_STATE [1] -> [1] vvl::DeviceMemory
 //
 // 2. Sparse images:
-//    IMAGE_STATE [1] -> [N] DEVICE_MEMORY_STATE
+//    IMAGE_STATE [1] -> [N] vvl::DeviceMemory
 //
 // 3. VK_IMAGE_CREATE_ALIAS_BIT images:
-//    IMAGE_STATE [N] -> [1] DEVICE_MEMORY_STATE
+//    IMAGE_STATE [N] -> [1] vvl::DeviceMemory
 //    All other images using the same device memory are in the aliasing_images set.
 //
 // 4. Swapchain images

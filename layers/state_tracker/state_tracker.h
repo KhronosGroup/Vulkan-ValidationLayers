@@ -296,7 +296,7 @@ VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, vvl::PipelineCache)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, PIPELINE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
-VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, DEVICE_MEMORY_STATE)
+VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, vvl::DeviceMemory)
 VALSTATETRACK_STATE_OBJECT(VkFramebuffer, vvl::Framebuffer)
 VALSTATETRACK_STATE_OBJECT(VkShaderModule, SHADER_MODULE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate)
@@ -1034,9 +1034,11 @@ class ValidationStateTracker : public ValidationObject {
                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                          const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<DEVICE_MEMORY_STATE> CreateDeviceMemoryState(
-        VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address, const VkMemoryType& memory_type,
-        const VkMemoryHeap& memory_heap, std::optional<DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count);
+    virtual std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,
+                                                                       uint64_t fake_address, const VkMemoryType& memory_type,
+                                                                       const VkMemoryHeap& memory_heap,
+                                                                       std::optional<DedicatedBinding>&& dedicated_binding,
+                                                                       uint32_t physical_device_count);
 
     // Memory mapping
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
@@ -1915,7 +1917,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, vvl::PipelineCache, pipeline_cache_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, SHADER_OBJECT_STATE, shader_object_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, vvl::DeviceMemory, mem_obj_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, vvl::Framebuffer, frame_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate, desc_template_map_)

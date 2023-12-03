@@ -28,7 +28,7 @@
 #include "cc_buffer_address.h"
 #include "utils/ray_tracing_utils.h"
 
-bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE *mem_info,
+bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory *mem_info,
                                                                 VkDeviceSize mem_offset, const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, loc);
 }
@@ -98,7 +98,7 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         }
 
         // Validate bound memory range information
-        auto mem_info = Get<DEVICE_MEMORY_STATE>(info.memory);
+        auto mem_info = Get<vvl::DeviceMemory>(info.memory);
         if (mem_info) {
             skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info.get(), info.memoryOffset,
                                                                    bind_info_loc.dot(Field::memoryOffset));

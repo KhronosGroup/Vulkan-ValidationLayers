@@ -237,13 +237,13 @@ class Swapchain : public SWAPCHAIN_NODE {
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
 
-class DeviceMemory : public DEVICE_MEMORY_STATE {
+class DeviceMemory : public vvl::DeviceMemory {
   public:
     DeviceMemory(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address,
                  const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
                  std::optional<DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
-        : DEVICE_MEMORY_STATE(mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
-                              physical_device_count) {}
+        : vvl::DeviceMemory(mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
+                            physical_device_count) {}
 
     std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
 };
@@ -1019,12 +1019,12 @@ class BestPractices : public ValidationStateTracker {
         return std::static_pointer_cast<vvl::DescriptorPool>(std::make_shared<bp_state::DescriptorPool>(this, pool, pCreateInfo));
     }
 
-    std::shared_ptr<DEVICE_MEMORY_STATE> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,
-                                                                 uint64_t fake_address, const VkMemoryType& memory_type,
-                                                                 const VkMemoryHeap& memory_heap,
-                                                                 std::optional<DedicatedBinding>&& dedicated_binding,
-                                                                 uint32_t physical_device_count) final {
-        return std::static_pointer_cast<DEVICE_MEMORY_STATE>(std::make_shared<bp_state::DeviceMemory>(
+    std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,
+                                                               uint64_t fake_address, const VkMemoryType& memory_type,
+                                                               const VkMemoryHeap& memory_heap,
+                                                               std::optional<DedicatedBinding>&& dedicated_binding,
+                                                               uint32_t physical_device_count) final {
+        return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
             mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
     }
 

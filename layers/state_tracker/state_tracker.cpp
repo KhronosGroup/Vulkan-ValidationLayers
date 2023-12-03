@@ -1203,11 +1203,11 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
 
 void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator,
                                                      const RecordObject &record_obj) {
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
+    auto mem_info = Get<vvl::DeviceMemory>(mem);
     if (mem_info) {
         fake_memory.Free(mem_info->fake_base_address);
     }
-    Destroy<DEVICE_MEMORY_STATE>(mem);
+    Destroy<vvl::DeviceMemory>(mem);
 }
 
 void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
@@ -1223,7 +1223,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
             for (uint32_t k = 0; k < bind_info.pBufferBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pBufferBinds[j].pBinds[k];
                 auto buffer_state = Get<vvl::Buffer>(bind_info.pBufferBinds[j].buffer);
-                auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
+                auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (buffer_state) {
                     buffer_state->BindMemory(buffer_state.get(), mem_state, sparse_binding.memoryOffset,
                                              sparse_binding.resourceOffset, sparse_binding.size);
@@ -1234,7 +1234,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
             for (uint32_t k = 0; k < bind_info.pImageOpaqueBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pImageOpaqueBinds[j].pBinds[k];
                 auto image_state = Get<IMAGE_STATE>(bind_info.pImageOpaqueBinds[j].image);
-                auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
+                auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (image_state) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
                     // See: VUID-vkGetImageSubresourceLayout-image-09432
@@ -1254,7 +1254,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
                 VkDeviceSize offset = sparse_binding.offset.z * sparse_binding.offset.y * sparse_binding.offset.x * 4;
                 auto image_state = Get<IMAGE_STATE>(bind_info.pImageBinds[j].image);
-                auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
+                auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (image_state) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
                     // See: VUID-vkGetImageSubresourceLayout-image-09432
@@ -1340,7 +1340,7 @@ void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, c
 }
 
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
+    auto mem_info = Get<vvl::DeviceMemory>(mem);
     if (mem_info) {
         mem_info->mapped_range.offset = offset;
         mem_info->mapped_range.size = size;
@@ -1490,7 +1490,7 @@ void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDevi
     auto buffer_state = Get<vvl::Buffer>(buffer);
     if (buffer_state) {
         // Track objects tied to memory
-        auto mem_state = Get<DEVICE_MEMORY_STATE>(mem);
+        auto mem_state = Get<vvl::DeviceMemory>(mem);
         if (mem_state) {
             buffer_state->BindMemory(buffer_state.get(), mem_state, memoryOffset, 0u, buffer_state->requirements.size);
         }
@@ -2389,7 +2389,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
         auto as_state = Get<vvl::AccelerationStructureNV>(info.accelerationStructure);
         if (as_state) {
             // Track objects tied to memory
-            auto mem_state = Get<DEVICE_MEMORY_STATE>(info.memory);
+            auto mem_state = Get<vvl::DeviceMemory>(info.memory);
             if (mem_state) {
                 as_state->BindMemory(as_state.get(), mem_state, info.memoryOffset, 0u, as_state->memory_requirements.size);
             }
@@ -3168,7 +3168,7 @@ void ValidationStateTracker::PostCallRecordMapMemory2KHR(VkDevice device, const 
 }
 
 void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem, const RecordObject &record_obj) {
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
+    auto mem_info = Get<vvl::DeviceMemory>(mem);
     if (mem_info) {
         mem_info->mapped_range = MemRange();
         mem_info->p_driver_data = nullptr;
@@ -3177,7 +3177,7 @@ void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceM
 
 void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
                                                           const RecordObject &record_obj) {
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryUnmapInfo->memory);
+    auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory);
     if (mem_info) {
         mem_info->mapped_range = MemRange();
         mem_info->p_driver_data = nullptr;
@@ -3200,7 +3200,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             }
         } else {
             // Track bound memory range information
-            auto mem_info = Get<DEVICE_MEMORY_STATE>(bindInfo.memory);
+            auto mem_info = Get<vvl::DeviceMemory>(bindInfo.memory);
             if (mem_info) {
                 VkDeviceSize plane_index = 0u;
                 if (image_state->disjoint && image_state->IsExternalBuffer() == false) {
@@ -3330,7 +3330,7 @@ void ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(VkDevice devi
                                                                    const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                                    HANDLE *pHandle, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetWin32HandleInfo->memory)) {
+    if (const auto memory_state = Get<vvl::DeviceMemory>(pGetWin32HandleInfo->memory)) {
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
         ExternalOpaqueInfo external_info = {};
@@ -3351,7 +3351,7 @@ void ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(VkDevice devi
 void ValidationStateTracker::PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                           const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
+    if (const auto memory_state = Get<vvl::DeviceMemory>(pGetFdInfo->memory)) {
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
         ExternalOpaqueInfo external_info = {};
@@ -5247,9 +5247,9 @@ std::shared_ptr<CMD_BUFFER_STATE> ValidationStateTracker::CreateCmdBufferState(V
     return std::make_shared<CMD_BUFFER_STATE>(this, cb, create_info, pool);
 }
 
-std::shared_ptr<DEVICE_MEMORY_STATE> ValidationStateTracker::CreateDeviceMemoryState(
+std::shared_ptr<vvl::DeviceMemory> ValidationStateTracker::CreateDeviceMemoryState(
     VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address, const VkMemoryType &memory_type,
     const VkMemoryHeap &memory_heap, std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count) {
-    return std::make_shared<DEVICE_MEMORY_STATE>(mem, p_alloc_info, fake_address, memory_type, memory_heap,
-                                                 std::move(dedicated_binding), physical_device_count);
+    return std::make_shared<vvl::DeviceMemory>(mem, p_alloc_info, fake_address, memory_type, memory_heap,
+                                               std::move(dedicated_binding), physical_device_count);
 }

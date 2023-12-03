@@ -24,7 +24,7 @@
 #include "core_validation.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
-bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const LogObjectList &objlist,
+bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
                                           const VulkanTypedHandle &typed_handle, const Location &loc, const char *vuid) const {
     bool result = false;
     auto type_name = object_string[typed_handle.type];
@@ -41,7 +41,7 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, 
     return result;
 }
 
-bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const DEVICE_MEMORY_STATE *mem_state, const LogObjectList &objlist,
+bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
                                                   const VulkanTypedHandle &typed_handle, const Location &loc,
                                                   const char *vuid) const {
     bool result = false;
@@ -144,7 +144,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const BINDABLE &me
                          FormatHandle(memory).c_str(), FormatHandle(typed_handle).c_str(), handle_type);
     }
 
-    if (Get<DEVICE_MEMORY_STATE>(memory)) {
+    if (Get<vvl::DeviceMemory>(memory)) {
         const auto *prev_binding = mem_binding.MemState();
         if (prev_binding) {
             const char *vuid = nullptr;
@@ -205,7 +205,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                                const ErrorObject &error_obj) const {
     bool skip = false;
-    if (Count<DEVICE_MEMORY_STATE>() >= phys_dev_props.limits.maxMemoryAllocationCount) {
+    if (Count<vvl::DeviceMemory>() >= phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= LogError(
             "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101", device, error_obj.location,
             "vkAllocateMemory: Number of currently valid memory objects is not less than maxMemoryAllocationCount (%" PRIu32 ").",
@@ -434,7 +434,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator,
                                            const ErrorObject &error_obj) const {
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_info = Get<vvl::DeviceMemory>(memory);
     bool skip = false;
     if (mem_info) {
         skip |= ValidateObjectNotInUse(mem_info.get(), error_obj.location, "VUID-vkFreeMemory-memory-00677");
@@ -442,7 +442,7 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memor
     return skip;
 }
 
-bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const DEVICE_MEMORY_STATE *mem_info,
+bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const vvl::DeviceMemory *mem_info,
                                            VkDeviceSize memoryOffset, const Location &loc) const {
     bool skip = false;
 
@@ -470,17 +470,17 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
     return skip;
 }
 
-bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
+bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, const vvl::DeviceMemory *mem_info, VkDeviceSize mem_offset,
                                                 const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset, loc);
 }
 
-bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
+bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const vvl::DeviceMemory *mem_info, VkDeviceSize mem_offset,
                                                  const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, loc);
 }
 
-bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const uint32_t memory_type_bits,
+bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory *mem_info, const uint32_t memory_type_bits,
                                      const Location &resource_loc, const char *vuid) const {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
@@ -539,7 +539,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                          memoryOffset, buffer_state->requirements.alignment);
     }
 
-    if (auto mem_info = Get<DEVICE_MEMORY_STATE>(memory)) {
+    if (auto mem_info = Get<vvl::DeviceMemory>(memory)) {
         // Validate VkExportMemoryAllocateInfo's VUs that can't be checked during vkAllocateMemory
         // because they require buffer information.
         if (mem_info->IsExport()) {
@@ -843,7 +843,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, 
     return PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, error_obj);
 }
 
-bool CoreChecks::ValidateMapMemory(const DEVICE_MEMORY_STATE &mem_info, VkDeviceSize offset, VkDeviceSize size,
+bool CoreChecks::ValidateMapMemory(const vvl::DeviceMemory &mem_info, VkDeviceSize offset, VkDeviceSize size,
                                    const Location &offset_loc, const Location &size_loc) const {
     bool skip = false;
     const bool map2 = offset_loc.function != Func::vkMapMemory;
@@ -894,7 +894,7 @@ bool CoreChecks::ValidateMapMemory(const DEVICE_MEMORY_STATE &mem_info, VkDevice
 bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
                                           VkFlags flags, void **ppData, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_info = Get<vvl::DeviceMemory>(memory);
     if (mem_info) {
         skip |= ValidateMapMemory(*mem_info.get(), offset, size, error_obj.location.dot(Field::offset),
                                   error_obj.location.dot(Field::size));
@@ -905,7 +905,7 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory
 bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData,
                                               const ErrorObject &error_obj) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryMapInfo->memory);
+    auto mem_info = Get<vvl::DeviceMemory>(pMemoryMapInfo->memory);
     if (mem_info) {
         skip |= ValidateMapMemory(*mem_info.get(), pMemoryMapInfo->offset, pMemoryMapInfo->size,
                                   error_obj.location.dot(Field::pMemoryMapInfo).dot(Field::offset),
@@ -916,7 +916,7 @@ bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMap
 
 bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_info = Get<vvl::DeviceMemory>(memory);
     if (mem_info && !mem_info->mapped_range.size) {
         skip |= LogError("VUID-vkUnmapMemory-memory-00689", memory, error_obj.location,
                          "Unmapping Memory without memory being mapped.");
@@ -927,7 +927,7 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memo
 bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryUnmapInfo->memory);
+    auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory);
     if (mem_info && !mem_info->mapped_range.size) {
         skip |= LogError("VUID-VkMemoryUnmapInfoKHR-memory-07964", pMemoryUnmapInfo->memory, error_obj.location,
                          "Unmapping Memory without memory being mapped.");
@@ -940,7 +940,7 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappe
     bool skip = false;
     for (uint32_t i = 0; i < memoryRangeCount; ++i) {
         const Location memory_range_loc = error_obj.location.dot(Field::pMemoryRanges, i);
-        auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryRanges[i].memory);
+        auto mem_info = Get<vvl::DeviceMemory>(pMemoryRanges[i].memory);
         if (!mem_info) {
             continue;
         }
@@ -994,7 +994,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
                              "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64 ").",
                              offset, atom_size);
         }
-        auto mem_info = Get<DEVICE_MEMORY_STATE>(mem_ranges[i].memory);
+        auto mem_info = Get<vvl::DeviceMemory>(mem_ranges[i].memory);
         if (!mem_info) {
             continue;
         }
@@ -1045,7 +1045,7 @@ bool CoreChecks::PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, ui
 bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, VkDeviceSize *pCommittedMem,
                                                           const ErrorObject &error_obj) const {
     bool skip = false;
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+    auto mem_info = Get<vvl::DeviceMemory>(memory);
 
     if (mem_info) {
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
@@ -1079,7 +1079,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             skip |= ValidateSetMemBinding(bind_info.memory, *image_state, loc);
 
             const auto plane_info = vku::FindStructInPNextChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
-            auto mem_info = Get<DEVICE_MEMORY_STATE>(bind_info.memory);
+            auto mem_info = Get<vvl::DeviceMemory>(bind_info.memory);
 
             if (image_state->disjoint && plane_info == nullptr) {
                 const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1650,7 +1650,7 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
                                           VkDeviceSize resource_size, VkExternalMemoryHandleTypeFlags external_handle_types,
                                           const VulkanTypedHandle &resource_handle, const Location &loc) const {
     bool skip = false;
-    auto mem_state = Get<DEVICE_MEMORY_STATE>(bind.memory);
+    auto mem_state = Get<vvl::DeviceMemory>(bind.memory);
     if (mem_state) {
         if (!((uint32_t(1) << mem_state->alloc_info.memoryTypeIndex) & requirements.memoryTypeBits)) {
             const LogObjectList objlist(bind.memory, resource_handle);
@@ -1764,7 +1764,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
                                                const Location &bind_loc, const Location &memory_loc) const {
     bool skip = false;
 
-    auto const mem_state = Get<DEVICE_MEMORY_STATE>(bind.memory);
+    auto const mem_state = Get<vvl::DeviceMemory>(bind.memory);
     if (mem_state) {
         // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
         // one. We also need to check memory_bind.memory
@@ -1954,7 +1954,7 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice dev
                          "bufferDeviceAddressMultiDevice feature was not enabled.");
     }
 
-    auto mem_info = Get<DEVICE_MEMORY_STATE>(pInfo->memory);
+    auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory);
     if (mem_info) {
         auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
         if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {

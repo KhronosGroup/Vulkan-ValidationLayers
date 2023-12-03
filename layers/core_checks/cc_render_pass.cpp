@@ -384,7 +384,7 @@ bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass 
 
 // If this is a stencil format, make sure the stencil[Load|Store]Op flag is checked, while if it is a depth/color attachment the
 // [load|store]Op flag must be checked
-// TODO: The memory valid flag in DEVICE_MEMORY_STATE should probably be split to track the validity of stencil memory separately.
+// TODO: The memory valid flag in vvl::DeviceMemory should probably be split to track the validity of stencil memory separately.
 template <typename T>
 static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_op, T stencil_op, T op) {
     if (color_depth_op != op && stencil_op != op) {
