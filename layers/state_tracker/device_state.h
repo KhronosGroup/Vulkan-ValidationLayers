@@ -22,12 +22,12 @@
 #include "generated/vk_safe_struct.h"
 #include <vector>
 
-class QUEUE_FAMILY_PERF_COUNTERS {
+class QueueFamilyPerfCounters {
   public:
     std::vector<VkPerformanceCounterKHR> counters;
 };
 
-class SURFACELESS_QUERY_STATE {
+class SurfacelessQueryState {
   public:
     std::vector<safe_VkSurfaceFormat2KHR> formats;
     std::vector<VkPresentModeKHR> present_modes;
@@ -44,11 +44,11 @@ class PhysicalDevice : public BASE_NODE {
     bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
     uint32_t display_plane_property_count = 0;
 
-    // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
-    vvl::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
+    // Map of queue family index to QueueFamilyPerfCounters
+    vvl::unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
 
     // Surfaceless Query extension needs 'global' surface_state data
-    SURFACELESS_QUERY_STATE surfaceless_query_state{};
+    SurfacelessQueryState surfaceless_query_state{};
 
     PhysicalDevice(VkPhysicalDevice phys_dev)
         : BASE_NODE(phys_dev, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(phys_dev)) {}

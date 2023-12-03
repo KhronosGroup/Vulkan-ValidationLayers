@@ -419,7 +419,7 @@ void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, u
     });
 }
 
-void CommandBuffer::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
+void CommandBuffer::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses) {
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
@@ -510,7 +510,7 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
 
     if (activeFramebuffer) {
         // Set cb_state->active_subpasses
-        active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
+        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->createInfo.attachmentCount);
         const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
         UpdateSubpassAttachments(subpass, *active_subpasses);
 
@@ -531,7 +531,7 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     // Update cb_state->active_subpasses
     if (activeFramebuffer) {
         active_subpasses = nullptr;
-        active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
+        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->createInfo.attachmentCount);
 
         if (GetActiveSubpass() < activeRenderPass->createInfo.subpassCount) {
             const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
@@ -857,7 +857,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                     if (activeFramebuffer) {
                         // Set active_subpasses
                         active_subpasses =
-                            std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
+                            std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->createInfo.attachmentCount);
                         const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
                         UpdateSubpassAttachments(subpass, *active_subpasses);
 
