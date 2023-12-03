@@ -66,8 +66,10 @@ using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges);
 
+namespace vvl {
+
 // Store layouts and pushconstants for PipelineLayout
-class PIPELINE_LAYOUT_STATE : public BASE_NODE {
+class PipelineLayout : public BASE_NODE {
   public:
     using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
     const SetLayoutVector set_layouts;
@@ -77,12 +79,11 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     VkPipelineLayoutCreateFlags create_flags;
 
-    PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo);
+    PipelineLayout(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
-    PIPELINE_LAYOUT_STATE(const vvl::span<const PIPELINE_LAYOUT_STATE *const> &layouts);
+    PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts);
     template <typename Container>
-    PIPELINE_LAYOUT_STATE(const Container &layouts)
-        : PIPELINE_LAYOUT_STATE(vvl::span<const PIPELINE_LAYOUT_STATE *const>{layouts}) {}
+    PipelineLayout(const Container &layouts) : PipelineLayout(vvl::span<const PipelineLayout *const>{layouts}) {}
 
     VkPipelineLayout layout() const { return handle_.Cast<VkPipelineLayout>(); }
 
@@ -96,6 +97,8 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
 
     VkPipelineLayoutCreateFlags CreateFlags() const { return create_flags; }
 };
+
+}  // namespace vvl
 
 std::vector<PipelineLayoutCompatId> GetCompatForSet(
     const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,

@@ -161,7 +161,7 @@ bool CoreChecks::VerifySetLayoutCompatibility(
     }
 }
 
-bool CoreChecks::VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE &layout_a, const PIPELINE_LAYOUT_STATE &layout_b,
+bool CoreChecks::VerifySetLayoutCompatibility(const vvl::PipelineLayout &layout_a, const vvl::PipelineLayout &layout_b,
                                               std::string &error_msg) const {
     const uint32_t num_sets = static_cast<uint32_t>(std::min(layout_a.set_layouts.size(), layout_b.set_layouts.size()));
     for (uint32_t i = 0; i < num_sets; ++i) {
@@ -188,7 +188,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     uint32_t total_dynamic_descriptors = 0;
     std::string error_string = "";
 
-    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
         const Location set_loc = error_obj.location.dot(Field::pDescriptorSets, set_idx);
         auto descriptor_set = Get<vvl::DescriptorSet>(pDescriptorSets[set_idx]);
@@ -1975,7 +1975,7 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                                                                  const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
                                                                  const ErrorObject &error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     assert(cb_state);
     assert(pipeline_layout);
 
@@ -2127,7 +2127,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCom
     }
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
 
-    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     if (set >= pipeline_layout->set_layouts.size()) {
         skip |= LogError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08071", commandBuffer, error_obj.location,
                          "set (%" PRIu32
@@ -3197,7 +3197,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
-    auto layout_data = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto layout_data = Get<vvl::PipelineLayout>(layout);
 
     // Validate the set index points to a push descriptor set and is in range
     if (layout_data) {
@@ -3249,7 +3249,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
             skip |= LogError("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00351", device,
                              create_info_loc.dot(Field::pipelineBindPoint), "is %s.", string_VkPipelineBindPoint(bind_point));
         }
-        auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(pCreateInfo->pipelineLayout);
+        auto pipeline_layout = Get<vvl::PipelineLayout>(pCreateInfo->pipelineLayout);
         if (!pipeline_layout) {
             skip |= LogError("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352", pCreateInfo->pipelineLayout,
                              create_info_loc.dot(Field::pipelineLayout), "(%s) is invalid.",
@@ -3342,7 +3342,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    auto layout_data = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto layout_data = Get<vvl::PipelineLayout>(layout);
     const auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
     // Validate the set index points to a push descriptor set and is in range
     if (dsl) {
@@ -3376,7 +3376,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                              "%s created with set %" PRIu32 " does not match command parameter set %" PRIu32 ".",
                              FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
         }
-        auto template_layout = Get<PIPELINE_LAYOUT_STATE>(template_ci.pipelineLayout);
+        auto template_layout = Get<vvl::PipelineLayout>(template_ci.pipelineLayout);
         if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
             skip |= LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993", objlist,
@@ -4098,7 +4098,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
     if (skip) {
         return skip;
     }
-    auto layout_state = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto layout_state = Get<vvl::PipelineLayout>(layout);
     const auto &ranges = *layout_state->push_constant_ranges;
     VkShaderStageFlags found_stages = 0;
     for (const auto &range : ranges) {

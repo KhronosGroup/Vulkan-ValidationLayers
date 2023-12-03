@@ -58,12 +58,12 @@ class PipelineCache;
 class Surface;
 class DisplayMode;
 class Event;
+class PipelineLayout;
 }  // namespace vvl
 
 class CMD_BUFFER_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
-class PIPELINE_LAYOUT_STATE;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
 class COMMAND_POOL_STATE;
@@ -305,7 +305,7 @@ VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_STATE_OBJECT(VkCommandPool, COMMAND_POOL_STATE)
-VALSTATETRACK_STATE_OBJECT(VkPipelineLayout, PIPELINE_LAYOUT_STATE)
+VALSTATETRACK_STATE_OBJECT(VkPipelineLayout, vvl::PipelineLayout)
 VALSTATETRACK_STATE_OBJECT(VkFence, vvl::Fence)
 VALSTATETRACK_STATE_OBJECT(VkQueryPool, QUERY_POOL_STATE)
 VALSTATETRACK_STATE_OBJECT(VkSemaphore, vvl::Semaphore)
@@ -765,7 +765,7 @@ class ValidationStateTracker : public ValidationObject {
                                         const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<PIPELINE_STATE> CreateComputePipelineState(const VkComputePipelineCreateInfo* pCreateInfo,
-                                                                       std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
+                                                                       std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -817,7 +817,7 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
                                                                         std::shared_ptr<const vvl::RenderPass>&& render_pass,
-                                                                        std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout,
+                                                                        std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                         CreateShaderModuleStates* csm_states) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
@@ -871,7 +871,7 @@ class ValidationStateTracker : public ValidationObject {
                                       const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<PIPELINE_STATE> CreateRayTracingPipelineState(
-        const VkRayTracingPipelineCreateInfoNV* pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
+        const VkRayTracingPipelineCreateInfoNV* pCreateInfo, std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -881,7 +881,7 @@ class ValidationStateTracker : public ValidationObject {
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                    const RecordObject& record_obj, void* pipe_state) override;
     virtual std::shared_ptr<PIPELINE_STATE> CreateRayTracingPipelineState(
-        const VkRayTracingPipelineCreateInfoKHR* pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
+        const VkRayTracingPipelineCreateInfoKHR* pCreateInfo, std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
@@ -1924,7 +1924,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, vvl::DescriptorSet, descriptor_set_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, command_pool_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, PIPELINE_LAYOUT_STATE, pipeline_layout_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, vvl::PipelineLayout, pipeline_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFence, vvl::Fence, fence_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, query_pool_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, vvl::Semaphore, semaphore_map_)

@@ -253,14 +253,14 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
 }
 
 bp_state::Pipeline::Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
-                             std::shared_ptr<const vvl::RenderPass>&& rpstate,
-                             std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout, CreateShaderModuleStates* csm_states)
+                             std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                             CreateShaderModuleStates* csm_states)
     : PIPELINE_STATE(state_data, pCreateInfo, std::move(rpstate), std::move(layout), csm_states),
       access_framebuffer_attachments(GetAttachmentAccess(*this)) {}
 
 std::shared_ptr<PIPELINE_STATE> BestPractices::CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
                                                                            std::shared_ptr<const vvl::RenderPass>&& render_pass,
-                                                                           std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout,
+                                                                           std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                            CreateShaderModuleStates* csm_states) const {
     return std::static_pointer_cast<PIPELINE_STATE>(
         std::make_shared<bp_state::Pipeline>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states));

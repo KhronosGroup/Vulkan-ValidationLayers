@@ -565,7 +565,7 @@ gpuav::CommandResources gpuav::Validator::AllocateCommandResources(const VkComma
     }
 
     const auto pipeline_layout =
-        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<PIPELINE_LAYOUT_STATE>(last_bound.pipeline_layout);
+        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
     // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
     // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
     // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout

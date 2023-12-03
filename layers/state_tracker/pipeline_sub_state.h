@@ -77,7 +77,7 @@ struct PreRasterState : public PipelineSubState {
                VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
     }
 
-    std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
+    std::shared_ptr<const vvl::PipelineLayout> pipeline_layout;
     safe_VkPipelineViewportStateCreateInfo *viewport_state = nullptr;
 
     safe_VkPipelineRasterizationStateCreateInfo *raster_state = nullptr;
@@ -133,7 +133,7 @@ struct FragmentShaderState : public PipelineSubState {
     std::shared_ptr<const vvl::RenderPass> rp_state;
     uint32_t subpass = 0;
 
-    std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
+    std::shared_ptr<const vvl::PipelineLayout> pipeline_layout;
     std::unique_ptr<const safe_VkPipelineMultisampleStateCreateInfo> ms_state;
     std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ds_state;
 

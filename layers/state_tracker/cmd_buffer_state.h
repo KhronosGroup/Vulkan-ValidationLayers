@@ -497,7 +497,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void IncrementResources();
 
-    void ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT_STATE *pipeline_layout_state);
+    void ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state);
 
     const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) const;
     ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state);
@@ -554,16 +554,16 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
-    void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE &pipeline_layout,
+    void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const vvl::PipelineLayout &pipeline_layout,
                                        uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
-                                       std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
-                                       uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets);
+                                       std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set, uint32_t dynamic_offset_count,
+                                       const uint32_t *p_dynamic_offsets);
 
-    void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE &pipeline_layout,
+    void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point, const vvl::PipelineLayout &pipeline_layout,
                                           uint32_t first_set, uint32_t set_count, const uint32_t *buffer_indicies,
                                           const VkDeviceSize *buffer_offsets);
 
-    void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_LAYOUT_STATE &pipeline_layout, uint32_t set,
+    void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout, uint32_t set,
                                 uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites);
 
     void UpdateDrawCmd(Func command);

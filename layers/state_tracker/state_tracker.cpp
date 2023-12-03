@@ -1611,7 +1611,7 @@ void ValidationStateTracker::PostCallRecordCmdBindShadersEXT(VkCommandBuffer com
 void ValidationStateTracker::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 const RecordObject &record_obj) {
-    Destroy<PIPELINE_LAYOUT_STATE>(pipelineLayout);
+    Destroy<vvl::PipelineLayout>(pipelineLayout);
 }
 
 void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler,
@@ -1761,7 +1761,7 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, 
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(
     const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::RenderPass> &&render_pass,
-    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states) const {
+    std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states) const {
     return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states);
 }
 
@@ -1776,7 +1776,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         const auto &create_info = pCreateInfos[i];
-        auto layout_state = Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
+        auto layout_state = Get<vvl::PipelineLayout>(create_info.layout);
         std::shared_ptr<const vvl::RenderPass> render_pass;
 
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
@@ -1817,7 +1817,7 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateComputePipelineState(
-    const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
     return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
 }
 
@@ -1831,7 +1831,7 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         ccpl_state->pipe_state.push_back(
-            CreateComputePipelineState(&pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            CreateComputePipelineState(&pCreateInfos[i], Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1853,7 +1853,7 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipelineState(
-    const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
     return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
 }
 
@@ -1865,7 +1865,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            CreateRayTracingPipelineState(&pCreateInfos[i], Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1885,7 +1885,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipelineState(
-    const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
     return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
 }
 
@@ -1900,7 +1900,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            CreateRayTracingPipelineState(&pCreateInfos[i], Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1980,7 +1980,7 @@ void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(std::make_shared<PIPELINE_LAYOUT_STATE>(this, *pPipelineLayout, pCreateInfo));
+    Add(std::make_shared<vvl::PipelineLayout>(this, *pPipelineLayout, pCreateInfo));
 }
 
 std::shared_ptr<vvl::DescriptorPool> ValidationStateTracker::CreateDescriptorPoolState(
@@ -2585,7 +2585,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
                                                                 const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                                 const uint32_t *pDynamicOffsets, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     if (!cb_state || !pipeline_layout) {
         return;
     }
@@ -2603,7 +2603,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
                                                                   const VkWriteDescriptorSet *pDescriptorWrites,
                                                                   const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     cb_state->PushDescriptorSetState(pipelineBindPoint, *pipeline_layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
@@ -2621,7 +2621,7 @@ void ValidationStateTracker::PreCallRecordCmdSetDescriptorBufferOffsetsEXT(
     VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet,
     uint32_t setCount, const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets, const RecordObject &record_obj) {
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
 
     cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, *pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
 }
@@ -2632,7 +2632,7 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
         cb_state->RecordCmd(record_obj.location.function);
-        auto layout_state = Get<PIPELINE_LAYOUT_STATE>(layout);
+        auto layout_state = Get<vvl::PipelineLayout>(layout);
         cb_state->ResetPushConstantDataIfIncompatible(layout_state.get());
 
         auto &push_constant_data = cb_state->push_constant_data;
@@ -3997,7 +3997,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
                                                                               const void *pData, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
-    auto layout_data = Get<PIPELINE_LAYOUT_STATE>(layout);
+    auto layout_data = Get<vvl::PipelineLayout>(layout);
     if (!cb_state || !template_state || !layout_data) {
         return;
     }
