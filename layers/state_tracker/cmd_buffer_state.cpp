@@ -1444,7 +1444,7 @@ void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR 
     if (dev_data->disabled[query_validation]) return;
 
     if (!dev_data->disabled[command_buffer_state]) {
-        auto pool_state = dev_data->Get<QUERY_POOL_STATE>(queryPool);
+        auto pool_state = dev_data->Get<vvl::QueryPool>(queryPool);
         AddChild(pool_state);
     }
     QueryObject query_obj = {queryPool, slot};
@@ -1452,7 +1452,7 @@ void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR 
 }
 
 void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc) {
-    // Update QUERY_POOL_STATE with a query state at the end of the command buffer.
+    // Update vvl::QueryPool with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
         VkQueryPool first_pool = VK_NULL_HANDLE;
@@ -1461,7 +1461,7 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
             function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
         }
         for (const auto &query_state_pair : local_query_to_state_map) {
-            auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
+            auto query_pool_state = dev_data->Get<vvl::QueryPool>(query_state_pair.first.pool);
             query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, query_state_pair.second);
         }
     }
@@ -1506,7 +1506,7 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
 
     for (const auto &query_state_pair : local_query_to_state_map) {
         if (query_state_pair.second == QUERYSTATE_ENDED && !is_query_updated_after(query_state_pair.first)) {
-            auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
+            auto query_pool_state = dev_data->Get<vvl::QueryPool>(query_state_pair.first.pool);
             if (query_pool_state) {
                 query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass,
                                                 QUERYSTATE_AVAILABLE);

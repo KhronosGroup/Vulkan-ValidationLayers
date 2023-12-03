@@ -127,7 +127,7 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
                                                        VkQueryResultFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    const auto& query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
+    const auto& query_pool_state = *Get<vvl::QueryPool>(queryPool);
 
     for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
         if (query_pool_state.GetQueryState(i, 0u) == QUERYSTATE_RESET) {

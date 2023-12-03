@@ -1742,7 +1742,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
     for (const auto &query : cb_state->activeQueries) {
         uint32_t op_count = vs_state->GetVideoDecodeOperationCount(pDecodeInfo);
         if (query.active_query_index + op_count > query.last_activatable_query_index + 1) {
-            auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
+            auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             skip |= LogError(commandBuffer, "VUID-vkCmdDecodeVideoKHR-opCount-07134",
                              "vkCmdDecodeVideoKHR(): not enough activatable queries for query type %s "
                              "with opCount %u, active query index %u, and last activatable query index %u",

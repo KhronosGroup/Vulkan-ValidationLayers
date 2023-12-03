@@ -505,7 +505,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
     vvl::unordered_set<int> active_types;
     if (!disabled[query_validation]) {
         for (const auto &query_object : cb_state.activeQueries) {
-            auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
+            auto query_pool_state = Get<vvl::QueryPool>(query_object.pool);
             if (!query_pool_state) {
                 continue;
             }
@@ -526,7 +526,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
             active_types.insert(query_pool_state->createInfo.queryType);
         }
         for (const auto &query_object : sub_cb_state.startedQueries) {
-            auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
+            auto query_pool_state = Get<vvl::QueryPool>(query_object.pool);
             if (query_pool_state && active_types.count(query_pool_state->createInfo.queryType)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), sub_cb_state.commandBuffer(), query_object.pool);
                 skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00105", objlist, cb_loc,
@@ -802,7 +802,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
     const QueryObject *active_occlusion_query = nullptr;
     for (const auto &active_query : cb_state.activeQueries) {
-        auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
+        auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
         const auto queryType = query_pool_state->createInfo.queryType;
         if (queryType == VK_QUERY_TYPE_OCCLUSION) {
             active_occlusion_query = &active_query;

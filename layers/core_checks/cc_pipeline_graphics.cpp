@@ -2529,7 +2529,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
     if (!primitives_generated_query_with_rasterizer_discard || !primitives_generated_query_with_non_zero_streams) {
         bool primitives_generated_query = false;
         for (const auto &query : cb_state.activeQueries) {
-            auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
+            auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
                 primitives_generated_query = true;
                 break;
