@@ -33,13 +33,13 @@ static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const safe_VkPipeli
     return depth_stencil_attachment;
 }
 
-struct SUBPASS_INFO {
+struct SubpassInfo {
     bool used;
     VkImageUsageFlagBits usage;
     VkImageLayout layout;
     VkImageAspectFlags aspectMask;
 
-    SUBPASS_INFO()
+    SubpassInfo()
         : used(false), usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), aspectMask(VkImageAspectFlags(0)) {}
 };
 

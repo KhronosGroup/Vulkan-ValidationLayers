@@ -408,11 +408,11 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 
     // Verify if attachments are used in DescriptorSet
     const std::vector<vvl::ImageView *> *attachments = cb_state.active_attachments.get();
-    const std::vector<SUBPASS_INFO> *subpasses = cb_state.active_subpasses.get();
+    const std::vector<SubpassInfo> *subpasses = cb_state.active_subpasses.get();
     if (attachments && attachments->size() > 0 && subpasses && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         for (uint32_t att_index = 0; att_index < attachments->size(); ++att_index) {
             const auto &view_state = (*attachments)[att_index];
-            const SUBPASS_INFO &subpass = (*subpasses)[att_index];
+            const SubpassInfo &subpass = (*subpasses)[att_index];
             if (!view_state || view_state->Destroyed()) {
                 continue;
             }

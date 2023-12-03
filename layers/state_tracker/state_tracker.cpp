@@ -1673,7 +1673,7 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
         const auto *perf = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
         index_count = perf->counterIndexCount;
 
-        const QUEUE_FAMILY_PERF_COUNTERS &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
+        const QueueFamilyPerfCounters &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
         for (uint32_t i = 0; i < perf->counterIndexCount; i++) {
             const auto &counter = counters.counters[perf->pCounterIndices[i]];
             switch (counter.scope) {
@@ -3917,7 +3917,7 @@ void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformance
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     assert(pd_state);
 
-    std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS> queue_family_counters(new QUEUE_FAMILY_PERF_COUNTERS());
+    std::unique_ptr<QueueFamilyPerfCounters> queue_family_counters(new QueueFamilyPerfCounters());
     queue_family_counters->counters.resize(*pCounterCount);
     for (uint32_t i = 0; i < *pCounterCount; i++) queue_family_counters->counters[i] = pCounters[i];
 

@@ -31,7 +31,7 @@
 #include "containers/qfo_transfer.h"
 #include "containers/custom_containers.h"
 
-struct SUBPASS_INFO;
+struct SubpassInfo;
 class VIDEO_SESSION_STATE;
 class VIDEO_SESSION_PARAMETERS_STATE;
 class CoreChecks;
@@ -388,7 +388,7 @@ class CommandBuffer : public REFCOUNTED_NODE {
     uint32_t active_render_pass_device_mask;
     // only when not using dynamic rendering
     safe_VkRenderPassBeginInfo active_render_pass_begin_info;
-    std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
+    std::shared_ptr<std::vector<SubpassInfo>> active_subpasses;
     std::shared_ptr<std::vector<vvl::ImageView *>> active_attachments;
     std::set<std::shared_ptr<vvl::ImageView>> attachments_view_states;
 
@@ -544,7 +544,7 @@ class CommandBuffer : public REFCOUNTED_NODE {
 
     void BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
     void NextSubpass(Func command, VkSubpassContents contents);
-    void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses);
+    void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses);
     void EndRenderPass(Func command);
 
     void BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo);
