@@ -658,7 +658,7 @@ void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const Va
         ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless);
     }
     image_layout_ = image_info.imageLayout;
-    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView), is_bindless);
+    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless);
     UpdateKnownValidView(is_bindless);
 }
 
@@ -683,7 +683,7 @@ void vvl::ImageDescriptor::WriteUpdate(DescriptorSet &set_state, const Validatio
                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
     const auto &image_info = update.pImageInfo[index];
     image_layout_ = image_info.imageLayout;
-    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView), is_bindless);
+    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless);
     UpdateKnownValidView(is_bindless);
 }
 
@@ -823,14 +823,14 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
                                 is_bindless);
             }
             image_layout_ = image_info.imageLayout;
-            ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView),
+            ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
                             is_bindless);
             break;
         }
         case DescriptorClass::Image: {
             const auto &image_info = update.pImageInfo[index];
             image_layout_ = image_info.imageLayout;
-            ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView),
+            ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
                             is_bindless);
             break;
         }

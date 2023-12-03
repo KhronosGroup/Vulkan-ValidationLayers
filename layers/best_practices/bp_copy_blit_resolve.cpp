@@ -56,7 +56,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
                     clear_attachment.colorAttachment != VK_ATTACHMENT_UNUSED && pColorAttachments) {
                     const auto& attachment = pColorAttachments[clear_attachment.colorAttachment];
                     if (attachment.imageView) {
-                        auto image_view_state = Get<IMAGE_VIEW_STATE>(attachment.imageView);
+                        auto image_view_state = Get<vvl::ImageView>(attachment.imageView);
                         const VkFormat format = image_view_state->create_info.format;
                         RecordClearColor(format, clear_attachment.clearValue.color);
                     }
@@ -221,7 +221,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                     if ((attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && attachment.colorAttachment != VK_ATTACHMENT_UNUSED) {
                         const auto& color_attachment = pColorAttachments[attachment.colorAttachment];
                         if (color_attachment.imageView) {
-                            auto image_view_state = Get<IMAGE_VIEW_STATE>(color_attachment.imageView);
+                            auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
                             const VkFormat format = image_view_state->create_info.format;
                             skip |= ValidateClearColor(commandBuffer, format, attachment.clearValue.color, error_obj.location);
                         }

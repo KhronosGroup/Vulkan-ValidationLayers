@@ -161,7 +161,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                     const vvl::ImageDescriptor &image_descriptor) const {
     std::vector<const vvl::Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
-    const IMAGE_VIEW_STATE *image_view_state = image_descriptor.GetImageViewState();
+    const vvl::ImageView *image_view_state = image_descriptor.GetImageViewState();
     const auto binding = binding_info.first;
 
     if (image_descriptor.GetClass() == vvl::DescriptorClass::ImageSampler) {
@@ -407,7 +407,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     }
 
     // Verify if attachments are used in DescriptorSet
-    const std::vector<IMAGE_VIEW_STATE *> *attachments = cb_state.active_attachments.get();
+    const std::vector<vvl::ImageView *> *attachments = cb_state.active_attachments.get();
     const std::vector<SUBPASS_INFO> *subpasses = cb_state.active_subpasses.get();
     if (attachments && attachments->size() > 0 && subpasses && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         for (uint32_t att_index = 0; att_index < attachments->size(); ++att_index) {

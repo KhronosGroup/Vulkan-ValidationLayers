@@ -274,7 +274,7 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
         for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
             const auto& color_attachment = pRenderingInfo->pColorAttachments[i];
             if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                const VkFormat format = Get<IMAGE_VIEW_STATE>(color_attachment.imageView)->create_info.format;
+                const VkFormat format = Get<vvl::ImageView>(color_attachment.imageView)->create_info.format;
                 skip |= ValidateClearColor(commandBuffer, format, color_attachment.clearValue.color, loc);
             }
         }
@@ -361,7 +361,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
     assert(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        IMAGE_VIEW_STATE* depth_image_view = nullptr;
+        vvl::ImageView* depth_image_view = nullptr;
 
         const auto depth_attachment = rp->createInfo.pSubpasses[cmd_state->GetActiveSubpass()].pDepthStencilAttachment;
         if (depth_attachment) {
@@ -417,16 +417,16 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
             }
 
             auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
-            std::shared_ptr<IMAGE_VIEW_STATE> image_view = nullptr;
+            std::shared_ptr<vvl::ImageView> image_view = nullptr;
 
             if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi =
                     vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
                 if (rpabi) {
-                    image_view = Get<IMAGE_VIEW_STATE>(rpabi->pAttachments[att]);
+                    image_view = Get<vvl::ImageView>(rpabi->pAttachments[att]);
                 }
             } else {
-                image_view = Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[att]);
+                image_view = Get<vvl::ImageView>(framebuffer->createInfo.pAttachments[att]);
             }
 
             QueueValidateImageView(cb->queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
@@ -455,15 +455,15 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 
             auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
 
-            std::shared_ptr<IMAGE_VIEW_STATE> image_view;
+            std::shared_ptr<vvl::ImageView> image_view;
             if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi =
                     vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
                 if (rpabi) {
-                    image_view = Get<IMAGE_VIEW_STATE>(rpabi->pAttachments[att]);
+                    image_view = Get<vvl::ImageView>(rpabi->pAttachments[att]);
                 }
             } else {
-                image_view = Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[att]);
+                image_view = Get<vvl::ImageView>(framebuffer->createInfo.pAttachments[att]);
             }
 
             QueueValidateImageView(cb->queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(), usage);
@@ -479,22 +479,22 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
     assert(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        std::shared_ptr<IMAGE_VIEW_STATE> depth_image_view_shared_ptr;
-        IMAGE_VIEW_STATE* depth_image_view = nullptr;
+        std::shared_ptr<vvl::ImageView> depth_image_view_shared_ptr;
+        vvl::ImageView* depth_image_view = nullptr;
         std::optional<VkAttachmentLoadOp> load_op;
 
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
             const auto depth_attachment = rp->dynamic_rendering_begin_rendering_info.pDepthAttachment;
             if (depth_attachment) {
                 load_op.emplace(depth_attachment->loadOp);
-                depth_image_view_shared_ptr = Get<IMAGE_VIEW_STATE>(depth_attachment->imageView);
+                depth_image_view_shared_ptr = Get<vvl::ImageView>(depth_attachment->imageView);
                 depth_image_view = depth_image_view_shared_ptr.get();
             }
 
             for (uint32_t i = 0; i < rp->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
                 const auto& color_attachment = rp->dynamic_rendering_begin_rendering_info.pColorAttachments[i];
                 if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    const VkFormat format = Get<IMAGE_VIEW_STATE>(color_attachment.imageView)->create_info.format;
+                    const VkFormat format = Get<vvl::ImageView>(color_attachment.imageView)->create_info.format;
                     RecordClearColor(format, color_attachment.clearValue.color);
                 }
             }

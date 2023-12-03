@@ -780,7 +780,7 @@ class BestPractices : public ValidationStateTracker {
 
     using QueueCallbacks = std::vector<CMD_BUFFER_STATE::QueueCallback>;
 
-    void QueueValidateImageView(QueueCallbacks& func, Func command, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
+    void QueueValidateImageView(QueueCallbacks& func, Func command, vvl::ImageView* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
     void QueueValidateImage(QueueCallbacks& func, Func command, std::shared_ptr<bp_state::Image>& state,
                             IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range);
     void QueueValidateImage(QueueCallbacks& func, Func command, std::shared_ptr<bp_state::Image>& state,

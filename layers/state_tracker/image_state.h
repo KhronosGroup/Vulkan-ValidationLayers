@@ -271,10 +271,12 @@ class IMAGE_STATE : public BINDABLE {
                  BindableMultiplanarMemoryTracker> tracker_;
 };
 
+namespace vvl {
+
 // State for VkImageView objects.
 // Parent -> child relationships in the object usage tree:
-//    IMAGE_VIEW_STATE [N] -> [1] IMAGE_STATE
-class IMAGE_VIEW_STATE : public BASE_NODE {
+//    ImageView [N] -> [1] IMAGE_STATE
+class ImageView : public BASE_NODE {
   public:
     const safe_VkImageViewCreateInfo safe_create_info;
     const VkImageViewCreateInfo &create_info;
@@ -293,9 +295,9 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     std::shared_ptr<IMAGE_STATE> image_state;
     const bool is_depth_sliced;
 
-    IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                     VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
-    IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
+    ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+              VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+    ImageView(const ImageView &rh_obj) = delete;
     VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
 
     void LinkChildNodes() override {
@@ -303,13 +305,13 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
         image_state->AddParent(this);
     }
 
-    virtual ~IMAGE_VIEW_STATE() {
+    virtual ~ImageView() {
         if (!Destroyed()) {
             Destroy();
         }
     }
 
-    bool OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const;
+    bool OverlapSubresource(const ImageView &compare_view) const;
 
     void Destroy() override;
 
@@ -319,6 +321,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 };
+
+}  // namespace vvl
 
 struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;

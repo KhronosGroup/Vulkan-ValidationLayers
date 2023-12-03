@@ -188,7 +188,7 @@ class ImageState : public IMAGE_STATE {
     VkDeviceSize opaque_base_address_ = 0U;
 };
 
-class ImageViewState : public IMAGE_VIEW_STATE {
+class ImageViewState : public vvl::ImageView {
   public:
     ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
                    VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);

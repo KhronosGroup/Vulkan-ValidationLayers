@@ -399,8 +399,10 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
-                                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
+namespace vvl {
+
+ImageView::ImageView(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
+                     VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
@@ -423,7 +425,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
       is_depth_sliced(::IsDepthSliced(im->createInfo, *ci)) {
 }
 
-void IMAGE_VIEW_STATE::Destroy() {
+void ImageView::Destroy() {
     if (image_state) {
         image_state->RemoveParent(this);
         image_state = nullptr;
@@ -431,14 +433,14 @@ void IMAGE_VIEW_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-uint32_t IMAGE_VIEW_STATE::GetAttachmentLayerCount() const {
+uint32_t ImageView::GetAttachmentLayerCount() const {
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !IsDepthSliced()) {
         return image_state->createInfo.arrayLayers;
     }
     return create_info.subresourceRange.layerCount;
 }
 
-bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const {
+bool ImageView::OverlapSubresource(const ImageView &compare_view) const {
     if (image_view() == compare_view.image_view()) {
         return true;
     }
@@ -476,6 +478,8 @@ bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) 
     }
     return true;
 }
+
+}  // namespace vvl
 
 static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();

@@ -484,7 +484,7 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
     return skip;
 }
 
-void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, Func command, IMAGE_VIEW_STATE* view,
+void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, Func command, vvl::ImageView* view,
                                            IMAGE_SUBRESOURCE_USAGE_BP usage) {
     if (view) {
         auto image_state = std::static_pointer_cast<bp_state::Image>(view->image_state);

@@ -655,7 +655,7 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
                 }
 
                 if (image_view) {
-                    auto image_view_state = Get<IMAGE_VIEW_STATE>(image_view);
+                    auto image_view_state = Get<vvl::ImageView>(image_view);
                     QueueValidateImageView(cb_state.queue_submit_functions, command, image_view_state.get(),
                                            IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS);
                 }

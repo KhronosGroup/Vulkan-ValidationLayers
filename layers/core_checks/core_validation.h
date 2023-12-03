@@ -530,7 +530,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateIndirectCountCmd(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& count_buffer_state,
                                   VkDeviceSize count_buffer_offset, const Location& loc) const;
     bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
-                                                      const std::shared_ptr<const IMAGE_VIEW_STATE>& image_view_state,
+                                                      const std::shared_ptr<const vvl::ImageView>& image_view_state,
                                                       const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info,
                                                       const Location& attachment_loc, const Location& loc) const;
 
@@ -766,11 +766,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                              IMAGE_STATE* image_state, VkSampleCountFlagBits msrtss_samples,
                                                              const Location& rasterization_samples_loc) const;
-    bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const IMAGE_VIEW_STATE& image_view_state,
+    bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const vvl::ImageView& image_view_state,
                                                               VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                               uint32_t attachment_index, const Location& rp_loc,
                                                               const Location& attachment_reference_loc) const;
-    bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const IMAGE_VIEW_STATE& image_view_state,
+    bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const vvl::ImageView& image_view_state,
                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                      const Location& layout_loc) const;
     bool ValidateHostCopyImageCreateInfos(VkDevice device, const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state,
@@ -844,9 +844,8 @@ class CoreChecks : public ValidationStateTracker {
                                       VkImageLayout optimal_layout, const Location& image_loc, const char* invalid_layout_vuid,
                                       const char* mismatch_layout_vuid) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                           bool* error) const override;
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const vvl::ImageView& image_view_state, VkImageLayout explicit_layout,
+                           const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const override;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
@@ -1404,7 +1403,7 @@ class CoreChecks : public ValidationStateTracker {
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                            const ErrorObject& error_obj) const override;
-    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE>& image_view,
+    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const vvl::ImageView>& image_view,
                                          const VkRenderingInfo* pRenderingInfo, const LogObjectList& objlist,
                                          const Location& loc) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,

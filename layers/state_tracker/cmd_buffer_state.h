@@ -386,8 +386,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // only when not using dynamic rendering
     safe_VkRenderPassBeginInfo active_render_pass_begin_info;
     std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
-    std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> active_attachments;
-    std::set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
+    std::shared_ptr<std::vector<vvl::ImageView *>> active_attachments;
+    std::set<std::shared_ptr<vvl::ImageView>> attachments_view_states;
 
     VkSubpassContents activeSubpassContents;
     uint32_t GetActiveSubpass() const { return active_subpass_; }
@@ -476,8 +476,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     VkCommandBuffer commandBuffer() const { return handle_.Cast<VkCommandBuffer>(); }
 
-    IMAGE_VIEW_STATE *GetActiveAttachmentImageViewState(uint32_t index);
-    const IMAGE_VIEW_STATE *GetActiveAttachmentImageViewState(uint32_t index) const;
+    vvl::ImageView *GetActiveAttachmentImageViewState(uint32_t index);
+    const vvl::ImageView *GetActiveAttachmentImageViewState(uint32_t index) const;
 
     void AddChild(std::shared_ptr<BASE_NODE> &base_node);
     template <typename StateObject>
@@ -586,8 +586,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
                         const VkImageMemoryBarrier *pImageMemoryBarriers);
     void RecordBarriers(const VkDependencyInfoKHR &dep_info);
 
-    void SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
-    void SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout);
+    void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
+    void SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout);
 
     void SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &image_subresource_range,
                         VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);

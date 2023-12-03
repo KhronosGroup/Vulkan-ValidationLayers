@@ -256,7 +256,7 @@ class BufferView : public vvl::BufferView {
     const DescriptorId id;
 };
 
-class ImageView : public IMAGE_VIEW_STATE {
+class ImageView : public vvl::ImageView {
   public:
     ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
               VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props,

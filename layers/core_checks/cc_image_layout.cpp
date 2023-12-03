@@ -140,7 +140,7 @@ bool CoreChecks::VerifyImageLayoutSubresource(const CMD_BUFFER_STATE &cb_state, 
     return skip;
 }
 
-bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE &image_view_state,
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const vvl::ImageView &image_view_state,
                                    VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
                                    bool *error) const {
     if (disabled[image_layout_validation]) return false;
@@ -382,8 +382,7 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
     return skip;
 }
 
-bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLayout layout,
-                                                                      const IMAGE_VIEW_STATE &image_view_state,
+bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const vvl::ImageView &image_view_state,
                                                                       VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                       uint32_t attachment_index, const Location &rp_loc,
                                                                       const Location &attachment_reference_loc) const {
@@ -458,7 +457,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
 }
 
 bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkImageLayout layout,
-                                                                             const IMAGE_VIEW_STATE &image_view_state,
+                                                                             const vvl::ImageView &image_view_state,
                                                                              VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                              const Location &layout_loc) const {
     bool skip = false;
@@ -528,7 +527,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
     for (uint32_t i = 0; i < render_pass_info->attachmentCount && i < framebuffer_info.attachmentCount; ++i) {
         const Location attachment_loc = rp_create_info.dot(Field::pAttachments, i);
         auto image_view = attachments[i];
-        auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
+        auto view_state = Get<vvl::ImageView>(image_view);
 
         if (!view_state) {
             const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view);
@@ -647,7 +646,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 const Location input_loc = subpass_loc.dot(Field::pInputAttachments, k);
                 auto image_view = attachments[attachment_ref.attachment];
-                auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
+                auto view_state = Get<vvl::ImageView>(image_view);
 
                 if (view_state) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
@@ -670,7 +669,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 const Location color_loc = subpass_loc.dot(Field::pColorAttachments, k);
                 auto image_view = attachments[attachment_ref.attachment];
-                auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
+                auto view_state = Get<vvl::ImageView>(image_view);
 
                 if (view_state) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
@@ -698,7 +697,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 const Location ds_loc = subpass_loc.dot(Field::pDepthStencilAttachment);
                 auto image_view = attachments[attachment_ref.attachment];
-                auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
+                auto view_state = Get<vvl::ImageView>(image_view);
 
                 if (view_state) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
@@ -728,7 +727,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
 
 void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *cb_state, const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        IMAGE_VIEW_STATE *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
+        vvl::ImageView *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);

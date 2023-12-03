@@ -348,7 +348,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                     }
                 }
                 if (metal_texture_ptr->imageView) {
-                    auto image_view_info = Get<IMAGE_VIEW_STATE>(metal_texture_ptr->imageView);
+                    auto image_view_info = Get<vvl::ImageView>(metal_texture_ptr->imageView);
                     if (image_view_info) {
                         if (!image_view_info->metal_imageview_export) {
                             skip |= LogError(

@@ -423,9 +423,9 @@ class ImageDescriptor : public Descriptor {
                     VkDescriptorType type) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state);
     VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view() : VK_NULL_HANDLE; }
-    const IMAGE_VIEW_STATE *GetImageViewState() const { return image_view_state_.get(); }
-    IMAGE_VIEW_STATE *GetImageViewState() { return image_view_state_.get(); }
-    std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
+    const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
+    vvl::ImageView *GetImageViewState() { return image_view_state_.get(); }
+    std::shared_ptr<vvl::ImageView> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
     bool AddParent(BASE_NODE *base_node) override {
@@ -455,7 +455,7 @@ class ImageDescriptor : public Descriptor {
     bool ComputeInvalid() const { return !image_view_state_ || image_view_state_->Invalid(); }
     void UpdateKnownValidView(bool is_bindless) { known_valid_view_ = !is_bindless && !ComputeInvalid(); }
 
-    std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
+    std::shared_ptr<vvl::ImageView> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
     bool known_valid_view_ = false;
 };
@@ -670,7 +670,7 @@ class MutableDescriptor : public Descriptor {
     VkDeviceSize GetBufferSize() const { return buffer_size_; }
 
     std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }
-    std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
+    std::shared_ptr<vvl::ImageView> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
     std::shared_ptr<vvl::Buffer> GetSharedBufferState() const { return buffer_state_; }
     VkDeviceSize GetOffset() const { return offset_; }
@@ -709,7 +709,7 @@ class MutableDescriptor : public Descriptor {
     bool immutable_{false};
     std::shared_ptr<vvl::Sampler> sampler_state_;
     // Image Descriptor
-    std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
+    std::shared_ptr<vvl::ImageView> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
     // Texel Descriptor
     std::shared_ptr<vvl::BufferView> buffer_view_state_;

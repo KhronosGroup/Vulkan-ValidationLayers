@@ -527,7 +527,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
 
     if ((depth_stencil_attachment != VK_ATTACHMENT_UNUSED) && attachment_views_[depth_stencil_attachment].IsValid()) {
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
-        const IMAGE_VIEW_STATE &view_state = *view_gen.GetViewState();
+        const vvl::ImageView &view_state = *view_gen.GetViewState();
         const VkImageLayout ds_layout = subpass.pDepthStencilAttachment->layout;
         const VkFormat ds_format = view_state.create_info.format;
         const bool depth_write = IsDepthAttachmentWriteable(last_bound_state, ds_format, ds_layout);
@@ -606,7 +606,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
     const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
     if ((depth_stencil_attachment != VK_ATTACHMENT_UNUSED) && attachment_views_[depth_stencil_attachment].IsValid()) {
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
-        const IMAGE_VIEW_STATE &view_state = *view_gen.GetViewState();
+        const vvl::ImageView &view_state = *view_gen.GetViewState();
         bool depth_write = false, stencil_write = false;
         const bool has_depth = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT);
         const bool has_stencil = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
