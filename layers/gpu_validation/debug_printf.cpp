@@ -719,7 +719,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, NULL);
 
     const auto pipeline_layout =
-        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<PIPELINE_LAYOUT_STATE>(last_bound.pipeline_layout);
+        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
     if (pipeline_layout) {
         // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
         // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.

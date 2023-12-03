@@ -331,7 +331,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
             if (from_libraries_only && no_independent_sets) {
                 // The layout defined at link time must be compatible with each (pre-raster and fragment shader) sub state's layout
                 // (vertex input and fragment output state do not contain a layout)
-                const auto layout_state = Get<PIPELINE_LAYOUT_STATE>(pipe_ci.layout);
+                const auto layout_state = Get<vvl::PipelineLayout>(pipe_ci.layout);
                 if (layout_state) {
                     if (std::string err_msg;
                         !VerifySetLayoutCompatibility(*layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
@@ -362,9 +362,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
         };
         struct GPLValidInfo {
             GPLValidInfo() = default;
-            GPLValidInfo(GPLInitInfo ii, const PIPELINE_LAYOUT_STATE *pls) : init_type(ii), layout_state(pls) {}
+            GPLValidInfo(GPLInitInfo ii, const vvl::PipelineLayout *pls) : init_type(ii), layout_state(pls) {}
             GPLInitInfo init_type = GPLInitInfo::uninitialized;
-            const PIPELINE_LAYOUT_STATE *layout_state = nullptr;
+            const vvl::PipelineLayout *layout_state = nullptr;
         };
         std::pair<VkPipelineLayoutCreateFlags, GPLValidInfo> pre_raster_flags = std::make_pair(
                                                                  VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM, GPLValidInfo{}),
@@ -378,7 +378,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                 // NOTE: 06642 only refers to the create flags, not the sub-state, so look at the "raw layout" rather than the
                 // layout
                 //       associated with the sub-state
-                const auto layout_state = Get<PIPELINE_LAYOUT_STATE>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
+                const auto layout_state = Get<vvl::PipelineLayout>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
                 if (!layout_state) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
                                      "is a graphics library created with %s state, but does not have a valid layout specified.",

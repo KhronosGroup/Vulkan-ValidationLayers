@@ -607,7 +607,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>& set_layouts,
                                       const VulkanTypedHandle& handle, const uint32_t layoutIndex, std::string& errorMsg) const;
 
-    bool VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE& layout_a, const PIPELINE_LAYOUT_STATE& layout_b,
+    bool VerifySetLayoutCompatibility(const vvl::PipelineLayout& layout_a, const vvl::PipelineLayout& layout_b,
                                       std::string& errorMsg) const;
 
     // Validate contents of a CopyUpdate

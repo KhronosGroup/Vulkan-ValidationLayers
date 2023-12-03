@@ -181,18 +181,18 @@ class PIPELINE_STATE : public BASE_NODE {
 
     // Executable or legacy pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
+                   std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const vvl::PipelineLayout> &&layout,
                    CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
@@ -268,7 +268,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
     bool IsRenderPassStateRequired() const { return pre_raster_state || fragment_shader_state || fragment_output_state; }
 
-    const std::shared_ptr<const PIPELINE_LAYOUT_STATE> PipelineLayoutState() const {
+    const std::shared_ptr<const vvl::PipelineLayout> PipelineLayoutState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (merged_graphics_layout) {
             return merged_graphics_layout;
@@ -280,16 +280,16 @@ class PIPELINE_STATE : public BASE_NODE {
         return merged_graphics_layout;
     }
 
-    std::vector<std::shared_ptr<const PIPELINE_LAYOUT_STATE>> PipelineLayoutStateUnion() const;
+    std::vector<std::shared_ptr<const vvl::PipelineLayout>> PipelineLayoutStateUnion() const;
 
-    const std::shared_ptr<const PIPELINE_LAYOUT_STATE> PreRasterPipelineLayoutState() const {
+    const std::shared_ptr<const vvl::PipelineLayout> PreRasterPipelineLayoutState() const {
         if (pre_raster_state) {
             return pre_raster_state->pipeline_layout;
         }
         return merged_graphics_layout;
     }
 
-    const std::shared_ptr<const PIPELINE_LAYOUT_STATE> FragmentShaderPipelineLayoutState() const {
+    const std::shared_ptr<const vvl::PipelineLayout> FragmentShaderPipelineLayoutState() const {
         if (fragment_shader_state) {
             return fragment_shader_state->pipeline_layout;
         }
@@ -607,7 +607,7 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     // Merged layouts
-    std::shared_ptr<const PIPELINE_LAYOUT_STATE> merged_graphics_layout;
+    std::shared_ptr<const vvl::PipelineLayout> merged_graphics_layout;
 };
 
 template <>
@@ -761,15 +761,14 @@ struct LAST_BOUND_STATE {
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
 };
 
-static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,
-                                    const PIPELINE_LAYOUT_STATE &pipeline_layout) {
+static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound, const vvl::PipelineLayout &pipeline_layout) {
     if ((set >= last_bound.per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
         return false;
     }
     return (*(last_bound.per_set[set].compat_id_for_set) == *(pipeline_layout.set_compat_ids[set]));
 }
 
-static inline bool IsPipelineLayoutSetCompat(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
+static inline bool IsPipelineLayoutSetCompat(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
     if (!a || !b) {
         return false;
     }

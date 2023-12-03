@@ -225,7 +225,7 @@ void CMD_BUFFER_STATE::IncrementResources() {
 // vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
 //
 // Part of this assumes apps at draw/dispath/traceRays/etc time will have it properly compatabile or else other VU will be triggered
-void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT_STATE *pipeline_layout_state) {
+void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state) {
     if (pipeline_layout_state == nullptr) {
         return;
     }
@@ -983,7 +983,7 @@ void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondar
     }
 }
 
-void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_LAYOUT_STATE &pipeline_layout,
+void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
                                               uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet *pDescriptorWrites) {
     // Short circuit invalid updates
@@ -1110,7 +1110,7 @@ static bool PushDescriptorCleanup(LAST_BOUND_STATE &last_bound, uint32_t set_idx
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                     const PIPELINE_LAYOUT_STATE &pipeline_layout, uint32_t first_set,
+                                                     const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
                                                      uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                                      std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
                                                      uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
@@ -1194,7 +1194,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
 }
 
 void CMD_BUFFER_STATE::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
-                                                        const PIPELINE_LAYOUT_STATE &pipeline_layout, uint32_t first_set,
+                                                        const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
                                                         uint32_t set_count, const uint32_t *buffer_indicies,
                                                         const VkDeviceSize *buffer_offsets) {
     uint32_t required_size = first_set + set_count;

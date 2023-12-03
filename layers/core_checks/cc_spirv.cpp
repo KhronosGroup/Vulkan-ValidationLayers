@@ -1232,7 +1232,7 @@ bool CoreChecks::ValidateExecutionModes(const SPIRV_MODULE_STATE &module_state, 
 
 // For given pipelineLayout verify that the set_layout_node at slot.first
 //  has the requested binding at slot.second and return ptr to that binding
-static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout, uint32_t set,
+static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(vvl::PipelineLayout const *pipelineLayout, uint32_t set,
                                                                 uint32_t binding) {
     if (!pipelineLayout) return nullptr;
 

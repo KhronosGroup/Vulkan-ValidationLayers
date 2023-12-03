@@ -532,8 +532,8 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
     return {};
 }
 
-std::vector<std::shared_ptr<const PIPELINE_LAYOUT_STATE>> PIPELINE_STATE::PipelineLayoutStateUnion() const {
-    std::vector<std::shared_ptr<const PIPELINE_LAYOUT_STATE>> ret;
+std::vector<std::shared_ptr<const vvl::PipelineLayout>> PIPELINE_STATE::PipelineLayoutStateUnion() const {
+    std::vector<std::shared_ptr<const vvl::PipelineLayout>> ret;
     ret.reserve(2);
     // Only need to check pre-raster _or_ fragment shader layout; if either one is not merged_graphics_layout, then
     // merged_graphics_layout is a union
@@ -599,7 +599,7 @@ std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkS
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const vvl::RenderPass> &&rpstate,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(*pCreateInfo, rpstate, state_data),
@@ -628,7 +628,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       csm_states(csm_states) {
     if (library_create_info) {
-        const auto &exe_layout_state = state_data->Get<PIPELINE_LAYOUT_STATE>(create_info.graphics.layout);
+        const auto &exe_layout_state = state_data->Get<vvl::PipelineLayout>(create_info.graphics.layout);
         const auto *exe_layout = exe_layout_state.get();
         const auto *pre_raster_layout =
             (pre_raster_state && pre_raster_state->pipeline_layout) ? pre_raster_state->pipeline_layout.get() : nullptr;
@@ -639,7 +639,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
         layouts[0] = exe_layout;
         layouts[1] = fragment_shader_layout;
         layouts[2] = pre_raster_layout;
-        merged_graphics_layout = std::make_shared<PIPELINE_LAYOUT_STATE>(layouts);
+        merged_graphics_layout = std::make_shared<vvl::PipelineLayout>(layouts);
 
         // TODO Could store the graphics_lib_type in the sub-state rather than searching for it again here.
         //      Or, could store a pointer back to the owning PIPELINE_STATE.
@@ -653,7 +653,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_type(VK_PIPELINE_BIND_POINT_COMPUTE),
@@ -675,7 +675,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
@@ -700,7 +700,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV),
