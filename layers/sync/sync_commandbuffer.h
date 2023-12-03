@@ -407,7 +407,7 @@ struct SyncNodeFormatter {
     const char *label;
 
     SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const IMAGE_STATE *image);
+    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image);
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
     SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_ = nullptr);
 };

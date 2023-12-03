@@ -32,9 +32,9 @@
 
 // Forward declarations...
 class CMD_BUFFER_STATE;
-class IMAGE_STATE;
 
 namespace vvl {
+class Image;
 class ImageView;
 }  // namespace vvl
 #endif
@@ -123,9 +123,9 @@ class ImageSubresourceLayoutMap {
     bool UpdateFrom(const ImageSubresourceLayoutMap& from);
     uintptr_t CompatibilityKey() const;
     const LayoutMap& GetLayoutMap() const { return layouts_; }
-    ImageSubresourceLayoutMap(const IMAGE_STATE& image_state);
+    ImageSubresourceLayoutMap(const vvl::Image& image_state);
     ~ImageSubresourceLayoutMap() {}
-    const IMAGE_STATE* GetImageView() const { return &image_state_; };
+    const vvl::Image* GetImageView() const { return &image_state_; };
 
     // This looks a bit ponderous but kAspectCount is a compile time constant
     VkImageSubresource Decode(IndexType index) const {
@@ -166,7 +166,7 @@ class ImageSubresourceLayoutMap {
     bool InRange(const VkImageSubresourceRange& range) const { return encoder_.InRange(range); }
 
   private:
-    const IMAGE_STATE& image_state_;
+    const vvl::Image& image_state_;
     const Encoder& encoder_;
     LayoutMap layouts_;
     InitialLayoutStates initial_layout_states_;

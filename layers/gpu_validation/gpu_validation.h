@@ -23,7 +23,7 @@
 #include "gpu_validation/gpu_subclasses.h"
 #include "state_tracker/pipeline_state.h"
 
-typedef vvl::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 namespace gpuav {
 struct GpuVuid {
@@ -126,7 +126,7 @@ class Validator : public gpu_tracker::Validator {
     std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
     std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
                                                            const VkBufferViewCreateInfo* ci, VkFormatFeatureFlags2KHR buf_ff) final;
-    std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv,
+    std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView iv,
                                                          const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
                                                          const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) final;
     std::shared_ptr<vvl::AccelerationStructureNV> CreateAccelerationStructureState(
@@ -412,9 +412,9 @@ class Validator : public gpu_tracker::Validator {
     void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
                                 VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
 
-    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
+    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const override;
-    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
+    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                   const char* vuid, const char* more_message = "") const override;
     bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                  const char* vuid, const char* more_message = "") const override;
@@ -429,7 +429,7 @@ class Validator : public gpu_tracker::Validator {
     VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
 
     template <typename RangeFactory>
-    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
+    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
                                 VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& loc,
                                 const char* mismatch_layout_vuid, bool* error) const;
 

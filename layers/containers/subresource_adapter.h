@@ -31,7 +31,9 @@
 #include "vk_snippets.h"
 #endif
 
-class IMAGE_STATE;
+namespace vvl {
+class Image;
+}  // namespace vvl
 
 namespace subresource_adapter {
 
@@ -366,8 +368,8 @@ class ImageRangeEncoder : public RangeEncoder {
     // The default constructor for default iterators
     ImageRangeEncoder() {}
 
-    ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param);
-    explicit ImageRangeEncoder(const IMAGE_STATE& image);
+    ImageRangeEncoder(const vvl::Image& image, const AspectParameters* param);
+    explicit ImageRangeEncoder(const vvl::Image& image);
     ImageRangeEncoder(const ImageRangeEncoder& from) = default;
 
     inline IndexType Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index,

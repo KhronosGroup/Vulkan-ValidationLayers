@@ -323,8 +323,8 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
 bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkImage src_image, VkImage dst_image,
                                             const Location& loc) const {
     bool skip = false;
-    auto src_image_type = Get<IMAGE_STATE>(src_image)->createInfo.imageType;
-    auto dst_image_type = Get<IMAGE_STATE>(dst_image)->createInfo.imageType;
+    auto src_image_type = Get<vvl::Image>(src_image)->createInfo.imageType;
+    auto dst_image_type = Get<vvl::Image>(dst_image)->createInfo.imageType;
 
     if (src_image_type != dst_image_type) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_MismatchedImageType, command_buffer, loc,
@@ -589,8 +589,8 @@ bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     dst_image_hex << "0x" << std::hex << HandleToUint64(dstImage);
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        auto src_state = Get<IMAGE_STATE>(srcImage);
-        auto dst_state = Get<IMAGE_STATE>(dstImage);
+        auto src_state = Get<vvl::Image>(srcImage);
+        auto dst_state = Get<vvl::Image>(dstImage);
 
         if (src_state && dst_state) {
             VkImageTiling src_Tiling = src_state->createInfo.tiling;

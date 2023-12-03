@@ -3485,7 +3485,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 continue;
             }
             auto color_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
+            auto color_image_samples = Get<vvl::Image>(color_view_state->create_info.image)->createInfo.samples;
 
             if (p_attachment_sample_count_info &&
                 (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
@@ -3502,7 +3502,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
 
         if (rendering_info.pDepthAttachment != nullptr) {
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-            auto depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
+            auto depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->createInfo.samples;
 
             if (p_attachment_sample_count_info) {
                 if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -3520,7 +3520,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
 
         if (rendering_info.pStencilAttachment != nullptr) {
             auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-            auto stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
+            auto stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->createInfo.samples;
 
             if (p_attachment_sample_count_info) {
                 if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -3543,7 +3543,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 continue;
             }
             auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
+            auto samples = Get<vvl::Image>(view_state->create_info.image)->createInfo.samples;
 
             if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
@@ -3558,7 +3558,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
 
         if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-            const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
+            const auto &depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->createInfo.samples;
             if (depth_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
@@ -3572,7 +3572,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
 
         if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-            const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
+            const auto &stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->createInfo.samples;
             if (stencil_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());

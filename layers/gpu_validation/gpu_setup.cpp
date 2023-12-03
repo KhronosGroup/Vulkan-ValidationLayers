@@ -48,7 +48,7 @@ std::shared_ptr<vvl::BufferView> gpuav::Validator::CreateBufferViewState(const s
 }
 
 std::shared_ptr<vvl::ImageView> gpuav::Validator::CreateImageViewState(
-    const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+    const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap);
 }

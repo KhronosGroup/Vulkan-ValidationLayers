@@ -298,8 +298,8 @@ const std::shared_ptr<const vvl::Buffer> BufferBarrier::GetResourceState(const V
     return state_tracker.Get<vvl::Buffer>(buffer);
 }
 
-const std::shared_ptr<const IMAGE_STATE> ImageBarrier::GetResourceState(const ValidationStateTracker &state_tracker) const {
-    return state_tracker.Get<IMAGE_STATE>(image);
+const std::shared_ptr<const vvl::Image> ImageBarrier::GetResourceState(const ValidationStateTracker &state_tracker) const {
+    return state_tracker.Get<vvl::Image>(image);
 }
 
 }  // namespace sync_utils

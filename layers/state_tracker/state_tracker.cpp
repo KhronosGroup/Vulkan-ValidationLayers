@@ -185,15 +185,15 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
     return format_features;
 }
 
-std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
-                                                                      VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<IMAGE_STATE>(this, img, pCreateInfo, features);
+std::shared_ptr<vvl::Image> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                                     VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<vvl::Image>(this, img, pCreateInfo, features);
 }
 
-std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
-                                                                      VkSwapchainKHR swapchain, uint32_t swapchain_index,
-                                                                      VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<IMAGE_STATE>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+std::shared_ptr<vvl::Image> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                                     VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                                     VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<vvl::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
@@ -214,7 +214,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
 
 void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                                        const RecordObject &record_obj) {
-    Destroy<IMAGE_STATE>(image);
+    Destroy<vvl::Image>(image);
 }
 
 void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
@@ -225,7 +225,7 @@ void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer com
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
-        cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(image));
+        cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(image));
     }
 }
 
@@ -238,7 +238,7 @@ void ValidationStateTracker::PreCallRecordCmdClearDepthStencilImage(VkCommandBuf
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
-        cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(image));
+        cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(image));
     }
 }
 
@@ -249,7 +249,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage(VkCommandBuffer commandBu
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(srcImage), Get<vvl::Image>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
@@ -262,8 +262,8 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage2(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pCopyImageInfo->srcImage),
-                                Get<IMAGE_STATE>(pCopyImageInfo->dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(pCopyImageInfo->srcImage),
+                                Get<vvl::Image>(pCopyImageInfo->dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage,
@@ -273,7 +273,7 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer comman
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(srcImage), Get<vvl::Image>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
@@ -288,8 +288,8 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage2(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pResolveImageInfo->srcImage),
-                                Get<IMAGE_STATE>(pResolveImageInfo->dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(pResolveImageInfo->srcImage),
+                                Get<vvl::Image>(pResolveImageInfo->dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
@@ -299,7 +299,7 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBu
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(srcImage), Get<vvl::Image>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
@@ -312,8 +312,8 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage2(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pBlitImageInfo->srcImage),
-                                Get<IMAGE_STATE>(pBlitImageInfo->dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(pBlitImageInfo->srcImage),
+                                Get<vvl::Image>(pBlitImageInfo->dstImage));
 }
 
 struct BufferAddressInfillUpdateOps {
@@ -407,7 +407,7 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
 }
 
 std::shared_ptr<vvl::ImageView> ValidationStateTracker::CreateImageViewState(
-    const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+    const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<vvl::ImageView>(image_state, iv, ci, ff, cubic_props);
 }
@@ -416,7 +416,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                            const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    auto image_state = Get<IMAGE_STATE>(pCreateInfo->image);
+    auto image_state = Get<vvl::Image>(pCreateInfo->image);
 
     VkFormatFeatureFlags2KHR format_features = 0;
     if (image_state->HasAHBFormat() == true) {
@@ -549,7 +549,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer c
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(srcImage), Get<vvl::Buffer>(dstBuffer));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(srcImage), Get<vvl::Buffer>(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -564,7 +564,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer 
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage),
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Image>(pCopyImageToBufferInfo->srcImage),
                                 Get<vvl::Buffer>(pCopyImageToBufferInfo->dstBuffer));
 }
 
@@ -574,7 +574,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer c
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Buffer>(srcBuffer), Get<IMAGE_STATE>(dstImage));
+    cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Buffer>(srcBuffer), Get<vvl::Image>(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -590,7 +590,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer 
 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Buffer>(pCopyBufferToImageInfo->srcBuffer),
-                                Get<IMAGE_STATE>(pCopyBufferToImageInfo->dstImage));
+                                Get<vvl::Image>(pCopyBufferToImageInfo->dstImage));
 }
 
 // Gets union of all features defined by Potential Format Features
@@ -1180,7 +1180,7 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
             }
             dedicated_binding.emplace(dedicated->buffer, buffer_state->createInfo);
         } else if (dedicated->image) {
-            auto image_state = Get<IMAGE_STATE>(dedicated->image);
+            auto image_state = Get<vvl::Image>(dedicated->image);
             assert(image_state);
             if (!image_state) {
                 return;
@@ -1233,7 +1233,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
         for (uint32_t j = 0; j < bind_info.imageOpaqueBindCount; j++) {
             for (uint32_t k = 0; k < bind_info.pImageOpaqueBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pImageOpaqueBinds[j].pBinds[k];
-                auto image_state = Get<IMAGE_STATE>(bind_info.pImageOpaqueBinds[j].image);
+                auto image_state = Get<vvl::Image>(bind_info.pImageOpaqueBinds[j].image);
                 auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (image_state) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
@@ -1253,7 +1253,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                 // TODO: This size is broken for non-opaque bindings, need to update to comprehend full sparse binding data
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
                 VkDeviceSize offset = sparse_binding.offset.z * sparse_binding.offset.y * sparse_binding.offset.x * 4;
-                auto image_state = Get<IMAGE_STATE>(bind_info.pImageBinds[j].image);
+                auto image_state = Get<vvl::Image>(bind_info.pImageBinds[j].image);
                 auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (image_state) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
@@ -1520,7 +1520,7 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(VkDevice device,
 void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2 *pInfo) {
     const VkImagePlaneMemoryRequirementsInfo *plane_info =
         (pInfo == nullptr) ? nullptr : vku::FindStructInPNextChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (image_state) {
         if (plane_info != nullptr) {
             // Multi-plane image
@@ -1560,14 +1560,14 @@ void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2KHR(VkDevi
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements(
     VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements *pSparseMemoryRequirements, const RecordObject &record_obj) {
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     image_state->get_sparse_reqs_called = true;
 }
 
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2(
     VkDevice device, const VkImageSparseMemoryRequirementsInfo2 *pInfo, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const RecordObject &record_obj) {
-    auto image_state = Get<IMAGE_STATE>(pInfo->image);
+    auto image_state = Get<vvl::Image>(pInfo->image);
     image_state->get_sparse_reqs_called = true;
 }
 
@@ -3185,7 +3185,7 @@ void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const
 }
 
 void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
-    auto image_state = Get<IMAGE_STATE>(bindInfo.image);
+    auto image_state = Get<vvl::Image>(bindInfo.image);
     if (image_state) {
         // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
         // See: VUID-vkGetImageSubresourceLayout-image-09432

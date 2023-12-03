@@ -132,18 +132,18 @@ std::shared_ptr<vvl::Swapchain> SyncValidator::CreateSwapchainState(const VkSwap
     return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<syncval_state::Swapchain>(this, create_info, swapchain));
 }
 
-std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
-                                                             VkFormatFeatureFlags2KHR features) {
+std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                            VkFormatFeatureFlags2KHR features) {
     return std::make_shared<ImageState>(this, img, pCreateInfo, features);
 }
 
-std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
-                                                             VkSwapchainKHR swapchain, uint32_t swapchain_index,
-                                                             VkFormatFeatureFlags2KHR features) {
+std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                            VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                            VkFormatFeatureFlags2KHR features) {
     return std::make_shared<ImageState>(this, img, pCreateInfo, swapchain, swapchain_index, features);
 }
 std::shared_ptr<vvl::ImageView> SyncValidator::CreateImageViewState(
-    const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+    const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageViewState>(image_state, iv, ci, ff, cubic_props);
 }
@@ -2808,7 +2808,7 @@ void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &dev
     if (opaque_base_address_) return;
 
     VkDeviceSize opaque_base = 0U;  // Fakespace Allocator starts > 0
-    auto get_opaque_base = [&opaque_base](const IMAGE_STATE &other) {
+    auto get_opaque_base = [&opaque_base](const vvl::Image &other) {
         const ImageState &other_sync = static_cast<const ImageState &>(other);
         opaque_base = other_sync.opaque_base_address_;
         return true;
@@ -2858,7 +2858,7 @@ ImageRangeGen syncval_state::ImageState::MakeImageRangeGen(const VkImageSubresou
     return range_gen;
 }
 
-syncval_state::ImageViewState::ImageViewState(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv,
+syncval_state::ImageViewState::ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv,
                                               const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
                                               const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : vvl::ImageView(image_state, iv, ci, ff, cubic_props), view_range_gen(MakeImageRangeGen()) {}

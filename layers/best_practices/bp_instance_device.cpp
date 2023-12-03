@@ -420,14 +420,14 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
         // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
-        vvl::unordered_set<const IMAGE_STATE*> sparse_images;
+        vvl::unordered_set<const vvl::Image*> sparse_images;
         // Track images getting metadata bound by this call in a set, it'll be recorded into the image_state
         // in RecordQueueBindSparse.
-        vvl::unordered_set<const IMAGE_STATE*> sparse_images_with_metadata;
+        vvl::unordered_set<const vvl::Image*> sparse_images_with_metadata;
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bind_info.imageBindCount; ++i) {
             const auto& image_bind = bind_info.pImageBinds[i];
-            auto image_state = Get<IMAGE_STATE>(image_bind.image);
+            auto image_state = Get<vvl::Image>(image_bind.image);
             if (!image_state) {
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             }
@@ -451,7 +451,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
         }
         for (uint32_t i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
             const auto& image_opaque_bind = bind_info.pImageOpaqueBinds[i];
-            auto image_state = Get<IMAGE_STATE>(bind_info.pImageOpaqueBinds[i].image);
+            auto image_state = Get<vvl::Image>(bind_info.pImageOpaqueBinds[i].image);
             if (!image_state) {
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             }
@@ -513,7 +513,7 @@ void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t 
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
         for (uint32_t i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
             const auto& image_opaque_bind = bind_info.pImageOpaqueBinds[i];
-            auto image_state = Get<IMAGE_STATE>(bind_info.pImageOpaqueBinds[i].image);
+            auto image_state = Get<vvl::Image>(bind_info.pImageOpaqueBinds[i].image);
             if (!image_state) {
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             }

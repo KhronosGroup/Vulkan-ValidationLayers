@@ -88,7 +88,7 @@ bool ImageSubresourceLayoutMap::SubresourceLayout::operator==(const ImageSubreso
         (current_layout == rhs.current_layout) && (initial_layout == rhs.initial_layout) && (subresource == rhs.subresource);
     return is_equal;
 }
-ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_state)
+ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const vvl::Image& image_state)
     : image_state_(image_state),
       encoder_(image_state.subresource_encoder),
       layouts_(encoder_.SubresourceCount()),

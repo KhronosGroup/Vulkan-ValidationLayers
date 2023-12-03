@@ -24,8 +24,8 @@
 #include <functional>
 
 class ValidationStateTracker;
-class IMAGE_STATE;
 namespace vvl {
+class Image;
 class ImageView;
 }  // namespace vvl
 
@@ -164,7 +164,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
 class VideoPictureResource {
   public:
     std::shared_ptr<const vvl::ImageView> image_view_state;
-    std::shared_ptr<const IMAGE_STATE> image_state;
+    std::shared_ptr<const vvl::Image> image_state;
     uint32_t base_array_layer;
     VkImageSubresourceRange range;
     VkOffset2D coded_offset;

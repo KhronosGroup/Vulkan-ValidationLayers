@@ -59,6 +59,7 @@ class Surface;
 class DisplayMode;
 class Event;
 class PipelineLayout;
+class Image;
 class ImageView;
 class Swapchain;
 }  // namespace vvl
@@ -66,7 +67,6 @@ class Swapchain;
 class CMD_BUFFER_STATE;
 class PIPELINE_STATE;
 struct PipelineStageState;
-class IMAGE_STATE;
 class COMMAND_POOL_STATE;
 struct SHADER_MODULE_STATE;
 struct SHADER_OBJECT_STATE;
@@ -290,7 +290,7 @@ VALSTATETRACK_STATE_OBJECT(VkRenderPass, vvl::RenderPass)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, vvl::Sampler)
 VALSTATETRACK_STATE_OBJECT(VkImageView, vvl::ImageView)
-VALSTATETRACK_STATE_OBJECT(VkImage, IMAGE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkImage, vvl::Image)
 VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, vvl::PipelineCache)
@@ -828,17 +828,17 @@ class ValidationStateTracker : public ValidationObject {
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const RecordObject& record_obj, void* cgpl_state) override;
 
-    virtual std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
-                                                          VkFormatFeatureFlags2KHR features);
-    virtual std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
-                                                          VkSwapchainKHR swapchain, uint32_t swapchain_index,
-                                                          VkFormatFeatureFlags2KHR features);
+    virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                         VkFormatFeatureFlags2KHR features);
+    virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                         VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                         VkFormatFeatureFlags2KHR features);
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv,
+    virtual std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView iv,
                                                                  const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
                                                                  const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props);
     void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
@@ -1758,10 +1758,14 @@ class ValidationStateTracker : public ValidationObject {
     }
 #endif
 
-    virtual bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
-                                const char* vuid, const char* more_message = "") const { return false; }
-    virtual bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
-                                  const char* vuid, const char* more_message = "") const { return false; }
+    virtual bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state, const Location& image_loc,
+                                        const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const vvl::Image& image_state,
+                                          const Location& image_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
     virtual bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const vvl::Buffer& buffer_state,
                                          const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
         return false;
@@ -1914,7 +1918,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, vvl::DescriptorSetLayout, descriptor_set_layout_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, vvl::Sampler, sampler_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, vvl::ImageView, image_view_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkImage, vvl::Image, image_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, vvl::BufferView, buffer_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, vvl::PipelineCache, pipeline_cache_map_)

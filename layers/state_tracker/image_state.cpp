@@ -93,9 +93,9 @@ static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo *pCreateInfo) {
     return swapchain_info ? swapchain_info->swapchain : VK_NULL_HANDLE;
 }
 
-static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracker *dev_data, VkImage img,
-                                                     const VkImageCreateInfo *create_info, bool disjoint, bool is_external_ahb) {
-    IMAGE_STATE::MemoryReqs result{};
+static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker *dev_data, VkImage img,
+                                                    const VkImageCreateInfo *create_info, bool disjoint, bool is_external_ahb) {
+    vvl::Image::MemoryReqs result{};
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be queried until after memory is bound
     if (!is_external_ahb) {
@@ -133,8 +133,8 @@ static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracke
     return result;
 }
 
-static IMAGE_STATE::SparseReqs GetSparseRequirements(const ValidationStateTracker *dev_data, VkImage img, bool sparse_residency) {
-    IMAGE_STATE::SparseReqs result;
+static vvl::Image::SparseReqs GetSparseRequirements(const ValidationStateTracker *dev_data, VkImage img, bool sparse_residency) {
+    vvl::Image::SparseReqs result;
     if (sparse_residency) {
         uint32_t count = 0;
         DispatchGetImageSparseMemoryRequirements(dev_data->device, img, &count, nullptr);
@@ -144,7 +144,7 @@ static IMAGE_STATE::SparseReqs GetSparseRequirements(const ValidationStateTracke
     return result;
 }
 
-static bool SparseMetaDataRequired(const IMAGE_STATE::SparseReqs &sparse_reqs) {
+static bool SparseMetaDataRequired(const vvl::Image::SparseReqs &sparse_reqs) {
     bool result = false;
     for (const auto &req : sparse_reqs) {
         if (req.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
@@ -169,8 +169,9 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
-                         VkFormatFeatureFlags2KHR ff)
+namespace vvl {
+
+Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -212,8 +213,8 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
     }
 }
 
-IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
-                         VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
+Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+             uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -249,7 +250,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
     SetMemoryTracker(&std::get<BindableNoMemoryTracker>(tracker_));
 }
 
-void IMAGE_STATE::Destroy() {
+void Image::Destroy() {
     // NOTE: due to corner cases in aliased images, the layout_range_map MUST not be cleaned up here.
     // If it is, bad local entries could be created by CMD_BUFFER_STATE::GetImageSubresourceLayoutMap()
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
@@ -264,14 +265,14 @@ void IMAGE_STATE::Destroy() {
     BINDABLE::Destroy();
 }
 
-void IMAGE_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
+void Image::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
     BINDABLE::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
         bind_swapchain = nullptr;
     }
 }
 
-bool IMAGE_STATE::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const {
+bool Image::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const {
     bool is_equal = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
     is_equal = is_equal && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
     is_equal = is_equal && IsMipLevelsEqual(other_createInfo) && IsArrayLayersEqual(other_createInfo);
@@ -283,7 +284,7 @@ bool IMAGE_STATE::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) c
 }
 
 // Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
-bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const {
+bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const {
     bool is_compatible = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
     is_compatible = is_compatible && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
     is_compatible = is_compatible && IsMipLevelsEqual(other_createInfo);
@@ -300,7 +301,7 @@ bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const V
     return is_compatible;
 }
 
-bool IMAGE_STATE::IsCompatibleAliasing(const IMAGE_STATE *other_image_state) const {
+bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
     if (!IsSwapchainImage() && !other_image_state->IsSwapchainImage() &&
         !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
@@ -319,13 +320,13 @@ bool IMAGE_STATE::IsCompatibleAliasing(const IMAGE_STATE *other_image_state) con
     return false;
 }
 
-void IMAGE_STATE::SetInitialLayoutMap() {
+void Image::SetInitialLayoutMap() {
     if (layout_range_map) {
         return;
     }
 
     std::shared_ptr<GlobalImageLayoutRangeMap> layout_map;
-    auto get_layout_map = [&layout_map](const IMAGE_STATE &other_image) {
+    auto get_layout_map = [&layout_map](const Image &other_image) {
         layout_map = other_image.layout_range_map;
         return true;
     };
@@ -352,7 +353,7 @@ void IMAGE_STATE::SetInitialLayoutMap() {
     layout_range_map = std::move(layout_map);
 }
 
-void IMAGE_STATE::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout) {
+void Image::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout) {
     using sparse_container::update_range_value;
     using sparse_container::value_precedence;
     GlobalImageLayoutRangeMap::RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
@@ -362,19 +363,21 @@ void IMAGE_STATE::SetImageLayout(const VkImageSubresourceRange &range, VkImageLa
     }
 }
 
-void IMAGE_STATE::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index) {
+void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index) {
     assert(IsSwapchainImage());
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
 }
 
+}  // namespace vvl
+
 static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {
     auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(ci->pNext);
     return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
 }
 
-static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo *ci, const IMAGE_STATE &image_state) {
+static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo *ci, const vvl::Image &image_state) {
     auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci->pNext);
     return (usage_create_info) ? usage_create_info->usage : image_state.createInfo.usage;
 }
@@ -401,7 +404,7 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 
 namespace vvl {
 
-ImageView::ImageView(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
+ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
                      VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
       safe_create_info(ci),
@@ -543,7 +546,7 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
         images[image_index].acquire_semaphore.reset();
         images[image_index].acquire_fence.reset();
     } else {
-        IMAGE_STATE *image_state = images[image_index].image_state;
+        vvl::Image *image_state = images[image_index].image_state;
         if (image_state) {
             image_state->layout_locked = true;
         }
@@ -563,7 +566,7 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
     images[image_index].acquire_semaphore = semaphore_state;
     images[image_index].acquire_fence = fence_state;
     if (shared_presentable) {
-        IMAGE_STATE *image_state = images[image_index].image_state;
+        vvl::Image *image_state = images[image_index].image_state;
         if (image_state) {
             image_state->shared_presentable = shared_presentable;
         }
@@ -574,7 +577,7 @@ void Swapchain::Destroy() {
     for (auto &swapchain_image : images) {
         if (swapchain_image.image_state) {
             RemoveParent(swapchain_image.image_state);
-            dev_data->Destroy<IMAGE_STATE>(swapchain_image.image_state->image());
+            dev_data->Destroy<vvl::Image>(swapchain_image.image_state->image());
         }
         // NOTE: We don't have access to dev_data->fake_memory.Free() here, but it is currently a no-op
     }
@@ -600,12 +603,12 @@ SwapchainImage Swapchain::GetSwapChainImage(uint32_t index) const {
     return SwapchainImage();
 }
 
-std::shared_ptr<const IMAGE_STATE> Swapchain::GetSwapChainImageShared(uint32_t index) const {
+std::shared_ptr<const vvl::Image> Swapchain::GetSwapChainImageShared(uint32_t index) const {
     const SwapchainImage swapchain_image(GetSwapChainImage(index));
     if (swapchain_image.image_state) {
         return swapchain_image.image_state->shared_from_this();
     }
-    return std::shared_ptr<const IMAGE_STATE>();
+    return std::shared_ptr<const vvl::Image>();
 }
 
 void Surface::Destroy() {

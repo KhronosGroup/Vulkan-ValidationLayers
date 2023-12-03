@@ -280,7 +280,7 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
                     break;
                 case kVulkanObjectTypeImage:
                     if (unlink) {
-                        image_layout_map.erase(static_cast<IMAGE_STATE *>(obj.get()));
+                        image_layout_map.erase(static_cast<vvl::Image *>(obj.get()));
                     }
                     break;
                 default:
@@ -302,7 +302,7 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
 const CommandBufferImageLayoutMap &CMD_BUFFER_STATE::GetImageSubresourceLayoutMap() const { return image_layout_map; }
 
 // The const variant only need the image as it is the key for the map
-const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) const {
+const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const vvl::Image &image_state) const {
     auto it = image_layout_map.find(&image_state);
     if (it == image_layout_map.cend()) {
         return nullptr;
@@ -311,7 +311,7 @@ const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
-ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) {
+ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const vvl::Image &image_state) {
     auto &layout_map = image_layout_map[&image_state];
     if (!layout_map) {
         // Make sure we don't create a nullptr keyed entry for a zombie Image
@@ -1251,7 +1251,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipe
 }
 
 // Set image layout for given VkImageSubresourceRange struct
-void CMD_BUFFER_STATE::SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &image_subresource_range,
+void CMD_BUFFER_STATE::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range,
                                       VkImageLayout layout, VkImageLayout expected_layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     if (subresource_map && subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
@@ -1264,7 +1264,7 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const vvl::ImageView &view_stat
     if (dev_data->disabled[image_layout_validation]) {
         return;
     }
-    IMAGE_STATE *image_state = view_state.image_state.get();
+    vvl::Image *image_state = view_state.image_state.get();
     auto *subresource_map = GetImageSubresourceLayoutMap(*image_state);
     if (subresource_map) {
         subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
@@ -1272,7 +1272,7 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const vvl::ImageView &view_stat
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
-void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range,
+void CMD_BUFFER_STATE::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
                                              VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     if (subresource_map) {
@@ -1281,19 +1281,19 @@ void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, con
 }
 
 void CMD_BUFFER_STATE::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
-    auto image_state = dev_data->Get<IMAGE_STATE>(image);
+    auto image_state = dev_data->Get<vvl::Image>(image);
     if (!image_state) return;
     SetImageInitialLayout(*image_state, range, layout);
 }
 
-void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers,
+void CMD_BUFFER_STATE::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &layers,
                                              VkImageLayout layout) {
     SetImageInitialLayout(image_state, RangeFromLayers(layers), layout);
 }
 
 // Set image layout for all slices of an image view
 void CMD_BUFFER_STATE::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
-    const IMAGE_STATE *image_state = view_state.image_state.get();
+    const vvl::Image *image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
 
@@ -1413,7 +1413,7 @@ void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemor
         }
     }
     for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
-        auto image_state = dev_data->Get<IMAGE_STATE>(pImageMemoryBarriers[i].image);
+        auto image_state = dev_data->Get<vvl::Image>(pImageMemoryBarriers[i].image);
         if (image_state) {
             AddChild(image_state);
         }
@@ -1430,7 +1430,7 @@ void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
         }
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
-        auto image_state = dev_data->Get<IMAGE_STATE>(dep_info.pImageMemoryBarriers[i].image);
+        auto image_state = dev_data->Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image);
         if (image_state) {
             AddChild(image_state);
         }

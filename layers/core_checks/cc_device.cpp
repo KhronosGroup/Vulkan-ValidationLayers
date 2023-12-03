@@ -77,7 +77,7 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
     return skip;
 }
 
-bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state, const char *vuid_string,
+bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image &image_state, const char *vuid_string,
                                                         const Location &loc) const {
     bool skip = false;
     const auto image_create_info = image_state.createInfo;

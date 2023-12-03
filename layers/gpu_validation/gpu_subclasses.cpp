@@ -52,7 +52,7 @@ void gpuav::BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unl
     vvl::BufferView::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav::ImageView::ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+gpuav::ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
                             VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props,
                             DescriptorHeap &desc_heap_)
     : vvl::ImageView(image_state, iv, ci, ff, cubic_props),
