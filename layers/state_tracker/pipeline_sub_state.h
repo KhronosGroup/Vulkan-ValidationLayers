@@ -21,13 +21,15 @@
 #include "generated/vk_safe_struct.h"
 
 // Graphics pipeline sub-state as defined by VK_KHR_graphics_pipeline_library
-//
-struct EntryPoint;
 
 namespace vvl {
 class RenderPass;
 struct ShaderModule;
 }  // namespace vvl
+
+namespace spirv {
+struct EntryPoint;
+}  // namespace spirv
 
 template <typename CreateInfoType>
 static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateInfoType &create_info) {
@@ -140,7 +142,7 @@ struct FragmentShaderState : public PipelineSubState {
     std::shared_ptr<const vvl::ShaderModule> fragment_shader;
     std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> fragment_shader_ci;
     // many times we need to quickly get the entry point to access the SPIR-V static data
-    std::shared_ptr<const EntryPoint> fragment_entry_point;
+    std::shared_ptr<const spirv::EntryPoint> fragment_entry_point;
 
   private:
     static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,

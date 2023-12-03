@@ -299,7 +299,7 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
         #
         # The main function to validate all the extensions and capabilities
         out.append('''
-            bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn, const bool pipeline, const Location& loc) const {
+            bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction &insn, const bool pipeline, const Location& loc) const {
                 bool skip = false;
 
                 if (insn.Opcode() == spv::OpCapability) {

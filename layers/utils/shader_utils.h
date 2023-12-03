@@ -32,11 +32,13 @@ struct DeviceFeatures;
 struct DeviceExtensions;
 class APIVersion;
 
+namespace spirv {
 struct ResourceInterfaceVariable;
+}  // namespace spirv
 
 struct DescriptorRequirement {
     uint64_t revalidate_hash;
-    const ResourceInterfaceVariable *variable;
+    const spirv::ResourceInterfaceVariable *variable;
     DescriptorRequirement() : revalidate_hash(0), variable(nullptr) {}
 };
 
@@ -93,36 +95,38 @@ typedef vvl::unordered_map<uint32_t, DescriptorRequirement> BindingVariableMap;
 // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
 using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
 
-struct EntryPoint;
-struct SPIRV_MODULE_STATE;
 struct safe_VkPipelineShaderStageCreateInfo;
 struct safe_VkShaderCreateInfoEXT;
 struct safe_VkSpecializationInfo;
-class Instruction;
 
 namespace vvl {
 struct ShaderModule;
 }  // namespace vvl
 
+namespace spirv {
+struct Module;
+struct EntryPoint;
+class Instruction;
+}  // namespace spirv
+
 struct PipelineStageState {
-    // We use this over a SPIRV_MODULE_STATE because there are times we need to create empty objects
+    // We use this over a spirv::Module because there are times we need to create empty objects
     std::shared_ptr<const vvl::ShaderModule> module_state;
-    std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state;
+    std::shared_ptr<const spirv::Module> spirv_state;
     const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
     const safe_VkShaderCreateInfoEXT *shader_object_create_info;
     // If null, means it is an empty object, no SPIR-V backing it
-    std::shared_ptr<const EntryPoint> entrypoint;
+    std::shared_ptr<const spirv::EntryPoint> entrypoint;
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                        const safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                       std::shared_ptr<const vvl::ShaderModule> module_state,
-                       std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state);
+                       std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state);
 
     const char *GetPName() const;
     VkShaderStageFlagBits GetStage() const;
     safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void *GetPNext() const;
-    bool GetInt32ConstantValue(const Instruction &insn, uint32_t *value) const;
+    bool GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const;
 };
 
 using StageStateVec = std::vector<PipelineStageState>;
@@ -245,8 +249,8 @@ spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);
 
-void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const EntryPoint> &entrypoint);
+void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
 ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
-ActiveSlotMap GetActiveSlots(const std::shared_ptr<const EntryPoint> &entrypoint);
+ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
 
 uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots);

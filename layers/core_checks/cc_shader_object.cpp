@@ -280,7 +280,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
             const StageCreateInfo stage_create_info(pCreateInfos[i]);
             const auto spirv =
-                std::make_shared<SPIRV_MODULE_STATE>(pCreateInfos[i].codeSize, static_cast<const uint32_t*>(pCreateInfos[i].pCode));
+                std::make_shared<spirv::Module>(pCreateInfos[i].codeSize, static_cast<const uint32_t*>(pCreateInfos[i].pCode));
             safe_VkShaderCreateInfoEXT safe_create_info = safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
             const PipelineStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
             skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc);
@@ -310,13 +310,15 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                     if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
                         tesc_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
                         tesc_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
-                        tesc_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
+                        tesc_linked_point_mode =
+                            stage_state.entrypoint->execution_mode.flags & spirv::ExecutionModeSet::point_mode_bit;
                         tesc_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
                         tesc_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
                     } else if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
                         tese_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
                         tese_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
-                        tese_linked_point_mode = stage_state.entrypoint->execution_mode.flags & ExecutionModeSet::point_mode_bit;
+                        tese_linked_point_mode =
+                            stage_state.entrypoint->execution_mode.flags & spirv::ExecutionModeSet::point_mode_bit;
                         tese_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
                         tese_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
                     }

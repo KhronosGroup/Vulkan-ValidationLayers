@@ -20,7 +20,7 @@
 #include "sync/sync_validation.h"
 
 SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
-                                                             const ResourceInterfaceVariable &variable,
+                                                             const spirv::ResourceInterfaceVariable &variable,
                                                              VkShaderStageFlagBits stage_flag) {
     if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
         assert(stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT);

@@ -415,7 +415,8 @@ ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView iv, cons
       // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
       // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
       // conversion must be used the shader type is always float.
-      descriptor_format_bits(im->HasAHBFormat() ? static_cast<uint32_t>(NumericTypeFloat) : GetFormatType(ci->format)),
+      descriptor_format_bits(im->HasAHBFormat() ? static_cast<uint32_t>(spirv::NumericTypeFloat)
+                                                : spirv::GetFormatType(ci->format)),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
       min_lod(GetImageViewMinLod(ci)),

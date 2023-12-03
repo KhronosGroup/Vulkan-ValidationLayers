@@ -177,7 +177,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 auto rpci = rp_state->createInfo.ptr();
                 auto subpass = pipeline.Subpass();
                 for (const auto& variable : stage.entrypoint->resource_interface_variables) {
-                    if (!variable.decorations.Has(DecorationSet::input_attachment_bit)) {
+                    if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
                         continue;
                     }
                     auto slot = variable.decorations.input_attachment_index_start;

@@ -260,9 +260,9 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
-    std::shared_ptr<const SPIRV_MODULE_STATE> vert_spirv_state;
-    std::shared_ptr<const EntryPoint> vert_entrypoint;
-    std::shared_ptr<const SPIRV_MODULE_STATE> frag_spirv_state;
+    std::shared_ptr<const spirv::Module> vert_spirv_state;
+    std::shared_ptr<const spirv::EntryPoint> vert_entrypoint;
+    std::shared_ptr<const spirv::Module> frag_spirv_state;
     if (last_bound_state.pipeline_state) {
         for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
             if (stage_state.GetStage() == VK_SHADER_STAGE_VERTEX_BIT) {
@@ -818,7 +818,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if ((dyn_depth_write_enable || dyn_stencil_write_mask) &&
             (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point)) {
             auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
-            const bool mode_early_fragment_test = entrypoint->execution_mode.Has(ExecutionModeSet::early_fragment_test_bit);
+            const bool mode_early_fragment_test = entrypoint->execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
             const bool depth_read =
                 pipeline.fragment_shader_state->fragment_shader->spirv->static_data_.has_shader_tile_image_depth_read;
             const bool stencil_read =

@@ -59,7 +59,7 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
                     const uint32_t unique_shader_id = (csm_states) ? (*csm_states)[stage].unique_shader_id : 0;
                     if (shader_ci) {
                         // don't need to worry about GroupDecoration in GPL
-                        auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
+                        auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
                         module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, unique_shader_id);
                     } else {
                         // VK_EXT_shader_module_identifier could legally provide a null module handle

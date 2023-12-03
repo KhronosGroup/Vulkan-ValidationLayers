@@ -33,10 +33,11 @@ namespace vvl {
 class Pipeline;
 }  // namespace vvl
 
+namespace spirv {
 struct EntryPoint;
-struct SPIRV_MODULE_STATE;
+struct Module;
 
-static constexpr uint32_t kInvalidSpirvValue = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
 // This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
@@ -59,14 +60,14 @@ struct DecorationBase {
     uint32_t flags = 0;
 
     // When being used as an User-defined Variable (input, output, rtx)
-    uint32_t location = kInvalidSpirvValue;
+    uint32_t location = kInvalidValue;
     // Component is optional and spec says it is 0 if not defined
     uint32_t component = 0;
 
     uint32_t offset = 0;
 
     // A given object can only have a single BuiltIn OpDecoration
-    uint32_t builtin = kInvalidSpirvValue;
+    uint32_t builtin = kInvalidValue;
 
     void Add(uint32_t decoration, uint32_t value);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
@@ -80,7 +81,7 @@ struct DecorationSet : public DecorationBase {
     uint32_t binding = 0;
 
     // Value of InputAttachmentIndex the variable starts
-    uint32_t input_attachment_index_start = kInvalidSpirvValue;
+    uint32_t input_attachment_index_start = kInvalidValue;
 
     // <index into struct, DecorationBase>
     vvl::unordered_map<uint32_t, DecorationBase> member_decorations;
@@ -131,9 +132,9 @@ struct ExecutionModeSet {
     VkPrimitiveTopology primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 
     // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share
-    uint32_t local_size_x = kInvalidSpirvValue;
-    uint32_t local_size_y = kInvalidSpirvValue;
-    uint32_t local_size_z = kInvalidSpirvValue;
+    uint32_t local_size_x = kInvalidValue;
+    uint32_t local_size_y = kInvalidValue;
+    uint32_t local_size_z = kInvalidValue;
 
     uint32_t output_vertices = 0;
     uint32_t output_primitives = 0;
@@ -178,13 +179,13 @@ struct TypeStructInfo {
     };
     std::vector<Member> members;
 
-    TypeStructInfo(const SPIRV_MODULE_STATE &module_state, const Instruction &struct_insn);
+    TypeStructInfo(const Module &module_state, const Instruction &struct_insn);
 
-    TypeStructSize GetSize(const SPIRV_MODULE_STATE &module_state) const;
+    TypeStructSize GetSize(const Module &module_state) const;
 };
 
 // Represents the OpImage* instructions and how it maps to the variable
-// This is created in the SPIRV_MODULE_STATE but then used with VariableBase objects
+// This is created in the Module but then used with VariableBase objects
 struct ImageAccess {
     const Instruction &image_insn;  // OpImage*
     std::vector<const Instruction *> variable_image_insn;
@@ -204,11 +205,11 @@ struct ImageAccess {
     bool is_sign_extended = false;
     bool is_zero_extended = false;
 
-    uint32_t image_access_chain_index = kInvalidSpirvValue;    // OpAccessChain's Index 0
-    uint32_t sampler_access_chain_index = kInvalidSpirvValue;  // OpAccessChain's Index 0
-    uint32_t texel_component_count = kInvalidSpirvValue;
+    uint32_t image_access_chain_index = kInvalidValue;    // OpAccessChain's Index 0
+    uint32_t sampler_access_chain_index = kInvalidValue;  // OpAccessChain's Index 0
+    uint32_t texel_component_count = kInvalidValue;
 
-    ImageAccess(const SPIRV_MODULE_STATE &module_state, const Instruction &image_insn);
+    ImageAccess(const Module &module_state, const Instruction &image_insn);
 };
 
 // <Image OpVariable Result ID, [ImageAccess, ImageAccess, etc] > - used for faster lookup
@@ -268,7 +269,7 @@ struct VariableBase {
     // If variable is accessed from mulitple entrypoint, create a seperate VariableBase object as info about it being access will be
     // different
     const VkShaderStageFlagBits stage;
-    VariableBase(const SPIRV_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
+    VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 };
 
 // These are Input/Output OpVariable that go in-between stages
@@ -295,16 +296,16 @@ struct StageInteraceVariable : public VariableBase {
     const std::vector<uint32_t> builtin_block;
     uint32_t total_builtin_components = 0;
 
-    StageInteraceVariable(const SPIRV_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
+    StageInteraceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 
   protected:
     static bool IsPerTaskNV(const StageInteraceVariable &variable);
     static bool IsArrayInterface(const StageInteraceVariable &variable);
-    static const Instruction &FindBaseType(StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
-    static bool IsBuiltin(const StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
-    static std::vector<InterfaceSlot> GetInterfaceSlots(StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
-    static std::vector<uint32_t> GetBuiltinBlock(const StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
-    static uint32_t GetBuiltinComponents(const StageInteraceVariable &variable, const SPIRV_MODULE_STATE &module_state);
+    static const Instruction &FindBaseType(StageInteraceVariable &variable, const Module &module_state);
+    static bool IsBuiltin(const StageInteraceVariable &variable, const Module &module_state);
+    static std::vector<InterfaceSlot> GetInterfaceSlots(StageInteraceVariable &variable, const Module &module_state);
+    static std::vector<uint32_t> GetBuiltinBlock(const StageInteraceVariable &variable, const Module &module_state);
+    static uint32_t GetBuiltinComponents(const StageInteraceVariable &variable, const Module &module_state);
 };
 
 // vkspec.html#interfaces-resources describes 'Shader Resource Interface'
@@ -379,15 +380,15 @@ struct ResourceInterfaceVariable : public VariableBase {
     const bool is_storage_buffer;
     bool is_input_attachment{false};
 
-    ResourceInterfaceVariable(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint, const Instruction &insn,
+    ResourceInterfaceVariable(const Module &module_state, const EntryPoint &entrypoint, const Instruction &insn,
                               const ImageAccessMap &image_access_map);
 
   protected:
-    static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const SPIRV_MODULE_STATE &module_state);
-    static uint32_t FindImageSampledTypeWidth(const SPIRV_MODULE_STATE &module_state, const Instruction &base_type);
-    static NumericType FindImageFormatType(const SPIRV_MODULE_STATE &module_state, const Instruction &base_type);
+    static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
+    static uint32_t FindImageSampledTypeWidth(const Module &module_state, const Instruction &base_type);
+    static NumericType FindImageFormatType(const Module &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
-    static bool IsAtomicOperation(const SPIRV_MODULE_STATE &module_state, const ResourceInterfaceVariable &variable);
+    static bool IsAtomicOperation(const Module &module_state, const ResourceInterfaceVariable &variable);
 };
 
 // Used to help detect if different variable is being used
@@ -403,7 +404,7 @@ struct PushConstantVariable : public VariableBase {
     uint32_t offset;  // where first member is
     uint32_t size;    // total size of block
 
-    PushConstantVariable(const SPIRV_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
+    PushConstantVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 };
 
 // Represents a single Entrypoint into a Shader Module
@@ -456,25 +457,23 @@ struct EntryPoint {
     bool has_passthrough{false};
     bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
 
-    EntryPoint(const SPIRV_MODULE_STATE &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map);
+    EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map);
 
   protected:
-    static vvl::unordered_set<uint32_t> GetAccessibleIds(const SPIRV_MODULE_STATE &module_state, EntryPoint &entrypoint);
-    static std::vector<StageInteraceVariable> GetStageInterfaceVariables(const SPIRV_MODULE_STATE &module_state,
-                                                                         const EntryPoint &entrypoint);
-    static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const SPIRV_MODULE_STATE &module_state,
-                                                                                EntryPoint &entrypoint,
+    static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
+    static std::vector<StageInteraceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint);
+    static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                                 const ImageAccessMap &image_access_map);
 };
 
 // Represents a SPIR-V Module
 // This holds the SPIR-V source and parse it
-struct SPIRV_MODULE_STATE {
+struct Module {
     // Static/const data extracted from a SPIRV module at initialization time
     // The goal of this struct is to move everything that is ready only into here
     struct StaticData {
         StaticData() = default;
-        StaticData(const SPIRV_MODULE_STATE &module_state);
+        StaticData(const Module &module_state);
         StaticData &operator=(StaticData &&) = default;
         StaticData(StaticData &&) = default;
 
@@ -568,10 +567,9 @@ struct SPIRV_MODULE_STATE {
     VulkanTypedHandle handle() const { return handle_; }  // matches normal convention to get handle
 
     // Used for when modifying the SPIR-V (spirv-opt, GPU-AV instrumentation, etc) and need reparse it for VVL validaiton
-    SPIRV_MODULE_STATE(vvl::span<const uint32_t> code) : words_(code.begin(), code.end()), static_data_(*this) {}
+    Module(vvl::span<const uint32_t> code) : words_(code.begin(), code.end()), static_data_(*this) {}
 
-    SPIRV_MODULE_STATE(size_t codeSize, const uint32_t *pCode)
-        : words_(pCode, pCode + codeSize / sizeof(uint32_t)), static_data_(*this) {}
+    Module(size_t codeSize, const uint32_t *pCode) : words_(pCode, pCode + codeSize / sizeof(uint32_t)), static_data_(*this) {}
 
     const Instruction *FindDef(uint32_t id) const {
         auto it = static_data_.definitions.find(id);
@@ -654,10 +652,12 @@ struct SPIRV_MODULE_STATE {
     }
 };
 
+}  // namespace spirv
+
 // Represents a VkShaderModule handle
 namespace vvl {
 struct ShaderModule : public BASE_NODE {
-    ShaderModule(VkShaderModule shader_module, std::shared_ptr<SPIRV_MODULE_STATE> &spirv_module, uint32_t unique_shader_id)
+    ShaderModule(VkShaderModule shader_module, std::shared_ptr<spirv::Module> &spirv_module, uint32_t unique_shader_id)
         : BASE_NODE(shader_module, kVulkanObjectTypeShaderModule), spirv(spirv_module), gpu_validation_shader_id(unique_shader_id) {
         spirv->handle_ = handle_;
     }
@@ -670,7 +670,7 @@ struct ShaderModule : public BASE_NODE {
     // If null, means this is a empty object and no shader backing it
     // TODO - This (and vvl::ShaderObject) could be unique, but need handle multiple ValidationObjects
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6265/files
-    std::shared_ptr<SPIRV_MODULE_STATE> spirv;
+    std::shared_ptr<spirv::Module> spirv;
 
     // Used as way to match instrumented GPU-AV shader to a VkShaderModule handle
     uint32_t gpu_validation_shader_id = 0;

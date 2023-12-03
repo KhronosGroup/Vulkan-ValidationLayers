@@ -246,16 +246,19 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
 
         if (!(variable.info.image_format_type & image_view_state->descriptor_format_bits)) {
-            const bool signed_override = ((variable.info.image_format_type & NumericTypeUint) && variable.info.is_sign_extended);
-            const bool unsigned_override = ((variable.info.image_format_type & NumericTypeSint) && variable.info.is_zero_extended);
+            const bool signed_override =
+                ((variable.info.image_format_type & spirv::NumericTypeUint) && variable.info.is_sign_extended);
+            const bool unsigned_override =
+                ((variable.info.image_format_type & spirv::NumericTypeSint) && variable.info.is_zero_extended);
             if (!signed_override && !unsigned_override) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view);
                 return dev_state.LogError(vuids.image_view_numeric_format_07753, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") requires %s component type, but bound descriptor format is %s.",
-                                FormatHandle(set).c_str(), binding, index, string_NumericType(variable.info.image_format_type),
-                                string_VkFormat(image_view_ci.format));
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") requires %s component type, but bound descriptor format is %s.",
+                                          FormatHandle(set).c_str(), binding, index,
+                                          spirv::string_NumericType(variable.info.image_format_type),
+                                          string_VkFormat(image_view_ci.format));
             }
         }
 
@@ -847,18 +850,20 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                         "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32 ") is using buffer %s that has been destroyed.",
                         FormatHandle(set).c_str(), binding, index, FormatHandle(buffer).c_str());
     }
-    const auto format_bits = GetFormatType(buffer_view_format);
+    const auto format_bits = spirv::GetFormatType(buffer_view_format);
 
     if (!(variable.info.image_format_type & format_bits)) {
-        const bool signed_override = ((variable.info.image_format_type & NumericTypeUint) && variable.info.is_sign_extended);
-        const bool unsigned_override = ((variable.info.image_format_type & NumericTypeSint) && variable.info.is_zero_extended);
+        const bool signed_override = ((variable.info.image_format_type & spirv::NumericTypeUint) && variable.info.is_sign_extended);
+        const bool unsigned_override =
+            ((variable.info.image_format_type & spirv::NumericTypeSint) && variable.info.is_zero_extended);
         if (!signed_override && !unsigned_override) {
             auto set = descriptor_set.Handle();
             return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") requires %s component type, but bound descriptor format is %s.",
-                            FormatHandle(set).c_str(), binding, index, string_NumericType(variable.info.image_format_type),
-                            string_VkFormat(buffer_view_format));
+                                      "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                      ") requires %s component type, but bound descriptor format is %s.",
+                                      FormatHandle(set).c_str(), binding, index,
+                                      spirv::string_NumericType(variable.info.image_format_type),
+                                      string_VkFormat(buffer_view_format));
         }
     }
 

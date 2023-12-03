@@ -24,6 +24,8 @@
 #include "containers/custom_containers.h"
 #include <spirv/unified1/spirv.hpp>
 
+namespace spirv {
+
 // Holds information about a single SPIR-V instruction
 // Provides easy access to len, opcode, and content words without the caller needing to care too much about the physical SPIRV
 // module layout.
@@ -96,3 +98,5 @@ class Instruction {
     uint32_t words_debug_[12];
 #endif
 };
+
+}  // namespace spirv

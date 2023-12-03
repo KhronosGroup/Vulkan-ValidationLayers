@@ -17,6 +17,8 @@
 #include "state_tracker/shader_module.h"
 #include "generated/spirv_grammar_helper.h"
 
+namespace spirv {
+
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
     words_.emplace_back(*it++);
     words_.reserve(Length());
@@ -152,3 +154,5 @@ spv::StorageClass Instruction::StorageClass() const {
     }
     return storage_class;
 }
+
+}  // namespace spirv

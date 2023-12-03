@@ -24,6 +24,8 @@
 #include "generated/spirv_grammar_helper.h"
 #include "spirv/1.2/GLSL.std.450.h"
 
+namespace spirv {
+
 void DecorationBase::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
         case spv::DecorationLocation:
@@ -45,7 +47,7 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
             flags |= nonwritable_bit;
             break;
         case spv::DecorationBuiltIn:
-            assert(builtin == kInvalidSpirvValue);  // being over written - not valid
+            assert(builtin == kInvalidValue);  // being over written - not valid
             builtin = value;
             break;
         case spv::DecorationNonReadable:
@@ -93,11 +95,11 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
 }
 
 bool DecorationSet::HasBuiltIn() const {
-    if (kInvalidSpirvValue != builtin) {
+    if (kInvalidValue != builtin) {
         return true;
     } else if (!member_decorations.empty()) {
         for (const auto& member : member_decorations) {
-            if (kInvalidSpirvValue != member.second.builtin) {
+            if (kInvalidValue != member.second.builtin) {
                 return true;
             }
         }
@@ -394,7 +396,7 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
     }
 }
 
-vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const SPIRV_MODULE_STATE& module_state, EntryPoint& entrypoint) {
+vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
     vvl::unordered_set<uint32_t> result_ids;
 
     // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
@@ -442,7 +444,7 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const SPIRV_MODULE_STA
     return result_ids;
 }
 
-std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const SPIRV_MODULE_STATE& module_state,
+std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state,
                                                                           const EntryPoint& entrypoint) {
     std::vector<StageInteraceVariable> variables;
 
@@ -473,8 +475,7 @@ std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const 
     return variables;
 }
 
-std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const SPIRV_MODULE_STATE& module_state,
-                                                                                 EntryPoint& entrypoint,
+std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
                                                                                  const ImageAccessMap& image_access_map) {
     std::vector<ResourceInterfaceVariable> variables;
 
@@ -502,7 +503,7 @@ static inline bool IsImageOperandsBiasOffset(uint32_t type) {
                     spv::ImageOperandsConstOffsetsMask)) != 0;
 }
 
-ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instruction& image_insn) : image_insn(image_insn) {
+ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_insn) : image_insn(image_insn) {
     const uint32_t image_opcode = image_insn.Opcode();
 
     // Get properties from each access instruction
@@ -699,8 +700,7 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
     }
 }
 
-EntryPoint::EntryPoint(const SPIRV_MODULE_STATE& module_state, const Instruction& entrypoint_insn,
-                       const ImageAccessMap& image_access_map)
+EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint_insn, const ImageAccessMap& image_access_map)
     : entrypoint_insn(entrypoint_insn),
       execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
       stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
@@ -773,7 +773,7 @@ EntryPoint::EntryPoint(const SPIRV_MODULE_STATE& module_state, const Instruction
     }
 }
 
-std::optional<VkPrimitiveTopology> SPIRV_MODULE_STATE::GetTopology(const EntryPoint& entrypoint) const {
+std::optional<VkPrimitiveTopology> Module::GetTopology(const EntryPoint& entrypoint) const {
     std::optional<VkPrimitiveTopology> result;
 
     // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
@@ -786,7 +786,7 @@ std::optional<VkPrimitiveTopology> SPIRV_MODULE_STATE::GetTopology(const EntryPo
     return result;
 }
 
-SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_state) {
+Module::StaticData::StaticData(const Module& module_state) {
     // Parse the words first so we have instruction class objects to use
     {
         std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
@@ -1082,7 +1082,7 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
     }
 }
 
-void SPIRV_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
+void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
     const Instruction* insn = FindDef(type);
     for (uint32_t i = 0; i < indent; i++) {
         ss << "\t";
@@ -1152,13 +1152,13 @@ void SPIRV_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t type
     }
 }
 
-std::string SPIRV_MODULE_STATE::DescribeType(uint32_t type) const {
+std::string Module::DescribeType(uint32_t type) const {
     std::ostringstream ss;
     DescribeTypeInner(ss, type, 0);
     return ss.str();
 }
 
-std::shared_ptr<const EntryPoint> SPIRV_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+std::shared_ptr<const EntryPoint> Module::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
             return entry_point;
@@ -1171,8 +1171,8 @@ std::shared_ptr<const EntryPoint> SPIRV_MODULE_STATE::FindEntrypoint(char const*
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
 // Assumes shader module contains no spec constants used to set the local size values
-bool SPIRV_MODULE_STATE::FindLocalSize(const EntryPoint& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
-                                        uint32_t& local_size_z) const {
+bool Module::FindLocalSize(const EntryPoint& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
+                           uint32_t& local_size_z) const {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
     if (static_data_.has_builtin_workgroup_size) {
@@ -1202,7 +1202,7 @@ bool SPIRV_MODULE_STATE::FindLocalSize(const EntryPoint& entrypoint, uint32_t& l
     return false;  // not found
 }
 
-uint32_t SPIRV_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
+uint32_t Module::CalculateWorkgroupSharedMemory() const {
     uint32_t total_size = 0;
     // when using WorkgroupMemoryExplicitLayoutKHR
     // either all or none the structs are decorated with Block,
@@ -1238,7 +1238,7 @@ uint32_t SPIRV_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
 
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
-const Instruction* SPIRV_MODULE_STATE::GetConstantDef(uint32_t id) const {
+const Instruction* Module::GetConstantDef(uint32_t id) const {
     const Instruction* value = FindDef(id);
 
     // If id is a copy, see where it was copied from
@@ -1255,7 +1255,7 @@ const Instruction* SPIRV_MODULE_STATE::GetConstantDef(uint32_t id) const {
 
 // Returns the constant value described by the instruction at |id|
 // Caller ensures there can't be a runtime array or specialization constants
-uint32_t SPIRV_MODULE_STATE::GetConstantValueById(uint32_t id) const {
+uint32_t Module::GetConstantValueById(uint32_t id) const {
     const Instruction* value = GetConstantDef(id);
 
     // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
@@ -1271,7 +1271,7 @@ uint32_t SPIRV_MODULE_STATE::GetConstantValueById(uint32_t id) const {
 }
 
 // Returns the number of Location slots used for a given ID reference to a OpType*
-uint32_t SPIRV_MODULE_STATE::GetLocationsConsumedByType(uint32_t type) const {
+uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
@@ -1317,7 +1317,7 @@ uint32_t SPIRV_MODULE_STATE::GetLocationsConsumedByType(uint32_t type) const {
 }
 
 // Returns the number of Components slots used for a given ID reference to a OpType*
-uint32_t SPIRV_MODULE_STATE::GetComponentsConsumedByType(uint32_t type) const {
+uint32_t Module::GetComponentsConsumedByType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
@@ -1356,7 +1356,7 @@ uint32_t SPIRV_MODULE_STATE::GetComponentsConsumedByType(uint32_t type) const {
 
 // characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
 // also used for input attachments, as we statically know their format.
-NumericType SPIRV_MODULE_STATE::GetNumericType(uint32_t type) const {
+NumericType Module::GetNumericType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
@@ -1379,7 +1379,7 @@ NumericType SPIRV_MODULE_STATE::GetNumericType(uint32_t type) const {
 
 // For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
 // This function examines instructions in the static call tree for a write to this variable.
-bool SPIRV_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const EntryPoint& entrypoint) const {
+bool Module::IsBuiltInWritten(const Instruction* builtin_insn, const EntryPoint& entrypoint) const {
     auto type = builtin_insn->Opcode();
     uint32_t target_id = builtin_insn->Word(1);
     bool init_complete = false;
@@ -1481,9 +1481,8 @@ bool SPIRV_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const
 // %a == variable_id
 // %c == access_ids
 // %b == return value
-const std::vector<const Instruction*> SPIRV_MODULE_STATE::FindVariableAccesses(uint32_t variable_id,
-                                                                                const std::vector<uint32_t>& access_ids,
-                                                                                bool atomic) const {
+const std::vector<const Instruction*> Module::FindVariableAccesses(uint32_t variable_id, const std::vector<uint32_t>& access_ids,
+                                                                   bool atomic) const {
     std::vector<const Instruction*> accessed_instructions;
     for (auto access_id : access_ids) {
         // The only time a direct access to a OpVariable is possible is in a Workgroup storage class
@@ -1556,7 +1555,7 @@ char const* string_NumericType(uint32_t type) {
     return "(none)";
 }
 
-VariableBase::VariableBase(const SPIRV_MODULE_STATE& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
+VariableBase::VariableBase(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
     : id(insn.Word(2)),
       type_id(insn.Word(1)),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
@@ -1595,7 +1594,7 @@ bool StageInteraceVariable::IsArrayInterface(const StageInteraceVariable& variab
     return false;
 }
 
-const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& variable, const SPIRV_MODULE_STATE& module_state) {
+const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& variable, const Module& module_state) {
     // base type is always just grabbing the type of the OpTypePointer tied to the variables
     // This is allowed only here because interface variables are never Phyiscal pointers
     const Instruction* base_type = module_state.FindDef(module_state.FindDef(variable.type_id)->Word(3));
@@ -1615,7 +1614,7 @@ const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& va
     return *base_type;
 }
 
-bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, const SPIRV_MODULE_STATE& module_state) {
+bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, const Module& module_state) {
     const auto decoration_set = module_state.GetDecorationSet(variable.id);
     // If OpTypeStruct, will grab it's own decoration set
     return decoration_set.HasBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasBuiltIn());
@@ -1623,9 +1622,8 @@ bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, con
 
 // This logic is based off assumption that the Location are implicit and not member decorations
 // when we have structs-of-structs, only the top struct can have explicit locations given
-static uint32_t GetStructInterfaceSlots(const SPIRV_MODULE_STATE& module_state,
-                                        std::shared_ptr<const TypeStructInfo> type_struct_info, std::vector<InterfaceSlot>& slots,
-                                        uint32_t starting_location) {
+static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_ptr<const TypeStructInfo> type_struct_info,
+                                        std::vector<InterfaceSlot>& slots, uint32_t starting_location) {
     uint32_t locations_added = 0;
     for (uint32_t i = 0; i < type_struct_info->length; i++) {
         const auto& member = type_struct_info->members[i];
@@ -1659,8 +1657,7 @@ static uint32_t GetStructInterfaceSlots(const SPIRV_MODULE_STATE& module_state,
     return locations_added;
 }
 
-std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInteraceVariable& variable,
-                                                                    const SPIRV_MODULE_STATE& module_state) {
+std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInteraceVariable& variable, const Module& module_state) {
     std::vector<InterfaceSlot> slots;
     if (variable.is_builtin || variable.is_per_task_nv) {
         // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
@@ -1671,7 +1668,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         // Structs has two options being labeled
         // 1. The block is given a Location, need to walk though and add up starting for that value
         // 2. The block is NOT given a Location, each member has dedicated decoration
-        const bool block_decorated_with_location = variable.decorations.location != kInvalidSpirvValue;
+        const bool block_decorated_with_location = variable.decorations.location != kInvalidValue;
         if (block_decorated_with_location) {
             // In case of option 1, need to keep track as we go
             uint32_t base_location = variable.decorations.location;
@@ -1755,8 +1752,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
     return slots;
 }
 
-std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInteraceVariable& variable,
-                                                             const SPIRV_MODULE_STATE& module_state) {
+std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInteraceVariable& variable, const Module& module_state) {
     // Built-in Location slot will always be [zero, size]
     std::vector<uint32_t> slots;
     // Only check block built-ins - many builtin are non-block and not used between shaders
@@ -1773,8 +1769,7 @@ std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInterace
     return slots;
 }
 
-uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable& variable,
-                                                     const SPIRV_MODULE_STATE& module_state) {
+uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable& variable, const Module& module_state) {
     uint32_t count = 0;
     if (!variable.is_builtin) {
         return count;
@@ -1790,8 +1785,7 @@ uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable
     return count;
 }
 
-StageInteraceVariable::StageInteraceVariable(const SPIRV_MODULE_STATE& module_state, const Instruction& insn,
-                                             VkShaderStageFlagBits stage)
+StageInteraceVariable::StageInteraceVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
     : VariableBase(module_state, insn, stage),
       is_patch(decorations.Has(DecorationSet::patch_bit)),
       is_per_vertex(decorations.Has(DecorationSet::per_vertex_bit)),
@@ -1805,8 +1799,7 @@ StageInteraceVariable::StageInteraceVariable(const SPIRV_MODULE_STATE& module_st
       builtin_block(GetBuiltinBlock(*this, module_state)),
       total_builtin_components(GetBuiltinComponents(*this, module_state)) {}
 
-const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable,
-                                                           const SPIRV_MODULE_STATE& module_state) {
+const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable, const Module& module_state) {
     // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
     // image atomic operation, matching images to samplers, etc
     const Instruction* type = module_state.FindDef(variable.type_id);
@@ -1833,12 +1826,11 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
-uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const SPIRV_MODULE_STATE& module_state,
-                                                              const Instruction& base_type) {
+uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const Module& module_state, const Instruction& base_type) {
     return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetTypeBitsSize(&base_type) : 0;
 }
 
-NumericType ResourceInterfaceVariable::FindImageFormatType(const SPIRV_MODULE_STATE& module_state, const Instruction& base_type) {
+NumericType ResourceInterfaceVariable::FindImageFormatType(const Module& module_state, const Instruction& base_type) {
     return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetNumericType(base_type.Word(2)) : NumericTypeUnknown;
 }
 
@@ -1852,12 +1844,11 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 
-bool ResourceInterfaceVariable::IsAtomicOperation(const SPIRV_MODULE_STATE& module_state,
-                                                  const ResourceInterfaceVariable& variable) {
+bool ResourceInterfaceVariable::IsAtomicOperation(const Module& module_state, const ResourceInterfaceVariable& variable) {
     return !module_state.FindVariableAccesses(variable.id, module_state.static_data_.atomic_pointer_ids, true).empty();
 }
 
-ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ImageAccessMap& image_access_map)
     : VariableBase(module_state, insn, entrypoint.stage),
       array_length(0),
@@ -1915,7 +1906,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 if (image_access.is_written_to) {
                     if (is_image_without_format) {
                         info.is_write_without_format |= true;
-                        if (image_access.texel_component_count != kInvalidSpirvValue) {
+                        if (image_access.texel_component_count != kInvalidValue) {
                             write_without_formats_component_count_list.push_back(image_access.texel_component_count);
                         }
                     }
@@ -1928,7 +1919,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
 
                     // If accessed in an array, track which indexes were read, if not runtime array
                     if (is_input_attachment && !runtime_array) {
-                        if (image_access.image_access_chain_index != kInvalidSpirvValue) {
+                        if (image_access.image_access_chain_index != kInvalidValue) {
                             input_attachment_index_read[image_access.image_access_chain_index] = true;
                         } else {
                             // if InputAttachment is accessed from load, just a single, non-array, index
@@ -1942,9 +1933,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 if (!image_access.variable_sampler_insn.empty() && !is_sampled_image) {
                     // if no AccessChain, it is same conceptually as being zero
                     const uint32_t image_index =
-                        image_access.image_access_chain_index != kInvalidSpirvValue ? image_access.image_access_chain_index : 0;
+                        image_access.image_access_chain_index != kInvalidValue ? image_access.image_access_chain_index : 0;
                     const uint32_t sampler_index =
-                        image_access.sampler_access_chain_index != kInvalidSpirvValue ? image_access.sampler_access_chain_index : 0;
+                        image_access.sampler_access_chain_index != kInvalidValue ? image_access.sampler_access_chain_index : 0;
 
                     if (image_index >= samplers_used_by_image.size()) {
                         samplers_used_by_image.resize(image_index + 1);
@@ -1989,8 +1980,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
     descriptor_hash = hash_util::DescriptorVariableHash(&info, sizeof(info));
 }
 
-PushConstantVariable::PushConstantVariable(const SPIRV_MODULE_STATE& module_state, const Instruction& insn,
-                                           VkShaderStageFlagBits stage)
+PushConstantVariable::PushConstantVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
     : VariableBase(module_state, insn, stage), offset(vvl::kU32Max), size(0) {
     assert(type_struct_info != nullptr);  // Push Constants need to be structs
 
@@ -1999,7 +1989,7 @@ PushConstantVariable::PushConstantVariable(const SPIRV_MODULE_STATE& module_stat
     size = struct_size.size;
 }
 
-TypeStructInfo::TypeStructInfo(const SPIRV_MODULE_STATE& module_state, const Instruction& struct_insn)
+TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& struct_insn)
     : id(struct_insn.Word(1)), length(struct_insn.Length() - 2), decorations(module_state.GetDecorationSet(id)) {
     members.resize(length);
     for (uint32_t i = 0; i < length; i++) {
@@ -2015,7 +2005,7 @@ TypeStructInfo::TypeStructInfo(const SPIRV_MODULE_STATE& module_state, const Ins
     }
 }
 
-TypeStructSize TypeStructInfo::GetSize(const SPIRV_MODULE_STATE& module_state) const {
+TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     uint32_t offset = vvl::kU32Max;
     uint32_t size = 0;
 
@@ -2066,7 +2056,7 @@ TypeStructSize TypeStructInfo::GetSize(const SPIRV_MODULE_STATE& module_state) c
     return {offset, size};
 }
 
-uint32_t SPIRV_MODULE_STATE::GetNumComponentsInBaseType(const Instruction* insn) const {
+uint32_t Module::GetNumComponentsInBaseType(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
     uint32_t component_count = 0;
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
@@ -2092,7 +2082,7 @@ uint32_t SPIRV_MODULE_STATE::GetNumComponentsInBaseType(const Instruction* insn)
 }
 
 // Returns the total size in 'bits' of any OpType*
-uint32_t SPIRV_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
+uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
     uint32_t bit_size = 0;
     if (opcode == spv::OpTypeVector) {
@@ -2142,11 +2132,11 @@ uint32_t SPIRV_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
 }
 
 // Returns the total size in 'bytes' of any OpType*
-uint32_t SPIRV_MODULE_STATE::GetTypeBytesSize(const Instruction* insn) const { return GetTypeBitsSize(insn) / 8; }
+uint32_t Module::GetTypeBytesSize(const Instruction* insn) const { return GetTypeBitsSize(insn) / 8; }
 
 // Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)
 // Will return 0 if it can not be determined
-uint32_t SPIRV_MODULE_STATE::GetBaseType(const Instruction* insn) const {
+uint32_t Module::GetBaseType(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeBool || opcode == spv::OpTypeStruct) {
         // point to itself as its the base type (or a struct that needs to be traversed still)
@@ -2179,7 +2169,7 @@ uint32_t SPIRV_MODULE_STATE::GetBaseType(const Instruction* insn) const {
     return 0;
 }
 
-const Instruction* SPIRV_MODULE_STATE::GetBaseTypeInstruction(uint32_t type) const {
+const Instruction* Module::GetBaseTypeInstruction(uint32_t type) const {
     const Instruction* insn = FindDef(type);
     const uint32_t base_insn_id = GetBaseType(insn);
     // Will return end() if an invalid/unknown base_insn_id is returned
@@ -2187,13 +2177,13 @@ const Instruction* SPIRV_MODULE_STATE::GetBaseTypeInstruction(uint32_t type) con
 }
 
 // Returns type_id if id has type or zero otherwise
-uint32_t SPIRV_MODULE_STATE::GetTypeId(uint32_t id) const {
+uint32_t Module::GetTypeId(uint32_t id) const {
     const Instruction* type = FindDef(id);
     return type ? type->TypeId() : 0;
 }
 
 // Return zero if nothing is found
-uint32_t SPIRV_MODULE_STATE::GetTexelComponentCount(const Instruction& insn) const {
+uint32_t Module::GetTexelComponentCount(const Instruction& insn) const {
     uint32_t texel_component_count = 0;
     switch (insn.Opcode()) {
         case spv::OpImageWrite: {
@@ -2210,7 +2200,7 @@ uint32_t SPIRV_MODULE_STATE::GetTexelComponentCount(const Instruction& insn) con
 
 // Takes an array like [3][2][4] and returns 24
 // If not an array, returns 1
-uint32_t SPIRV_MODULE_STATE::GetFlattenArraySize(const Instruction& insn) const {
+uint32_t Module::GetFlattenArraySize(const Instruction& insn) const {
     uint32_t array_size = 1;
     if (insn.Opcode() == spv::OpTypeArray) {
         array_size = GetConstantValueById(insn.Word(3));
@@ -2222,7 +2212,7 @@ uint32_t SPIRV_MODULE_STATE::GetFlattenArraySize(const Instruction& insn) const 
     return array_size;
 }
 
-AtomicInstructionInfo SPIRV_MODULE_STATE::GetAtomicInfo(const Instruction& insn) const {
+AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
     AtomicInstructionInfo info;
 
     // All atomics have a pointer referenced
@@ -2240,3 +2230,5 @@ AtomicInstructionInfo SPIRV_MODULE_STATE::GetAtomicInfo(const Instruction& insn)
 
     return info;
 }
+
+}  // namespace spirv

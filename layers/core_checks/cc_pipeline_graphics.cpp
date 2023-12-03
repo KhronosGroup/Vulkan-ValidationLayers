@@ -848,11 +848,11 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
 
         if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point) {
             auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
-            if (entrypoint->execution_mode.Has(ExecutionModeSet::depth_replacing_bit)) {
+            if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
                                  create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                                  "is %" PRIu64 " but the fragment shader declares DepthReplacing.", external_format);
-            } else if (entrypoint->execution_mode.Has(ExecutionModeSet::stencil_ref_replacing_bit)) {
+            } else if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::stencil_ref_replacing_bit)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
                                  create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                                  "is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.", external_format);
@@ -3462,11 +3462,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
             if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_entry_point) {
                 auto entrypoint = pipeline->fragment_shader_state->fragment_entry_point;
-                if (entrypoint->execution_mode.Has(ExecutionModeSet::depth_replacing_bit)) {
+                if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
                     skip |= LogError(vuid.external_format_resolve_09372, objlist, loc,
                                      "pipeline externalFormat is %" PRIu64 " but the fragment shader declares DepthReplacing.",
                                      pipeline_external_format);
-                } else if (entrypoint->execution_mode.Has(ExecutionModeSet::stencil_ref_replacing_bit)) {
+                } else if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::stencil_ref_replacing_bit)) {
                     skip |=
                         LogError(vuid.external_format_resolve_09372, objlist, loc,
                                  "pipeline externalFormat is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.",
