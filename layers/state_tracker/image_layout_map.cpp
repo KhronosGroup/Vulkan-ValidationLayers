@@ -30,7 +30,7 @@ using LayoutEntry = ImageSubresourceLayoutMap::LayoutEntry;
 
 template <typename LayoutsMap>
 static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& initial_layout_states, const IndexRange& range,
-                                  LayoutEntry& new_entry, const CMD_BUFFER_STATE& cb_state, const vvl::ImageView* view_state) {
+                                  LayoutEntry& new_entry, const vvl::CommandBuffer& cb_state, const vvl::ImageView* view_state) {
     using CachedLowerBound = typename sparse_container::cached_lower_bound_impl<LayoutsMap>;
     CachedLowerBound pos(layouts, range.begin);
     if (!range.includes(pos->index)) {
@@ -76,7 +76,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& init
     return updated_current;
 }
 
-InitialLayoutState::InitialLayoutState(const CMD_BUFFER_STATE& cb_state_, const vvl::ImageView* view_state_)
+InitialLayoutState::InitialLayoutState(const vvl::CommandBuffer& cb_state_, const vvl::ImageView* view_state_)
     : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state_.debug_label) {
     if (view_state_) {
         image_view = view_state_->image_view();
@@ -97,7 +97,7 @@ ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const vvl::Image& image_sta
 // Use the unwrapped maps from the BothMap in the actual implementation
 template <typename LayoutMap>
 static bool SetSubresourceRangeLayoutImpl(LayoutMap& layouts, InitialLayoutStates& initial_layout_states, RangeGenerator& range_gen,
-                                          const CMD_BUFFER_STATE& cb_state, VkImageLayout layout, VkImageLayout expected_layout) {
+                                          const vvl::CommandBuffer& cb_state, VkImageLayout layout, VkImageLayout expected_layout) {
     bool updated = false;
     LayoutEntry entry(expected_layout, layout);
     for (; range_gen->non_empty(); ++range_gen) {
@@ -106,7 +106,7 @@ static bool SetSubresourceRangeLayoutImpl(LayoutMap& layouts, InitialLayoutState
     return updated;
 }
 
-bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range,
+bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
                                                           VkImageLayout layout, VkImageLayout expected_layout) {
     if (expected_layout == kInvalidLayout) {
         // Set the initial layout to the set layout as we had no other layout to reference
@@ -128,8 +128,8 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const CMD_BUFFER_STATE
 // Use the unwrapped maps from the BothMap in the actual implementation
 template <typename LayoutMap>
 static void SetSubresourceRangeInitialLayoutImpl(LayoutMap& layouts, InitialLayoutStates& initial_layout_states,
-                                                 RangeGenerator& range_gen, const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
-                                                 const vvl::ImageView* view_state) {
+                                                 RangeGenerator& range_gen, const vvl::CommandBuffer& cb_state,
+                                                 VkImageLayout layout, const vvl::ImageView* view_state) {
     LayoutEntry entry(layout);
     for (; range_gen->non_empty(); ++range_gen) {
         UpdateLayoutStateImpl(layouts, initial_layout_states, *range_gen, entry, cb_state, view_state);
@@ -137,7 +137,7 @@ static void SetSubresourceRangeInitialLayoutImpl(LayoutMap& layouts, InitialLayo
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state,
+void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state,
                                                                  const VkImageSubresourceRange& range, VkImageLayout layout) {
     if (!InRange(range)) return;  // Don't even try to track bogus subreources
 
@@ -151,7 +151,7 @@ void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
                                                                  const vvl::ImageView& view_state) {
     RangeGenerator range_gen(view_state.range_generator);
     if (layouts_.SmallMode()) {

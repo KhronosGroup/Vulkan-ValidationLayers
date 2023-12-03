@@ -375,7 +375,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     if (enabled_features.shaderObject == VK_FALSE) {
         skip |= LogError("VUID-vkCmdBindShadersEXT-None-08462", device, error_obj.location,

@@ -10,14 +10,13 @@ using DescriptorBindingInfo = vvl::map_entry<uint32_t, DescriptorRequirement>;
 
 class DescriptorValidator {
  public:
+   DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb, vvl::DescriptorSet& set, VkFramebuffer fb,
+                       const Location& l)
+       : dev_state(dev), cb_state(cb), descriptor_set(set), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
 
-    DescriptorValidator(ValidationStateTracker &dev, CMD_BUFFER_STATE &cb, vvl::DescriptorSet& set,
-                        VkFramebuffer fb, const Location &l) : dev_state(dev), cb_state(cb), descriptor_set(set),
-                        framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function))  {}
-
-    template <typename T>
-    std::string FormatHandle(T&& h) const {
-        return dev_state.FormatHandle(std::forward<T>(h));
+   template <typename T>
+   std::string FormatHandle(T&& h) const {
+       return dev_state.FormatHandle(std::forward<T>(h));
     }
 
     bool ValidateBinding(const DescriptorBindingInfo& binding_info, const vvl::DescriptorBinding& binding) const;
@@ -50,7 +49,7 @@ class DescriptorValidator {
                                    const vvl::Sampler* sampler_state) const;
 
     ValidationStateTracker& dev_state;
-    CMD_BUFFER_STATE& cb_state;
+    vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
     const VkFramebuffer framebuffer;
     const Location& loc;

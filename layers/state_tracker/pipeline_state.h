@@ -35,10 +35,10 @@ class DescriptorSetLayout;
 class DescriptorSet;
 class Descriptor;
 class RenderPass;
+class CommandBuffer;
 }  // namespace vvl
 
 class ValidationStateTracker;
-class CMD_BUFFER_STATE;
 struct SHADER_MODULE_STATE;
 class PIPELINE_STATE;
 
@@ -696,9 +696,9 @@ struct PIPELINE_STATE::CreateInfo::Traits<VkRayTracingPipelineCreateInfoNV> {
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LAST_BOUND_STATE {
-    LAST_BOUND_STATE(CMD_BUFFER_STATE &cb) : cb_state(cb) {}
+    LAST_BOUND_STATE(vvl::CommandBuffer &cb) : cb_state(cb) {}
 
-    CMD_BUFFER_STATE &cb_state;
+    vvl::CommandBuffer &cb_state;
     PIPELINE_STATE *pipeline_state{nullptr};
     // All shader stages for a used pipeline bind point must be bound to with a valid shader or VK_NULL_HANDLE
     // We have to track shader_object_bound, because shader_object_states will be nullptr when VK_NULL_HANDLE is used

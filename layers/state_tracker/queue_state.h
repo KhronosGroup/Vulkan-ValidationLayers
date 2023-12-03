@@ -27,11 +27,11 @@
 #include <vector>
 #include "error_message/error_location.h"
 
-class CMD_BUFFER_STATE;
 class ValidationStateTracker;
 
 namespace vvl {
 
+class CommandBuffer;
 class Queue;
 
 struct QueueSubmission {
@@ -42,7 +42,7 @@ struct QueueSubmission {
     };
     QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
-    std::vector<std::shared_ptr<CMD_BUFFER_STATE>> cbs;
+    std::vector<std::shared_ptr<vvl::CommandBuffer>> cbs;
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<Fence> fence;
@@ -52,7 +52,7 @@ struct QueueSubmission {
     std::promise<void> completed;
     std::shared_future<void> waiter;
 
-    void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_state) { cbs.emplace_back(std::move(cb_state)); }
+    void AddCommandBuffer(std::shared_ptr<vvl::CommandBuffer> &&cb_state) { cbs.emplace_back(std::move(cb_state)); }
 
     void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
         signal_semaphores.emplace_back(std::move(semaphore_state), value);

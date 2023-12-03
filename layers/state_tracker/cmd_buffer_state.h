@@ -102,7 +102,7 @@ class CommandPool : public BASE_NODE {
     const VkQueueFlags queue_flags;
     const bool unprotected;  // can't be used for protected memory
     // Cmd buffers allocated from this pool
-    vvl::unordered_map<VkCommandBuffer, CMD_BUFFER_STATE *> commandBuffers;
+    vvl::unordered_map<VkCommandBuffer, CommandBuffer *> commandBuffers;
 
     CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo, VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
@@ -167,7 +167,9 @@ typedef vvl::unordered_map<const vvl::Image *, std::shared_ptr<ImageSubresourceL
 typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
     CommandBufferAliasedLayoutMap;
 
-class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
+namespace vvl {
+
+class CommandBuffer : public REFCOUNTED_NODE {
     using Func = vvl::Func;
 
   public:
@@ -345,8 +347,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::array<LAST_BOUND_STATE, BindPoint_Count> lastBound;  // index is LvlBindPoint.
 
     // Use the casting boilerplate from BASE_NODE to implement the derived shared_from_this
-    std::shared_ptr<const CMD_BUFFER_STATE> shared_from_this() const { return SharedFromThisImpl(this); }
-    std::shared_ptr<CMD_BUFFER_STATE> shared_from_this() { return SharedFromThisImpl(this); }
+    std::shared_ptr<const CommandBuffer> shared_from_this() const { return SharedFromThisImpl(this); }
+    std::shared_ptr<CommandBuffer> shared_from_this() { return SharedFromThisImpl(this); }
 
     // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
     // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
@@ -420,23 +422,23 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
     // If primary, the secondary command buffers we will call.
-    vvl::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
+    vvl::unordered_set<CommandBuffer *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
     using QueueCallback = std::function<bool(const ValidationStateTracker &device_data, const class vvl::Queue &queue_state,
-                                             const CMD_BUFFER_STATE &cb_state)>;
+                                             const CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
     // Used by some layers to defer actions until vkCmdEndRenderPass time.
     // Layers using this are responsible for inserting the callbacks into queue_submit_functions.
     std::vector<QueueCallback> queue_submit_functions_after_render_pass;
     // Validation functions run when secondary CB is executed in primary
-    std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const vvl::Framebuffer *)>>
+    std::vector<std::function<bool(const CommandBuffer &secondary, const CommandBuffer *primary, const vvl::Framebuffer *)>>
         cmd_execute_commands_functions;
 
-    using EventCallback = std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
+    using EventCallback = std::function<bool(CommandBuffer &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
                                              VkQueue waiting_queue, const Location &loc)>;
     std::vector<EventCallback> eventUpdates;
 
-    std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
+    std::vector<std::function<bool(CommandBuffer &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
     IndexBufferBinding index_buffer_binding;
@@ -468,10 +470,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CMD_BUFFER_STATE(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                     const vvl::CommandPool *cmd_pool);
+    CommandBuffer(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const vvl::CommandPool *cmd_pool);
 
-    virtual ~CMD_BUFFER_STATE() { Destroy(); }
+    virtual ~CommandBuffer() { Destroy(); }
 
     void Destroy() override;
 
@@ -699,26 +701,28 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
 // specializations for barriers that cannot do queue family ownership transfers
 template <>
-inline bool CMD_BUFFER_STATE::IsReleaseOp(const sync_utils::MemoryBarrier &barrier) const {
+inline bool CommandBuffer::IsReleaseOp(const sync_utils::MemoryBarrier &barrier) const {
     return false;
 }
 template <>
-inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier &barrier) const {
+inline bool CommandBuffer::IsReleaseOp(const VkMemoryBarrier &barrier) const {
     return false;
 }
 template <>
-inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier2KHR &barrier) const {
+inline bool CommandBuffer::IsReleaseOp(const VkMemoryBarrier2KHR &barrier) const {
     return false;
 }
 template <>
-inline bool CMD_BUFFER_STATE::IsAcquireOp(const sync_utils::MemoryBarrier &barrier) const {
+inline bool CommandBuffer::IsAcquireOp(const sync_utils::MemoryBarrier &barrier) const {
     return false;
 }
 template <>
-inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkMemoryBarrier &barrier) const {
+inline bool CommandBuffer::IsAcquireOp(const VkMemoryBarrier &barrier) const {
     return false;
 }
 template <>
-inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkMemoryBarrier2KHR &barrier) const {
+inline bool CommandBuffer::IsAcquireOp(const VkMemoryBarrier2KHR &barrier) const {
     return false;
 }
+
+}  // namespace vvl

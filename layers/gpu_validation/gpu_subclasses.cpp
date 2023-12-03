@@ -124,11 +124,11 @@ gpuav::CommandBuffer::~CommandBuffer() { Destroy(); }
 
 void gpuav::CommandBuffer::Destroy() {
     ResetCBState();
-    CMD_BUFFER_STATE::Destroy();
+    vvl::CommandBuffer::Destroy();
 }
 
 void gpuav::CommandBuffer::Reset() {
-    CMD_BUFFER_STATE::Reset();
+    vvl::CommandBuffer::Reset();
     ResetCBState();
 }
 

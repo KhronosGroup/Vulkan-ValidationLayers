@@ -2440,7 +2440,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_state, const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer *cb_state, const PIPELINE_STATE &pipeline,
                                                    const Location &loc) const {
     bool skip = false;
 
@@ -2478,7 +2478,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const CMD_BUFFER_STATE &cb_state,
+bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const vvl::CommandBuffer &cb_state,
                                                             const Location &loc, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
@@ -2504,7 +2504,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
-    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
@@ -2807,7 +2807,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
 
 bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
-    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.commandBuffer());
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
 
@@ -3018,7 +3018,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
 bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
 
-    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.commandBuffer());
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
 
@@ -3042,7 +3042,7 @@ bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STAT
 // Verify that PSO creation renderPass is compatible with active (non-dynamic) renderPass
 bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
-    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
 
@@ -3135,7 +3135,7 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
 
 bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
-    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
     const auto &rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;

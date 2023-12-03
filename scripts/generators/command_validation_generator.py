@@ -151,7 +151,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
             // Ran on all vkCmd* commands
             // Because it validate the implicit VUs that stateless can't, if this fails, it is likely
             // the input is very bad and other checks will crash dereferencing null pointers
-            bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE& cb_state, const Location& loc) const {
+            bool CoreChecks::ValidateCmd(const vvl::CommandBuffer& cb_state, const Location& loc) const {
                 bool skip = false;
 
                 auto info_it = kCommandValidationTable.find(loc.function);
