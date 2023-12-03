@@ -261,12 +261,12 @@ std::vector<debug_printf::Substring> debug_printf::Validator::ParseFormatString(
 
 std::string debug_printf::Validator::FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id) {
     std::string format_string;
-    SPIRV_MODULE_STATE module_state(pgm);
+    spirv::Module module_state(pgm);
     if (module_state.words_.empty()) {
         return {};
     }
 
-    for (const Instruction *insn : module_state.static_data_.debug_string_inst) {
+    for (const spirv::Instruction *insn : module_state.static_data_.debug_string_inst) {
         if (insn->Word(1) == string_id) {
             format_string = insn->GetAsString(2);
             break;

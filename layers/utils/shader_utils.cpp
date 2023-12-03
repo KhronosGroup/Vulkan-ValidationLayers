@@ -74,7 +74,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     options.SetFriendlyNames(false);
 }
 
-void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const EntryPoint> &entrypoint) {
+void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
     if (!entrypoint) {
         return;
     }
@@ -96,7 +96,7 @@ ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states) {
     return active_slots;
 }
 
-ActiveSlotMap GetActiveSlots(const std::shared_ptr<const EntryPoint> &entrypoint) {
+ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
     ActiveSlotMap active_slots;
     GetActiveSlots(active_slots, entrypoint);
     return active_slots;
@@ -126,8 +126,8 @@ const void *PipelineStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-bool PipelineStageState::GetInt32ConstantValue(const Instruction &insn, uint32_t *value) const {
-    const Instruction *type_id = spirv_state->FindDef(insn.Word(1));
+bool PipelineStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const {
+    const spirv::Instruction *type_id = spirv_state->FindDef(insn.Word(1));
     if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
         return false;
     }
@@ -153,7 +153,7 @@ bool PipelineStageState::GetInt32ConstantValue(const Instruction &insn, uint32_t
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                                        const safe_VkShaderCreateInfoEXT *shader_object_create_info,
                                        std::shared_ptr<const vvl::ShaderModule> module_state,
-                                       std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state)
+                                       std::shared_ptr<const spirv::Module> spirv_state)
     : module_state(module_state),
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),

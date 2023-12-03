@@ -153,11 +153,11 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const SPIRV_MODULE_STATE &module_state, const uint32_t reported_file_id,
+static void ReadOpSource(const spirv::Module &module_state, const uint32_t reported_file_id,
                          std::vector<std::string> &opsource_lines) {
-    const std::vector<Instruction> &instructions = module_state.GetInstructions();
+    const std::vector<spirv::Instruction> &instructions = module_state.GetInstructions();
     for (size_t i = 0; i < instructions.size(); i++) {
-        const Instruction &insn = instructions[i];
+        const spirv::Instruction &insn = instructions[i];
         if ((insn.Opcode() == spv::OpSource) && (insn.Length() >= 5) && (insn.Word(3) == reported_file_id)) {
             std::istringstream in_stream;
             std::string cur_line;
@@ -167,7 +167,7 @@ static void ReadOpSource(const SPIRV_MODULE_STATE &module_state, const uint32_t 
             }
 
             for (size_t k = i + 1; k < instructions.size(); k++) {
-                const Instruction &continue_insn = instructions[k];
+                const spirv::Instruction &continue_insn = instructions[k];
                 if (continue_insn.Opcode() != spv::OpSourceContinued) {
                     break;
                 }
@@ -232,7 +232,7 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *d
     using namespace spvtools;
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
-    SPIRV_MODULE_STATE module_state(pgm);
+    spirv::Module module_state(pgm);
     if (module_state.words_.empty()) {
         return;
     }
@@ -242,7 +242,7 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *d
     uint32_t reported_file_id = 0;
     uint32_t reported_line_number = 0;
     uint32_t reported_column_number = 0;
-    for (const Instruction &insn : module_state.GetInstructions()) {
+    for (const spirv::Instruction &insn : module_state.GetInstructions()) {
         if (insn.Opcode() == spv::OpLine) {
             reported_file_id = insn.Word(1);
             reported_line_number = insn.Word(2);
@@ -267,7 +267,7 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *d
             prefix = "Shader validation error occurred ";
         }
 
-        for (const Instruction *insn : module_state.static_data_.debug_string_inst) {
+        for (const spirv::Instruction *insn : module_state.static_data_.debug_string_inst) {
             if (insn->Length() >= 3 && insn->Word(1) == reported_file_id) {
                 found_opstring = true;
                 reported_filename = insn->GetAsString(2);

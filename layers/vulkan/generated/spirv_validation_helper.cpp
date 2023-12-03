@@ -975,7 +975,8 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
 }
 // clang-format on
 
-bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn, const bool pipeline, const Location &loc) const {
+bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction &insn, const bool pipeline,
+                                                         const Location &loc) const {
     bool skip = false;
 
     if (insn.Opcode() == spv::OpCapability) {

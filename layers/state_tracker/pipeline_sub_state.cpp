@@ -87,7 +87,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
             const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
             if (shader_ci) {
                 // don't need to worry about GroupDecoration in GPL
-                auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
+                auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
             }
         }
@@ -195,7 +195,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                 const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
                 if (shader_ci) {
                     // don't need to worry about GroupDecoration in GPL
-                    auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
+                    auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
                     module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
                 }
             }

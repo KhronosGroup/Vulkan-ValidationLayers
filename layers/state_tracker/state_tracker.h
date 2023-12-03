@@ -70,15 +70,18 @@ struct ShaderModule;
 struct ShaderObject;
 }  // namespace vvl
 
+namespace spirv {
+struct Module;
+}  // namespace spirv
+
 struct PipelineStageState;
-struct SPIRV_MODULE_STATE;
 
 // This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
 struct create_shader_module_api_state {
-    // We build a SPIRV_MODULE_STATE at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers
+    // We build a spirv::Module at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers
     // if passed in the Dispatch). It is then passed to PostCallRecord to save in state tracking so it can be used at Pipeline
     // creation time where the rest of the information is needed to do the remaining SPIR-V validation.
-    std::shared_ptr<SPIRV_MODULE_STATE> module_state;  // contains SPIR-V to validate
+    std::shared_ptr<spirv::Module> module_state;  // contains SPIR-V to validate
     uint32_t unique_shader_id = 0;
     bool valid_spirv = true;
 
@@ -89,7 +92,7 @@ struct create_shader_module_api_state {
 
 // same idea as create_shader_module_api_state but for VkShaderEXT (VK_EXT_shader_object)
 struct create_shader_object_api_state {
-    std::vector<std::shared_ptr<SPIRV_MODULE_STATE>> module_states;  // contains SPIR-V to validate
+    std::vector<std::shared_ptr<spirv::Module>> module_states;  // contains SPIR-V to validate
     std::vector<uint32_t> unique_shader_ids;
     bool valid_spirv = true;
 

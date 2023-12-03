@@ -1443,7 +1443,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
             if (!stage_state.entrypoint || stage_state.GetStage() != pipe->pre_raster_state->last_stage) {
                 continue;
             }
-            if (!stage_state.entrypoint->execution_mode.Has(ExecutionModeSet::xfb_bit)) {
+            if (!stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::xfb_bit)) {
                 const LogObjectList objlist(commandBuffer, pipe->Handle());
                 skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128", objlist, error_obj.location,
                                  "The last bound pipeline (%s) has no Xfb Execution Mode for stage %s.",

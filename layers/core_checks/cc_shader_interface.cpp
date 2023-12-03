@@ -27,15 +27,15 @@
 #include "generated/spirv_grammar_helper.h"
 #include "utils/shader_utils.h"
 
-bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const SPIRV_MODULE_STATE &module_state,
-                                              const EntryPoint &entrypoint, const Location &create_info_loc) const {
+bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
+                                              const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
     const Location vi_loc = create_info_loc.dot(Field::pVertexInputState);
 
     struct AttribInputPair {
         const VkFormat *attribute_input = nullptr;
-        const Instruction *shader_input = nullptr;
+        const spirv::Instruction *shader_input = nullptr;
         uint32_t attribute_index = 0;
     };
     // For vertex input, we only need to care about Location.
@@ -73,7 +73,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             for (const auto &slot : variable.interface_slots) {
                 location_map[slot.Location()].shader_input = &variable.base_type;
             }
-        } else if (variable.decorations.location != kInvalidSpirvValue) {
+        } else if (variable.decorations.location != spirv::kInvalidValue) {
             // Variable is decorated with Location
             uint32_t location = variable.decorations.location;
             for (uint32_t i = 0; i < variable.type_struct_info->members.size(); i++) {
@@ -108,7 +108,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
                              location);
         } else if (attribute_input && shader_input) {
             const VkFormat attribute_format = *attribute_input;
-            const auto attribute_type = GetFormatType(attribute_format);
+            const auto attribute_type = spirv::GetFormatType(attribute_format);
             const uint32_t var_base_type_id = shader_input->ResultId();
             const auto var_numeric_type = module_state.GetNumericType(var_base_type_id);
 
@@ -160,8 +160,8 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, const SPIRV_MODULE_STATE &module_state,
-                                                 const EntryPoint &entrypoint, const Location &create_info_loc) const {
+bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
+                                                 const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     const auto *ms_state = pipeline.MultisampleState();
     if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
@@ -177,7 +177,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateBuiltinLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                        const StageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
 
@@ -205,7 +205,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, c
     return skip;
 }
 
-bool CoreChecks::ValidatePrimitiveTopology(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                            const StageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
 
@@ -224,7 +224,7 @@ bool CoreChecks::ValidatePrimitiveTopology(const SPIRV_MODULE_STATE &module_stat
         if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             has_tess = true;
             if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                if (stage_state.entrypoint->execution_mode.Has(ExecutionModeSet::point_mode_bit)) {
+                if (stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
                     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
                 } else {
                     topology = stage_state.entrypoint->execution_mode.primitive_topology;
@@ -263,8 +263,8 @@ bool CoreChecks::ValidatePrimitiveTopology(const SPIRV_MODULE_STATE &module_stat
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                      const EntryPoint &entrypoint, const Location &loc) const {
+bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &module_state, VkShaderStageFlagBits stage,
+                                                      const spirv::EntryPoint &entrypoint, const Location &loc) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
@@ -274,16 +274,18 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
 
     const uint32_t num_vertices = entrypoint.execution_mode.output_vertices;
     const uint32_t num_primitives = entrypoint.execution_mode.output_primitives;
-    const bool is_iso_lines = entrypoint.execution_mode.Has(ExecutionModeSet::iso_lines_bit);
-    const bool is_point_mode = entrypoint.execution_mode.Has(ExecutionModeSet::point_mode_bit);
+    const bool is_iso_lines = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::iso_lines_bit);
+    const bool is_point_mode = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit);
 
     // The max is a combiniation of both the user defined variables largest values
     // and
     // The total components used by built ins
-    const auto max_input_slot =
-        (entrypoint.max_input_slot_variable && entrypoint.max_input_slot) ? *entrypoint.max_input_slot : InterfaceSlot(0, 0, 0, 0);
-    const auto max_output_slot = (entrypoint.max_output_slot_variable && entrypoint.max_output_slot) ? *entrypoint.max_output_slot
-                                                                                                     : InterfaceSlot(0, 0, 0, 0);
+    const auto max_input_slot = (entrypoint.max_input_slot_variable && entrypoint.max_input_slot)
+                                    ? *entrypoint.max_input_slot
+                                    : spirv::InterfaceSlot(0, 0, 0, 0);
+    const auto max_output_slot = (entrypoint.max_output_slot_variable && entrypoint.max_output_slot)
+                                     ? *entrypoint.max_output_slot
+                                     : spirv::InterfaceSlot(0, 0, 0, 0);
 
     const uint32_t total_input_components = max_input_slot.slot + entrypoint.builtin_input_components;
     const uint32_t total_output_components = max_output_slot.slot + entrypoint.builtin_output_components;
@@ -443,8 +445,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &producer, const EntryPoint &producer_entrypoint,
-                                                const SPIRV_MODULE_STATE &consumer, const EntryPoint &consumer_entrypoint,
+bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, const spirv::EntryPoint &producer_entrypoint,
+                                                const spirv::Module &consumer, const spirv::EntryPoint &consumer_entrypoint,
                                                 const Location &create_info_loc) const {
     bool skip = false;
 
@@ -457,10 +459,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
 
     // build up a mapping of which slots are used and then go through it and look for gaps
     struct ComponentInfo {
-        const StageInteraceVariable *output = nullptr;
+        const spirv::StageInteraceVariable *output = nullptr;
         uint32_t output_type = 0;
         uint32_t output_width = 0;
-        const StageInteraceVariable *input = nullptr;
+        const spirv::StageInteraceVariable *input = nullptr;
         uint32_t input_type = 0;
         uint32_t input_width = 0;
     };
@@ -604,7 +606,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
         for (size_t i = 0; i < input_builtins_block.size(); i++) {
             const uint32_t input_builtin = input_builtins_block[i];
             const uint32_t output_builtin = output_builtins_block[i];
-            if (input_builtin == kInvalidSpirvValue || output_builtin == kInvalidSpirvValue) {
+            if (input_builtin == spirv::kInvalidValue || output_builtin == spirv::kInvalidValue) {
                 continue;  // some stages (TessControl -> TessEval) can have legal block vs non-block mistmatch
             } else if (input_builtin != output_builtin) {
                 mismatch = true;
@@ -631,7 +633,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
     return skip;
 }
 
-bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                                     const vvl::Pipeline &pipeline, uint32_t subpass_index,
                                                     const Location &create_info_loc) const {
     bool skip = false;
@@ -639,7 +641,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
         const VkAttachmentDescription2 *attachment = nullptr;
-        const StageInteraceVariable *output = nullptr;
+        const spirv::StageInteraceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -699,7 +701,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
                                               location);
                 }
             } else if (attachment && output) {
-                const auto attachment_type = GetFormatType(attachment->format);
+                const auto attachment_type = spirv::GetFormatType(attachment->format);
                 const auto output_type = module_state.GetNumericType(output->type_id);
 
                 // Type checking
@@ -719,13 +721,14 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE &mo
     return skip;
 }
 
-bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE &module_state,
-                                                                    const EntryPoint &entrypoint, const vvl::Pipeline &pipeline,
+bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const spirv::Module &module_state,
+                                                                    const spirv::EntryPoint &entrypoint,
+                                                                    const vvl::Pipeline &pipeline,
                                                                     const Location &create_info_loc) const {
     bool skip = false;
 
     struct Attachment {
-        const StageInteraceVariable *output = nullptr;
+        const spirv::StageInteraceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -751,7 +754,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_
         } else if (pipeline.fragment_output_state && output &&
                    (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
             auto format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
-            const auto attachment_type = GetFormatType(format);
+            const auto attachment_type = spirv::GetFormatType(format);
             const auto output_type = module_state.GetNumericType(output->type_id);
 
             // Type checking
@@ -768,8 +771,10 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineTessellationStages(const SPIRV_MODULE_STATE &tesc_module_state, const EntryPoint &tesc_entrypoint,
-                                                    const SPIRV_MODULE_STATE &tese_module_state, const EntryPoint &tese_entrypoint,
+bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_module_state,
+                                                    const spirv::EntryPoint &tesc_entrypoint,
+                                                    const spirv::Module &tese_module_state,
+                                                    const spirv::EntryPoint &tese_entrypoint,
                                                     const Location &create_info_loc) const {
     bool skip = false;
 
@@ -849,9 +854,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
         const auto &producer = pipeline.stage_states[i - 1];
         const auto &consumer = pipeline.stage_states[i];
-        const std::shared_ptr<const SPIRV_MODULE_STATE> &producer_spirv =
+        const std::shared_ptr<const spirv::Module> &producer_spirv =
             producer.spirv_state ? producer.spirv_state : producer.module_state->spirv;
-        const std::shared_ptr<const SPIRV_MODULE_STATE> &consumer_spirv =
+        const std::shared_ptr<const spirv::Module> &consumer_spirv =
             consumer.spirv_state ? consumer.spirv_state : consumer.module_state->spirv;
         assert(producer.module_state);
         if (&producer == fragment_stage) {

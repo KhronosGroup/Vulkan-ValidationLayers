@@ -688,75 +688,76 @@ class CoreChecks : public ValidationStateTracker {
                                            const ErrorObject& error_obj) const override;
     bool ValidatePipelineShaderStage(const StageCreateInfo& stage_create_info, const PipelineStageState& stage_state,
                                      const Location& loc) const;
-    bool ValidatePointSizeShaderState(const StageCreateInfo& create_info, const SPIRV_MODULE_STATE& module_state,
-                                      const EntryPoint& entrypoint, VkShaderStageFlagBits stage, const Location& loc) const;
-    bool ValidatePrimitiveRateShaderState(const StageCreateInfo& create_info, const SPIRV_MODULE_STATE& module_state,
-                                          const EntryPoint& entrypoint, VkShaderStageFlagBits stage, const Location& loc) const;
-    bool ValidateTexelOffsetLimits(const SPIRV_MODULE_STATE& module_state, const Instruction& insn, const Location& loc) const;
+    bool ValidatePointSizeShaderState(const StageCreateInfo& create_info, const spirv::Module& module_state,
+                                      const spirv::EntryPoint& entrypoint, VkShaderStageFlagBits stage, const Location& loc) const;
+    bool ValidatePrimitiveRateShaderState(const StageCreateInfo& create_info, const spirv::Module& module_state,
+                                          const spirv::EntryPoint& entrypoint, VkShaderStageFlagBits stage,
+                                          const Location& loc) const;
+    bool ValidateTexelOffsetLimits(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc) const;
 
     // Auto-generated helper functions
-    bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn, const bool pipeline, const Location& loc) const;
+    bool ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction& insn, const bool pipeline, const Location& loc) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
-    bool ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                              const EntryPoint& entrypoint, const Location& loc) const;
-    bool ValidateShaderStorageImageFormatsVariables(const SPIRV_MODULE_STATE& module_state, const Instruction* insn,
+    bool ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, VkShaderStageFlagBits stage,
+                                              const spirv::EntryPoint& entrypoint, const Location& loc) const;
+    bool ValidateShaderStorageImageFormatsVariables(const spirv::Module& module_state, const spirv::Instruction* insn,
                                                     const Location& loc) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const StageCreateInfo& create_info,
                                          const Location& loc) const;
-    bool ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+    bool ValidateShaderStageGroupNonUniform(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                             const Location& loc) const;
-    bool ValidateMemoryScope(const SPIRV_MODULE_STATE& module_state, const Instruction& insn, const Location& loc) const;
-    bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateMemoryScope(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc) const;
+    bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const PipelineStageState& stage_state, const uint32_t local_size_x, const Location& loc) const;
-    bool ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+    bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                    const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateShaderSubgroupSizeControl(const StageCreateInfo& stage_create_info, VkShaderStageFlagBits stage,
                                            const PipelineStageState& stage_state, const Location& loc) const;
-    bool ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+    bool ValidateWorkgroupSharedMemory(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory, const Location& loc) const;
-    bool ValidateShaderTileImage(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateShaderTileImage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                  const StageCreateInfo& create_info, const VkShaderStageFlagBits stage, const Location& loc) const;
-    bool ValidateAtomicsTypes(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
-    bool ValidateExecutionModes(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint, VkShaderStageFlagBits stage,
+    bool ValidateAtomicsTypes(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint, VkShaderStageFlagBits stage,
                                 const StageCreateInfo& create_info, const Location& loc) const;
-    bool ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, const SPIRV_MODULE_STATE& module_state,
-                                      const EntryPoint& entrypoint, const Location& create_info_loc) const;
-    bool ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, const SPIRV_MODULE_STATE& module_state,
-                                         const EntryPoint& entrypoint, const Location& create_info_loc) const;
-    bool ValidateShaderInputAttachment(const SPIRV_MODULE_STATE& module_state, const vvl::Pipeline& pipeline,
-                                       const ResourceInterfaceVariable& variable, const Location& loc) const;
-    bool ValidateConservativeRasterization(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
+                                      const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
+    bool ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
+                                         const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
+    bool ValidateShaderInputAttachment(const spirv::Module& module_state, const vvl::Pipeline& pipeline,
+                                       const spirv::ResourceInterfaceVariable& variable, const Location& loc) const;
+    bool ValidateConservativeRasterization(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const StageCreateInfo& stage_create_info, const Location& loc) const;
-    bool ValidatePushConstantUsage(const StageCreateInfo& create_info, const SPIRV_MODULE_STATE& module_state,
-                                   const EntryPoint& entrypoint, const Location& loc) const;
-    bool ValidateBuiltinLimits(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidatePushConstantUsage(const StageCreateInfo& create_info, const spirv::Module& module_state,
+                                   const spirv::EntryPoint& entrypoint, const Location& loc) const;
+    bool ValidateBuiltinLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                const StageCreateInfo& create_info, const Location& loc) const;
-    bool ValidatePrimitiveTopology(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidatePrimitiveTopology(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info,
                                  const Location& loc) const;
-    bool ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE& producer, const EntryPoint& producer_entrypoint,
-                                        const SPIRV_MODULE_STATE& consumer, const EntryPoint& consumer_entrypoint,
+    bool ValidateInterfaceBetweenStages(const spirv::Module& producer, const spirv::EntryPoint& producer_entrypoint,
+                                        const spirv::Module& consumer, const spirv::EntryPoint& consumer_entrypoint,
                                         const Location& create_info_loc) const;
-    bool ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                             const vvl::Pipeline& pipeline, uint32_t subpass_index,
                                             const Location& create_info_loc) const;
-    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                             const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidatePipelineTessellationStages(const SPIRV_MODULE_STATE& tesc_module_state, const EntryPoint& tesc_entrypoint,
-                                            const SPIRV_MODULE_STATE& tese_module_state, const EntryPoint& tese_entrypoint,
+    bool ValidatePipelineTessellationStages(const spirv::Module& tesc_module_state, const spirv::EntryPoint& tesc_entrypoint,
+                                            const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
                                             const Location& create_info_loc) const;
-    bool ValidateVariables(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
-    bool ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE& module_state, const StageCreateInfo& stage_create_info,
-                                          const EntryPoint& entrypoint, const Location& loc) const;
-    bool ValidateTransformFeedback(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateVariables(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateShaderDescriptorVariable(const spirv::Module& module_state, const StageCreateInfo& stage_create_info,
+                                          const spirv::EntryPoint& entrypoint, const Location& loc) const;
+    bool ValidateTransformFeedback(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const StageCreateInfo& create_info, const Location& loc) const;
-    bool ValidateTransformFeedbackDecorations(const SPIRV_MODULE_STATE& module_state, const StageCreateInfo& create_info,
+    bool ValidateTransformFeedbackDecorations(const spirv::Module& module_state, const StageCreateInfo& create_info,
                                               const Location& loc) const;
     virtual bool ValidateShaderModuleId(const vvl::Pipeline& pipeline, const Location& loc) const;
-    bool ValidateShaderClock(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
-    bool ValidateImageWrite(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
+    bool ValidateShaderClock(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateImageWrite(const spirv::Module& module_state, const Location& loc) const;
 
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& src_image_state,
@@ -1981,17 +1982,17 @@ class CoreChecks : public ValidationStateTracker {
                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue,
                                                  const ErrorObject& error_obj) const override;
-    bool ValidateRequiredSubgroupSize(const SPIRV_MODULE_STATE& module_state, const PipelineStageState& stage_state,
+    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const PipelineStageState& stage_state,
                                       const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT& required_subgroup_size,
                                       uint64_t invocations, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
                                       const Location& loc) const;
-    bool ValidateComputeWorkGroupSizes(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateComputeWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                        uint32_t local_size_z, const Location& loc) const;
-    bool ValidateTaskMeshWorkGroupSizes(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateTaskMeshWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                         const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                         uint32_t local_size_z, const Location& loc) const;
-    bool ValidateEmitMeshTasksSize(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateEmitMeshTasksSize(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const PipelineStageState& stage_state, const Location& loc) const;
 
     bool PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
