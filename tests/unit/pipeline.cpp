@@ -441,6 +441,7 @@ TEST_F(NegativePipeline, SampleRateFeatureEnable) {
 
 TEST_F(NegativePipeline, DepthClipControlFeatureDisable) {
     // Enable negativeOneToOne (VK_EXT_depth_clip_control) in pipeline when the feature is disabled.
+    AddRequiredExtensions(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -3670,6 +3671,9 @@ TEST_F(NegativePipeline, IndirectBindablePipelineWithoutFeature) {
         "Create pipeline with VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV without enabling required deviceGeneratedCommands "
         "feature");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     CreatePipelineHelper pipe(*this);
