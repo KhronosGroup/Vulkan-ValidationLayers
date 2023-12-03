@@ -670,7 +670,7 @@ class CommandBuffer : public REFCOUNTED_NODE {
     inline void BindPipeline(LvlBindPoint bind_point, vvl::Pipeline *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
     }
-    void BindShader(VkShaderStageFlagBits shader_stage, SHADER_OBJECT_STATE *shader_object_state) {
+    void BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
         auto &lastBoundState = lastBound[ConvertToPipelineBindPoint(shader_stage)];
         const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
         lastBoundState.shader_object_bound[stage_index] = true;

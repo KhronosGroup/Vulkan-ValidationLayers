@@ -1581,13 +1581,13 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
 void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               const RecordObject &record_obj) {
-    Destroy<SHADER_MODULE_STATE>(shaderModule);
+    Destroy<vvl::ShaderModule>(shaderModule);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
                                                            const VkAllocationCallbacks *pAllocator,
                                                            const RecordObject &record_obj) {
-    Destroy<SHADER_OBJECT_STATE>(shader);
+    Destroy<vvl::ShaderObject>(shader);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
@@ -1600,9 +1600,9 @@ void ValidationStateTracker::PostCallRecordCmdBindShadersEXT(VkCommandBuffer com
                                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < stageCount; ++i) {
-        SHADER_OBJECT_STATE *shader_object_state = nullptr;
+        vvl::ShaderObject *shader_object_state = nullptr;
         if (pShaders && pShaders[i] != VK_NULL_HANDLE) {
-            shader_object_state = Get<SHADER_OBJECT_STATE>(pShaders[i]).get();
+            shader_object_state = Get<vvl::ShaderObject>(pShaders[i]).get();
         }
         cb_state->BindShader(pStages[i], shader_object_state);
     }
@@ -4448,7 +4448,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
                                                               void *csm_state_data) {
     if (VK_SUCCESS != record_obj.result) return;
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
-    Add(std::make_shared<SHADER_MODULE_STATE>(*pShaderModule, csm_state->module_state, csm_state->unique_shader_id));
+    Add(std::make_shared<vvl::ShaderModule>(*pShaderModule, csm_state->module_state, csm_state->unique_shader_id));
 }
 
 void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
@@ -4459,7 +4459,8 @@ void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uin
     create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pShaders[i] != VK_NULL_HANDLE) {
-            Add(std::make_shared<SHADER_OBJECT_STATE>(this, pCreateInfos[i], pShaders[i], csm_state->module_states[i], createInfoCount, pShaders, csm_state->unique_shader_ids[i]));
+            Add(std::make_shared<vvl::ShaderObject>(this, pCreateInfos[i], pShaders[i], csm_state->module_states[i],
+                                                    createInfoCount, pShaders, csm_state->unique_shader_ids[i]));
         }
     }
 }
@@ -5186,7 +5187,7 @@ void ValidationStateTracker::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer com
 void ValidationStateTracker::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice, const VkShaderModule shaderModule,
                                                                         VkShaderModuleIdentifierEXT *pIdentifier,
                                                                         const RecordObject &record_obj) {
-    if (const auto shader_state = Get<SHADER_MODULE_STATE>(shaderModule); shader_state) {
+    if (const auto shader_state = Get<vvl::ShaderModule>(shaderModule); shader_state) {
         WriteLockGuard guard(shader_identifier_map_lock_);
         shader_identifier_map_.emplace(*pIdentifier, std::move(shader_state));
     }
@@ -5197,7 +5198,7 @@ void ValidationStateTracker::PostCallRecordGetShaderModuleCreateInfoIdentifierEX
                                                                                   VkShaderModuleIdentifierEXT *pIdentifier,
                                                                                   const RecordObject &record_obj) {
     WriteLockGuard guard(shader_identifier_map_lock_);
-    shader_identifier_map_.emplace(*pIdentifier, std::make_shared<SHADER_MODULE_STATE>(0));
+    shader_identifier_map_.emplace(*pIdentifier, std::make_shared<vvl::ShaderModule>(0));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,

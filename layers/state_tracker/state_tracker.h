@@ -66,11 +66,11 @@ class Swapchain;
 class CommandPool;
 class CommandBuffer;
 class Pipeline;
+struct ShaderModule;
+struct ShaderObject;
 }  // namespace vvl
 
 struct PipelineStageState;
-struct SHADER_MODULE_STATE;
-struct SHADER_OBJECT_STATE;
 struct SPIRV_MODULE_STATE;
 
 // This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
@@ -296,10 +296,10 @@ VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, vvl::PipelineCache)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, vvl::Pipeline)
-VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
+VALSTATETRACK_STATE_OBJECT(VkShaderEXT, vvl::ShaderObject)
 VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, vvl::DeviceMemory)
 VALSTATETRACK_STATE_OBJECT(VkFramebuffer, vvl::Framebuffer)
-VALSTATETRACK_STATE_OBJECT(VkShaderModule, SHADER_MODULE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkShaderModule, vvl::ShaderModule)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate)
 VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, vvl::Swapchain)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, vvl::DescriptorPool)
@@ -1700,7 +1700,7 @@ class ValidationStateTracker : public ValidationObject {
         }
     }
 
-    inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
+    inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);
         if (const auto itr = shader_identifier_map_.find(ident); itr != shader_identifier_map_.cend()) {
             return itr->second;
@@ -1708,7 +1708,7 @@ class ValidationStateTracker : public ValidationObject {
         return {};
     }
 
-    inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(
+    inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(
         const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
         if (shader_stage_id.pIdentifier) {
             VkShaderModuleIdentifierEXT shader_id = vku::InitStructHelper();
@@ -1899,7 +1899,7 @@ class ValidationStateTracker : public ValidationObject {
     std::atomic<VkDeviceSize> samplerDescriptorBufferAddressSpaceSize = {0u};
 
     // Keep track of identifier -> state
-    vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<SHADER_MODULE_STATE>> shader_identifier_map_;
+    vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<vvl::ShaderModule>> shader_identifier_map_;
     mutable std::shared_mutex shader_identifier_map_lock_;
 
     // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
@@ -1924,10 +1924,10 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, vvl::PipelineCache, pipeline_cache_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, vvl::Pipeline, pipeline_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, SHADER_OBJECT_STATE, shader_object_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, vvl::ShaderObject, shader_object_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, vvl::DeviceMemory, mem_obj_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, vvl::Framebuffer, frame_buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, vvl::ShaderModule, shader_module_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, vvl::DescriptorUpdateTemplate, desc_template_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, vvl::Swapchain, swapchain_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, vvl::DescriptorPool, descriptor_pool_map_)

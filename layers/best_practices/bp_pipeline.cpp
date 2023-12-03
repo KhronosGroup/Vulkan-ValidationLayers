@@ -311,7 +311,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         }
 
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
-            auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+            auto module_state = Get<vvl::ShaderModule>(createInfo.stage.module);
             if (module_state &&
                 module_state->spirv->static_data_.has_builtin_workgroup_size) {  // No module if creating from module identifier
                 skip |= LogWarning(kVUID_BestPractices_SpirvDeprecated_WorkgroupSize, device, create_info_loc,
@@ -327,7 +327,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo,
                                                      const Location& create_info_loc) const {
     bool skip = false;
-    auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    auto module_state = Get<vvl::ShaderModule>(createInfo.stage.module);
     if (!module_state || !module_state->spirv) {
         return false;  // No module if creating from module identifier
     }
@@ -398,7 +398,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
 bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& createInfo,
                                                      const Location& create_info_loc) const {
     bool skip = false;
-    auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    auto module_state = Get<vvl::ShaderModule>(createInfo.stage.module);
     if (!module_state || !module_state->spirv) {
         return false;
     }
