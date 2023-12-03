@@ -213,7 +213,7 @@ void CMD_BUFFER_STATE::IncrementResources() {
     //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
     //  should then be flagged prior to calling this function
     for (auto event : writeEventsBeforeWait) {
-        auto event_state = dev_data->Get<EVENT_STATE>(event);
+        auto event_state = dev_data->Get<vvl::Event>(event);
         if (event_state) event_state->write_in_use++;
     }
 }
@@ -1353,7 +1353,7 @@ static bool SetEventSignalInfo(VkEvent event, VkPipelineStageFlags2 src_stage_ma
 void CMD_BUFFER_STATE::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(command);
     if (!dev_data->disabled[command_buffer_state]) {
-        auto event_state = dev_data->Get<EVENT_STATE>(event);
+        auto event_state = dev_data->Get<vvl::Event>(event);
         if (event_state) {
             AddChild(event_state);
         }
@@ -1370,7 +1370,7 @@ void CMD_BUFFER_STATE::RecordSetEvent(Func command, VkEvent event, VkPipelineSta
 void CMD_BUFFER_STATE::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(command);
     if (!dev_data->disabled[command_buffer_state]) {
-        auto event_state = dev_data->Get<EVENT_STATE>(event);
+        auto event_state = dev_data->Get<vvl::Event>(event);
         if (event_state) {
             AddChild(event_state);
         }
@@ -1391,7 +1391,7 @@ void CMD_BUFFER_STATE::RecordWaitEvents(Func command, uint32_t eventCount, const
     RecordCmd(command);
     for (uint32_t i = 0; i < eventCount; ++i) {
         if (!dev_data->disabled[command_buffer_state]) {
-            auto event_state = dev_data->Get<EVENT_STATE>(pEvents[i]);
+            auto event_state = dev_data->Get<vvl::Event>(pEvents[i]);
             if (event_state) {
                 AddChild(event_state);
             }
@@ -1465,7 +1465,7 @@ void CMD_BUFFER_STATE::Submit(VkQueue queue, uint32_t perf_submit_pass, const Lo
         }
     }
 
-    // Update EVENT_STATE with src_stage from the last recorded SetEvent.
+    // Update vvl::Event with src_stage from the last recorded SetEvent.
     // Ultimately, it tracks the last SetEvent for the entire submission.
     {
         EventToStageMap local_event_signal_info;
@@ -1474,7 +1474,7 @@ void CMD_BUFFER_STATE::Submit(VkQueue queue, uint32_t perf_submit_pass, const Lo
                      VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */, loc);
         }
         for (const auto &event_signal : local_event_signal_info) {
-            auto event_state = dev_data->Get<EVENT_STATE>(event_signal.first);
+            auto event_state = dev_data->Get<vvl::Event>(event_signal.first);
             event_state->signal_src_stage_mask = event_signal.second;
             event_state->signaling_queue = queue;
         }
@@ -1492,7 +1492,7 @@ void CMD_BUFFER_STATE::Submit(VkQueue queue, uint32_t perf_submit_pass, const Lo
 void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
     // First perform decrement on general case bound objects
     for (auto event : writeEventsBeforeWait) {
-        auto event_state = dev_data->Get<EVENT_STATE>(event);
+        auto event_state = dev_data->Get<vvl::Event>(event);
         if (event_state) {
             event_state->write_in_use--;
         }

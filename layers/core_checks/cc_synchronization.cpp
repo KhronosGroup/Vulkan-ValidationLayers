@@ -567,7 +567,7 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator,
                                              const ErrorObject &error_obj) const {
-    auto event_state = Get<EVENT_STATE>(event);
+    auto event_state = Get<vvl::Event>(event);
     bool skip = false;
     if (event_state) {
         skip |= ValidateObjectNotInUse(event_state.get(), error_obj.location.dot(Field::event), "VUID-vkDestroyEvent-event-01145");
@@ -999,14 +999,14 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const CMD_BUFFER_
         // *current* queue submission. If the current submission does not have
         // SetEvent before WaitEvents then we need to find the last SetEvent (if any)
         // in the previous submissions to the same queue. This information is
-        // conveniently stored in the EVENT_STATE object itself (after each queue
-        // submit, CMD_BUFFER_STATE::Submit() updates EVENT_STATE, so it contains
+        // conveniently stored in the vvl::Event object itself (after each queue
+        // submit, CMD_BUFFER_STATE::Submit() updates vvl::Event, so it contains
         // the last src_stage from that submission).
         if (auto signal_info = local_event_signal_info.find(event); signal_info != local_event_signal_info.end()) {
             stage_mask |= signal_info->second;
             // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
         } else {
-            auto event_state = state_data->Get<EVENT_STATE>(event);
+            auto event_state = state_data->Get<vvl::Event>(event);
             assert(event_state);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
             stage_mask |= event_state->signal_src_stage_mask;
 
@@ -1286,7 +1286,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
 
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto event_state = Get<EVENT_STATE>(event);
+    auto event_state = Get<vvl::Event>(event);
     if (event_state) {
         if (event_state->write_in_use) {
             skip |= LogError(kVUID_Core_DrawState_QueueForwardProgress, event, error_obj.location.dot(Field::event),
@@ -1302,7 +1302,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const E
 
 bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto event_state = Get<EVENT_STATE>(event);
+    auto event_state = Get<vvl::Event>(event);
     if (event_state) {
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
             skip |= LogError("VUID-vkResetEvent-event-03823", event, error_obj.location.dot(Field::event),
@@ -1314,7 +1314,7 @@ bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const
 
 bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto event_state = Get<EVENT_STATE>(event);
+    auto event_state = Get<vvl::Event>(event);
     if (event_state) {
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
             skip |= LogError("VUID-vkGetEventStatus-event-03940", event, error_obj.location.dot(Field::event),

@@ -807,7 +807,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func comma
     return barrier_tag;
 }
 
-void CommandBufferAccessContext::RecordDestroyEvent(EVENT_STATE *event_state) { GetCurrentEventsContext()->Destroy(event_state); }
+void CommandBufferAccessContext::RecordDestroyEvent(vvl::Event *event_state) { GetCurrentEventsContext()->Destroy(event_state); }
 
 void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_cb_context) {
     const AccessContext *recorded_context = recorded_cb_context.GetCurrentAccessContext();
@@ -1149,7 +1149,7 @@ void syncval_state::CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &i
     for (auto &obj : invalid_nodes) {
         switch (obj->Type()) {
             case kVulkanObjectTypeEvent:
-                access_context.RecordDestroyEvent(static_cast<EVENT_STATE *>(obj.get()));
+                access_context.RecordDestroyEvent(static_cast<vvl::Event *>(obj.get()));
                 break;
             default:
                 break;
