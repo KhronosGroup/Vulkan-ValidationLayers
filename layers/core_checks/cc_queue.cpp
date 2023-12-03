@@ -416,7 +416,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
         for (const auto &base_node : cb_state.object_bindings) {
             switch (base_node->Type()) {
                 case kVulkanObjectTypeImage: {
-                    auto image_state = static_cast<const IMAGE_STATE *>(base_node.get());
+                    auto image_state = static_cast<const vvl::Image *>(base_node.get());
                     if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                         skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state->queueFamilyIndex,
                                                       image_state->createInfo.queueFamilyIndexCount,
@@ -600,7 +600,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.imageOpaqueBindCount; ++image_opaque_idx) {
                 const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
                 if (image_opaque_bind.pBinds) {
-                    auto image_state = Get<IMAGE_STATE>(image_opaque_bind.image);
+                    auto image_state = Get<vvl::Image>(image_opaque_bind.image);
                     for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
                          ++image_opaque_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
@@ -620,7 +620,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             for (uint32_t image_idx = 0; image_idx < bind_info.imageBindCount; ++image_idx) {
                 const Location bind_loc = bind_info_loc.dot(Field::pImageBinds, image_idx);
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
-                auto image_state = Get<IMAGE_STATE>(image_bind.image);
+                auto image_state = Get<vvl::Image>(image_bind.image);
 
                 if (image_state && !(image_state->sparse_residency)) {
                     skip |= LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),

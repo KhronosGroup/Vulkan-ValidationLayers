@@ -159,7 +159,7 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
 
     assert((subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U);
 
-    auto image_state = Get<IMAGE_STATE>(depth_attachment);
+    auto image_state = Get<vvl::Image>(depth_attachment);
     assert(image_state);
 
     const uint32_t mip_levels = image_state->createInfo.mipLevels;
@@ -191,7 +191,7 @@ void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_
 }
 
 template <typename Func>
-static void ForEachSubresource(const IMAGE_STATE& image, const VkImageSubresourceRange& range, Func&& func) {
+static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
     const uint32_t layerCount =
         (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
     const uint32_t levelCount =
@@ -218,7 +218,7 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
     }
     auto& tree = image_it->second;
 
-    auto image = Get<IMAGE_STATE>(depth_image);
+    auto image = Get<vvl::Image>(depth_image);
     if (!image) return;
 
     ForEachSubresource(*image, subresource_range, [&tree](uint32_t layer, uint32_t level) {
@@ -247,7 +247,7 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, 
     }
     auto& tree = image_it->second;
 
-    auto image = Get<IMAGE_STATE>(depth_image);
+    auto image = Get<vvl::Image>(depth_image);
     if (!image) return;
 
     ForEachSubresource(*image, subresource_range, [&tree, &cmd_state](uint32_t layer, uint32_t level) {
@@ -261,7 +261,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     // Add one draw to each subresource depending on the current Z-cull direction
     auto& scope = cmd_state.nv.zcull_scope;
 
-    auto image = Get<IMAGE_STATE>(scope.image);
+    auto image = Get<vvl::Image>(scope.image);
     if (!image) return;
 
     ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
@@ -309,7 +309,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
     }
     const auto& tree = image_it->second;
 
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (!image_state) {
         return skip;
     }

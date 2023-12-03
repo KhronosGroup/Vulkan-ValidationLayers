@@ -196,7 +196,7 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
 
 bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
 
     if (mem_state->alloc_info.allocationSize == image_state->requirements[0].size &&

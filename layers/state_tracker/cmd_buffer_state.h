@@ -161,7 +161,7 @@ struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
-typedef vvl::unordered_map<const IMAGE_STATE *, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
+typedef vvl::unordered_map<const vvl::Image *, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
 typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
     CommandBufferAliasedLayoutMap;
@@ -499,8 +499,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state);
 
-    const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) const;
-    ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state);
+    const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const vvl::Image &image_state) const;
+    ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const vvl::Image &image_state);
     const CommandBufferImageLayoutMap &GetImageSubresourceLayoutMap() const;
 
     const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
@@ -589,13 +589,13 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
     void SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout);
 
-    void SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &image_subresource_range,
-                        VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
-    void SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &image_subresource_layers,
+    void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
+                        VkImageLayout expected_layout = kInvalidLayout);
+    void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &image_subresource_layers,
                         VkImageLayout layout);
     void SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout);
-    void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
-    void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers, VkImageLayout layout);
+    void SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
+    void SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &layers, VkImageLayout layout);
 
     void Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);

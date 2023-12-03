@@ -82,25 +82,27 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
     mutable std::shared_mutex lock_;
 };
 
+namespace vvl {
+
 // State for VkImage objects.
 // Parent -> child relationships in the object usage tree:
 // 1. Normal images:
-//    IMAGE_STATE [1] -> [1] vvl::DeviceMemory
+//    vvl::Image [1] -> [1] vvl::DeviceMemory
 //
 // 2. Sparse images:
-//    IMAGE_STATE [1] -> [N] vvl::DeviceMemory
+//    vvl::Image [1] -> [N] vvl::DeviceMemory
 //
 // 3. VK_IMAGE_CREATE_ALIAS_BIT images:
-//    IMAGE_STATE [N] -> [1] vvl::DeviceMemory
+//    vvl::Image [N] -> [1] vvl::DeviceMemory
 //    All other images using the same device memory are in the aliasing_images set.
 //
 // 4. Swapchain images
-//    IMAGE_STATE [N] -> [1] vvl::Swapchain
+//    vvl::Image [N] -> [1] vvl::Swapchain
 //    All other images using the same swapchain and swapchain_image_index are in the aliasing_images set.
 //    Note that the images for *every* image_index will show up as parents of the swapchain,
 //    so swapchain_image_index values must be compared.
 //
-class IMAGE_STATE : public BINDABLE {
+class Image : public BINDABLE {
   public:
     const safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &createInfo;
@@ -141,18 +143,18 @@ class IMAGE_STATE : public BINDABLE {
 
     vvl::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
-    IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
-                VkFormatFeatureFlags2KHR features);
-    IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-                uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
-    IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
-    std::shared_ptr<const IMAGE_STATE> shared_from_this() const { return SharedFromThisImpl(this); }
-    std::shared_ptr<IMAGE_STATE> shared_from_this() { return SharedFromThisImpl(this); }
+    Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
+          VkFormatFeatureFlags2KHR features);
+    Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+          uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
+    Image(Image const &rh_obj) = delete;
+    std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
+    std::shared_ptr<Image> shared_from_this() { return SharedFromThisImpl(this); }
 
     VkImage image() const { return handle_.Cast<VkImage>(); }
 
     bool HasAHBFormat() const { return ahb_format != 0; }
-    bool IsCompatibleAliasing(const IMAGE_STATE *other_image_state) const;
+    bool IsCompatibleAliasing(const Image *other_image_state) const;
 
     // returns true if this image could be using the same memory as another image
     bool HasAliasFlag() const { return 0 != (createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT); }
@@ -200,7 +202,7 @@ class IMAGE_STATE : public BINDABLE {
                        createInfo.queueFamilyIndexCount * sizeof(createInfo.pQueueFamilyIndices[0])) == 0);
     }
 
-    ~IMAGE_STATE() {
+    ~Image() {
         if (!Destroyed()) {
             Destroy();
         }
@@ -241,7 +243,7 @@ class IMAGE_STATE : public BINDABLE {
             if (entry.first.type == kVulkanObjectTypeImage) {
                 auto base_node = entry.second.lock();
                 if (base_node) {
-                    auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
+                    auto other_image = static_cast<Image *>(base_node.get());
                     if ((other_image != this) && other_image->IsCompatibleAliasing(this)) {
                         if (pred(*other_image)) return true;
                     }
@@ -271,11 +273,9 @@ class IMAGE_STATE : public BINDABLE {
                  BindableMultiplanarMemoryTracker> tracker_;
 };
 
-namespace vvl {
-
 // State for VkImageView objects.
 // Parent -> child relationships in the object usage tree:
-//    ImageView [N] -> [1] IMAGE_STATE
+//    ImageView [N] -> [1] vv::Image
 class ImageView : public BASE_NODE {
   public:
     const safe_VkImageViewCreateInfo safe_create_info;
@@ -292,10 +292,10 @@ class ImageView : public BASE_NODE {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_imageview_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
-    std::shared_ptr<IMAGE_STATE> image_state;
+    std::shared_ptr<vvl::Image> image_state;
     const bool is_depth_sliced;
 
-    ImageView(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+    ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
               VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     ImageView(const ImageView &rh_obj) = delete;
     VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
@@ -323,7 +323,7 @@ class ImageView : public BASE_NODE {
 };
 
 struct SwapchainImage {
-    IMAGE_STATE *image_state = nullptr;
+    vvl::Image *image_state = nullptr;
     bool acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
     std::shared_ptr<vvl::Fence> acquire_fence;
@@ -368,7 +368,7 @@ class Swapchain : public BASE_NODE {
 
     SwapchainImage GetSwapChainImage(uint32_t index) const;
 
-    std::shared_ptr<const IMAGE_STATE> GetSwapChainImageShared(uint32_t index) const;
+    std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

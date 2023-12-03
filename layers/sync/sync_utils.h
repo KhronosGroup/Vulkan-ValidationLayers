@@ -30,9 +30,9 @@
 struct DeviceFeatures;
 struct DeviceExtensions;
 class ValidationStateTracker;
-class IMAGE_STATE;
 
 namespace vvl {
+class Image;
 class Buffer;
 }  // namespace vvl
 
@@ -176,7 +176,7 @@ struct ImageBarrier : QueueFamilyBarrier {
           subresourceRange(barrier.subresourceRange) {}
 
     VulkanTypedHandle GetTypedHandle() const { return VulkanTypedHandle(image, kVulkanObjectTypeImage); }
-    const std::shared_ptr<const IMAGE_STATE> GetResourceState(const ValidationStateTracker& state_tracker) const;
+    const std::shared_ptr<const vvl::Image> GetResourceState(const ValidationStateTracker& state_tracker) const;
 };
 
 }  // namespace sync_utils

@@ -321,7 +321,7 @@ class DescriptorSetLayout : public BASE_NODE {
  */
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
-enum DescriptorClass {
+enum class DescriptorClass {
     PlainSampler,
     ImageSampler,
     Image,
@@ -372,7 +372,7 @@ inline bool IsBufferDescriptor(VkDescriptorType type) {
 class SamplerDescriptor : public Descriptor {
   public:
     SamplerDescriptor() = default;
-    DescriptorClass GetClass() const override { return PlainSampler; }
+    DescriptorClass GetClass() const override { return DescriptorClass::PlainSampler; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
@@ -416,7 +416,7 @@ class ImageDescriptor : public Descriptor {
         return node_type == VulkanObjectType::kVulkanObjectTypeImageView;
     }
     ImageDescriptor() = default;
-    DescriptorClass GetClass() const override { return Image; }
+    DescriptorClass GetClass() const override { return DescriptorClass::Image; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
@@ -463,7 +463,7 @@ class ImageDescriptor : public Descriptor {
 class ImageSamplerDescriptor : public ImageDescriptor {
   public:
     ImageSamplerDescriptor() = default;
-    DescriptorClass GetClass() const override { return ImageSampler; }
+    DescriptorClass GetClass() const override { return DescriptorClass::ImageSampler; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
@@ -505,7 +505,7 @@ class ImageSamplerDescriptor : public ImageDescriptor {
 class TexelDescriptor : public Descriptor {
   public:
     TexelDescriptor() = default;
-    DescriptorClass GetClass() const override { return TexelBuffer; }
+    DescriptorClass GetClass() const override { return DescriptorClass::TexelBuffer; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
@@ -537,7 +537,7 @@ class TexelDescriptor : public Descriptor {
 class BufferDescriptor : public Descriptor {
   public:
     BufferDescriptor() = default;
-    DescriptorClass GetClass() const override { return GeneralBuffer; }
+    DescriptorClass GetClass() const override { return DescriptorClass::GeneralBuffer; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
@@ -572,7 +572,7 @@ class BufferDescriptor : public Descriptor {
 class InlineUniformDescriptor : public Descriptor {
   public:
     InlineUniformDescriptor() = default;
-    DescriptorClass GetClass() const override { return InlineUniform; }
+    DescriptorClass GetClass() const override { return DescriptorClass::InlineUniform; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override {}
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
@@ -582,7 +582,7 @@ class InlineUniformDescriptor : public Descriptor {
 class AccelerationStructureDescriptor : public Descriptor {
   public:
     AccelerationStructureDescriptor() = default;
-    DescriptorClass GetClass() const override { return AccelerationStructure; }
+    DescriptorClass GetClass() const override { return DescriptorClass::AccelerationStructure; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
@@ -632,7 +632,7 @@ class AccelerationStructureDescriptor : public Descriptor {
 class MutableDescriptor : public Descriptor {
   public:
     MutableDescriptor();
-    DescriptorClass GetClass() const override { return Mutable; }
+    DescriptorClass GetClass() const override { return DescriptorClass::Mutable; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,

@@ -746,14 +746,14 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
         // non-sparse images set up their layout maps when memory is bound
-        auto image_state = Get<IMAGE_STATE>(*pImage);
+        auto image_state = Get<vvl::Image>(*pImage);
         image_state->SetInitialLayoutMap();
     }
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                              const ErrorObject &error_obj) const {
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     bool skip = false;
     if (image_state) {
         if (image_state->IsSwapchainImage() && image_state->owned_by_swapchain) {
@@ -770,13 +770,13 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
     // Clean up validation specific data
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     qfo_release_image_barrier_map.erase(image);
     // Clean up generic image state
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
 
-bool CoreChecks::ValidateClearImageSubresourceRange(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
+bool CoreChecks::ValidateClearImageSubresourceRange(const CMD_BUFFER_STATE &cb_state, const vvl::Image &image_state,
                                                     const VkImageSubresourceRange &range, const Location &loc) const {
     bool skip = false;
 
@@ -795,7 +795,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto image_state_ptr = Get<IMAGE_STATE>(image);
+    auto image_state_ptr = Get<vvl::Image>(image);
     if (!cb_state_ptr || !image_state_ptr) {
         return skip;
     }
@@ -852,7 +852,7 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
     StateTracker::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
 
     auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(image, pRanges[i], imageLayout);
@@ -884,7 +884,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    auto image_state_ptr = Get<IMAGE_STATE>(image);
+    auto image_state_ptr = Get<vvl::Image>(image);
     if (!cb_state_ptr || !image_state_ptr) {
         return skip;
     }
@@ -982,7 +982,7 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
                                                          record_obj);
 
     auto cb_state_ptr = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(image, pRanges[i], imageLayout);
@@ -1305,7 +1305,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
 }
 
 // Helper function to validate usage flags for images
-bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer cb, IMAGE_STATE const &image_state, VkImageUsageFlags desired, bool strict,
+bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer cb, vvl::Image const &image_state, VkImageUsageFlags desired, bool strict,
                                          const char *vuid, const Location &image_loc) const {
     bool skip = false;
     LogObjectList objlist(cb, image_state.Handle());
@@ -1324,7 +1324,7 @@ bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer cb, IMAGE_STATE const &
     return skip;
 }
 
-bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE const &image_state,
+bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, vvl::Image const &image_state,
                                                  VkFormatFeatureFlags2KHR desired, const Location &image_loc,
                                                  const char *vuid) const {
     bool skip = false;
@@ -1494,7 +1494,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     return skip;
 }
 
-bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE &image_state, bool is_imageview_2d_type,
+bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image_state, bool is_imageview_2d_type,
                                                          const VkImageSubresourceRange &subresourceRange,
                                                          const Location &loc) const {
     const bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
@@ -1528,7 +1528,7 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE &imag
                                          loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateCmdClearColorSubresourceRange(const IMAGE_STATE &image_state,
+bool CoreChecks::ValidateCmdClearColorSubresourceRange(const vvl::Image &image_state,
                                                        const VkImageSubresourceRange &subresourceRange, const Location &loc) const {
     SubresourceRangeErrorCodes subresource_range_error_codes = {};
     subresource_range_error_codes.base_mip_err = "VUID-vkCmdClearColorImage-baseMipLevel-01470";
@@ -1541,7 +1541,7 @@ bool CoreChecks::ValidateCmdClearColorSubresourceRange(const IMAGE_STATE &image_
                                          loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE &image_state,
+bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const vvl::Image &image_state,
                                                        const VkImageSubresourceRange &subresourceRange, const Location &loc) const {
     SubresourceRangeErrorCodes subresource_range_error_codes = {};
     subresource_range_error_codes.base_mip_err = "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474";
@@ -1554,14 +1554,14 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE &image_
                                          loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateImageBarrierSubresourceRange(const Location &loc, const IMAGE_STATE &image_state,
+bool CoreChecks::ValidateImageBarrierSubresourceRange(const Location &loc, const vvl::Image &image_state,
                                                       const VkImageSubresourceRange &subresourceRange) const {
     return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
                                          "arrayLayers", image_state.image(), sync_vuid_maps::GetSubResourceVUIDs(loc),
                                          loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state, const VkFormat view_format,
+bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, const VkFormat view_format,
                                                  const VkImageUsageFlags image_usage, const Location &create_info_loc) const {
     // Pass in image_usage here instead of extracting it from image_state in case there's a chained VkImageViewUsageCreateInfo
     bool skip = false;
@@ -1695,7 +1695,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                                 [[maybe_unused]] const VkAllocationCallbacks *pAllocator,
                                                 [[maybe_unused]] VkImageView *pView, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state_ptr = Get<IMAGE_STATE>(pCreateInfo->image);
+    auto image_state_ptr = Get<vvl::Image>(pCreateInfo->image);
     if (!image_state_ptr) {
         return skip;
     }
@@ -2264,7 +2264,7 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_state, const VkImageSubresource &subresource,
+bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image &image_state, const VkImageSubresource &subresource,
                                                    const Location &subresource_loc) const {
     bool skip = false;
     const bool is_2 = subresource_loc.function != Func::vkGetImageSubresourceLayout;
@@ -2410,7 +2410,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
                                                           VkSubresourceLayout *pLayout, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
         skip = ValidateGetImageSubresourceLayout(*image_state, *pSubresource, error_obj.location.dot(Field::pSubresource));
         if ((image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
@@ -2427,7 +2427,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, V
                                                               VkSubresourceLayout2KHR *pLayout,
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
         skip = ValidateGetImageSubresourceLayout(*image_state, pSubresource->imageSubresource,
                                                  error_obj.location.dot(Field::pSubresource).dot(Field::imageSubresource));
@@ -2446,7 +2446,7 @@ bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice 
                                                                        VkImageDrmFormatModifierPropertiesEXT *pProperties,
                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (image_state) {
         if (image_state->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             skip |=
@@ -2472,7 +2472,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
     for (uint32_t i = 0; i < transitionCount; ++i) {
         const Location transition_loc = error_obj.location.dot(Field::pTransitions, i);
         const auto &transition = pTransitions[i];
-        const auto image_state = Get<IMAGE_STATE>(transition.image);
+        const auto image_state = Get<vvl::Image>(transition.image);
         const auto image_format = image_state->createInfo.format;
         const auto aspect_mask = transition.subresourceRange.aspectMask;
         const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
@@ -2595,14 +2595,14 @@ void CoreChecks::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
         auto &transition = pTransitions[i];
-        auto image_state = Get<IMAGE_STATE>(transition.image);
+        auto image_state = Get<vvl::Image>(transition.image);
         if (!image_state) continue;
         image_state->SetImageLayout(transition.subresourceRange, transition.newLayout);
     }
 }
 
 // Validates the image is allowed to be protected
-bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state, const Location &loc,
+bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const vvl::Image &image_state, const Location &loc,
                                         const char *vuid, const char *more_message) const {
     bool skip = false;
 
@@ -2616,7 +2616,7 @@ bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const 
 }
 
 // Validates the image is allowed to be unprotected
-bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state, const Location &loc,
+bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, const vvl::Image &image_state, const Location &loc,
                                           const char *vuid, const char *more_message) const {
     bool skip = false;
 
@@ -2629,7 +2629,7 @@ bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, cons
     return skip;
 }
 
-bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo *pCreateInfo, const IMAGE_STATE &image_state,
+bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo *pCreateInfo, const vvl::Image &image_state,
                                                    const Location &loc) const {
     bool skip = false;
 

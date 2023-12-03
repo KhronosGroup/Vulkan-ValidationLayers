@@ -270,10 +270,10 @@ RangeGenerator& RangeGenerator::operator++() {
     return *this;
 }
 
-ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image)
+ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image)
     : ImageRangeEncoder(image, AspectParameters::Get(image.full_range.aspectMask)) {}
 
-ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param)
+ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParameters* param)
     : RangeEncoder(image.full_range, param), total_size_(0U) {
     if (image.createInfo.extent.depth > 1) {
         limits_.arrayLayer = image.createInfo.extent.depth;

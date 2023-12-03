@@ -1516,7 +1516,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const CMD
     const CommandBufferImageLayoutMap &current_map = cb_state->GetImageSubresourceLayoutMap();
 
     {
-        auto image_state = Get<IMAGE_STATE>(img_barrier.image);
+        auto image_state = Get<vvl::Image>(img_barrier.image);
         if (!image_state) {
             return skip;
         }
@@ -2248,7 +2248,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         }
     }
 
-    auto image_data = Get<IMAGE_STATE>(mem_barrier.image);
+    auto image_data = Get<vvl::Image>(mem_barrier.image);
     if (image_data) {
         auto image_loc = barrier_loc.dot(Field::image);
         // TODO - use LocationVuidAdapter

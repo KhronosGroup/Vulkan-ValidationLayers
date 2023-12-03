@@ -56,7 +56,7 @@ bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory *mem_s
 }
 
 // Check to see if memory was ever bound to this image
-bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, const IMAGE_STATE &image_state, const Location &loc,
+bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, const vvl::Image &image_state, const Location &loc,
                                               const char *vuid) const {
     bool result = false;
     if (image_state.create_from_swapchain != VK_NULL_HANDLE) {
@@ -303,7 +303,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             // Dedicated VkImage
             const LogObjectList objlist(device, dedicated_image);
             const Location image_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
-            auto image_state = Get<IMAGE_STATE>(dedicated_image);
+            auto image_state = Get<vvl::Image>(dedicated_image);
             if (image_state->disjoint == true) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01797", objlist, image_loc,
                                  "(%s) was created with VK_IMAGE_CREATE_DISJOINT_BIT.", FormatHandle(dedicated_image).c_str());
@@ -755,7 +755,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
     const Location image_loc = error_obj.location.dot(Field::image);
     skip |= ValidateGetImageMemoryRequirementsANDROID(image, image_loc);
 
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (image_state) {
         // Checks for no disjoint bit
         if (image_state->disjoint == true) {
@@ -776,7 +776,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
     const Location image_loc = info_loc.dot(Field::image);
     skip |= ValidateGetImageMemoryRequirementsANDROID(pInfo->image, image_loc);
 
-    auto image_state = Get<IMAGE_STATE>(pInfo->image);
+    auto image_state = Get<vvl::Image>(pInfo->image);
     const VkFormat image_format = image_state->createInfo.format;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
     const auto *image_plane_info = vku::FindStructInPNextChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
@@ -1073,7 +1073,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const Location loc = bind_image_mem_2 ? error_obj.location.dot(Field::pBindInfos, i) : error_obj.location.function;
         const VkBindImageMemoryInfo &bind_info = pBindInfos[i];
-        auto image_state = Get<IMAGE_STATE>(bind_info.image);
+        auto image_state = Get<vvl::Image>(bind_info.image);
         if (image_state) {
             // Track objects tied to memory
             skip |= ValidateSetMemBinding(bind_info.memory, *image_state, loc);
@@ -1226,7 +1226,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 const VkImage dedicated_image = mem_info->GetDedicatedImage();
                 if (dedicated_image != VK_NULL_HANDLE) {
                     if (enabled_features.dedicatedAllocationImageAliasing) {
-                        auto current_image_state = Get<IMAGE_STATE>(bind_info.image);
+                        auto current_image_state = Get<vvl::Image>(bind_info.image);
                         if ((bind_info.memoryOffset != 0) || !current_image_state ||
                             !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
                                 mem_info->dedicated->create_info.image)) {
@@ -1569,7 +1569,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
     // Check to make sure all disjoint planes were bound
     for (auto &resource : resources_bound) {
-        auto image_state = Get<IMAGE_STATE>(resource.first);
+        auto image_state = Get<vvl::Image>(resource.first);
         if (image_state->disjoint == true && !is_drm) {
             uint32_t total_planes = vkuFormatPlaneCount(image_state->createInfo.format);
             for (uint32_t i = 0; i < total_planes; i++) {
@@ -1589,7 +1589,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (image_state) {
         // Checks for no disjoint bit
         if (image_state->disjoint == true) {
@@ -1612,7 +1612,7 @@ void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, V
     if (VK_SUCCESS != record_obj.result) return;
 
     StateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (image_state) {
         image_state->SetInitialLayoutMap();
     }
@@ -1629,7 +1629,7 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
     StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        auto image_state = Get<IMAGE_STATE>(pBindInfos[i].image);
+        auto image_state = Get<vvl::Image>(pBindInfos[i].image);
         if (image_state) {
             image_state->SetInitialLayoutMap();
         }
@@ -1736,9 +1736,8 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
     return skip;
 }
 
-bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const &image_state,
-                                                               VkImageSubresource const &subresource, const Location &bind_loc,
-                                                               const Location &subresource_loc) const {
+bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const &image_state, VkImageSubresource const &subresource,
+                                                               const Location &bind_loc, const Location &subresource_loc) const {
     bool skip = ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask,
                                         image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBind-subresource-01106");
 
@@ -1760,7 +1759,7 @@ bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const
 }
 
 // This will only be called after we are sure the image was created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
-bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, VkSparseImageMemoryBind const &bind,
+bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, VkSparseImageMemoryBind const &bind,
                                                const Location &bind_loc, const Location &memory_loc) const {
     bool skip = false;
 

@@ -745,9 +745,9 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
                                                      VkImage *pSwapchainImages, const RecordObject &record_obj) {
     // This function will run twice. The first is to get pSwapchainImageCount. The second is to get pSwapchainImages.
     // The first time in StateTracker::PostCallRecordGetSwapchainImagesKHR only generates the container's size.
-    // The second time in StateTracker::PostCallRecordGetSwapchainImagesKHR will create VKImage and IMAGE_STATE.
+    // The second time in StateTracker::PostCallRecordGetSwapchainImagesKHR will create VKImage and vvl::Image.
 
-    // So GlobalImageLayoutMap saving new IMAGE_STATEs has to run in the second time.
+    // So GlobalImageLayoutMap saving new vvl::Images has to run in the second time.
     // pSwapchainImages is not nullptr and it needs to wait until StateTracker::PostCallRecordGetSwapchainImagesKHR.
 
     uint32_t new_swapchain_image_index = 0;
@@ -766,7 +766,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
     if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
-            auto image_state = Get<IMAGE_STATE>(pSwapchainImages[new_swapchain_image_index]);
+            auto image_state = Get<vvl::Image>(pSwapchainImages[new_swapchain_image_index]);
             image_state->SetInitialLayoutMap();
         }
     }

@@ -1271,7 +1271,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
         VideoPictureResources unique_resources{};
         bool resources_unique = true;
         bool has_separate_images = false;
-        const IMAGE_STATE *last_dpb_image = nullptr;
+        const vvl::Image *last_dpb_image = nullptr;
         char where[64];
 
         for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {

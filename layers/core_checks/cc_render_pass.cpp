@@ -3219,7 +3219,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                     const int32_t offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
                     const uint32_t height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
 
-                    IMAGE_STATE *image_state = view_state->image_state.get();
+                    vvl::Image *image_state = view_state->image_state.get();
                     if (image_state->createInfo.extent.width <
                         vvl::GetQuotientCeil(
                             offset_x + width,
@@ -3424,7 +3424,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
         if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
             auto view_state = Get<vvl::ImageView>(fragment_density_map_attachment_info->imageView);
-            IMAGE_STATE *image_state = view_state->image_state.get();
+            vvl::Image *image_state = view_state->image_state.get();
             if (image_state->createInfo.extent.width <
                 vvl::GetQuotientCeil(
                     x_adjusted_extent,
@@ -3501,7 +3501,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
                 if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
                     auto image_view_state = Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[j].imageView);
-                    IMAGE_STATE *image_state = image_view_state->image_state.get();
+                    vvl::Image *image_state = image_view_state->image_state.get();
                     if (image_state->createInfo.extent.width < offset_x + width) {
                         const LogObjectList objlist(commandBuffer, image_view_state->image_view(), image_state->image());
                         skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
@@ -3525,7 +3525,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
             if (pRenderingInfo->pDepthAttachment != VK_NULL_HANDLE) {
                 auto depth_view_state = Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView);
-                IMAGE_STATE *image_state = depth_view_state->image_state.get();
+                vvl::Image *image_state = depth_view_state->image_state.get();
                 if (image_state->createInfo.extent.width < offset_x + width) {
                     const LogObjectList objlist(commandBuffer, depth_view_state->image_view(), image_state->image());
                     skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
@@ -3548,7 +3548,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
             if (pRenderingInfo->pStencilAttachment != VK_NULL_HANDLE) {
                 auto stencil_view_state = Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView);
-                IMAGE_STATE *image_state = stencil_view_state->image_state.get();
+                vvl::Image *image_state = stencil_view_state->image_state.get();
                 if (image_state->createInfo.extent.width < offset_x + width) {
                     const LogObjectList objlist(commandBuffer, stencil_view_state->image_view(), image_state->image());
                     skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
@@ -3571,7 +3571,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
             if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
                 auto view_state = Get<vvl::ImageView>(fragment_density_map_attachment_info->imageView);
-                IMAGE_STATE *image_state = view_state->image_state.get();
+                vvl::Image *image_state = view_state->image_state.get();
                 if (image_state->createInfo.extent.width <
                     vvl::GetQuotientCeil(offset_x + width,
                                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
@@ -3653,7 +3653,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
         if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
             auto image_view_state = Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[j].imageView);
-            IMAGE_STATE *image_state = image_view_state->image_state.get();
+            vvl::Image *image_state = image_view_state->image_state.get();
             if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
                 const LogObjectList objlist(commandBuffer, image_view_state->image_view(), image_state->image());
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06087", objlist, color_loc.dot(Field::imageView),
@@ -3732,7 +3732,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
         if (depth_attachment_info.imageView != VK_NULL_HANDLE) {
             auto depth_view_state = Get<vvl::ImageView>(depth_attachment_info.imageView);
-            IMAGE_STATE *image_state = depth_view_state->image_state.get();
+            vvl::Image *image_state = depth_view_state->image_state.get();
             if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
                 const LogObjectList objlist(commandBuffer, depth_view_state->image_view(), image_state->image());
                 skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06088", objlist,
@@ -3762,7 +3762,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
         if (stencil_attachment_info.imageView != VK_NULL_HANDLE) {
             auto stencil_view_state = Get<vvl::ImageView>(stencil_attachment_info.imageView);
-            IMAGE_STATE *image_state = stencil_view_state->image_state.get();
+            vvl::Image *image_state = stencil_view_state->image_state.get();
             if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
                 const LogObjectList objlist(commandBuffer, stencil_view_state->image_view(), image_state->image());
                 skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06089", objlist,
@@ -3887,7 +3887,7 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                      string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples), attachment_loc.Fields().c_str(),
                      string_VkSampleCountFlagBits(image_view_state->samples));
     }
-    IMAGE_STATE *image_state = image_view_state->image_state.get();
+    vvl::Image *image_state = image_view_state->image_state.get();
     if ((image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) &&
         !(image_state->createInfo.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)) {
         skip |= LogError("VUID-VkRenderingInfo-imageView-06859", objlist, attachment_loc,
@@ -4207,7 +4207,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
             }
 
             // Verify that image memory is valid
-            auto image_data = Get<IMAGE_STATE>(ivci.image);
+            auto image_data = Get<vvl::Image>(ivci.image);
             skip |= ValidateMemoryIsBoundToImage(LogObjectList(ivci.image), *image_data, attachment_loc,
                                                  kVUID_Core_Bound_Resource_FreedMemoryAccess);
 
@@ -4433,7 +4433,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                  string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
             }
             if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D)) {
-                auto image_state = Get<IMAGE_STATE>(ivci.image);
+                auto image_state = Get<vvl::Image>(ivci.image);
                 if (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                     if (vkuFormatIsDepthOrStencil(ivci.format)) {
                         LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);

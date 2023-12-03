@@ -313,7 +313,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                  FormatHandle(metal_texture_ptr->bufferView).c_str());
                 }
                 if (metal_texture_ptr->image) {
-                    auto image_info = Get<IMAGE_STATE>(metal_texture_ptr->image);
+                    auto image_info = Get<vvl::Image>(metal_texture_ptr->image);
                     if (image_info) {
                         if (!image_info->metal_image_export) {
                             skip |= LogError(
@@ -422,7 +422,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
 
             case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {
                 auto metal_io_surface_ptr = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT *>(metal_objects_info_ptr);
-                auto image_info = Get<IMAGE_STATE>(metal_io_surface_ptr->image);
+                auto image_info = Get<vvl::Image>(metal_io_surface_ptr->image);
                 if (image_info) {
                     if (!image_info->metal_io_surface_export) {
                         skip |= LogError(

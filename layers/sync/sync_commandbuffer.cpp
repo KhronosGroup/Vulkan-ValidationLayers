@@ -1114,7 +1114,7 @@ std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &haz
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state)
     : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
 
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const IMAGE_STATE *image)
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image)
     : report_data(sync_state.report_data), node(image), label("image") {}
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)

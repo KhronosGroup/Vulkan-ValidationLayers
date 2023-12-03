@@ -160,17 +160,17 @@ enum IMAGE_SUBRESOURCE_USAGE_BP {
 class BestPractices;
 
 namespace bp_state {
-class Image : public IMAGE_STATE {
+class Image : public vvl::Image {
   public:
     Image(const ValidationStateTracker* dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo,
           VkFormatFeatureFlags2KHR features)
-        : IMAGE_STATE(dev_data, img, pCreateInfo, features) {
+        : vvl::Image(dev_data, img, pCreateInfo, features) {
         SetupUsages();
     }
 
     Image(const ValidationStateTracker* dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
-        : IMAGE_STATE(dev_data, img, pCreateInfo, swapchain, swapchain_index, features) {
+        : vvl::Image(dev_data, img, pCreateInfo, swapchain, swapchain_index, features) {
         SetupUsages();
     }
 
@@ -358,7 +358,7 @@ class Pipeline : public PIPELINE_STATE {
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkPhysicalDevice, bp_state::PhysicalDevice, vvl::PhysicalDevice)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, bp_state::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, bp_state::Swapchain, vvl::Swapchain)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, IMAGE_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, vvl::Image)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, PIPELINE_STATE)
 
@@ -1004,13 +1004,13 @@ class BestPractices : public ValidationStateTracker {
     std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) final {
         return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(phys_dev));
     }
-    std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
-                                                  VkFormatFeatureFlags2KHR features) final {
+    std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                 VkFormatFeatureFlags2KHR features) final {
         return std::make_shared<bp_state::Image>(this, img, pCreateInfo, features);
     }
 
-    std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
-                                                  uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final {
+    std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
+                                                 uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final {
         return std::make_shared<bp_state::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
     }
 

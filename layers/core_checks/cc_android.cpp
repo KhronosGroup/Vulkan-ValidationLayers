@@ -152,7 +152,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     // with non-NULL image member, then that image must already be bound to memory.
     const VkImage dedicated_image = mem_info->GetDedicatedImage();
     if (dedicated_image != VK_NULL_HANDLE) {
-        auto image_state = Get<IMAGE_STATE>(dedicated_image);
+        auto image_state = Get<vvl::Image>(dedicated_image);
         if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->deviceMemory())))) {
             const LogObjectList objlist(device, pInfo->memory, dedicated_image);
             skip |= LogError("VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883", objlist,
@@ -293,7 +293,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                                  "AHardwareBuffer's usage is 0x%" PRIx64 ". (AHB = %p).", ahb_desc.usage, import_ahb_info->buffer);
             }
 
-            auto image_state = Get<IMAGE_STATE>(mem_ded_alloc_info->image);
+            auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
             const auto *ici = &image_state->createInfo;
             const Location &dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
 
@@ -400,7 +400,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
 bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location &loc) const {
     bool skip = false;
 
-    auto image_state = Get<IMAGE_STATE>(image);
+    auto image_state = Get<vvl::Image>(image);
     if (image_state != nullptr) {
         if (image_state->IsExternalBuffer() && (0 == image_state->GetBoundMemoryStates().size())) {
             const char *vuid = loc.function == Func::vkGetImageMemoryRequirements
@@ -549,7 +549,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
 // Validate creating an image view with an AHB format
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info, const Location &create_info_loc) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(create_info->image);
+    auto image_state = Get<vvl::Image>(create_info->image);
 
     if (image_state->HasAHBFormat()) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
