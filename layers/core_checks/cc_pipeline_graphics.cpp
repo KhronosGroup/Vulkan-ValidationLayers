@@ -273,7 +273,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
     }
 
-    // If extension is not enable, ignore the rest of checks
+    // If extension is not enabled, ignore the rest of checks
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
         if (!pipeline.PipelineLayoutState()) {
             skip |=
@@ -2479,7 +2479,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const vvl::Pipeline 
 
     for (auto &stage_state : pipeline.stage_states) {
         const VkShaderStageFlagBits stage = stage_state.GetStage();
-        if (stage != VK_SHADER_STAGE_VERTEX_BIT && stage != VK_SHADER_STAGE_GEOMETRY_BIT && stage != VK_SHADER_STAGE_MESH_BIT_EXT) {
+        if (!IsValueIn(stage, {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_MESH_BIT_EXT})) {
             continue;
         }
         if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
