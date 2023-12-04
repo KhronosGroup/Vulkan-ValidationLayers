@@ -405,9 +405,14 @@ class Pipeline : public BASE_NODE {
 
     bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }
 
-    const safe_VkPipelineDynamicStateCreateInfo *DynamicState() const {
+    const safe_VkPipelineDynamicStateCreateInfo *DynamicStateGraphics() const {
         // TODO Each library can contain its own dynamic state (apparently?). Which one should be returned here? Union?
         return create_info.graphics.pDynamicState;
+    }
+
+    const safe_VkPipelineDynamicStateCreateInfo *DynamicStateRayTracing() const {
+        // TODO Each library can contain its own dynamic state (apparently?). Which one should be returned here? Union?
+        return create_info.raytracing.pDynamicState;
     }
 
     template <typename CI>
