@@ -1527,3 +1527,192 @@ TEST_F(PositiveShaderInterface, PhysicalStorageBuffer) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5374
+// Need to understand if this is legal or not
+TEST_F(PositiveShaderInterface, DISABLED_PhysicalStorageBufferArray) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference_uvec2 : enable
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            int value2;
+        };
+
+        layout(location=0) out dataBuffer outgoingPtr[3];
+        void main() {
+            outgoingPtr[2] = dataBuffer(uvec2(2.0));
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference_uvec2 : enable
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            int value2;
+        };
+
+        layout(location=0) in dataBuffer incomingPtr[3];
+        layout(location=0) out vec4 fragColor;
+        void main() {
+            ivec2 v = ivec2(incomingPtr[1].value1, incomingPtr[2].value2);
+            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5374
+// Need to understand if this is legal or not
+TEST_F(PositiveShaderInterface, DISABLED_PhysicalStorageBufferLinkedList) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer dataBuffer;
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            dataBuffer next;
+        };
+
+        layout(location=0) out dataBuffer outgoingPtr;
+        void main() {
+            outgoingPtr.next.value1 = 3;
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer dataBuffer;
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            dataBuffer next;
+        };
+
+        layout(location=0) in dataBuffer incomingPtr;
+        layout(location=0) out vec4 fragColor;
+        void main() {
+            ivec2 v = ivec2(incomingPtr.value1, incomingPtr.next.value1);
+            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5374
+// Need to understand if this is legal or not
+TEST_F(PositiveShaderInterface, DISABLED_PhysicalStorageBufferNested) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework())
+
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t2 {
+            int values[];
+        };
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t1 {
+            t2 c;
+        };
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            t1 next;
+        };
+
+        layout(location=0) out dataBuffer outgoingPtr;
+        void main() {
+            outgoingPtr.next.c.values[3] = 3;
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t2 {
+            int values[];
+        };
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t1 {
+            t2 c;
+        };
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            t1 next;
+        };
+
+        layout(location=0) in dataBuffer incomingPtr;
+        layout(location=0) out vec4 fragColor;
+        void main() {
+            ivec2 v = ivec2(incomingPtr.value1, incomingPtr.next.c.values[2]);
+            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
