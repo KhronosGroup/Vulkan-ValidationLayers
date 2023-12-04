@@ -50,6 +50,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/thread_timeout_helper.h
     framework/thread_timeout_helper.cpp
     framework/gpu_av_helper.h
+    framework/render_pass_helper.h
+    framework/render_pass_helper.cpp
     unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
@@ -132,7 +134,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/ray_tracing_pipeline_positive_nv.cpp
     unit/ray_tracing_positive.cpp
     unit/render_pass_positive.cpp
-    unit/renderpass.cpp
+    unit/render_pass.cpp
     unit/robustness.cpp
     unit/robustness_positive.cpp
     unit/sampler.cpp

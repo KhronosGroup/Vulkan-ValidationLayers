@@ -15,6 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeProtectedMemory, Queue) {
     TEST_DESCRIPTION("Try creating queue without VK_QUEUE_PROTECTED_BIT capability");
@@ -820,29 +821,19 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     image_views_descriptor[1] = view_descriptor1;
 
     // A renderpass and framebuffer that contains a protected and unprotected image view
-    VkAttachmentDescription attachments[2] = {
-        {0, image_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {0, image_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-    };
-    VkAttachmentReference references[2] = {{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-                                           {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
-    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 2, references, nullptr, nullptr, 0, nullptr};
-    VkSubpassDependency dependency = {0,
-                                      0,
-                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                      VK_ACCESS_SHADER_WRITE_BIT,
-                                      VK_ACCESS_SHADER_WRITE_BIT,
-                                      VK_DEPENDENCY_BY_REGION_BIT};
-    VkRenderPassCreateInfo render_pass_create_info = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 1, &dependency};
-    vkt::RenderPass render_pass(*m_device, render_pass_create_info);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(image_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(image_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(1);
+    rp.AddSubpassDependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT);
+    rp.CreateRenderPass();
+
     VkFramebufferCreateInfo framebuffer_create_info = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass, 2, image_views, 8, 8, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.Handle(), 2, image_views, 8, 8, 1};
     vkt::Framebuffer framebuffer(*m_device, framebuffer_create_info);
 
     // Various structs used for commands
@@ -873,7 +864,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkRect2D render_area = {{0, 0}, {8, 8}};
     VkRenderPassBeginInfo render_pass_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.Handle(), framebuffer.handle(), render_area, 0u, nullptr);
     VkClearAttachment clear_attachments[2] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, {m_clear_color}},
                                               {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
     VkClearRect clear_rect[2] = {{render_area, 0, 1}, {render_area, 0, 1}};
@@ -891,7 +882,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this, 2u);
-    g_pipe.gp_ci_.renderPass = render_pass.handle();
+    g_pipe.gp_ci_.renderPass = rp.Handle();
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};

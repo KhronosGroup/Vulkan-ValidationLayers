@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "generated/vk_extension_helper.h"
 
 TEST_F(PositiveVertexInput, AttributeMatrixType) {
@@ -358,39 +359,19 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Create a renderPass with two color attachments
-    VkAttachmentReference attachments[2] = {};
-    attachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachments[1].attachment = 1;
-    attachments[1].layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = attachments;
-    subpass.colorAttachmentCount = 2;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 2;
-
-    VkAttachmentDescription attach_desc[2] = {};
-    attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    rpci.pAttachments = attach_desc;
-    vkt::RenderPass renderpass(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(1);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this, 2);
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.renderPass = renderpass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_FALSE;
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;

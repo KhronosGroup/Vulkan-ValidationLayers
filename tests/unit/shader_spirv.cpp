@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 struct icd_spv_header {
     uint32_t magic = 0x07230203;
@@ -1762,28 +1763,11 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     vs.InitFromGLSLTry(false, &test_device);
     fs.InitFromGLSLTry(false, &test_device);
 
-    VkAttachmentReference attach = {};
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attach;
-    subpass.colorAttachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(test_device, rpci);
+    RenderPassSingleSubpass rp(*this, &test_device);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.device_ = &test_device;
@@ -1799,7 +1783,7 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1832,28 +1816,12 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
     vs.InitFromGLSLTry(false, &test_device);
     fs.InitFromGLSLTry(false, &test_device);
 
-    VkAttachmentReference attach = {};
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    RenderPassSingleSubpass rp(*this, &test_device);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attach;
-    subpass.colorAttachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(test_device, rpci);
     const vkt::PipelineLayout pipeline_layout(test_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -1862,7 +1830,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1959,28 +1927,12 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     vs.InitFromGLSLTry(false, &test_device);
     fs.InitFromGLSLTry(false, &test_device);
 
-    VkAttachmentReference attach = {};
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    RenderPassSingleSubpass rp(*this, &test_device);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attach;
-    subpass.colorAttachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(test_device, rpci);
     const vkt::PipelineLayout pipeline_layout(test_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -1990,7 +1942,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2022,28 +1974,12 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
     vs.InitFromGLSLTry(false, &test_device);
     fs.InitFromGLSLTry(false, &test_device);
 
-    VkAttachmentReference attach = {};
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    RenderPassSingleSubpass rp(*this, &test_device);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attach;
-    subpass.colorAttachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(test_device, rpci);
     const vkt::PipelineLayout pipeline_layout(test_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -2052,7 +1988,7 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
