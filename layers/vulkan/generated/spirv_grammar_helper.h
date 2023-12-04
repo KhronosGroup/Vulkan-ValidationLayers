@@ -1180,4 +1180,85 @@ static constexpr uint32_t OpcodeImageAccessPosition(uint32_t opcode) {
     return position;
 }
 
+// All valid OpType*
+enum class SpvType {
+    Empty = 0,
+    kVoid,
+    kBool,
+    kInt,
+    kFloat,
+    kVector,
+    kMatrix,
+    kImage,
+    kSampler,
+    kSampledImage,
+    kArray,
+    kRuntimeArray,
+    kStruct,
+    kPointer,
+    kFunction,
+    kForwardPointer,
+    kPipeStorage,
+    kCooperativeMatrixKHR,
+    kRayQueryKHR,
+    kHitObjectNV,
+    kAccelerationStructureKHR,
+    kCooperativeMatrixNV,
+    kBufferSurfaceINTEL,
+    kStructContinuedINTEL,
+};
+
+static constexpr SpvType GetSpvType(uint32_t opcode) {
+    switch (opcode) {
+        case spv::OpTypeVoid:
+            return SpvType::kVoid;
+        case spv::OpTypeBool:
+            return SpvType::kBool;
+        case spv::OpTypeInt:
+            return SpvType::kInt;
+        case spv::OpTypeFloat:
+            return SpvType::kFloat;
+        case spv::OpTypeVector:
+            return SpvType::kVector;
+        case spv::OpTypeMatrix:
+            return SpvType::kMatrix;
+        case spv::OpTypeImage:
+            return SpvType::kImage;
+        case spv::OpTypeSampler:
+            return SpvType::kSampler;
+        case spv::OpTypeSampledImage:
+            return SpvType::kSampledImage;
+        case spv::OpTypeArray:
+            return SpvType::kArray;
+        case spv::OpTypeRuntimeArray:
+            return SpvType::kRuntimeArray;
+        case spv::OpTypeStruct:
+            return SpvType::kStruct;
+        case spv::OpTypePointer:
+            return SpvType::kPointer;
+        case spv::OpTypeFunction:
+            return SpvType::kFunction;
+        case spv::OpTypeForwardPointer:
+            return SpvType::kForwardPointer;
+        case spv::OpTypePipeStorage:
+            return SpvType::kPipeStorage;
+        case spv::OpTypeCooperativeMatrixKHR:
+            return SpvType::kCooperativeMatrixKHR;
+        case spv::OpTypeRayQueryKHR:
+            return SpvType::kRayQueryKHR;
+        case spv::OpTypeHitObjectNV:
+            return SpvType::kHitObjectNV;
+        case spv::OpTypeAccelerationStructureKHR:
+            return SpvType::kAccelerationStructureKHR;
+        case spv::OpTypeCooperativeMatrixNV:
+            return SpvType::kCooperativeMatrixNV;
+        case spv::OpTypeBufferSurfaceINTEL:
+            return SpvType::kBufferSurfaceINTEL;
+        case spv::OpTypeStructContinuedINTEL:
+            return SpvType::kStructContinuedINTEL;
+        default:
+            return SpvType::Empty;
+    }
+}
+
 // NOLINTEND

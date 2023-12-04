@@ -37,6 +37,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.imageGatherOps = []
         self.imageSampleOps = []
         self.imageFetchOps = []
+        self.typeOps = [] # OpType*
         self.storageClassList = [] # list of storage classes
         self.executionModelList = []
         self.executionModeList = []
@@ -161,6 +162,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     self.imageFetchOps.append(opname)
                 if re.search("OpImageSample.*", opname) is not None:
                     self.imageSampleOps.append(opname)
+                if re.search("OpType.*", opname) is not None:
+                    self.typeOps.append(opname)
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
                         if operand['kind'] == 'IdResultType':
@@ -451,6 +454,26 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }
                 return position;
             }
+            ''')
+
+        out.append('''
+            // All valid OpType*
+            enum class SpvType {
+                Empty = 0,
+            ''')
+        for type in self.typeOps:
+            out.append(f'k{type[6:]},\n')
+        out.append("};\n")
+
+        typeCase = "\n".join([f"case spv::{f}: return SpvType::k{f[6:]};" for f in self.typeOps])
+        out.append(f'''
+            static constexpr SpvType GetSpvType(uint32_t opcode) {{
+                switch (opcode) {{
+                    {typeCase}
+                    default:
+                        return SpvType::Empty;
+                }}
+            }}
             ''')
 
         self.write("".join(out))
