@@ -165,10 +165,10 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
     const bool has_fragment_shader_state = pipe_state.OwnsSubState(pipe_state.fragment_shader_state);
     const bool has_fragment_output_state = pipe_state.OwnsSubState(pipe_state.fragment_output_state);
 
-    const auto *dynamic_state_ci = pipe_state.DynamicState();
+    const auto *dynamic_state_ci = pipe_state.DynamicStateGraphics();
     if (dynamic_state_ci) {
-        for (uint32_t i = 0; i < dynamic_state_ci->dynamicStateCount; i++) {
-            const VkDynamicState vk_dynamic_state = dynamic_state_ci->pDynamicStates[i];
+        for (const VkDynamicState vk_dynamic_state :
+             vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {
             // Check if should ignore or not before converting and adding
             switch (vk_dynamic_state) {
                 // VkPipelineVertexInputStateCreateInfo
@@ -321,6 +321,26 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
     return flags;
 }
 
+static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
+    CBDynamicFlags flags = 0;
+
+    const auto *dynamic_state_ci = pipe_state.DynamicStateRayTracing();
+    if (dynamic_state_ci) {
+        for (const VkDynamicState vk_dynamic_state :
+             vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {
+            switch (vk_dynamic_state) {
+                case VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
+                    flags.set(ConvertToCBDynamicState(vk_dynamic_state));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    return flags;
+}
+
 static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state) {
     bool result = false;
     const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
@@ -359,7 +379,7 @@ static bool IgnoreColorAttachments(const ValidationStateTracker *state_data, Pip
     // According to the spec, pAttachments is to be ignored if the pipeline is created with
     // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
     // and VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
-    if (pipe_state.ColorBlendState() && pipe_state.DynamicState()) {
+    if (pipe_state.ColorBlendState() && pipe_state.DynamicStateGraphics()) {
         ignore = (pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
                   pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
                   pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
@@ -684,7 +704,7 @@ Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkRayTracingP
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      dynamic_state(0),  // RTX has no dynamic states being validated
+      dynamic_state(GetRayTracingDynamicState(*this)),
       descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
@@ -709,7 +729,7 @@ Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkRayTracingP
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      dynamic_state(0),  // RTX has no dynamic states being validated
+      dynamic_state(GetRayTracingDynamicState(*this)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),

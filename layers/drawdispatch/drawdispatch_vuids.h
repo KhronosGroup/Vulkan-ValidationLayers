@@ -312,6 +312,8 @@ struct DrawDispatchVuid {
     const char* rasterization_samples_09211 = kVUIDUndefined;
     const char* dynamic_rendering_undefined_depth_format_08913 = kVUIDUndefined;
     const char* primitives_generated_query_07481 = kVUIDUndefined;
+    // Ray tracing
+    const char* ray_tracing_pipeline_stack_size_09458 = kVUIDUndefined;
 };
 
 const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);

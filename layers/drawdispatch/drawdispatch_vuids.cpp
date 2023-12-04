@@ -2546,6 +2546,7 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysNV-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysNV-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysNV-format-07753";
+        ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysNV-None-09458";
     }
 };
 
@@ -2590,6 +2591,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysKHR-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysKHR-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysKHR-format-07753";
+        ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysKHR-None-09458";
     }
 };
 
@@ -2636,6 +2638,7 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysIndirectKHR-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysIndirectKHR-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysIndirectKHR-format-07753";
+        ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysIndirectKHR-None-09458";
     }
 };
 
@@ -2682,6 +2685,7 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysIndirect2KHR-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysIndirect2KHR-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysIndirect2KHR-format-07753";
+        ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysIndirect2KHR-None-09458";
     }
 };
 

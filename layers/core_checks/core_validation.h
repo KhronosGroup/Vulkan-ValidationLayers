@@ -261,10 +261,11 @@ class CoreChecks : public ValidationStateTracker {
                                      const Location& submit_loc) const;
     bool ValidateDynamicStateIsSet(CBDynamicFlags not_set_status, CBDynamicState dynamic_state, const LogObjectList& objlist,
                                    const Location& loc, const char* vuid) const;
-    bool ValidateDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
                                      const vvl::RenderPass& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const Location& loc, const char* error_code) const;

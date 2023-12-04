@@ -33,7 +33,7 @@ bool CoreChecks::ValidateDynamicStateIsSet(CBDynamicFlags state_status_cb, CBDyn
 }
 
 // Makes sure the vkCmdSet* call was called correctly prior to a draw
-bool CoreChecks::ValidateDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
@@ -185,7 +185,7 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LastBound& last_bound_state
                                           vuid.dynamic_attachment_feedback_loop_08877);
     }
 
-    if (const auto *rp_state = pipeline.RasterizationState(); rp_state) {
+    if (const auto* rp_state = pipeline.RasterizationState()) {
         if (rp_state->depthBiasEnable == VK_TRUE) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS, objlist, loc,
                                               vuid.dynamic_depth_bias_07834);
@@ -424,7 +424,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
-    skip = ValidateDynamicStateSetStatus(last_bound_state, loc);
+    skip = ValidateGraphicsDynamicStateSetStatus(last_bound_state, loc);
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
 
@@ -1429,6 +1429,31 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
+    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+
+    // Verify vkCmdSet* calls since last bound pipeline
+    const CBDynamicFlags unset_status_pipeline =
+        (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
+    if (unset_status_pipeline.any()) {
+        skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, loc,
+                         "%s doesn't set up %s, but it calls the related dynamic state setting commands.",
+                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str());
+    }
+
+    // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer
+    const CBDynamicFlags state_status_cb = ~((cb_state.dynamic_state_status.cb ^ pipeline.dynamic_state) & pipeline.dynamic_state);
+
+    // VK_KHR_ray_tracing_pipeline
+    skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR, objlist, loc,
+                                      vuid.ray_tracing_pipeline_stack_size_09458);
     return skip;
 }
 

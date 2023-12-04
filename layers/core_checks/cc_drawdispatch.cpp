@@ -1433,7 +1433,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
     }
 
-    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         skip |= ValidateDrawDynamicState(last_bound_state, loc);
         skip |= ValidatePipelineDrawtimeState(last_bound_state, loc);
 
@@ -1464,6 +1464,8 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                 }
             }
         }
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR || bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+        skip |= ValidateRayTracingDynamicStateSetStatus(last_bound_state, loc);
     }
 
     const vvl::Pipeline *pipeline = last_pipeline;
