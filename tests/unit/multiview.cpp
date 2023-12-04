@@ -17,6 +17,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeMultiview, MaxInstanceIndex) {
     TEST_DESCRIPTION("Verify if instance index in CmdDraw is greater than maxMultiviewInstanceIndex.");
@@ -64,35 +65,17 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
         GTEST_SKIP() << "VkPhysicalDeviceMultiviewFeatures::multiview not supported";
     }
     RETURN_IF_SKIP(InitState(nullptr, &features2));
-    InitRenderTarget();
-
-    VkAttachmentDescription attachmentDescription = {};
-    attachmentDescription.format = VK_FORMAT_R8G8B8A8_UNORM;
-    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentReference colorAttachmentReference = {};
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    colorAttachmentReference.attachment = 0;
-
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &colorAttachmentReference;
 
     uint32_t viewMask = 0x1u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
 
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
-    renderPassCreateInfo.attachmentCount = 1;
-    renderPassCreateInfo.pAttachments = &attachmentDescription;
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-
-    vkt::RenderPass renderPass(*m_device, renderPassCreateInfo);
-    ASSERT_TRUE(renderPass.initialized());
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -115,7 +98,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     framebufferCreateInfo.width = 32;
     framebufferCreateInfo.height = 32;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = renderPass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &imageView.handle();
 
@@ -138,7 +121,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     clear_rect.rect.extent.height = 32;
 
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = renderPass.handle();
+    render_pass_begin_info.renderPass = rp.Handle();
     render_pass_begin_info.framebuffer = framebuffer.handle();
     render_pass_begin_info.renderArea.extent.width = 32;
     render_pass_begin_info.renderArea.extent.height = 32;
@@ -661,35 +644,17 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     }
 
     RETURN_IF_SKIP(InitState(nullptr, &pd_features));
-    InitRenderTarget();
-
-    VkAttachmentDescription attachmentDescription = {};
-    attachmentDescription.format = VK_FORMAT_R8G8B8A8_UNORM;
-    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentReference colorAttachmentReference = {};
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    colorAttachmentReference.attachment = 0;
-
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &colorAttachmentReference;
 
     uint32_t viewMask = 0x1u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
 
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
-    renderPassCreateInfo.attachmentCount = 1;
-    renderPassCreateInfo.pAttachments = &attachmentDescription;
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-
-    vkt::RenderPass render_pass;
-    render_pass.init(*m_device, renderPassCreateInfo);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -714,19 +679,20 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     framebufferCreateInfo.width = 32;
     framebufferCreateInfo.height = 32;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = render_pass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &imageView.handle();
 
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = render_pass.handle();
+    render_pass_begin_info.renderPass = rp.Handle();
     render_pass_begin_info.framebuffer = framebuffer.handle();
     render_pass_begin_info.renderArea.extent.width = 32;
     render_pass_begin_info.renderArea.extent.height = 32;
 
     CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 

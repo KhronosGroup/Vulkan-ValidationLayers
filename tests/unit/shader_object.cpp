@@ -11,6 +11,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeShaderObject, SpirvCodeSize) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
@@ -1399,34 +1400,18 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
     const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
-    VkAttachmentReference attach = {};
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attach;
-    subpass.colorAttachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1u;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1u;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
-    framebuffer_info.renderPass = render_pass.handle();
+    framebuffer_info.renderPass = rp.Handle();
     framebuffer_info.attachmentCount = 1;
     framebuffer_info.pAttachments = &image_view.handle();
     framebuffer_info.width = 32;
@@ -1442,7 +1427,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     clear_value.color.float32[3] = 0.0f;
 
     VkRenderPassBeginInfo beginInfo = vku::InitStructHelper();
-    beginInfo.renderPass = render_pass.handle();
+    beginInfo.renderPass = rp.Handle();
     beginInfo.framebuffer = framebuffer.handle();
     beginInfo.renderArea.extent.width = 32;
     beginInfo.renderArea.extent.height = 32;

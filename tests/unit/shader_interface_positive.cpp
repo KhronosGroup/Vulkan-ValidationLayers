@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
     TEST_DESCRIPTION("Test shader layout in and out with different components.");
@@ -481,32 +482,21 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
-    VkAttachmentDescription descs[2] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
-    };
-    VkAttachmentReference color = {
-        0,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-    VkAttachmentReference input = {
-        1,
-        VK_IMAGE_LAYOUT_GENERAL,
-    };
-
-    VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
-
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descs, 1, &sd, 0, nullptr};
-    vkt::RenderPass rp(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddInputAttachment(1);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
-    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -571,42 +561,21 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     GetPhysicalDeviceFeatures2(features12);
     RETURN_IF_SKIP(InitState(nullptr, &features12));
 
-    const VkAttachmentDescription inputAttachmentDescription = {0,
-                                                                m_render_target_fmt,
-                                                                VK_SAMPLE_COUNT_1_BIT,
-                                                                VK_ATTACHMENT_LOAD_OP_LOAD,
-                                                                VK_ATTACHMENT_STORE_OP_STORE,
-                                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                                VK_IMAGE_LAYOUT_GENERAL};
-
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(m_render_target_fmt);
     // index 0 is unused
+    rp.AddAttachmentReference({VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL});
     // index 1 is is valid (for both color and input)
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     // index 2 and 3 point to same image as index 1
-    const VkAttachmentReference inputAttachmentReferences[4] = {{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL},
-                                                                {0, VK_IMAGE_LAYOUT_GENERAL},
-                                                                {0, VK_IMAGE_LAYOUT_GENERAL},
-                                                                {0, VK_IMAGE_LAYOUT_GENERAL}};
-
-    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     4,
-                                                     inputAttachmentReferences,
-                                                     1,
-                                                     &inputAttachmentReferences[1],
-                                                     nullptr,
-                                                     nullptr,
-                                                     0,
-                                                     nullptr};
-
-    VkRenderPassCreateInfo renderPassInfo = vku::InitStructHelper();
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &inputAttachmentDescription;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpassDescription;
-
-    vkt::RenderPass renderPass(*m_device, renderPassInfo);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(1);
+    rp.AddInputAttachment(2);
+    rp.AddInputAttachment(3);
+    rp.AddColorAttachment(1);
+    rp.CreateRenderPass();
 
     // use static array of 2 and index into element 1 to read
     {
@@ -623,7 +592,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-            helper.gp_ci_.renderPass = renderPass.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -643,7 +612,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-            helper.gp_ci_.renderPass = renderPass.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -667,7 +636,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                     {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-            helper.gp_ci_.renderPass = renderPass.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -688,7 +657,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-            helper.gp_ci_.renderPass = renderPass.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -708,7 +677,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-            helper.gp_ci_.renderPass = renderPass.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -725,34 +694,18 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
-    const VkAttachmentDescription inputAttachmentDescriptions[2] = {
-        {0, m_render_target_fmt, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
-        {0, ds_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL}};
-
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(m_render_target_fmt);
+    rp.AddAttachmentDescription(ds_format);
     // index 0 = color | index 1 = depth | index 2 = stencil
-    const VkAttachmentReference inputAttachmentReferences[3] = {
-        {0, VK_IMAGE_LAYOUT_GENERAL}, {1, VK_IMAGE_LAYOUT_GENERAL}, {1, VK_IMAGE_LAYOUT_GENERAL}};
-
-    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     3,
-                                                     inputAttachmentReferences,
-                                                     1,
-                                                     &inputAttachmentReferences[0],
-                                                     nullptr,
-                                                     nullptr,
-                                                     0,
-                                                     nullptr};
-
-    VkRenderPassCreateInfo renderPassInfo = vku::InitStructHelper();
-    renderPassInfo.attachmentCount = 2;
-    renderPassInfo.pAttachments = inputAttachmentDescriptions;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpassDescription;
-
-    vkt::RenderPass renderPass(*m_device, renderPassInfo);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(1);
+    rp.AddInputAttachment(2);
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     // Depth and Stencil use same index, but valid because differnet image aspect masks
     const char *fs_source = R"(
@@ -776,7 +729,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                 {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                 {2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-        helper.gp_ci_.renderPass = renderPass.handle();
+        helper.gp_ci_.renderPass = rp.Handle();
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }

@@ -13,6 +13,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     TEST_DESCRIPTION(
@@ -34,23 +35,11 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     VkFormat framebufferAttachmentFormats[3] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
 
     // Create a renderPass with a single attachment
-    VkAttachmentDescription attachmentDescription = {};
-    attachmentDescription.format = attachmentFormats[0];
-    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAttachmentReference attachmentReference = {};
-    attachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &attachmentReference;
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpassDescription;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attachmentDescription;
-    vkt::RenderPass rp(*m_device, rpci);
-    ASSERT_TRUE(rp.initialized());
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachmentFormats[0]);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
@@ -70,7 +59,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = nullptr;
-    framebufferCreateInfo.renderPass = rp.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
 
     VkImageFormatListCreateInfoKHR imageFormatListCreateInfo = vku::InitStructHelper();
     imageFormatListCreateInfo.viewFormatCount = 2;
@@ -116,7 +105,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = image_views;
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
-    renderPassBeginInfo.renderPass = rp.handle();
+    renderPassBeginInfo.renderPass = rp.Handle();
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
     renderPassBeginInfo.renderArea.extent.height = attachmentHeight;
 
@@ -360,22 +349,11 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     VkFormat attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Create a renderPass with a single attachment
-    VkAttachmentDescription attachmentDescription = {};
-    attachmentDescription.format = attachmentFormat;
-    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAttachmentReference attachmentReference = {};
-    attachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &attachmentReference;
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper();
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-    renderPassCreateInfo.attachmentCount = 1;
-    renderPassCreateInfo.pAttachments = &attachmentDescription;
-    vkt::RenderPass render_pass(*m_device, renderPassCreateInfo);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachmentFormat);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -392,7 +370,7 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = render_pass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
     framebufferCreateInfo.attachmentCount = 1;
 
     // Imageless framebuffer creation bit not present
@@ -424,22 +402,11 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     VkFormat attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Create a renderPass with a single attachment
-    VkAttachmentDescription attachmentDescription = {};
-    attachmentDescription.format = attachmentFormat;
-    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAttachmentReference attachmentReference = {};
-    attachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &attachmentReference;
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper();
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-    renderPassCreateInfo.attachmentCount = 1;
-    renderPassCreateInfo.pAttachments = &attachmentDescription;
-    vkt::RenderPass render_pass(*m_device, renderPassCreateInfo);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachmentFormat);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -456,7 +423,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = render_pass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
     framebufferCreateInfo.attachmentCount = 1;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
@@ -532,55 +499,20 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     VkFormat colorAndInputAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
     VkFormat depthStencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-    VkAttachmentDescription attachmentDescriptions[4] = {};
-    // Color attachment
-    attachmentDescriptions[0].format = colorAndInputAttachmentFormat;
-    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Color resolve attachment
-    attachmentDescriptions[1].format = colorAndInputAttachmentFormat;
-    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Depth stencil attachment
-    attachmentDescriptions[2].format = depthStencilAttachmentFormat;
-    attachmentDescriptions[2].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachmentDescriptions[2].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[2].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Input attachment
-    attachmentDescriptions[3].format = colorAndInputAttachmentFormat;
-    attachmentDescriptions[3].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescriptions[3].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[3].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentReference colorAttachmentReference = {};
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    colorAttachmentReference.attachment = 0;
-    VkAttachmentReference colorResolveAttachmentReference = {};
-    colorResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    colorResolveAttachmentReference.attachment = 1;
-    VkAttachmentReference depthStencilAttachmentReference = {};
-    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthStencilAttachmentReference.attachment = 2;
-    VkAttachmentReference inputAttachmentReference = {};
-    inputAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    inputAttachmentReference.attachment = 3;
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &colorAttachmentReference;
-    subpassDescription.pResolveAttachments = &colorResolveAttachmentReference;
-    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
-    subpassDescription.inputAttachmentCount = 1;
-    subpassDescription.pInputAttachments = &inputAttachmentReference;
-
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper();
-    renderPassCreateInfo.attachmentCount = 4;
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-    renderPassCreateInfo.pAttachments = attachmentDescriptions;
-    vkt::RenderPass render_pass(*m_device, renderPassCreateInfo);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(colorAndInputAttachmentFormat, VK_SAMPLE_COUNT_4_BIT);  // Color attachment
+    rp.AddAttachmentDescription(colorAndInputAttachmentFormat);                         // Color resolve attachment
+    rp.AddAttachmentDescription(depthStencilAttachmentFormat, VK_SAMPLE_COUNT_4_BIT);   // Depth stencil attachment
+    rp.AddAttachmentDescription(colorAndInputAttachmentFormat);                         // Input attachment
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({2, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({3, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddResolveAttachment(1);
+    rp.AddDepthStencilAttachment(2);
+    rp.AddInputAttachment(3);
+    rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[4] = {};
     // Color attachment
@@ -623,7 +555,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = render_pass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
     framebufferCreateInfo.attachmentCount = 4;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
@@ -675,59 +607,25 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     VkFormat colorAndInputAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
     VkFormat depthStencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-    VkAttachmentDescription attachmentDescriptions[4] = {};
-    // Color attachment
-    attachmentDescriptions[0].format = colorAndInputAttachmentFormat;
-    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Color resolve attachment
-    attachmentDescriptions[1].format = colorAndInputAttachmentFormat;
-    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Depth stencil attachment
-    attachmentDescriptions[2].format = depthStencilAttachmentFormat;
-    attachmentDescriptions[2].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachmentDescriptions[2].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[2].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Input attachment
-    attachmentDescriptions[3].format = colorAndInputAttachmentFormat;
-    attachmentDescriptions[3].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescriptions[3].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[3].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentReference colorAttachmentReference = {};
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    colorAttachmentReference.attachment = 0;
-    VkAttachmentReference colorResolveAttachmentReference = {};
-    colorResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    colorResolveAttachmentReference.attachment = 1;
-    VkAttachmentReference depthStencilAttachmentReference = {};
-    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthStencilAttachmentReference.attachment = 2;
-    VkAttachmentReference inputAttachmentReference = {};
-    inputAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    inputAttachmentReference.attachment = 3;
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &colorAttachmentReference;
-    subpassDescription.pResolveAttachments = &colorResolveAttachmentReference;
-    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
-    subpassDescription.inputAttachmentCount = 1;
-    subpassDescription.pInputAttachments = &inputAttachmentReference;
-
     uint32_t viewMask = 0x3u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
-    renderPassCreateInfo.attachmentCount = 4;
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-    renderPassCreateInfo.pAttachments = attachmentDescriptions;
-    vkt::RenderPass render_pass(*m_device, renderPassCreateInfo);
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(colorAndInputAttachmentFormat, VK_SAMPLE_COUNT_4_BIT);  // Color attachment
+    rp.AddAttachmentDescription(colorAndInputAttachmentFormat);                         // Color resolve attachment
+    rp.AddAttachmentDescription(depthStencilAttachmentFormat, VK_SAMPLE_COUNT_4_BIT);   // Depth stencil attachment
+    rp.AddAttachmentDescription(colorAndInputAttachmentFormat);                         // Input attachment
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({2, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({3, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddResolveAttachment(1);
+    rp.AddDepthStencilAttachment(2);
+    rp.AddInputAttachment(3);
+    rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[4] = {};
     // Color attachment
@@ -770,7 +668,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = render_pass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
     framebufferCreateInfo.attachmentCount = 4;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
@@ -1116,23 +1014,11 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     VkFormat framebufferAttachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};
 
     // Create a renderPass with a single attachment
-    VkAttachmentDescription attachmentDescription = {};
-    attachmentDescription.format = attachmentFormats[0];
-    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAttachmentReference attachmentReference = {};
-    attachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpassDescription = {};
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &attachmentReference;
-    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper();
-    renderPassCreateInfo.subpassCount = 1;
-    renderPassCreateInfo.pSubpasses = &subpassDescription;
-    renderPassCreateInfo.attachmentCount = 1;
-    renderPassCreateInfo.pAttachments = &attachmentDescription;
-    vkt::RenderPass renderPass(*m_device, renderPassCreateInfo);
-    ASSERT_TRUE(renderPass.initialized());
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachmentFormats[0], VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     // Create Attachments
     VkImageCreateInfo imageCreateInfo = vku::InitStructHelper();
@@ -1178,7 +1064,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.renderPass = renderPass.handle();
+    framebufferCreateInfo.renderPass = rp.Handle();
 
     // Try to use 3D Image View without imageless flag
     {
@@ -1200,7 +1086,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = &imageView3D.handle();
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
-    renderPassBeginInfo.renderPass = renderPass.handle();
+    renderPassBeginInfo.renderPass = rp.Handle();
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
     renderPassBeginInfo.renderArea.extent.height = attachmentHeight;
     renderPassBeginInfo.framebuffer = framebuffer.handle();

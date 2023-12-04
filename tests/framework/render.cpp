@@ -38,10 +38,10 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
 }
 
 VkRenderFramework::VkRenderFramework()
-    : instance_(NULL),
-      m_device(NULL),
+    : instance_(nullptr),
+      m_device(nullptr),
       m_commandPool(VK_NULL_HANDLE),
-      m_commandBuffer(NULL),
+      m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_addRenderPassSelfDependency(false),
@@ -53,7 +53,7 @@ VkRenderFramework::VkRenderFramework()
       m_load_op_clear(true),
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
-      m_depthStencil(NULL) {
+      m_depthStencil(nullptr) {
     m_renderPassBeginInfo = vku::InitStructHelper();
 
     // clear the back buffer to dark grey

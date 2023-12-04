@@ -185,8 +185,7 @@ class VkRenderFramework : public VkTestFramework {
     vkt::CommandPool *m_commandPool;
     vkt::CommandBuffer *m_commandBuffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
-
-    VkFramebuffer m_framebuffer;
+    VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
 
     // WSI items
     SurfaceContext m_surface_context{};

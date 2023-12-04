@@ -16,6 +16,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeCommand, CommandPoolConsistency) {
     TEST_DESCRIPTION("Allocate command buffers from one command pool and attempt to delete them from another.");
@@ -47,24 +48,13 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
     RETURN_IF_SKIP(Init());
 
     // A renderpass with a single subpass that declared a self-dependency
-    VkAttachmentDescription attach[] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-    };
-    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
-    };
-    VkSubpassDependency dep = {0,
-                               0,
-                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                               VK_ACCESS_SHADER_WRITE_BIT,
-                               VK_ACCESS_SHADER_WRITE_BIT,
-                               VK_DEPENDENCY_BY_REGION_BIT};
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
-    vkt::RenderPass rp(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT);
+    rp.CreateRenderPass();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -73,13 +63,14 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
     VkImageObj image2(m_device);
     image2.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView.handle(), 32, 32, 1};
+    VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.Handle(), 1, &imageView.handle(), 32, 32, 1};
     vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
 
     VkRenderPassBeginInfo rpbi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.Handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -87,7 +78,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
 
     VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
                                            nullptr,
-                                           rp,
+                                           rp.Handle(),
                                            0,
                                            VK_NULL_HANDLE,  // Set to NULL FB handle intentionally to flesh out any errors
                                            VK_FALSE,
@@ -6505,32 +6496,12 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
 
     vkt::ImageView image_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    VkAttachmentDescription attachment = {};
-    attachment.flags = 0;
-    attachment.format = ds_format;
-    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
-    VkAttachmentReference ds_attachment_ref = {};
-    ds_attachment_ref.attachment = 0;
-    ds_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.pDepthStencilAttachment = &ds_attachment_ref;
-
-    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
-    rp_ci.attachmentCount = 1;
-    rp_ci.pAttachments = &attachment;
-    rp_ci.subpassCount = 1;
-    rp_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, rp_ci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
+    rp.AddDepthStencilAttachment(0);
+    rp.CreateRenderPass();
 
     VkPipelineDepthStencilStateCreateInfo depth_state_info = vku::InitStructHelper();
     depth_state_info.depthTestEnable = VK_TRUE;
@@ -6549,21 +6520,21 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     CreatePipelineHelper depth_pipe(*this);
     depth_pipe.InitState();
     depth_pipe.LateBindPipelineInfo();
-    depth_pipe.gp_ci_.renderPass = render_pass.handle();
+    depth_pipe.gp_ci_.renderPass = rp.Handle();
     depth_pipe.gp_ci_.pDepthStencilState = &depth_state_info;
     depth_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_pipe(*this);
     stencil_pipe.InitState();
     stencil_pipe.LateBindPipelineInfo();
-    stencil_pipe.gp_ci_.renderPass = render_pass.handle();
+    stencil_pipe.gp_ci_.renderPass = rp.Handle();
     stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_disabled_pipe(*this);
     stencil_disabled_pipe.InitState();
     stencil_disabled_pipe.LateBindPipelineInfo();
-    stencil_disabled_pipe.gp_ci_.renderPass = render_pass.handle();
+    stencil_disabled_pipe.gp_ci_.renderPass = rp.Handle();
     stencil_disabled_pipe.gp_ci_.pDepthStencilState = &stencil_disabled_state_info;
     stencil_disabled_pipe.CreateGraphicsPipeline(false);
 
@@ -6571,7 +6542,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
     stencil_dynamic_pipe.InitState();
     stencil_dynamic_pipe.LateBindPipelineInfo();
-    stencil_dynamic_pipe.gp_ci_.renderPass = render_pass.handle();
+    stencil_dynamic_pipe.gp_ci_.renderPass = rp.Handle();
     stencil_dynamic_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_dynamic_pipe.CreateGraphicsPipeline(false);
 
@@ -6579,14 +6550,14 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     framebuffer_ci.width = 32;
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
-    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.renderPass = rp.Handle();
     framebuffer_ci.attachmentCount = 1;
     framebuffer_ci.pAttachments = &image_view.handle();
 
     vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
     ASSERT_TRUE(framebuffer.initialized());
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = render_pass.handle();
+    render_pass_begin_info.renderPass = rp.Handle();
     render_pass_begin_info.framebuffer = framebuffer.handle();
     render_pass_begin_info.renderArea.extent.width = 32;
     render_pass_begin_info.renderArea.extent.height = 32;
@@ -7399,27 +7370,13 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         image.Init(32, 32, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
         vkt::ImageView image_view = image.CreateView(image_aspect);
 
-        VkAttachmentReference ds_attachment_ref = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-        VkSubpassDescription subpass = {
-            0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, &ds_attachment_ref, 0, nullptr,
-        };
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+        rp.AddDepthStencilAttachment(0);
+        rp.CreateRenderPass();
 
-        VkAttachmentDescription attachment = {
-            0,
-            format,
-            VK_SAMPLE_COUNT_1_BIT,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        };
-
-        auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr);
-        vkt::RenderPass render_pass(*m_device, rpci);
-
-        auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0, render_pass.handle(), 1, &image_view.handle(), 32, 32, 1);
+        auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0, rp.Handle(), 1, &image_view.handle(), 32, 32, 1);
         vkt::Framebuffer framebuffer(*m_device, fbci);
 
         VkClearValue clear_value = {};
@@ -7435,7 +7392,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         clear_rect.layerCount = 1u;
 
         VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-        render_pass_begin_info.renderPass = render_pass.handle();
+        render_pass_begin_info.renderPass = rp.Handle();
         render_pass_begin_info.framebuffer = framebuffer.handle();
         render_pass_begin_info.renderArea = {{0, 0}, {32, 32}};
         render_pass_begin_info.clearValueCount = 1u;

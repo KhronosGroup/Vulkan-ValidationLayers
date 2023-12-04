@@ -15,6 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     TEST_DESCRIPTION(
@@ -5410,32 +5411,15 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     image.Init(image_ci);
     vkt::ImageView image_view = image.CreateView();
 
-    VkAttachmentReference attachment_reference = {};
-    attachment_reference.attachment = 0u;
-    attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass_description = {};
-    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_description.colorAttachmentCount = 1u;
-    subpass_description.pColorAttachments = &attachment_reference;
-
-    VkAttachmentDescription attachment_description = {};
-    attachment_description.format = VK_FORMAT_R8G8B8A8_UNORM;
-    attachment_description.samples = VK_SAMPLE_COUNT_2_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.attachmentCount = 1u;
-    render_pass_ci.pAttachments = &attachment_description;
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass_description;
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_2_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.renderPass = rp.Handle();
     framebuffer_ci.attachmentCount = 1u;
     framebuffer_ci.pAttachments = &image_view.handle();
     framebuffer_ci.width = 32u;
@@ -5447,7 +5431,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     clear_value.color = {{0, 0, 0, 0}};
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.renderPass = rp.Handle();
     render_pass_bi.framebuffer = framebuffer.handle();
     render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
     render_pass_bi.clearValueCount = 1u;
@@ -5460,7 +5444,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     pipe1.InitState();
     pipe1.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
     pipe1.pipe_ms_state_ci_ = ms_state_ci;
-    pipe1.gp_ci_.renderPass = render_pass.handle();
+    pipe1.gp_ci_.renderPass = rp.Handle();
     pipe1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe2(*this);
@@ -5468,7 +5452,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     pipe2.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
     pipe2.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe2.pipe_ms_state_ci_ = ms_state_ci;
-    pipe2.gp_ci_.renderPass = render_pass.handle();
+    pipe2.gp_ci_.renderPass = rp.Handle();
     pipe2.CreateGraphicsPipeline();
 
     VkSampleMask sample_mask = 1u;
@@ -5553,31 +5537,15 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     image.Init(32u, 32u, 1u, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkAttachmentReference attachment_reference = {};
-    attachment_reference.attachment = 0u;
-    attachment_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass_description = {};
-    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_description.pDepthStencilAttachment = &attachment_reference;
-
-    VkAttachmentDescription attachment_description = {};
-    attachment_description.format = format;
-    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.attachmentCount = 1u;
-    render_pass_ci.pAttachments = &attachment_description;
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass_description;
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddDepthStencilAttachment(0);
+    rp.CreateRenderPass();
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.renderPass = rp.Handle();
     framebuffer_ci.attachmentCount = 1u;
     framebuffer_ci.pAttachments = &image_view.handle();
     framebuffer_ci.width = 32u;
@@ -5589,7 +5557,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     clear_value.depthStencil = {1.0f, 0u};
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.renderPass = rp.Handle();
     render_pass_bi.framebuffer = framebuffer.handle();
     render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
     render_pass_bi.clearValueCount = 1u;
@@ -5598,7 +5566,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.CreateGraphicsPipeline();
 

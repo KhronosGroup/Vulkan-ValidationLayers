@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "generated/vk_extension_helper.h"
 
 #include "utils/vk_layer_utils.h"
@@ -520,17 +521,12 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     uint32_t attachmentWidth = m_surface_capabilities.minImageExtent.width;
     uint32_t attachmentHeight = m_surface_capabilities.minImageExtent.height;
     VkFormat attachmentFormat = m_surface_formats[0].format;
-    VkAttachmentDescription attachmentDescription[] = {{0, attachmentFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                        VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                        VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR}};
-    VkAttachmentReference attachmentReference = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &attachmentReference, nullptr, nullptr, 0, nullptr},
-    };
-    VkRenderPassCreateInfo renderPassCreateInfo = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachmentDescription, 1, subpasses, 0, nullptr};
-    vkt::RenderPass renderPass(*m_device, renderPassCreateInfo);
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachmentFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
     VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
@@ -597,7 +593,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     VkFramebufferCreateInfo framebufferCreateInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                                                      &framebufferAttachmentsCreateInfo,
                                                      VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR,
-                                                     renderPass.handle(),
+                                                     rp.Handle(),
                                                      1,
                                                      reinterpret_cast<const VkImageView *>(1),
                                                      attachmentWidth,
@@ -608,8 +604,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
                                                                         nullptr, 1, &imageView.handle()};
     VkRenderPassBeginInfo renderPassBeginInfo =
-        vku::InitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, renderPass.handle(), framebuffer.handle(),
-                                             VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, rp.Handle(), framebuffer.handle(),
+                                               VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);
 
     // RenderPass should change the image layout of both the swapchain image and the aliased image to PRESENT_SRC_KHR
     m_commandBuffer->begin();

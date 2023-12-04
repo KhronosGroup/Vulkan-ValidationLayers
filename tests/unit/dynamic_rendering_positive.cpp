@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "generated/vk_extension_helper.h"
 
 void DynamicRenderingTest::InitBasicDynamicRendering(void* pNextFeatures) {
@@ -391,32 +392,17 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachmentFormats = &color_format;
 
-    VkAttachmentReference attachment = {};
-    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachment.attachment = 0;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.inputAttachmentCount = 1;
-    subpass.pInputAttachments = &attachment;
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1;
-    render_pass_ci.pSubpasses = &subpass;
-    render_pass_ci.attachmentCount = 1;
-    render_pass_ci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.gp_ci_.pNext = &rendering_info;
     pipe.CreateGraphicsPipeline();
 }
@@ -439,32 +425,17 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
-    VkAttachmentReference attachment = {};
-    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachment.attachment = 0;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.inputAttachmentCount = 1;
-    subpass.pInputAttachments = &attachment;
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1;
-    render_pass_ci.pSubpasses = &subpass;
-    render_pass_ci.attachmentCount = 1;
-    render_pass_ci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }
 

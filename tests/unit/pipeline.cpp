@@ -16,6 +16,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "../framework/shader_helper.h"
 
 TEST_F(NegativePipeline, NotBound) {
@@ -112,38 +113,18 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     RETURN_IF_SKIP(Init(&features));
 
     // Create a renderPass with two color attachments
-    VkAttachmentReference attachments[2] = {};
-    attachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachments[1].attachment = 1;
-    attachments[1].layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = attachments;
-    subpass.colorAttachmentCount = 2;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 2;
-
-    VkAttachmentDescription attach_desc[2] = {};
-    attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    rpci.pAttachments = attach_desc;
-
-    vkt::RenderPass renderpass(*m_device, rpci);
-    ASSERT_TRUE(renderpass.initialized());
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(1);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this, 2);
     pipe.InitState();
-    pipe.gp_ci_.renderPass = renderpass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_TRUE;
     pipe.cb_attachments_[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
@@ -176,32 +157,15 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
         GTEST_SKIP() << "Unable to find a color attachment format with no blending support";
     }
 
-    // Create a renderPass with two color attachments
-    VkAttachmentReference attachment = {};
-    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pColorAttachments = &attachment;
-    subpass.colorAttachmentCount = 1;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = non_blending_format;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass rp(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(non_blending_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_[0].blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
@@ -1054,43 +1018,19 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09028");
 
     RETURN_IF_SKIP(Init());
-    InitRenderTarget();
 
-    VkAttachmentDescription attachments[] = {
-        {
-            0,
-            VK_FORMAT_B8G8R8A8_UNORM,
-            VK_SAMPLE_COUNT_1_BIT,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        },
-        {
-            0,
-            VK_FORMAT_D16_UNORM,
-            VK_SAMPLE_COUNT_1_BIT,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        },
-    };
-    VkAttachmentReference refs[] = {
-        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
-    };
-    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr};
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 0, nullptr};
-    vkt::RenderPass rp(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(VK_FORMAT_D16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddDepthStencilAttachment(1);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
@@ -1177,33 +1117,16 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
          "VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853"}};
 
     for (const auto &test_case : test_cases) {
-        VkAttachmentDescription att[2] = {{}, {}};
-        att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
-        att[0].samples = test_case.color_samples;
-        att[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-        att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        att[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
-        att[1].samples = test_case.depth_samples;
-        att[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-        att[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-        VkAttachmentReference dr = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-
-        VkSubpassDescription sp = {};
-        sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        sp.colorAttachmentCount = 1;
-        sp.pColorAttachments = &cr;
-        sp.pResolveAttachments = NULL;
-        sp.pDepthStencilAttachment = &dr;
-
-        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
-        rpi.attachmentCount = 2;
-        rpi.pAttachments = att;
-        rpi.subpassCount = 1;
-        rpi.pSubpasses = &sp;
-        vkt::RenderPass rp(*m_device, rpi);
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, test_case.color_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, test_case.depth_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+        rp.AddColorAttachment(0);
+        rp.AddDepthStencilAttachment(1);
+        rp.CreateRenderPass();
 
         VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();
         VkPipelineCoverageModulationStateCreateInfoNV cmi = vku::InitStructHelper();
@@ -1226,7 +1149,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
             helper.pipe_ms_state_ci_.sampleShadingEnable = test_case.sample_shading;
 
-            helper.gp_ci_.renderPass = rp.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
             helper.gp_ci_.pDepthStencilState = &ds;
         };
 
@@ -1262,41 +1185,22 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
     };
 
     for (const auto &test_case : test_cases) {
-        VkAttachmentDescription att[2] = {{}, {}};
-        att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
-        att[0].samples = test_case.color_samples;
-        att[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-        att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, test_case.color_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentDescription(ds_format, test_case.depth_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+        rp.AddColorAttachment(0);
+        rp.AddDepthStencilAttachment(1);
 
-        att[1].format = ds_format;
-        att[1].samples = test_case.depth_samples;
-        att[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-        att[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-        VkAttachmentReference dr = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-
-        VkSubpassDescription sp = {};
-        sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        sp.colorAttachmentCount = 1;
-        sp.pColorAttachments = &cr;
-        sp.pResolveAttachments = NULL;
-        sp.pDepthStencilAttachment = &dr;
-
-        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
-        rpi.attachmentCount = 2;
-        rpi.pAttachments = att;
-        rpi.subpassCount = 1;
-        rpi.pSubpasses = &sp;
-
-        if (test_case.color_samples == test_case.depth_samples) {
-        } else {
+        if (test_case.color_samples != test_case.depth_samples) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-pDepthStencilAttachment-01418");
         }
-        vkt::RenderPass rp(*m_device, rpi);
+        rp.CreateRenderPass();
 
-        if (test_case.color_samples == test_case.depth_samples) {
-        } else {
+        if (test_case.color_samples != test_case.depth_samples) {
             m_errorMonitor->VerifyFound();
             continue;
         }
@@ -1306,7 +1210,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
         const auto break_samples = [&rp, &ds, &test_case](CreatePipelineHelper &helper) {
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
 
-            helper.gp_ci_.renderPass = rp.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
             helper.gp_ci_.pDepthStencilState = &ds;
         };
 
@@ -1399,39 +1303,18 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     }
 
     for (const auto &test_case : test_cases) {
-        VkAttachmentDescription att[2] = {{}, {}};
-        att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
-        att[0].samples = test_case.color_samples;
-        att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        att[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        att[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        att[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
-        att[1].samples = test_case.depth_samples;
-        att[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        att[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        att[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        att[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-        VkAttachmentReference dr = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-
-        VkSubpassDescription sp = {};
-        sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        sp.colorAttachmentCount = 1;
-        sp.pColorAttachments = &cr;
-        sp.pResolveAttachments = nullptr;
-        sp.pDepthStencilAttachment = (test_case.depth_samples) ? &dr : nullptr;
-
-        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
-        rpi.attachmentCount = (test_case.depth_samples) ? 2 : 1;
-        rpi.pAttachments = att;
-        rpi.subpassCount = 1;
-        rpi.pSubpasses = &sp;
-
-        vkt::RenderPass rp(*m_device, rpi);
-        ASSERT_TRUE(rp.initialized());
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, test_case.color_samples, VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+        rp.AddColorAttachment(0);
+        if (test_case.depth_samples) {
+            rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, test_case.depth_samples, VK_IMAGE_LAYOUT_UNDEFINED,
+                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+            rp.AddDepthStencilAttachment(1);
+        }
+        rp.CreateRenderPass();
 
         VkPipelineDepthStencilStateCreateInfo dss = vku::InitStructHelper();
         VkPipelineCoverageReductionStateCreateInfoNV crs = vku::InitStructHelper();
@@ -1442,7 +1325,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
 
             helper.pipe_ms_state_ci_.pNext = &crs;
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
-            helper.gp_ci_.renderPass = rp.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
             helper.gp_ci_.pDepthStencilState = (test_case.depth_samples) ? &dss : nullptr;
         };
 
@@ -3160,33 +3043,16 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     if (shader_tile_image_features.shaderTileImageColorReadAccess) {
         auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageColorReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        VkAttachmentReference attachmentRefs[1] = {};
-        attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
-        attachmentRefs[0].attachment = 0;
-
-        VkSubpassDescription subpass = {};
-        subpass.flags = 0;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &attachmentRefs[0];
-
-        VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
-        rp_ci.subpassCount = 1;
-        rp_ci.pSubpasses = &subpass;
-        rp_ci.attachmentCount = 1;
-        VkAttachmentDescription attach_desc[1] = {};
-        attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
-        attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-        rp_ci.pAttachments = attach_desc;
-
-        vkt::RenderPass render_pass(*m_device, rp_ci);
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+        rp.AddColorAttachment(0);
+        rp.CreateRenderPass();
 
         // Check if the colorAttachmentRead capability enable, renderpass should be null
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
-            helper.gp_ci_.renderPass = render_pass.handle();
+            helper.gp_ci_.renderPass = rp.Handle();
         };
 
         CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit,
@@ -3410,30 +3276,18 @@ TEST_F(NegativePipeline, PipelineMissingFeatures) {
     VkPhysicalDeviceFeatures features = {};
     RETURN_IF_SKIP(InitState(&features));
 
-    VkAttachmentDescription attachment = {};
-    attachment.format = FindSupportedDepthStencilFormat(m_device->phy().handle());
-    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference dr = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-
-    VkSubpassDescription sp = {};
-    sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    sp.pDepthStencilAttachment = &dr;
-
-    VkRenderPassCreateInfo rpi = vku::InitStructHelper();
-    rpi.attachmentCount = 1;
-    rpi.pAttachments = &attachment;
-    rpi.subpassCount = 1;
-    rpi.pSubpasses = &sp;
-    vkt::RenderPass rp(*m_device, rpi);
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->phy().handle());
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddDepthStencilAttachment(0);
+    rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.ds_ci_.depthBoundsTestEnable = VK_TRUE;
-    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

@@ -17,6 +17,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeDescriptors, DescriptorPoolConsistency) {
     TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
@@ -3068,60 +3069,16 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view_sampler_not_overlap(*m_device, createView);
 
-    const VkAttachmentDescription inputAttachment = {
-        0u,
-        format,
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_ATTACHMENT_LOAD_OP_LOAD,
-        VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_GENERAL,
-    };
-    std::vector<VkAttachmentDescription> attachmentDescs;
-    attachmentDescs.push_back(inputAttachment);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    rp.AddAttachmentDescription(depth_format);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.AddDepthStencilAttachment(1);
+    rp.CreateRenderPass();
 
-    VkAttachmentReference inputRef = {
-        0,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    };
-    std::vector<VkAttachmentReference> inputAttachments;
-    inputAttachments.push_back(inputRef);
-
-    const VkAttachmentDescription depthStencilAttachment = {0,
-                                                            depth_format,
-                                                            VK_SAMPLE_COUNT_1_BIT,
-                                                            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                            VK_IMAGE_LAYOUT_GENERAL,
-                                                            VK_IMAGE_LAYOUT_GENERAL};
-    attachmentDescs.push_back(depthStencilAttachment);
-
-    VkAttachmentReference depthStencilRef = {1, VK_IMAGE_LAYOUT_GENERAL};
-
-    const VkSubpassDescription subpass = {
-        0u,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        size32(inputAttachments),
-        inputAttachments.data(),
-        0,
-        nullptr,
-        nullptr,
-        &depthStencilRef,
-        0u,
-        nullptr,
-    };
-    const std::vector<VkSubpassDescription> subpasses(1u, subpass);
-
-    const auto renderPassInfo = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
-                                                                      size32(subpasses), subpasses.data(), 0u, nullptr);
-    vkt::RenderPass rp;
-    rp.init(*m_device, renderPassInfo);
-
-    const auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(0, 0u, rp.handle(), 2u, attachments, 64u, 64u, 1u);
+    const auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(0, 0u, rp.Handle(), 2u, attachments, 64u, 64u, 1u);
     vkt::Framebuffer fb(*m_device, fbci);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -3158,7 +3115,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
 
     g_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
-    g_pipe.gp_ci_.renderPass = rp.handle();
+    g_pipe.gp_ci_.renderPass = rp.Handle();
     g_pipe.InitState();
     ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
@@ -3178,7 +3135,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
 
     m_commandBuffer->begin();
     m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
-    m_renderPassBeginInfo.renderPass = rp.handle();
+    m_renderPassBeginInfo.renderPass = rp.Handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -3785,31 +3742,11 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     const uint32_t height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkAttachmentReference attach_ref = {};
-    attach_ref.attachment = 0;
-    attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &attach_ref;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = format;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3846,7 +3783,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     fbci.width = width;
     fbci.height = height;
     fbci.layers = 1;
-    fbci.renderPass = render_pass.handle();
+    fbci.renderPass = rp.Handle();
     fbci.attachmentCount = 1;
     fbci.pAttachments = &image_view_handle;
 
@@ -3854,7 +3791,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = render_pass.handle();
+    rpbi.renderPass = rp.Handle();
     rpbi.renderArea.extent.width = width;
     rpbi.renderArea.extent.height = height;
     rpbi.clearValueCount = 1;
@@ -3885,7 +3822,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -3928,31 +3865,11 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     const uint32_t height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkAttachmentReference attach_ref = {};
-    attach_ref.attachment = 0;
-    attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &attach_ref;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = format;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3989,7 +3906,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     fbci.width = width;
     fbci.height = height;
     fbci.layers = 1;
-    fbci.renderPass = render_pass.handle();
+    fbci.renderPass = rp.Handle();
     fbci.attachmentCount = 1;
     fbci.pAttachments = &image_view_handle;
 
@@ -3997,7 +3914,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = render_pass.handle();
+    rpbi.renderPass = rp.Handle();
     rpbi.renderArea.extent.width = width;
     rpbi.renderArea.extent.height = height;
     rpbi.clearValueCount = 1;
@@ -4027,7 +3944,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -4072,31 +3989,11 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     const uint32_t height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkAttachmentReference attach_ref = {};
-    attach_ref.attachment = 0;
-    attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.inputAttachmentCount = 1;
-    subpass.pInputAttachments = &attach_ref;
-
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = format;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4133,7 +4030,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     fbci.width = width;
     fbci.height = height;
     fbci.layers = 1;
-    fbci.renderPass = render_pass.handle();
+    fbci.renderPass = rp.Handle();
     fbci.attachmentCount = 1;
     fbci.pAttachments = &image_view_handle;
 
@@ -4141,7 +4038,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = render_pass.handle();
+    rpbi.renderPass = rp.Handle();
     rpbi.renderArea.extent.width = width;
     rpbi.renderArea.extent.height = height;
     rpbi.clearValueCount = 1;
@@ -4179,7 +4076,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet descriptor_set_storage_image(
