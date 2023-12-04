@@ -185,6 +185,15 @@ target_sources(vk_layer_validation_tests PRIVATE
     vvl_utils/small_vector.cpp
     vvl_utils/pnext_chain_extraction.cpp
 )
+if (APPLE)
+    target_sources(vk_layer_validation_tests PRIVATE
+        framework/apple_wsi.h
+        framework/apple_wsi.mm
+    )
+    # QuartzCore framework is needed for minimal Metal interaction
+    target_link_libraries(vk_layer_validation_tests PRIVATE "-framework QuartzCore")
+endif()
+
 get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 

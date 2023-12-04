@@ -544,8 +544,12 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     const auto swapchainImages = GetSwapchainImages(m_swapchain);
     const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
-    ASSERT_EQ(VK_SUCCESS,
-        vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
+    {
+        auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+        ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
+        fence.wait(vvl::kU32Max);
+    }
+
     VkAttachmentDescription attach[] = {
         {0, m_surface_formats[0].format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
@@ -889,8 +893,11 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     const vkt::Fence fence(*m_device);
 
     uint32_t image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
-    fence.wait(vvl::kU32Max);
+    {
+        auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+        ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
+        fence.wait(vvl::kU32Max);
+    }
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = swapchain_images[image_index];

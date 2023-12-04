@@ -28,6 +28,10 @@
 #include "utils/vk_layer_utils.h"
 #include "layer_validation_tests.h"
 
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+#include "apple_wsi.h"
+#endif
+
 using std::string;
 using std::strncmp;
 using std::vector;
@@ -698,6 +702,14 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
         surface_create_info.hinstance = window_instance;
         surface_create_info.hwnd = window;
         return VK_SUCCESS == vk::CreateWin32SurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+    }
+#endif
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    if (IsExtensionsEnabled(VK_EXT_METAL_SURFACE_EXTENSION_NAME)) {
+        const VkMetalSurfaceCreateInfoEXT surface_create_info = vkt::CreateMetalSurfaceInfoEXT();
+        assert(surface_create_info.pLayer != nullptr);
+        return VK_SUCCESS == vk::CreateMetalSurfaceEXT(surface_instance, &surface_create_info, nullptr, &surface);
     }
 #endif
 
