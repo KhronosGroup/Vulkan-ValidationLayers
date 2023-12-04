@@ -3622,3 +3622,31 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) 
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
+    TEST_DESCRIPTION(
+        "Setup a ray tracing pipeline and acceleration structure with a dynamic ray tracing stack size, "
+        "but do not set size before tracing rays");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&bda_features);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper(&ray_tracing_features);
+    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&accel_struct_features);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    vkt::rt::Pipeline test_pipeline(*this, m_device);
+    test_pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    test_pipeline.AddDynamicState(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
+    test_pipeline.Build();
+
+    m_commandBuffer->begin();
+    test_pipeline.BindResources(*m_commandBuffer);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-None-09458");
+    test_pipeline.TraceRays(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+}
