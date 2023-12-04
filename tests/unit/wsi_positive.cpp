@@ -1122,18 +1122,22 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
                                       VK_ACCESS_SHADER_WRITE_BIT,
                                       VK_DEPENDENCY_BY_REGION_BIT};
     // Use framework render pass and framebuffer so pipeline helper uses it
-    m_renderPass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachments, 1, &subpass, 1, &dependency};
-    ASSERT_EQ(VK_SUCCESS, vk::CreateRenderPass(device(), &m_renderPass_info, nullptr, &m_renderPass));
-    m_framebuffer_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-                          nullptr,
-                          0,
-                          m_renderPass,
-                          1,
-                          &image_view.handle(),
-                          swapchain_create_info.imageExtent.width,
-                          swapchain_create_info.imageExtent.height,
-                          1};
-    ASSERT_EQ(VK_SUCCESS, vk::CreateFramebuffer(device(), &m_framebuffer_info, nullptr, &m_framebuffer));
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = attachments;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &subpass;
+    rp_info.dependencyCount = 1;
+    rp_info.pDependencies = &dependency;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateRenderPass(device(), &rp_info, nullptr, &m_renderPass));
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
+    fb_info.renderPass = m_renderPass;
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &image_view.handle();
+    fb_info.width = swapchain_create_info.imageExtent.width;
+    fb_info.height = swapchain_create_info.imageExtent.height;
+    fb_info.layers = 1;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateFramebuffer(device(), &fb_info, nullptr, &m_framebuffer));
 
     // basic pipeline to allow for a valid vkCmdDraw()
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);

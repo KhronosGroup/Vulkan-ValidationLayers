@@ -1215,14 +1215,19 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    VkImageObj image(m_device);
+    image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+               VK_IMAGE_TILING_OPTIMAL);
+    vkt::ImageView imageView = image.CreateView();
 
     // random invalid struct for a framebuffer pNext change
     VkCommandPoolCreateInfo invalid_struct = vku::InitStructHelper();
 
-    VkFormat attachment_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat attachment_format = VK_FORMAT_B8G8R8A8_UNORM;
     VkFramebufferAttachmentImageInfo fb_fdm = vku::InitStructHelper(&invalid_struct);
     fb_fdm.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     fb_fdm.width = 64;
@@ -1240,8 +1245,8 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     framebufferCreateInfo.height = 64;
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.renderPass = m_renderPass;
-    framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(m_framebuffer_attachments.size());
-    framebufferCreateInfo.pAttachments = m_framebuffer_attachments.data();
+    framebufferCreateInfo.attachmentCount = 1;
+    framebufferCreateInfo.pAttachments = &imageView.handle();
 
     // VkFramebufferCreateInfo -pNext-> VkFramebufferAttachmentsCreateInfo
     //                                             |-> VkFramebufferAttachmentImageInfo -pNext-> INVALID

@@ -69,7 +69,6 @@ class VkRenderFramework : public VkTestFramework {
     vkt::Device *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu() const;
     VkRenderPass renderPass() const { return m_renderPass; }
-    const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
     VkFramebuffer framebuffer() const { return m_framebuffer; }
     ErrorMonitor &Monitor();
     const VkPhysicalDeviceProperties &physDevProps() const;
@@ -112,8 +111,6 @@ class VkRenderFramework : public VkTestFramework {
     // default to CommandPool Reset flag to allow recording multiple command buffers simpler
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
                    const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-    const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
@@ -188,15 +185,8 @@ class VkRenderFramework : public VkTestFramework {
     vkt::CommandPool *m_commandPool;
     vkt::CommandBuffer *m_commandBuffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
-    VkRenderPassCreateInfo m_renderPass_info = {};
-    std::vector<VkAttachmentDescription> m_renderPass_attachments;
-    std::vector<VkSubpassDescription> m_renderPass_subpasses;
-    std::vector<VkSubpassDependency> m_renderPass_dependencies;
 
     VkFramebuffer m_framebuffer;
-    VkFramebufferCreateInfo m_framebuffer_info;
-    std::vector<vkt::ImageView> m_render_target_views;   // color attachments but not depth
-    std::vector<VkImageView> m_framebuffer_attachments;  // all attachments, can be consumed directly by the API
 
     // WSI items
     SurfaceContext m_surface_context{};
@@ -245,6 +235,13 @@ class VkRenderFramework : public VkTestFramework {
     VkValidationFeatureDisableEXT validation_disable_all = VK_VALIDATION_FEATURE_DISABLE_ALL_EXT;
 
   private:
+    // TODO - move to own helper logic
+    std::vector<VkAttachmentDescription> m_renderPass_attachments;
+    std::vector<VkSubpassDescription> m_renderPass_subpasses;
+    std::vector<VkSubpassDependency> m_renderPass_dependencies;
+    std::vector<vkt::ImageView> m_render_target_views;   // color attachments but not depth
+    std::vector<VkImageView> m_framebuffer_attachments;  // all attachments, can be consumed directly by the API
+
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
     // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance
     // extension.

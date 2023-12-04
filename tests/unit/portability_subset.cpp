@@ -362,7 +362,6 @@ TEST_F(NegativePortabilitySubset, RasterizationState) {
     rp_info.pSubpasses = &subpass;
 
     vk::CreateRenderPass(device(), &rp_info, nullptr, &m_renderPass);
-    m_renderPass_info = rp_info;
 
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.polygonMode = VK_POLYGON_MODE_POINT;

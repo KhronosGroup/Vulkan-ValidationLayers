@@ -345,7 +345,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     auto clear_cmds = [this, &color_attachment](VkCommandBuffer cmd_buffer, VkClearRect clear_rect) {
         // extent too wide
         VkClearRect clear_rect_too_large = clear_rect;
-        clear_rect_too_large.rect.extent.width = renderPassBeginInfo().renderArea.extent.width + 4;
+        clear_rect_too_large.rect.extent.width = m_renderPassBeginInfo.renderArea.extent.width + 4;
         clear_rect_too_large.rect.extent.height = clear_rect_too_large.rect.extent.height / 2;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00016");
         vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect_too_large);

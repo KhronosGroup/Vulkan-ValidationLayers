@@ -553,7 +553,6 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
         pipe.InitState();
         pipe.ia_ci_.topology =
             (stage != TestStage::VERTEX) ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        pipe.gp_ci_.renderPass = renderPass();
         pipe.shader_stages_.clear();
 
         std::stringstream vs_src, tes_src, geom_src;
