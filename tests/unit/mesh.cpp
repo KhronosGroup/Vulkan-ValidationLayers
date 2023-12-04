@@ -936,7 +936,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     pipe1.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(renderPassBeginInfo());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     uint32_t max_group_count_X = mesh_shader_properties.maxTaskWorkGroupCount[0];
@@ -1082,7 +1082,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(renderPassBeginInfo());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088");
@@ -1194,7 +1194,7 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     pipe1.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(renderPassBeginInfo());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156");

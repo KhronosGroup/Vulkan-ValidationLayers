@@ -186,10 +186,11 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
     colorAttachmentReference.attachment = 0;
 
-    m_renderPass_subpasses.resize(multiview_count);
+    std::vector<VkSubpassDescription> subpasses;
+    subpasses.resize(multiview_count);
     for (unsigned i = 0; i < multiview_count; ++i) {
-        m_renderPass_subpasses[i].colorAttachmentCount = 1;
-        m_renderPass_subpasses[i].pColorAttachments = &colorAttachmentReference;
+        subpasses[i].colorAttachmentCount = 1;
+        subpasses[i].pColorAttachments = &colorAttachmentReference;
     }
 
     uint32_t viewMasks[multiview_count] = {};
@@ -200,15 +201,16 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     renderPassMultiviewCreateInfo.subpassCount = multiview_count;
     renderPassMultiviewCreateInfo.pViewMasks = viewMasks;
 
-    m_renderPass_info = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
-    m_renderPass_info.attachmentCount = 1;
-    m_renderPass_info.pAttachments = &attachmentDescription;
-    m_renderPass_info.subpassCount = m_renderPass_subpasses.size();
-    m_renderPass_info.pSubpasses = m_renderPass_subpasses.data();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachmentDescription;
+    rp_info.subpassCount = subpasses.size();
+    rp_info.pSubpasses = subpasses.data();
 
-    m_renderPass_dependencies.resize(extra_subpass_count);
-    for (unsigned i = 0; i < m_renderPass_dependencies.size(); ++i) {
-        auto &subpass_dep = m_renderPass_dependencies[i];
+    std::vector<VkSubpassDependency> dependencies;
+    dependencies.resize(extra_subpass_count);
+    for (unsigned i = 0; i < dependencies.size(); ++i) {
+        auto &subpass_dep = dependencies[i];
         subpass_dep.srcSubpass = i;
         subpass_dep.dstSubpass = i + 1;
 
@@ -229,10 +231,10 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     }
 
-    m_renderPass_info.dependencyCount = static_cast<uint32_t>(m_renderPass_dependencies.size());
-    m_renderPass_info.pDependencies = m_renderPass_dependencies.data();
+    rp_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    rp_info.pDependencies = dependencies.data();
 
-    vk::CreateRenderPass(m_device->handle(), &m_renderPass_info, nullptr, &m_renderPass);
+    vk::CreateRenderPass(m_device->handle(), &rp_info, nullptr, &m_renderPass);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;

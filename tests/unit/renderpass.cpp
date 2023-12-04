@@ -2483,8 +2483,8 @@ TEST_F(NegativeRenderPass, RenderArea) {
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
     rpbinfo.renderPass = m_renderPass;
     rpbinfo.framebuffer = m_framebuffer;
-    rpbinfo.renderArea.extent.width = m_framebuffer_info.width;
-    rpbinfo.renderArea.extent.height = m_framebuffer_info.height;
+    rpbinfo.renderArea.extent.width = m_width;
+    rpbinfo.renderArea.extent.height = m_height;
     rpbinfo.renderArea.offset.x = -32;
     rpbinfo.renderArea.offset.y = 0;
     rpbinfo.clearValueCount = 1;
@@ -2503,14 +2503,14 @@ TEST_F(NegativeRenderPass, RenderArea) {
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.offset.y = 0;
-    rpbinfo.renderArea.extent.width = m_framebuffer_info.width + 128;
+    rpbinfo.renderArea.extent.width = m_width + 128;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02852");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
-    rpbinfo.renderArea.extent.width = m_framebuffer_info.width;
-    rpbinfo.renderArea.extent.height = m_framebuffer_info.height + 1;
+    rpbinfo.renderArea.extent.width = m_width;
+    rpbinfo.renderArea.extent.height = m_height + 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02853");
     m_commandBuffer->BeginRenderPass(rpbinfo);
@@ -2524,9 +2524,7 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkRect2D renderArea = {};
@@ -2543,8 +2541,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper(&device_group_render_pass_begin_info);
     rpbinfo.renderPass = m_renderPass;
     rpbinfo.framebuffer = m_framebuffer;
-    rpbinfo.renderArea.extent.width = m_framebuffer_info.width;
-    rpbinfo.renderArea.extent.height = m_framebuffer_info.height;
+    rpbinfo.renderArea.extent.width = m_width;
+    rpbinfo.renderArea.extent.height = m_height;
     rpbinfo.renderArea.offset.x = -32;
     rpbinfo.renderArea.offset.y = 0;
     rpbinfo.clearValueCount = 1;
@@ -2559,8 +2557,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
 
     renderArea.offset.x = 0;
     renderArea.offset.y = 1;
-    renderArea.extent.width = m_framebuffer_info.width + 1;
-    renderArea.extent.height = m_framebuffer_info.height;
+    renderArea.extent.width = m_width + 1;
+    renderArea.extent.height = m_height;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02856");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02857");

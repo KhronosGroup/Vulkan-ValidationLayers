@@ -54,8 +54,6 @@ VkRenderFramework::VkRenderFramework()
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
       m_depthStencil(NULL) {
-    m_framebuffer_info = vku::InitStructHelper();
-    m_renderPass_info = vku::InitStructHelper();
     m_renderPassBeginInfo = vku::InitStructHelper();
 
     // clear the back buffer to dark grey
@@ -917,12 +915,10 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(ta
 void VkRenderFramework::InitRenderTarget(const VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *dsBinding) {
-    vector<VkAttachmentDescription> &attachments = m_renderPass_attachments;
     vector<VkAttachmentReference> color_references;
-    vector<VkImageView> &bindings = m_framebuffer_attachments;
-    attachments.reserve(targets + 1);  // +1 for dsBinding
+    m_renderPass_attachments.reserve(targets + 1);  // +1 for dsBinding
     color_references.reserve(targets);
-    bindings.reserve(targets + 1);  // +1 for dsBinding
+    m_framebuffer_attachments.reserve(targets + 1);  // +1 for dsBinding
 
     VkAttachmentDescription att = {};
     att.format = m_render_target_fmt;
@@ -945,7 +941,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     clear.color = m_clear_color;
 
     for (uint32_t i = 0; i < targets; i++) {
-        attachments.push_back(att);
+        m_renderPass_attachments.push_back(att);
 
         ref.attachment = i;
         color_references.push_back(ref);
@@ -971,7 +967,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
         }
 
         m_render_target_views.push_back(img->CreateView());
-        bindings.push_back(m_render_target_views.back().handle());
+        m_framebuffer_attachments.push_back(m_render_target_views.back().handle());
         m_renderTargets.push_back(std::move(img));
     }
 
@@ -995,13 +991,13 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
         att.initialLayout = m_depth_stencil_layout;
         att.finalLayout = m_depth_stencil_layout;
-        attachments.push_back(att);
+        m_renderPass_attachments.push_back(att);
 
         clear.depthStencil.depth = m_depth_clear_color;
         clear.depthStencil.stencil = m_stencil_clear_color;
         m_renderPassClearValues.push_back(clear);
 
-        bindings.push_back(*dsBinding);
+        m_framebuffer_attachments.push_back(*dsBinding);
 
         ds_reference.attachment = targets;
         ds_reference.layout = m_depth_stencil_layout;
@@ -1013,10 +1009,9 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = NULL;
 
-    VkRenderPassCreateInfo &rp_info = m_renderPass_info;
-    rp_info = vku::InitStructHelper();
-    rp_info.attachmentCount = attachments.size();
-    rp_info.pAttachments = attachments.data();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
+    rp_info.attachmentCount = m_renderPass_attachments.size();
+    rp_info.pAttachments = m_renderPass_attachments.data();
     rp_info.subpassCount = m_renderPass_subpasses.size();
     rp_info.pSubpasses = m_renderPass_subpasses.data();
 
@@ -1063,8 +1058,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
     // Create Framebuffer and RenderPass with color attachments and any
     // depth/stencil attachment
-    VkFramebufferCreateInfo &fb_info = m_framebuffer_info;
-    fb_info = vku::InitStructHelper();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = m_renderPass;
     fb_info.attachmentCount = m_framebuffer_attachments.size();
     fb_info.pAttachments = m_framebuffer_attachments.data();
